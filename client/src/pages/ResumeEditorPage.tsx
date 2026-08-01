@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, FileText, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -11,7 +11,9 @@ import { resumesApi } from "@/api/resumes";
 import { EditorFormCards } from "@/components/resumes/EditorFormCards";
 import { PreviewPane } from "@/components/resumes/PreviewPane";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
+import { VersionDrawer } from "@/components/resumes/VersionDrawer";
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resume, ResumeTemplate } from "@/types";
@@ -51,6 +53,7 @@ export default function ResumeEditorPage() {
   const [template, setTemplate] = useState<ResumeTemplate>("classic");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const lastSavedRef = useRef<string>("");
   const saveTimerRef = useRef<number | undefined>(undefined);
@@ -109,6 +112,15 @@ export default function ResumeEditorPage() {
   };
   saveRef.current = save;
 
+  const handleRestored = (updated: Resume) => {
+    const formValues = toFormValues(updated);
+    form.reset(formValues);
+    setResume(updated);
+    setTemplate(updated.template ?? "classic");
+    // Align the autosave baseline so no phantom save fires after restore.
+    lastSavedRef.current = JSON.stringify(toApiPayload(formValues, updated.template ?? "classic"));
+  };
+
   // Debounced autosave on any form/template change.
   useEffect(() => {
     if (!resume) return;
@@ -158,7 +170,13 @@ export default function ResumeEditorPage() {
               <span className="truncate">{resume.fileName}</span>
             </h1>
           </div>
-          <SaveIndicator state={saveState} />
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)} aria-label="Open version history">
+              <History className="mr-1.5 h-4 w-4" aria-hidden />
+              History
+            </Button>
+            <SaveIndicator state={saveState} />
+          </div>
         </div>
 
         <Card>
@@ -209,6 +227,8 @@ export default function ResumeEditorPage() {
           </div>
         </div>
       </div>
+
+      <VersionDrawer resume={resume} open={historyOpen} onOpenChange={setHistoryOpen} onRestored={handleRestored} />
     </FormProvider>
   );
 }

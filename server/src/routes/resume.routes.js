@@ -9,6 +9,7 @@ import {
   updateResume,
   uploadResume,
 } from "../controllers/resume.controller.js";
+import { getVersion, listVersions, restoreVersion } from "../controllers/versions.controller.js";
 import { validate } from "../middlewares/validate.js";
 import { updateResumeSchema } from "../validations/resume.js";
 
@@ -21,5 +22,9 @@ router.get("/", listResumes);
 router.get("/:id", getResume);
 router.patch("/:id", validate({ body: updateResumeSchema }), updateResume);
 router.delete("/:id", deleteResume);
+
+router.get("/:id/versions", listVersions);
+router.get("/:id/versions/:versionId", getVersion);
+router.post("/:id/versions/:versionId/restore", restoreVersion);
 
 export default router;

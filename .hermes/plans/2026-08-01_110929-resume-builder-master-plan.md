@@ -117,7 +117,7 @@ AI Resume Builder/
 - **server:** update endpoints for Resume sections, autosave persistence.
 - **Verify:** reorder persists, template switch, preview matches data, mobile usability.
 
-### M9 — Version History
+### M9 — Version History ✅
 - **server:** snapshot on save (diff-based or full snapshot, capped per resume), list/restore/compare endpoints.
 - **client:** history drawer with restore + compare view.
 - **Verify:** version created on edit, restore works, cap respected.

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { Resume } from "../models/Resume.js";
 import { ApiError } from "../utils/ApiError.js";
 import { extractText, normalizeResumeText } from "./resumeParser.js";
+import { createSnapshot } from "./versions.service.js";
 
 const UPLOADS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..", "uploads");
 
@@ -62,6 +63,8 @@ export async function updateResume(userId, resumeId, update) {
     .select("-filePath -__v")
     .lean();
   if (!resume) throw new ApiError(404, "Resume not found");
+  // Snapshot the saved state (post-update) — no-op saves are deduped.
+  await createSnapshot(userId, resumeId, resume);
   return resume;
 }
 
