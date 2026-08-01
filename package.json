@@ -1,0 +1,24 @@
+{
+  "name": "ai-resume-builder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI Resume Builder & Job Optimization Platform",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n client,server -c cyan,green \"npm run dev -w client\" \"npm run dev -w server\"",
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "build": "npm run build -w client",
+    "lint": "npm run lint -w client",
+    "start": "npm run start -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
