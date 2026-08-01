@@ -70,6 +70,12 @@ export default function ResumeEditorPage() {
   });
   const values = form.watch() as unknown as EditFormValues;
 
+  // The reactive `values` prop is applied by react-hook-form in an async
+  // effect — on the first render after fetch the watched values are still
+  // empty. Only treat the form as usable once the resume is synced in, so we
+  // never serialize (or save) an empty form over the real data.
+  const formReady = resume !== null && typeof values.skillsText === "string";
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -117,7 +123,7 @@ export default function ResumeEditorPage() {
 
   // History snapshots for undo/redo (debounced, capped at 50).
   useEffect(() => {
-    if (!resume || !values) return;
+    if (!resume || !formReady) return;
     const timer = window.setTimeout(() => {
       undoStackRef.current.push(structuredClone(values));
       if (undoStackRef.current.length > 50) undoStackRef.current.shift();
@@ -125,7 +131,7 @@ export default function ResumeEditorPage() {
       setHistoryTick((tick) => tick + 1);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [values, resume]);
+  }, [values, resume, formReady]);
 
   const onUndo = () => {
     const previous = undoStackRef.current.pop();
@@ -156,7 +162,7 @@ export default function ResumeEditorPage() {
 
   // Debounced autosave on any form/template change.
   useEffect(() => {
-    if (!resume) return;
+    if (!resume || !formReady) return;
     const serialized = JSON.stringify(toApiPayload(values, template));
     if (serialized === lastSavedRef.current) return;
     window.clearTimeout(saveTimerRef.current);
@@ -166,7 +172,7 @@ export default function ResumeEditorPage() {
       void saveRef.current();
     }, 600);
     return () => window.clearTimeout(saveTimerRef.current);
-  }, [values, template, resume]);
+  }, [values, template, resume, formReady]);
 
   // Flush any pending save on unmount (uses latest closure via ref).
   useEffect(() => {
@@ -176,7 +182,7 @@ export default function ResumeEditorPage() {
     };
   }, []);
 
-  if (!resume) {
+  if (!resume || !formReady) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
         <Skeleton className="h-8 w-1/3" />
@@ -187,7 +193,7 @@ export default function ResumeEditorPage() {
   }
 
   const title = resume.fileName.replace(/\.[^.]+$/, "");
-  const previewData = values ? toParsedData(values) : resume.parsedData;
+  const previewData = toParsedData(values);
 
   return (
     <FormProvider {...form}>
