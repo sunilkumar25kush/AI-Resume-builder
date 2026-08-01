@@ -161,6 +161,18 @@ AI Resume Builder/
 - **client:** Optimize result dashboard — matched skill chips (green), keyword density bar, weak bullets (amber), grammar issues (red), formatting suggestions.
 - **Verify:** 20/20 unit+live (real matched skills from AI), full regression green.
 
+### M15 — Templates → 11 + Design Choice ✅ (spec)
+- **server:** template enum + 7 new ids; **client:** ATS Professional (classic relabel), +Executive/Creative/Startup/Google/Microsoft/Harvard/Elegant — CSS preview + PDF/DOCX export styles; generation flow me design-choice dialog (Keep Existing vs Choose New → PATCH applies).
+- **Verify:** 13/13 template PATCH round-trip, invalid → 400.
+
+### M16 — Editor Power Features ✅ (spec)
+- custom sections (add/remove title+content), hide/show toggle per section (hiddenSections skip preview+export), duplicate entry per row, undo/redo in editor header.
+- **Verify:** 10/10 custom+hidden persist, partial PATCH isolation, merge preservation.
+
+### M17 — Export JSON + Duplicate Version ✅ (spec)
+- JSON export (structured data download), POST duplicate version (branch-point copy), Duplicate button in history drawer.
+- **Verify:** 7/7 duplicate flow + ownership.
+
 ### M14b — Hardening & Final QA
 - Full pass: security (helmet headers, rate limits everywhere, input sanitization everywhere, cookie flags), performance (lazy routes, code splitting, memoization, debounced calls), a11y audit, all breakpoints, dark/light contrast, empty/loading/error states everywhere, lint + build clean, README.
 
