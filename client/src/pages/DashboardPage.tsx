@@ -1,9 +1,10 @@
-import { FileText, ScanSearch, Wand2, Briefcase } from "lucide-react";
+import { FileText, Route, ScanSearch, Wand2, Briefcase } from "lucide-react";
 import { Link } from "react-router";
 
 import { useAuthStore } from "@/stores/auth";
 
 const features = [
+  { icon: Route, title: "AI Resume Wizard", description: "8-step guided flow: target → resume → JD → analysis → generate → template → edit → export.", stage: "Live", to: "/wizard" },
   { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Live", to: "/resumes" },
   { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Live", to: "/jds" },
   { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Live", to: "/optimize" },
@@ -32,7 +33,7 @@ export default function DashboardPage() {
         </p>
       </section>
 
-      <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {features.map(({ icon: Icon, title, description, stage, to }) => {
             const content = (
               <>

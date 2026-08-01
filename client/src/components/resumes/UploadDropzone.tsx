@@ -10,12 +10,22 @@ interface UploadDropzoneProps {
   onFile: (file: File) => void;
   copyTitle?: string;
   copyHint?: string;
+  accept?: string;
+  ariaLabel?: string;
 }
 
 const ACCEPT = ".pdf,.docx";
 
-/** Drag-and-drop + click upload zone for PDF/DOCX files. */
-export function UploadDropzone({ uploading, progress, onFile, copyTitle, copyHint }: UploadDropzoneProps) {
+/** Drag-and-drop + click upload zone for document files (default PDF/DOCX). */
+export function UploadDropzone({
+  uploading,
+  progress,
+  onFile,
+  copyTitle,
+  copyHint,
+  accept = ACCEPT,
+  ariaLabel = "Upload file",
+}: UploadDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -34,7 +44,7 @@ export function UploadDropzone({ uploading, progress, onFile, copyTitle, copyHin
     <div
       role="button"
       tabIndex={0}
-      aria-label="Upload resume"
+      aria-label={ariaLabel}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") inputRef.current?.click();
@@ -53,7 +63,7 @@ export function UploadDropzone({ uploading, progress, onFile, copyTitle, copyHin
       <input
         ref={inputRef}
         type="file"
-        accept={ACCEPT}
+        accept={accept}
         className="hidden"
         onChange={(event) => {
           pickFile(event.target.files?.[0]);

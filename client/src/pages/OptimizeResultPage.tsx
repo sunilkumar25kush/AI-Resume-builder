@@ -23,7 +23,7 @@ function ringTone(score: number): string {
   return "stroke-red-500";
 }
 
-function ScoreRing({ score }: { score: number }) {
+export function ScoreRing({ score }: { score: number }) {
   const clamped = Math.min(100, Math.max(0, score));
   const offset = RING_CIRCUMFERENCE * (1 - clamped / 100);
   return (

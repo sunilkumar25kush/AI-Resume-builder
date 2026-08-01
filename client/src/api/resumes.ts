@@ -36,6 +36,12 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
+  /** Wizard Workflow 1: generate a fresh resume from a job description only. */
+  async generateFromJd(input: { jdId: string; targetTitle: string; experienceLevel: "fresher" | "junior" | "senior" }): Promise<Resume> {
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/generate-from-jd", input);
+    return res.data.data.resume;
+  },
+
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/resumes/${id}`);
   },

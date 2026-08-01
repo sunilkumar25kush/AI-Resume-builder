@@ -23,6 +23,7 @@ const JDPreviewPage = lazy(() => import("@/pages/JDPreviewPage"));
 const JDEditPage = lazy(() => import("@/pages/JDEditPage"));
 const OptimizationsPage = lazy(() => import("@/pages/OptimizationsPage"));
 const OptimizeResultPage = lazy(() => import("@/pages/OptimizeResultPage"));
+const ResumeWizardPage = lazy(() => import("@/pages/ResumeWizardPage"));
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +58,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <NotificationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/wizard",
+        element: (
+          <ProtectedRoute>
+            <ResumeWizardPage />
           </ProtectedRoute>
         ),
       },

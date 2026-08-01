@@ -96,6 +96,7 @@ export function NavLinks({ collapsed = false, onNavigate }: NavLinksProps) {
 /** Bottom navigation (mobile only) — keep to essential destinations. */
 const BOTTOM_NAV: BottomNavItem[] = [
   { label: "Home", href: "/", icon: MAIN_NAV.items[0].icon },
+  { label: "Wizard", href: "/wizard", icon: MAIN_NAV.items[1].icon },
   { label: "Profile", href: "/profile", icon: ACCOUNT_NAV.items[0].icon },
   { label: "Settings", href: "/settings", icon: ACCOUNT_NAV.items[1].icon },
 ];
@@ -106,7 +107,7 @@ export function BottomNav() {
       aria-label="Bottom navigation"
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur lg:hidden"
     >
-      <div className="grid grid-cols-3 pb-[env(safe-area-inset-bottom)]">
+      <div className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
         {BOTTOM_NAV.map((item) => (
           <NavLink
             key={item.label}
