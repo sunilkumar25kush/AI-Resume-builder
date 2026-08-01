@@ -122,7 +122,7 @@ AI Resume Builder/
 - **client:** history drawer with restore + compare view.
 - **Verify:** version created on edit, restore works, cap respected.
 
-### M10 — Export PDF + DOCX
+### M10 — Export PDF + DOCX ✅
 - **server or client:** PDF via react-pdf (browser) or server-side puppeteer; DOCX via `docx` lib. Template-aware export.
 - **Verify:** downloads open correctly, content matches preview, file size sane.
 

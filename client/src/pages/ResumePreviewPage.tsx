@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -8,7 +8,15 @@ import { resumesApi } from "@/api/resumes";
 import { ResumeSections } from "@/components/resumes/ResumeSections";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { exportResumeDocx } from "@/utils/exportDocx";
+import { exportResumePdf } from "@/utils/exportPdfClient";
 import type { Resume } from "@/types";
 
 export default function ResumePreviewPage() {
@@ -17,6 +25,7 @@ export default function ResumePreviewPage() {
   const [resume, setResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -52,6 +61,24 @@ export default function ResumePreviewPage() {
     }
   };
 
+  const onExport = async (kind: "pdf" | "docx") => {
+    if (!resume) return;
+    setExporting(kind);
+    const title = resume.fileName.replace(/\.[^.]+$/, "");
+    try {
+      if (kind === "pdf") {
+        await exportResumePdf(resume.parsedData, resume.template, resume.fileName, title);
+      } else {
+        await exportResumeDocx(resume.parsedData, resume.template, resume.fileName, title);
+      }
+      toast.success(`${kind.toUpperCase()} downloaded`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -78,6 +105,18 @@ export default function ResumePreviewPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={exporting !== null}>
+                {exporting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden /> : <Download className="mr-1.5 h-4 w-4" aria-hidden />}
+                {exporting ? `Exporting ${exporting.toUpperCase()}…` : "Export"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => void onExport("pdf")}>Download PDF</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onExport("docx")}>Download DOCX</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button asChild variant="outline" size="sm">
             <Link to={`/resumes/${resume._id}/edit`}>
               <Pencil className="mr-1.5 h-4 w-4" aria-hidden />

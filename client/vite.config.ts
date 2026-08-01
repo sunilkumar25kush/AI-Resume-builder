@@ -21,4 +21,9 @@ export default defineConfig({
       },
     },
   },
+  // @react-pdf/renderer lives in its own lazy chunk (loaded only when a user
+  // exports a PDF) — it is legitimately >500 kB, so raise the advisory limit.
+  build: {
+    chunkSizeWarningLimit: 1600,
+  },
 });
