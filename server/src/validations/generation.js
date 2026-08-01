@@ -112,5 +112,7 @@ export function mergeGeneratedData(raw, original) {
     certifications: orig.certifications ?? [],
     languages: orig.languages ?? [],
     awards: orig.awards ?? [],
+    customSections: orig.customSections ?? [],
+    hiddenSections: orig.hiddenSections ?? [],
   };
 }

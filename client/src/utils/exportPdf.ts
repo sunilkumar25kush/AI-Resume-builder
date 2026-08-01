@@ -70,6 +70,7 @@ export function createResumePdfElement(
     },
   });
 
+  const hidden = (key: string) => data.hiddenSections?.includes(key) ?? false;
   const contact = [
     data.contact.email,
     data.contact.phone,
@@ -83,19 +84,19 @@ export function createResumePdfElement(
       title || data.name ? h(Text, { key: "name", style: styles.name }, title || data.name) : null,
       contact.length > 0 ? h(Text, { key: "contact", style: styles.contact }, contact.join("  ·  ")) : null,
     ]),
-    data.summary
+    !hidden("summary") && data.summary
       ? h(View, { key: "summary" }, [
           h(Text, { key: "h", style: styles.heading }, "Summary"),
           h(Text, { key: "b", style: styles.body }, data.summary),
         ])
       : null,
-    data.skills.length > 0
+    !hidden("skills") && data.skills.length > 0
       ? h(View, { key: "skills" }, [
           h(Text, { key: "h", style: styles.heading }, "Skills"),
           h(View, { key: "list", style: styles.skills }, data.skills.map((skill) => h(Text, { key: skill, style: styles.skill }, skill))),
         ])
       : null,
-    data.experience.length > 0
+    !hidden("experience") && data.experience.length > 0
       ? h(View, { key: "experience" }, [
           h(Text, { key: "h", style: styles.heading }, "Experience"),
           ...data.experience.map((entry, i) =>
@@ -114,7 +115,7 @@ export function createResumePdfElement(
           ),
         ])
       : null,
-    data.education.length > 0
+    !hidden("education") && data.education.length > 0
       ? h(View, { key: "education" }, [
           h(Text, { key: "h", style: styles.heading }, "Education"),
           ...data.education.map((entry, i) =>
@@ -131,7 +132,7 @@ export function createResumePdfElement(
           ),
         ])
       : null,
-    data.projects.length > 0
+    !hidden("projects") && data.projects.length > 0
       ? h(View, { key: "projects" }, [
           h(Text, { key: "h", style: styles.heading }, "Projects"),
           ...data.projects.map((entry, i) =>
@@ -144,24 +145,32 @@ export function createResumePdfElement(
           ),
         ])
       : null,
-    data.certifications.length > 0
+    !hidden("certifications") && data.certifications.length > 0
       ? h(View, { key: "certifications" }, [
           h(Text, { key: "h", style: styles.heading }, "Certifications"),
           h(View, { key: "list", style: styles.skills }, data.certifications.map((item) => h(Text, { key: item, style: styles.skill }, item))),
         ])
       : null,
-    data.languages.length > 0
+    !hidden("languages") && data.languages.length > 0
       ? h(View, { key: "languages" }, [
           h(Text, { key: "h", style: styles.heading }, "Languages"),
           h(View, { key: "list", style: styles.skills }, data.languages.map((item) => h(Text, { key: item, style: styles.skill }, item))),
         ])
       : null,
-    data.awards.length > 0
+    !hidden("awards") && data.awards.length > 0
       ? h(View, { key: "awards" }, [
           h(Text, { key: "h", style: styles.heading }, "Awards"),
           ...data.awards.map((item, i) => h(Text, { key: i, style: styles.meta }, item)),
         ])
       : null,
+    ...(data.customSections ?? []).map((section, i) =>
+      section.title || section.content
+        ? h(View, { key: `custom-${i}` }, [
+            h(Text, { key: "h", style: styles.heading }, section.title || "Custom"),
+            h(Text, { key: "b", style: styles.body }, section.content),
+          ])
+        : null,
+    ),
   ];
 
   return h(

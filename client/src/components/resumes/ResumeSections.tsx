@@ -10,6 +10,7 @@ interface ResumeSectionsProps {
 /** Read-only rendering of parsed resume sections (preview page). */
 export function ResumeSections({ data }: ResumeSectionsProps) {
   const { contact } = data;
+  const hidden = (key: string) => data.hiddenSections?.includes(key) ?? false;
   const contactItems = [
     { icon: Mail, value: contact.email },
     { icon: Phone, value: contact.phone },
@@ -51,13 +52,13 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </section>
       ) : null}
 
-      {data.summary ? (
+      {!hidden("summary") && data.summary ? (
         <Section title="Summary">
           <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{data.summary}</p>
         </Section>
       ) : null}
 
-      {data.skills.length > 0 ? (
+      {!hidden("skills") && data.skills.length > 0 ? (
         <Section title="Skills">
           <div className="flex flex-wrap gap-2">
             {data.skills.map((skill) => (
@@ -69,7 +70,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.experience.length > 0 ? (
+      {!hidden("experience") && data.experience.length > 0 ? (
         <Section title="Experience">
           <div className="flex flex-col gap-4">
             {data.experience.map((entry, i) => (
@@ -100,7 +101,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.education.length > 0 ? (
+      {!hidden("education") && data.education.length > 0 ? (
         <Section title="Education">
           <div className="flex flex-col gap-4">
             {data.education.map((entry, i) => (
@@ -123,7 +124,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.projects.length > 0 ? (
+      {!hidden("projects") && data.projects.length > 0 ? (
         <Section title="Projects">
           <div className="flex flex-col gap-4">
             {data.projects.map((entry, i) => (
@@ -152,7 +153,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.certifications.length > 0 ? (
+      {!hidden("certifications") && data.certifications.length > 0 ? (
         <Section title="Certifications">
           <div className="flex flex-wrap gap-2">
             {data.certifications.map((item) => (
@@ -164,7 +165,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.languages.length > 0 ? (
+      {!hidden("languages") && data.languages.length > 0 ? (
         <Section title="Languages">
           <div className="flex flex-wrap gap-2">
             {data.languages.map((item) => (
@@ -176,7 +177,7 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
         </Section>
       ) : null}
 
-      {data.awards.length > 0 ? (
+      {!hidden("awards") && data.awards.length > 0 ? (
         <Section title="Awards">
           <ul className="flex flex-col gap-1.5">
             {data.awards.map((item) => (
@@ -187,6 +188,15 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
           </ul>
         </Section>
       ) : null}
+      {(data.customSections ?? []).length > 0
+        ? data.customSections.map((section, i) =>
+            section.title || section.content ? (
+              <Section key={i} title={section.title || "Custom"}>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{section.content}</p>
+              </Section>
+            ) : null,
+          )
+        : null}
     </div>
   );
 }

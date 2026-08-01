@@ -66,6 +66,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     data.contact.linkedin,
     data.contact.github,
   ].filter(Boolean);
+  const hidden = (key: string) => data.hiddenSections?.includes(key) ?? false;
 
   const children: Paragraph[] = [
     new Paragraph({
@@ -93,7 +94,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
       : []),
   ];
 
-  if (data.summary) {
+  if (!hidden("summary") && data.summary) {
     children.push(heading("Summary"));
     children.push(
       new Paragraph({
@@ -103,7 +104,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     );
   }
 
-  if (data.skills.length > 0) {
+  if (!hidden("skills") && data.skills.length > 0) {
     children.push(heading("Skills"));
     children.push(
       new Paragraph({
@@ -120,7 +121,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     );
   }
 
-  if (data.experience.length > 0) {
+  if (!hidden("experience") && data.experience.length > 0) {
     children.push(heading("Experience"));
     for (const entryData of data.experience) {
       children.push(
@@ -134,7 +135,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     }
   }
 
-  if (data.education.length > 0) {
+  if (!hidden("education") && data.education.length > 0) {
     children.push(heading("Education"));
     for (const entryData of data.education) {
       children.push(
@@ -148,7 +149,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     }
   }
 
-  if (data.projects.length > 0) {
+  if (!hidden("projects") && data.projects.length > 0) {
     children.push(heading("Projects"));
     for (const entryData of data.projects) {
       children.push(
@@ -162,7 +163,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     }
   }
 
-  if (data.certifications.length > 0) {
+  if (!hidden("certifications") && data.certifications.length > 0) {
     children.push(heading("Certifications"));
     children.push(
       new Paragraph({
@@ -172,7 +173,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     );
   }
 
-  if (data.languages.length > 0) {
+  if (!hidden("languages") && data.languages.length > 0) {
     children.push(heading("Languages"));
     children.push(
       new Paragraph({
@@ -182,12 +183,23 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
     );
   }
 
-  if (data.awards.length > 0) {
+  if (!hidden("awards") && data.awards.length > 0) {
     children.push(heading("Awards"));
     children.push(
       new Paragraph({
         spacing: { after: 120 },
         children: [new TextRun({ text: data.awards.join("  ·  "), size: Math.round(style.bodySize * 2), color: "374151", font: style.docxFont })],
+      }),
+    );
+  }
+
+  for (const section of data.customSections ?? []) {
+    if (!section.title && !section.content) continue;
+    children.push(heading(section.title || "Custom"));
+    children.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [new TextRun({ text: section.content, size: Math.round(style.bodySize * 2), color: "374151", font: style.docxFont })],
       }),
     );
   }

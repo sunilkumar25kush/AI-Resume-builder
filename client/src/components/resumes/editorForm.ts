@@ -29,6 +29,11 @@ export const projectSchema = z.object({
   liveDemo: z.string().max(500).default(""),
 });
 
+export const customSectionSchema = z.object({
+  title: z.string().max(200).default(""),
+  content: z.string().max(10000).default(""),
+});
+
 export const editSchema = z.object({
   name: z.string().max(200).default(""),
   summary: z.string().max(10000).default(""),
@@ -46,6 +51,8 @@ export const editSchema = z.object({
   certificationsText: z.string().max(5000).default(""),
   languagesText: z.string().max(2000).default(""),
   awardsText: z.string().max(5000).default(""),
+  customSections: z.array(customSectionSchema).max(20).default([]),
+  hiddenSections: z.array(z.string().max(100)).default([]),
 });
 
 export type EditFormValues = z.output<typeof editSchema>;
@@ -53,6 +60,8 @@ export type EditFormValues = z.output<typeof editSchema>;
 export const EMPTY_EXPERIENCE = { title: "", company: "", location: "", startDate: "", endDate: "", description: "", achievements: "", technologies: "" };
 export const EMPTY_EDUCATION = { degree: "", institution: "", startDate: "", endDate: "", description: "" };
 export const EMPTY_PROJECT = { name: "", description: "", link: "", technologies: "", liveDemo: "" };
+
+export const EMPTY_CUSTOM_SECTION = { title: "", content: "" };
 
 export function toFormValues(resume: { parsedData: ParsedResumeData }): EditFormValues {
   return {
@@ -66,6 +75,8 @@ export function toFormValues(resume: { parsedData: ParsedResumeData }): EditForm
     certificationsText: resume.parsedData.certifications.join("\n"),
     languagesText: resume.parsedData.languages.join("\n"),
     awardsText: resume.parsedData.awards.join("\n"),
+    customSections: resume.parsedData.customSections,
+    hiddenSections: resume.parsedData.hiddenSections,
   };
 }
 
@@ -88,6 +99,8 @@ export function toParsedData(values: EditFormValues): ParsedResumeData {
     certifications: splitLines(values.certificationsText),
     languages: splitLines(values.languagesText),
     awards: splitLines(values.awardsText),
+    customSections: values.customSections,
+    hiddenSections: values.hiddenSections,
   };
 }
 

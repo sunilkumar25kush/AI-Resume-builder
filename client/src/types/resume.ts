@@ -33,6 +33,11 @@ export interface ProjectEntry {
   liveDemo: string;
 }
 
+export interface CustomSection {
+  title: string;
+  content: string;
+}
+
 export interface ParsedResumeData {
   name: string;
   summary: string;
@@ -44,6 +49,8 @@ export interface ParsedResumeData {
   certifications: string[];
   languages: string[];
   awards: string[];
+  customSections: CustomSection[];
+  hiddenSections: string[];
 }
 
 export type ResumeTemplate =

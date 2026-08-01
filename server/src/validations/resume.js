@@ -35,6 +35,11 @@ const projectEntrySchema = z.object({
   liveDemo: z.string().trim().max(500).optional().default(""),
 });
 
+const customSectionSchema = z.object({
+  title: z.string().trim().max(200).optional().default(""),
+  content: z.string().trim().max(10000).optional().default(""),
+});
+
 export const parsedDataSchema = z.object({
   name: z.string().trim().max(200).optional().default(""),
   summary: z.string().trim().max(10000).optional().default(""),
@@ -46,6 +51,8 @@ export const parsedDataSchema = z.object({
   certifications: z.array(z.string().trim().max(200)).max(100).optional().default([]),
   languages: z.array(z.string().trim().max(100)).max(50).optional().default([]),
   awards: z.array(z.string().trim().max(200)).max(100).optional().default([]),
+  customSections: z.array(customSectionSchema).max(20).optional().default([]),
+  hiddenSections: z.array(z.string().trim().max(100)).max(50).optional().default([]),
 });
 
 /**
@@ -64,6 +71,8 @@ const parsedDataUpdateSchema = z.object({
   certifications: z.array(z.string().trim().max(200)).max(100).optional(),
   languages: z.array(z.string().trim().max(100)).max(50).optional(),
   awards: z.array(z.string().trim().max(200)).max(100).optional(),
+  customSections: z.array(customSectionSchema).max(20).optional(),
+  hiddenSections: z.array(z.string().trim().max(100)).max(50).optional(),
 });
 
 export const updateResumeSchema = z.object({

@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch, type Path } from "react-hook-form";
 
 import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
@@ -49,6 +49,7 @@ function SortableRow({
   fieldDefs,
   assistSection,
   onRemove,
+  onDuplicate,
 }: {
   id: string;
   index: number;
@@ -56,6 +57,7 @@ function SortableRow({
   fieldDefs: FieldDef[];
   assistSection?: "experience" | "education" | "project";
   onRemove: () => void;
+  onDuplicate: (entry: unknown) => void;
 }) {
   const { control, register, setValue } = useFormContext<EditFormValues>();
   const rowPath = `${name}.${index}` as Path<EditFormValues>;
@@ -121,6 +123,10 @@ function SortableRow({
           <Trash2 className="mr-1.5 h-4 w-4" aria-hidden />
           Remove
         </Button>
+        <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onDuplicate(entry)} aria-label={`Duplicate ${name} entry ${index + 1}`}>
+          <Copy className="mr-1.5 h-4 w-4" aria-hidden />
+          Duplicate
+        </Button>
       </div>
     </div>
   );
@@ -167,6 +173,7 @@ export function SectionListEditor<N extends "experience" | "education" | "projec
                   fieldDefs={fieldDefs}
                   assistSection={assistSection}
                   onRemove={() => remove(index)}
+                  onDuplicate={(entry) => append(entry as never)}
                 />
               ))}
             </div>

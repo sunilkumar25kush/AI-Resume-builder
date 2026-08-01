@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, Redo2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -60,6 +60,9 @@ export default function ResumeEditorPage() {
   const pendingRef = useRef(false);
   const versionRef = useRef(0);
   const saveRef = useRef<() => Promise<void>>(async () => {});
+  const undoStackRef = useRef<EditFormValues[]>([]);
+  const redoStackRef = useRef<EditFormValues[]>([]);
+  const [, setHistoryTick] = useState(0);
 
   const form = useForm<z.input<typeof editSchema>, unknown, z.output<typeof editSchema>>({
     resolver: zodResolver(editSchema),
@@ -111,6 +114,36 @@ export default function ResumeEditorPage() {
     }
   };
   saveRef.current = save;
+
+  // History snapshots for undo/redo (debounced, capped at 50).
+  useEffect(() => {
+    if (!resume || !values) return;
+    const timer = window.setTimeout(() => {
+      undoStackRef.current.push(structuredClone(values));
+      if (undoStackRef.current.length > 50) undoStackRef.current.shift();
+      redoStackRef.current = [];
+      setHistoryTick((tick) => tick + 1);
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [values, resume]);
+
+  const onUndo = () => {
+    const previous = undoStackRef.current.pop();
+    if (!previous) return;
+    redoStackRef.current.push(structuredClone(values));
+    form.reset(previous);
+    lastSavedRef.current = "";
+    setHistoryTick((tick) => tick + 1);
+  };
+
+  const onRedo = () => {
+    const next = redoStackRef.current.pop();
+    if (!next) return;
+    undoStackRef.current.push(structuredClone(values));
+    form.reset(next);
+    lastSavedRef.current = "";
+    setHistoryTick((tick) => tick + 1);
+  };
 
   const handleRestored = (updated: Resume) => {
     const formValues = toFormValues(updated);
@@ -170,7 +203,13 @@ export default function ResumeEditorPage() {
               <span className="truncate">{resume.fileName}</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="icon" onClick={onUndo} disabled={undoStackRef.current.length === 0} aria-label="Undo">
+              <Undo2 className="h-4 w-4" aria-hidden />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={onRedo} disabled={redoStackRef.current.length === 0} aria-label="Redo">
+              <Redo2 className="h-4 w-4" aria-hidden />
+            </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)} aria-label="Open version history">
               <History className="mr-1.5 h-4 w-4" aria-hidden />
               History

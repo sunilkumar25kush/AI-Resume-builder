@@ -47,6 +47,14 @@ const projectEntrySchema = new mongoose.Schema(
   { _id: false },
 );
 
+const customSectionSchema = new mongoose.Schema(
+  {
+    title: { type: String, default: "", maxlength: 200 },
+    content: { type: String, default: "", maxlength: 10000 },
+  },
+  { _id: false },
+);
+
 const parsedDataSchema = new mongoose.Schema(
   {
     name: { type: String, default: "" },
@@ -59,6 +67,8 @@ const parsedDataSchema = new mongoose.Schema(
     certifications: { type: [String], default: [] },
     languages: { type: [String], default: [] },
     awards: { type: [String], default: [] },
+    customSections: { type: [customSectionSchema], default: [] },
+    hiddenSections: { type: [String], default: [] },
   },
   { _id: false },
 );
