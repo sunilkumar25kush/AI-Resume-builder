@@ -4,8 +4,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { JobDescription } from "../models/JobDescription.js";
 import { Resume } from "../models/Resume.js";
 import { generateJson } from "./ai/index.js";
-import { buildGenerationPrompt } from "./ai/prompts.js";
-import { mergeGeneratedData } from "../validations/generation.js";
+import { buildGenerationPrompt, buildJdOnlyPrompt } from "./ai/prompts.js";
+import { mergeGeneratedData, mergeJdOnlyData } from "../validations/generation.js";
 
 /** Compact display snapshot of a resume's parsed data for the prompt. */
 function resumeSnapshot(resume) {
@@ -67,5 +67,49 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
     status: "parsed",
     parsedData,
     template: resume.template,
+  });
+}
+
+/**
+ * Workflow 1 (JD-only): build a FRESH resume from a job description without
+ * an existing resume. The AI writes the summary, pulls skills from the JD,
+ * and suggests portfolio projects — but NEVER invents experience, education,
+ * companies or achievements. Result is a new resume doc (fresher-friendly).
+ */
+export async function generateFromJd(userId, { jdId, targetTitle, experienceLevel }) {
+  const jd = await JobDescription.findOne({ _id: jdId, user: userId });
+  if (!jd) throw new ApiError(404, "Job description not found");
+
+  const prompt = buildJdOnlyPrompt({
+    jd: {
+      title: jd.title,
+      company: jd.company,
+      skills: jd.skills,
+      preferredSkills: jd.preferredSkills,
+      qualifications: jd.qualifications,
+      responsibilities: jd.responsibilities,
+      atsKeywords: jd.atsKeywords,
+      softSkills: jd.softSkills,
+      industryKeywords: jd.industryKeywords,
+      experienceRequired: jd.experienceRequired,
+    },
+    targetTitle,
+    experienceLevel,
+  });
+
+  const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.3 });
+  const parsedData = mergeJdOnlyData(raw);
+
+  const slug = (targetTitle || jd.title || "job").replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 60);
+  return Resume.create({
+    user: userId,
+    fileName: `${slug || "target"}-resume.pdf`,
+    fileType: "application/pdf",
+    fileSize: 0,
+    // Non-empty sentinel: no real file on disk; delete flow unlinks silently.
+    filePath: `ai-generated/${randomUUID()}`,
+    status: "parsed",
+    parsedData,
+    template: "classic",
   });
 }

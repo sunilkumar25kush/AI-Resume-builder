@@ -311,6 +311,9 @@ export async function extractText(buffer, mimeType) {
     const result = await parser.getText();
     return result.text;
   }
+  if (mimeType === "text/plain" || mimeType === "text") {
+    return buffer.toString("utf8");
+  }
   const result = await mammoth.extractRawText({ buffer });
   return result.value;
 }

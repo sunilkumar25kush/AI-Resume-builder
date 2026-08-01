@@ -62,13 +62,35 @@ Return ONLY a single JSON object, no text outside it, with exactly these keys:
 
 /** Build the prompt for a full AI resume generation run. */
 export function buildGenerationPrompt({ resume, jd }) {
-  return `${GENERATION_INSTRUCTIONS}
+  return `${GENERATION_INSTRUCTIONS}\n\nRESUME (structured data):\n${JSON.stringify(resume, null, 2)}\n\nJOB DESCRIPTION:\n${JSON.stringify(jd, null, 2)}`;
+}
 
-RESUME (structured data):
-${JSON.stringify(resume, null, 2)}
+const JD_ONLY_INSTRUCTIONS = `You are an expert ATS resume writer. Create a fresh, professional resume for a job seeker targeting the job description below. The job seeker has NO work history yet, so this is a fresher-friendly resume.
 
-JOB DESCRIPTION:
-${JSON.stringify(jd, null, 2)}`;
+STRICT TRUTH RULES (never break these):
+- NEVER invent company names, employers, job titles held, dates, degrees, institutions, certifications, awards, languages, or any metric/number.
+- Skills: use ONLY skills that appear in the job description (required + preferred). Do not add skills from outside the JD.
+- Projects: suggest 2-3 portfolio/practice project ideas that demonstrate the JD's tech stack. Frame them as projects the candidate can build or has built — write the description generically (what it does, what technologies it uses) WITHOUT any company, client, date, or fake quantitative achievement. Never claim "at X company" or "increased revenue by Y%".
+- Do NOT create an experience section — the candidate has none.
+- Do NOT create education, certifications, languages or awards — leave them out entirely.
+- The summary must not claim any company, job, degree, or metric. It should highlight skills, motivation, and fit for this role.
+
+EXPERIENCE LEVEL TONE:
+- "fresher": emphasize fundamentals, learning agility, academic/portfolio projects, enthusiasm.
+- "junior" (1-3 years): emphasize practical project experience, quick learning, collaboration.
+- "senior": emphasize depth, ownership, architecture, mentoring — still WITHOUT inventing any employer.
+
+OUTPUT FORMAT:
+Return ONLY a single JSON object, no text outside it, with exactly these keys:
+{
+  "summary": string (3-4 sentences, plain English, no markdown),
+  "skills": string[] (8-16 skills, all from the JD, ordered most relevant first),
+  "projects": [{ "name": string, "description": string (2-3 sentences, no fabricated numbers or employers), "link": string (empty string) }]
+}`;
+
+/** Build the prompt for JD-only resume creation (Workflow 1). */
+export function buildJdOnlyPrompt({ jd, targetTitle, experienceLevel }) {
+  return `${JD_ONLY_INSTRUCTIONS}\n\nTARGET JOB TITLE: ${targetTitle || "(infer from job description)"}\nEXPERIENCE LEVEL: ${experienceLevel}\n\nJOB DESCRIPTION:\n${JSON.stringify(jd, null, 2)}`;
 }
 
 const ASSIST_BASE = `You are an expert resume writing assistant. Apply the instruction to the given content only.

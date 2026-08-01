@@ -17,11 +17,17 @@ const RESUME_MIME = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
+const JD_MIME = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
 
 function extensionFor(mimeType) {
   if (mimeType === "image/png") return "png";
   if (mimeType === "image/webp") return "webp";
   if (mimeType === "application/pdf") return "pdf";
+  if (mimeType === "text/plain") return "txt";
   return "docx";
 }
 
@@ -59,6 +65,6 @@ export const uploadResume = createUpload({
 export const uploadJd = createUpload({
   dir: JD_DIR,
   maxBytes: 10 * 1024 * 1024,
-  allowedMime: RESUME_MIME,
-  message: "Only PDF or DOCX files are allowed",
+  allowedMime: JD_MIME,
+  message: "Only PDF, DOCX or TXT files are allowed",
 });

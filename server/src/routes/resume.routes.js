@@ -10,16 +10,17 @@ import {
   uploadResume,
 } from "../controllers/resume.controller.js";
 import { duplicateVersion, getVersion, listVersions, restoreVersion } from "../controllers/versions.controller.js";
-import { generateResume } from "../controllers/generation.controller.js";
+import { generateResume, generateResumeFromJd } from "../controllers/generation.controller.js";
 import { validate } from "../middlewares/validate.js";
 import { updateResumeSchema } from "../validations/resume.js";
-import { generateResumeSchema } from "../validations/generation.js";
+import { generateFromJdSchema, generateResumeSchema } from "../validations/generation.js";
 
 const router = Router();
 
 router.use(protect);
 
 router.post("/", uploadResumeMulter.single("resume"), uploadResume);
+router.post("/generate-from-jd", validate({ body: generateFromJdSchema }), generateResumeFromJd);
 router.get("/", listResumes);
 router.get("/:id", getResume);
 router.patch("/:id", validate({ body: updateResumeSchema }), updateResume);

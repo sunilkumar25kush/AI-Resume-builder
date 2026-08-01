@@ -5,6 +5,13 @@ export const generateResumeSchema = z.object({
   jdId: z.string().min(1),
 });
 
+/** POST /api/resumes/generate-from-jd body (Workflow 1: JD-only wizard). */
+export const generateFromJdSchema = z.object({
+  jdId: z.string().min(1),
+  targetTitle: z.string().trim().max(200).optional().default(""),
+  experienceLevel: z.enum(["fresher", "junior", "senior"]).optional().default("fresher"),
+});
+
 /**
  * Whatever the AI returns for a generation run. Every key is optional —
  * garbage sections fall back to the ORIGINAL resume data.
@@ -114,5 +121,39 @@ export function mergeGeneratedData(raw, original) {
     awards: orig.awards ?? [],
     customSections: orig.customSections ?? [],
     hiddenSections: orig.hiddenSections ?? [],
+  };
+}
+
+/**
+ * JD-only merge (Workflow 1): builds a FRESH resume from the AI output.
+ * Unlike the resume rewrite, skills and projects DO come from the AI here
+ * because they are derived from the job description (facts from the JD),
+ * never from a made-up work history. Experience, education, certifications,
+ * languages and awards are left EMPTY — the AI must never invent them, and
+ * the user fills them in the editor (fresher-friendly flow).
+ */
+export function mergeJdOnlyData(raw) {
+  const parsed = generatedDataSchema.parse(raw ?? {});
+  return {
+    name: "",
+    summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
+    contact: { email: "", phone: "", location: "", linkedin: "", github: "" },
+    skills: Array.isArray(parsed.skills) ? parsed.skills.filter((s) => typeof s === "string" && s.trim().length > 0).map((s) => s.trim()) : [],
+    experience: [],
+    education: [],
+    projects: Array.isArray(parsed.projects)
+      ? parsed.projects
+          .filter((p) => p && typeof p.name === "string" && p.name.trim().length > 0)
+          .map((p) => ({
+            name: p.name.trim(),
+            description: typeof p.description === "string" ? p.description.trim() : "",
+            link: typeof p.link === "string" ? p.link.trim() : "",
+          }))
+      : [],
+    certifications: [],
+    languages: [],
+    awards: [],
+    customSections: [],
+    hiddenSections: [],
   };
 }
