@@ -103,8 +103,8 @@ AI Resume Builder/
 - **client:** JD page — input, parse result, editable, saved list.
 - **Verify:** parse accuracy on sample JDs, empty/paste edge cases.
 
-### M6 — AI Engine (Provider Abstraction)
-- **server:** `ai/providers/` — base interface (`generate(prompt, opts)`), `OllamaProvider` (fetch to 11434, model from env), `GeminiProvider` (google generative AI SDK), factory switching via `AI_PROVIDER` env, JSON-output parsing + retry/timeout + fallback chain. Prompt templates in `ai/prompts/`.
+### M6 — AI Engine (Provider Abstraction) ✅
+- **server:** `ai/providers/` — base interface (`generate(prompt, opts)`), `OllamaProvider` (fetch to 11434, model from env), `GeminiProvider` (REST via fetch, no SDK dep), factory switching via `AI_PROVIDER` env, JSON-output parsing + retry/timeout + fallback chain.
 - **Verify:** both providers respond to a test prompt via a `/api/ai/ping` (dev-only) route; provider switch via env.
 
 ### M7 — AI Resume Optimization
