@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { AI_REQUEST_TIMEOUT, apiClient } from "./client";
 import type { ApiEnvelope, ParsedResumeData, Resume, ResumeTemplate } from "@/types";
 
 export const resumesApi = {
@@ -32,13 +32,13 @@ export const resumesApi = {
 
   /** AI-generate an optimized resume against a job description (saved as a new resume). */
   async generate(id: string, jdId: string): Promise<Resume> {
-    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}/generate`, { jdId });
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}/generate`, { jdId }, { timeout: AI_REQUEST_TIMEOUT });
     return res.data.data.resume;
   },
 
   /** Wizard Workflow 1: generate a fresh resume from a job description only. */
   async generateFromJd(input: { jdId: string; targetTitle: string; experienceLevel: "fresher" | "junior" | "senior" }): Promise<Resume> {
-    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/generate-from-jd", input);
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/generate-from-jd", input, { timeout: AI_REQUEST_TIMEOUT });
     return res.data.data.resume;
   },
 

@@ -1,12 +1,16 @@
-import { apiClient } from "./client";
+import { AI_REQUEST_TIMEOUT, apiClient } from "./client";
 import type { ApiEnvelope, Optimization } from "@/types";
 
 export const optimizationsApi = {
   async run(resumeId: string, jdId: string): Promise<Optimization> {
-    const res = await apiClient.post<ApiEnvelope<{ optimization: Optimization }>>("/optimizations", {
-      resumeId,
-      jdId,
-    });
+    const res = await apiClient.post<ApiEnvelope<{ optimization: Optimization }>>(
+      "/optimizations",
+      {
+        resumeId,
+        jdId,
+      },
+      { timeout: AI_REQUEST_TIMEOUT },
+    );
     return res.data.data.optimization;
   },
 

@@ -9,6 +9,12 @@ export const apiClient = axios.create({
   timeout: 30_000,
 });
 
+/**
+ * AI endpoints (Ollama analysis/generation) routinely take 60-120s+.
+ * Use as per-request timeout override; the global 30s stays for everything else.
+ */
+export const AI_REQUEST_TIMEOUT = 180_000;
+
 let unauthorizedHandler: (() => void) | null = null;
 
 /** Auth store registers a callback here to react to expired sessions. */
