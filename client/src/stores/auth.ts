@@ -14,6 +14,8 @@ interface AuthState {
   login: (data: LoginInput) => Promise<void>;
   register: (data: RegisterInput) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
+  updateProfile: (data: { name: string }) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -45,6 +47,16 @@ export const useAuthStore = create<AuthState>()((set) => ({
   googleLogin: async (credential) => {
     const user = await authApi.googleLogin(credential);
     set({ user, status: "authenticated" });
+  },
+
+  updateProfile: async (data) => {
+    const user = await authApi.updateProfile(data);
+    set({ user });
+  },
+
+  uploadAvatar: async (file) => {
+    const user = await authApi.uploadAvatar(file);
+    set({ user });
   },
 
   logout: async () => {

@@ -84,12 +84,12 @@ AI Resume Builder/
 - **server:** Express app, config/env validation, MongoDB connection (Atlas), helmet, cors, rate limiter, error handler middleware, zod validation middleware skeleton, `/api/health` route, auth middleware skeleton, folder skeleton.
 - **Verify:** `npm run dev` — client serves, server `/api/health` returns ok, dark/light toggles, no lint/build errors.
 
-### M2 — Authentication
+### M2 — Authentication ✅
 - **server:** `User` model (name/email/passwordHash/avatar/googleId/role/resetToken...), zod auth schemas, `authService` (register, login, forgot/reset password, google OAuth via google-auth-library), JWT (httpOnly cookie + optional bearer), RBAC middleware, rate limits on auth routes, sanitization.
 - **client:** Auth pages (login/signup/forgot/reset) — responsive, fullscreen modals→pages, RHF+Zod forms, auth store with persist, axios interceptors (401 → logout), ProtectedRoute + RoleRoute.
 - **Verify:** register→login→me→logout flow, wrong password 401, token expiry, Google OAuth (test mode), rate limit 429.
 
-### M3 — Dashboard Shell + Navigation + Profile
+### M3 — Dashboard Shell + Navigation + Profile ✅
 - Responsive layout: desktop sidebar, tablet collapsible, mobile bottom-nav + drawer. Theme toggle. User profile page (edit, avatar upload via multer), Settings page, Notifications (bell + list, read/unread).
 - **Verify:** 320→1920px widths, no horizontal scroll, keyboard nav, ARIA labels.
 

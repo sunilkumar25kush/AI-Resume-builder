@@ -6,6 +6,7 @@ import { OAuth2Client } from "google-auth-library";
 import { env } from "../config/env.js";
 import { ROLES } from "../constants/index.js";
 import User from "../models/User.js";
+import { notificationService } from "./notification.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { signToken } from "../utils/token.js";
 
@@ -29,6 +30,16 @@ async function register({ name, email, password }) {
   if (existing) throw ApiError.conflict("An account with this email already exists");
 
   const user = await User.create({ name, email, passwordHash: await hashPassword(password) });
+
+  // Welcome notification — gives the bell something real on first login.
+  await notificationService.createNotification({
+    userId: user._id,
+    type: "info",
+    title: "Welcome to AI Resume Builder! 👋",
+    body: "Upload your first resume or paste a job description to get AI-powered suggestions.",
+    link: "/",
+  });
+
   return issueAuthPayload(user);
 }
 

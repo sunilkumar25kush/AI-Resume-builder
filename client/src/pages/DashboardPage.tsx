@@ -1,17 +1,30 @@
 import { FileText, ScanSearch, Wand2, Briefcase } from "lucide-react";
 
+import { useAuthStore } from "@/stores/auth";
+
 const features = [
-  { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "M4 · M8" },
-  { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "M5" },
-  { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "M7" },
-  { icon: Briefcase, title: "Generators", description: "Cover letters, LinkedIn summaries, interview questions.", stage: "M11" },
+  { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Soon" },
+  { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Soon" },
+  { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Soon" },
+  { icon: Briefcase, title: "Generators", description: "Cover letters, LinkedIn summaries, interview questions.", stage: "Soon" },
 ];
 
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function DashboardPage() {
+  const user = useAuthStore((state) => state.user);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">Welcome 👋</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+          {greeting()}, {user?.name.split(" ")[0]} 👋
+        </h1>
         <p className="max-w-2xl text-muted-foreground">
           Your AI-powered resume optimization workspace. Build, parse, and optimize resumes against real job
           descriptions — all in one place.

@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync } from "node:fs";
+
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import express from "express";
@@ -7,6 +9,10 @@ import { env } from "./config/env.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js";
 import routes from "./routes/index.js";
+
+// Ensure avatar upload dir exists before serving it
+const UPLOADS_DIR = "uploads/avatars";
+if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const app = express();
 
@@ -28,6 +34,9 @@ app.use(cookieParser());
 
 // Global rate limit + routes
 app.use("/api", apiLimiter, routes);
+
+// User-uploaded files (avatars)
+app.use("/uploads", express.static("uploads", { maxAge: "7d", immutable: true }));
 
 // 404 + centralized error handling
 app.use(notFound);

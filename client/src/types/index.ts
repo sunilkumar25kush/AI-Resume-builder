@@ -32,3 +32,5 @@ export interface ResetPasswordInput {
   token: string;
   password: string;
 }
+
+export type { NotificationItem, NotificationsPage } from "./notifications";

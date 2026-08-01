@@ -45,4 +45,16 @@ export const authApi = {
     const res = await apiClient.post<ApiEnvelope<UserPayload>>("/auth/google", { credential });
     return res.data.data.user;
   },
+
+  async updateProfile(data: { name: string }): Promise<User> {
+    const res = await apiClient.patch<ApiEnvelope<UserPayload>>("/users/me", data);
+    return res.data.data.user;
+  },
+
+  async uploadAvatar(file: File): Promise<User> {
+    const form = new FormData();
+    form.append("avatar", file);
+    const res = await apiClient.patch<ApiEnvelope<UserPayload>>("/users/me/avatar", form);
+    return res.data.data.user;
+  },
 };
