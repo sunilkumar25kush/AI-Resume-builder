@@ -17,7 +17,7 @@ export const HTTP_STATUS = Object.freeze({
 
 export const RATE_LIMITS = Object.freeze({
   GLOBAL: { windowMs: 15 * 60 * 1000, max: 300 },
-  AUTH: { windowMs: 15 * 60 * 1000, max: 20 },
+  AUTH: { windowMs: 15 * 60 * 1000, max: 50 },
   AI: { windowMs: 60 * 1000, max: 10 },
 });
 

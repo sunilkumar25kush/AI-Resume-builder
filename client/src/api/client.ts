@@ -1,27 +1,25 @@
 import axios from "axios";
 
-import { API_BASE_URL, TOKEN_STORAGE_KEY } from "@/constants";
+import { API_BASE_URL } from "@/constants";
 
-/** Shared axios instance — auth token attached, 401s handled centrally. */
+/** Shared axios instance — cookie-based auth, 401s handled centrally. */
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   timeout: 30_000,
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+let unauthorizedHandler: (() => void) | null = null;
+
+/** Auth store registers a callback here to react to expired sessions. */
+export function setUnauthorizedHandler(fn: () => void) {
+  unauthorizedHandler = fn;
+}
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token invalid/expired — drop it; auth store (M2) will redirect to login.
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-    }
+    if (error.response?.status === 401) unauthorizedHandler?.();
     return Promise.reject(error);
   },
 );
