@@ -6,8 +6,9 @@ import { ApiError } from "../utils/ApiError.js";
 
 const AVATAR_DIR = "uploads/avatars";
 const RESUME_DIR = "uploads/resumes";
+const JD_DIR = "uploads/jds";
 
-for (const dir of [AVATAR_DIR, RESUME_DIR]) {
+for (const dir of [AVATAR_DIR, RESUME_DIR, JD_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -50,6 +51,13 @@ export const uploadAvatar = createUpload({
 
 export const uploadResume = createUpload({
   dir: RESUME_DIR,
+  maxBytes: 10 * 1024 * 1024,
+  allowedMime: RESUME_MIME,
+  message: "Only PDF or DOCX files are allowed",
+});
+
+export const uploadJd = createUpload({
+  dir: JD_DIR,
   maxBytes: 10 * 1024 * 1024,
   allowedMime: RESUME_MIME,
   message: "Only PDF or DOCX files are allowed",

@@ -8,12 +8,14 @@ interface UploadDropzoneProps {
   uploading: boolean;
   progress: number | null;
   onFile: (file: File) => void;
+  copyTitle?: string;
+  copyHint?: string;
 }
 
 const ACCEPT = ".pdf,.docx";
 
-/** Drag-and-drop + click upload zone for resume files (PDF/DOCX). */
-export function UploadDropzone({ uploading, progress, onFile }: UploadDropzoneProps) {
+/** Drag-and-drop + click upload zone for PDF/DOCX files. */
+export function UploadDropzone({ uploading, progress, onFile, copyTitle, copyHint }: UploadDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -63,9 +65,11 @@ export function UploadDropzone({ uploading, progress, onFile }: UploadDropzonePr
       </span>
       <div className="flex flex-col gap-1">
         <p className="font-medium">
-          {uploading ? "Uploading and parsing…" : dragging ? "Drop it here" : "Drag & drop your resume"}
+          {uploading ? "Uploading and parsing…" : dragging ? "Drop it here" : (copyTitle ?? "Drag & drop your resume")}
         </p>
-        <p className="text-sm text-muted-foreground">or click to browse — PDF or DOCX, up to 10 MB</p>
+        <p className="text-sm text-muted-foreground">
+          {copyHint ?? "or click to browse — PDF or DOCX, up to 10 MB"}
+        </p>
       </div>
       {uploading && progress !== null ? (
         <div className="w-full max-w-xs">

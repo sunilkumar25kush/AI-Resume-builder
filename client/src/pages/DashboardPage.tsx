@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const features = [
   { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Live", to: "/resumes" },
-  { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Soon" },
+  { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Live", to: "/jds" },
   { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Soon" },
   { icon: Briefcase, title: "Generators", description: "Cover letters, LinkedIn summaries, interview questions.", stage: "Soon" },
 ];

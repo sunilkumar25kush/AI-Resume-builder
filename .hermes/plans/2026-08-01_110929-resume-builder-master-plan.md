@@ -98,7 +98,7 @@ AI Resume Builder/
 - **client:** Upload page (drag-drop, progress, skeletons, empty/error states), parsed resume preview + edit before save.
 - **Verify:** PDF + DOCX parse, garbage file rejected, big file rejected, Unicode text handled.
 
-### M5 — JD Upload + Parser
+### M5 — JD Upload + Parser ✅
 - **server:** `JobDescription` model, paste-text or file upload, extraction service (title, company, skills, qualifications, responsibilities).
 - **client:** JD page — input, parse result, editable, saved list.
 - **Verify:** parse accuracy on sample JDs, empty/paste edge cases.

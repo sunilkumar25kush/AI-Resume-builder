@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   PenLine,
+  ScanSearch,
   Settings,
   ShieldCheck,
   User,
@@ -36,6 +37,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/", icon: LayoutDashboard },
       { label: "Resume Builder", href: "/resumes", icon: FileText },
+      { label: "JD Parser", href: "/jds", icon: ScanSearch },
       { label: "AI Optimizer", icon: Wand2, soon: true },
     ],
   },

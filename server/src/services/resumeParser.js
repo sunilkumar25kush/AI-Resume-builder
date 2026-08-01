@@ -20,7 +20,7 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const PHONE_RE = /(?:\+?\d[\d\s().-]{8,}\d)/g;
 const LINK_RE = /(?:https?:\/\/|www\.)[^\s]+/g;
 
-function cleanText(raw) {
+export function cleanText(raw) {
   return raw
     .replace(/\r\n?/g, "\n")
     .replace(/[ \t]+/g, " ")
@@ -54,7 +54,7 @@ function parseSections(lines) {
   return sections;
 }
 
-function extractSkills(lines) {
+export function extractSkills(lines) {
   const skills = new Set();
   for (const line of lines) {
     if (!isSkillLine(line)) continue;
