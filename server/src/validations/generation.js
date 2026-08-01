@@ -102,11 +102,15 @@ export function mergeGeneratedData(raw, original) {
   const parsed = generatedDataSchema.parse(raw ?? {});
   const orig = original ?? {};
   return {
+    name: orig.name ?? "",
     summary: typeof parsed.summary === "string" && parsed.summary.trim().length > 0 ? parsed.summary.trim() : orig.summary ?? "",
     contact: { ...(orig.contact ?? {}) },
     skills: mergeSkills(orig.skills, parsed.skills),
     experience: mergeEntries(orig.experience, parsed.experience, "description"),
     education: mergeEntries(orig.education, parsed.education, "description"),
     projects: mergeEntries(orig.projects, parsed.projects, "description"),
+    certifications: orig.certifications ?? [],
+    languages: orig.languages ?? [],
+    awards: orig.awards ?? [],
   };
 }

@@ -147,7 +147,7 @@ const docxFd = fd(docxBuf, "priyanshi-resume.docx", "application/vnd.openxmlform
 const docxRes = await api("/resumes", { method: "POST", body: docxFd, cookie });
 const docxData = docxRes.json.data?.resume?.parsedData ?? {};
 check("docx upload 201", docxRes.status === 201);
-check("unicode name preserved", docxData.summary?.includes("प्रियांशी"), docxData.summary?.slice(0, 40));
+check("unicode name preserved", docxData.name?.includes("प्रियांशी") || docxData.summary?.includes("प्रियांशी"), `name=${docxData.name?.slice(0, 30)} summary=${docxData.summary?.slice(0, 30)}`);
 check("docx experience parsed", docxData.experience?.[0]?.company === "TechNova", JSON.stringify(docxData.experience?.[0] ?? {}));
 check("docx dates parsed", docxData.experience?.[0]?.startDate === "Mar 2021" && docxData.experience?.[0]?.endDate === "Present", `${docxData.experience?.[0]?.startDate} – ${docxData.experience?.[0]?.endDate}`);
 check("docx skills parsed", docxData.skills?.includes("GraphQL"), `${(docxData.skills ?? []).length} skills`);

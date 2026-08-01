@@ -146,7 +146,12 @@ AI Resume Builder/
 - **client:** analytics cards + charts (recharts), skeletons, empty states.
 - **Verify:** numbers match DB, responsive charts.
 
-### M13 — Admin Panel
+### M13 — Data Model Expansion ✅ (spec)
+- **server:** Resume parsedData + name, certifications, languages, awards; experience + achievements/technologies; projects + technologies/liveDemo. JD + preferredSkills, atsKeywords, softSkills, industryKeywords, experienceRequired. Parsers extract all new buckets; generation merge preserves them verbatim.
+- **client:** editor cards (personal info, certifications, languages, awards; entry fields), preview + sections, PDF/DOCX export, JD edit/preview show new fields.
+- **Verify:** 35/35 unit+live, parser extraction, PATCH persistence, generation merge preservation, full regression 195/195.
+
+### M13b — Admin Panel
 - **server:** admin routes guarded by RBAC — list/search users, block/unblock, delete, platform stats.
 - **client:** admin layout + user table (→ cards on mobile), actions with confirm dialogs.
 - **Verify:** non-admin blocked (403), actions work, audit log.

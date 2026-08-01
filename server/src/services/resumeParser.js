@@ -165,7 +165,12 @@ function parseExperienceBlocks(blocks) {
       }
     }
 
-    entry.description = lines.slice(dateLineIndex >= 0 ? dateLineIndex + 1 : 1).join(" ");
+    entry.description = lines
+      .slice(dateLineIndex >= 0 ? dateLineIndex + 1 : 1)
+      .filter((line) => !/^(?:achievements?|technolog(?:y|ies))\s*[:]/i.test(line))
+      .join(" ");
+    entry.achievements = extractLabelled(lines, /achievements?\s*[:]/i);
+    entry.technologies = extractLabelled(lines, /technolog(?:y|ies)\s*[:]/i);
     return entry;
   });
 }
@@ -202,13 +207,17 @@ function parseEducationBlocks(blocks) {
 
 function parseProjectBlocks(blocks) {
   return blocks.map((block) => {
-    const entry = { name: "", description: "", link: "" };
+    const entry = { name: "", description: "", link: "", technologies: "", liveDemo: "" };
     const headerLine = block[0] ?? "";
     const link = headerLine.match(/https?:\/\/[^\s]+/) ?? block.join(" ").match(/https?:\/\/[^\s]+/);
     if (link) entry.link = link[0];
     entry.name = headerLine.replace(/https?:\/\/[^\s]+/, "").trim();
-    entry.description = block.slice(1).join(" ");
-    if (!entry.description && block.length > 1) entry.description = block.slice(1).join(" ");
+    entry.description = block
+      .slice(1)
+      .filter((line) => !/^(?:technolog(?:y|ies)|(?:live\s*)?demo)\s*[:]/i.test(line))
+      .join(" ");
+    entry.technologies = extractLabelled(block, /technolog(?:y|ies)\s*[:]/i);
+    entry.liveDemo = extractLabelled(block, /(?:live\s*demo|demo)\s*[:]/i);
     return entry;
   });
 }
@@ -219,6 +228,40 @@ function joinSectionText(lines) {
     .join(" ")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+/** Extract a labelled value like "Technologies: React, Node" or "Achievements: …". */
+function extractLabelled(lines, labelRe) {
+  const index = lines.findIndex((line) => labelRe.test(line));
+  if (index === -1) return "";
+  return lines[index]
+    .replace(labelRe, "")
+    .replace(/^[:–—\-–\s]+/, "")
+    .trim()
+    .slice(0, 1000);
+}
+
+/** Simple list-section extraction: one item per line (bullet prefixes stripped). */
+function extractListSection(lines) {
+  const items = [];
+  for (const line of lines) {
+    const item = line.replace(/^[-•*–—:;\d.)\s]+/, "").trim();
+    if (item.length > 0 && item.length <= 200) items.push(item);
+  }
+  return items.slice(0, 100);
+}
+
+/** Best-effort name guess: first non-contact line of the preamble. */
+function extractName(preamble) {
+  for (const line of preamble) {
+    const candidate = line.trim();
+    if (!candidate || candidate.length > 60) continue;
+    if (EMAIL_RE.test(candidate) || PHONE_RE.test(candidate) || LINK_RE.test(candidate)) continue;
+    if (DATE_RE.test(candidate)) continue;
+    if (looksLikeHeader(candidate)) continue;
+    return candidate;
+  }
+  return "";
 }
 
 /** Normalize raw extracted text into the structured resume shape. */
@@ -239,7 +282,8 @@ export function normalizeResumeText(text) {
 
   const summaryLines = getSection("summary", "profile", "objective", "professional summary");
   const preamble = sections[0].lines;
-  const summary = joinSectionText([...preamble.filter((line) => !EMAIL_RE.test(line) && !PHONE_RE.test(line) && !LINK_RE.test(line)), ...summaryLines]);
+  const name = extractName(preamble);
+  const summary = joinSectionText([...preamble.filter((line) => line.trim() !== name && !EMAIL_RE.test(line) && !PHONE_RE.test(line) && !LINK_RE.test(line)), ...summaryLines]);
 
   const skills = extractSkills(getSection("skills", "technical skills", "core skills", "technologies"));
   const experienceBlocks = splitBlocks(foldDateLines(getSection("experience", "work experience", "professional experience", "employment history")));
@@ -247,12 +291,16 @@ export function normalizeResumeText(text) {
   const projectBlocks = splitBlocks(foldDateLines(getSection("projects", "project", "personal projects", "academic projects")));
 
   return {
+    name,
     summary,
     contact: { email, phone, location: "", linkedin, github },
     skills,
     experience: parseExperienceBlocks(experienceBlocks),
     education: parseEducationBlocks(educationBlocks),
     projects: parseProjectBlocks(projectBlocks),
+    certifications: extractListSection(getSection("certifications", "certificates")),
+    languages: extractListSection(getSection("languages")),
+    awards: extractListSection(getSection("awards")),
   };
 }
 

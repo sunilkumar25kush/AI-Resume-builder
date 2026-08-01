@@ -10,12 +10,16 @@ import { normalizeResult } from "../validations/optimization.js";
 function resumeSnapshot(resume) {
   const { parsedData } = resume;
   return {
+    name: parsedData?.name ?? "",
     summary: parsedData?.summary ?? "",
     contact: parsedData?.contact ?? {},
     skills: parsedData?.skills ?? [],
     experience: parsedData?.experience ?? [],
     education: parsedData?.education ?? [],
     projects: parsedData?.projects ?? [],
+    certifications: parsedData?.certifications ?? [],
+    languages: parsedData?.languages ?? [],
+    awards: parsedData?.awards ?? [],
   };
 }
 
@@ -37,8 +41,13 @@ export async function runOptimization(userId, resumeId, jdId) {
       title: jd.title,
       company: jd.company,
       skills: jd.skills,
+      preferredSkills: jd.preferredSkills,
       qualifications: jd.qualifications,
       responsibilities: jd.responsibilities,
+      atsKeywords: jd.atsKeywords,
+      softSkills: jd.softSkills,
+      industryKeywords: jd.industryKeywords,
+      experienceRequired: jd.experienceRequired,
     },
   });
 

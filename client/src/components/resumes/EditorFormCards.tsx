@@ -30,16 +30,22 @@ export function EditorFormCards() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Contact</CardTitle>
-          <CardDescription>How recruiters reach you</CardDescription>
+          <CardTitle className="text-base">Personal info</CardTitle>
+          <CardDescription>Your full name and contact details</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          {CONTACT_FIELDS.map(([name, label]) => (
-            <div key={name} className="flex flex-col gap-2">
-              <Label htmlFor={`contact-${name}`}>{label}</Label>
-              <Input id={`contact-${name}`} {...register(`contact.${name}`)} />
-            </div>
-          ))}
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">Full name</Label>
+            <Input id="name" placeholder="Rahul Sharma" {...register("name")} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {CONTACT_FIELDS.map(([name, label]) => (
+              <div key={name} className="flex flex-col gap-2">
+                <Label htmlFor={`contact-${name}`}>{label}</Label>
+                <Input id={`contact-${name}`} {...register(`contact.${name}`)} />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -94,6 +100,8 @@ export function EditorFormCards() {
               { key: "startDate", label: "Start date" },
               { key: "endDate", label: "End date" },
               { key: "description", label: "Description", type: "textarea" },
+              { key: "achievements", label: "Achievements", type: "textarea", placeholder: "Reduced load time by 40%" },
+              { key: "technologies", label: "Technologies", placeholder: "React, Node.js, MongoDB" },
             ]}
           />
         </CardContent>
@@ -134,10 +142,42 @@ export function EditorFormCards() {
             assistSection="project"
             fieldDefs={[
               { key: "name", label: "Project name" },
-              { key: "link", label: "Link" },
+              { key: "link", label: "GitHub link" },
+              { key: "liveDemo", label: "Live demo link" },
+              { key: "technologies", label: "Technologies", placeholder: "React, D3.js" },
               { key: "description", label: "Description", type: "textarea" },
             ]}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Certifications</CardTitle>
+          <CardDescription>One per line</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea id="certificationsText" rows={4} placeholder={"AWS Certified Solutions Architect\nGoogle Cloud Associate"} {...register("certificationsText")} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Languages</CardTitle>
+          <CardDescription>One per line — include proficiency</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea id="languagesText" rows={3} placeholder={"English (Fluent)\nHindi (Native)"} {...register("languagesText")} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Awards</CardTitle>
+          <CardDescription>One per line</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea id="awardsText" rows={3} placeholder={"Employee of the Year 2023\nHackathon Winner"} {...register("awardsText")} />
         </CardContent>
       </Card>
     </div>

@@ -5,8 +5,13 @@ export interface JdUpdateData {
   title?: string;
   company?: string;
   skills?: string[];
+  preferredSkills?: string[];
   qualifications?: string[];
   responsibilities?: string[];
+  atsKeywords?: string[];
+  softSkills?: string[];
+  industryKeywords?: string[];
+  experienceRequired?: string;
 }
 
 export const jdsApi = {

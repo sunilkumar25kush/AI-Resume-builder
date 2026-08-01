@@ -15,6 +15,8 @@ const experienceEntrySchema = z.object({
   startDate: z.string().trim().max(100).optional().default(""),
   endDate: z.string().trim().max(100).optional().default(""),
   description: z.string().trim().max(5000).optional().default(""),
+  achievements: z.string().trim().max(5000).optional().default(""),
+  technologies: z.string().trim().max(1000).optional().default(""),
 });
 
 const educationEntrySchema = z.object({
@@ -29,15 +31,21 @@ const projectEntrySchema = z.object({
   name: z.string().trim().max(200).optional().default(""),
   description: z.string().trim().max(3000).optional().default(""),
   link: z.string().trim().max(500).optional().default(""),
+  technologies: z.string().trim().max(1000).optional().default(""),
+  liveDemo: z.string().trim().max(500).optional().default(""),
 });
 
 export const parsedDataSchema = z.object({
+  name: z.string().trim().max(200).optional().default(""),
   summary: z.string().trim().max(10000).optional().default(""),
   contact: contactSchema.optional().default({}),
   skills: z.array(z.string().trim().max(100)).max(500).optional().default([]),
   experience: z.array(experienceEntrySchema).max(100).optional().default([]),
   education: z.array(educationEntrySchema).max(100).optional().default([]),
   projects: z.array(projectEntrySchema).max(100).optional().default([]),
+  certifications: z.array(z.string().trim().max(200)).max(100).optional().default([]),
+  languages: z.array(z.string().trim().max(100)).max(50).optional().default([]),
+  awards: z.array(z.string().trim().max(200)).max(100).optional().default([]),
 });
 
 /**
@@ -46,12 +54,16 @@ export const parsedDataSchema = z.object({
  * would silently overwrite sibling sections with empty values).
  */
 const parsedDataUpdateSchema = z.object({
+  name: z.string().trim().max(200).optional(),
   summary: z.string().trim().max(10000).optional(),
   contact: contactSchema.optional(),
   skills: z.array(z.string().trim().max(100)).max(500).optional(),
   experience: z.array(experienceEntrySchema).max(100).optional(),
   education: z.array(educationEntrySchema).max(100).optional(),
   projects: z.array(projectEntrySchema).max(100).optional(),
+  certifications: z.array(z.string().trim().max(200)).max(100).optional(),
+  languages: z.array(z.string().trim().max(100)).max(50).optional(),
+  awards: z.array(z.string().trim().max(200)).max(100).optional(),
 });
 
 export const updateResumeSchema = z.object({

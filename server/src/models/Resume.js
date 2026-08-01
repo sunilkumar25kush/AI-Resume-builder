@@ -19,6 +19,8 @@ const experienceEntrySchema = new mongoose.Schema(
     startDate: { type: String, default: "" },
     endDate: { type: String, default: "" },
     description: { type: String, default: "" },
+    achievements: { type: String, default: "" },
+    technologies: { type: String, default: "" },
   },
   { _id: false },
 );
@@ -39,18 +41,24 @@ const projectEntrySchema = new mongoose.Schema(
     name: { type: String, default: "" },
     description: { type: String, default: "" },
     link: { type: String, default: "" },
+    technologies: { type: String, default: "" },
+    liveDemo: { type: String, default: "" },
   },
   { _id: false },
 );
 
 const parsedDataSchema = new mongoose.Schema(
   {
+    name: { type: String, default: "" },
     summary: { type: String, default: "" },
     contact: { type: contactSchema, default: () => ({}) },
     skills: { type: [String], default: [] },
     experience: { type: [experienceEntrySchema], default: [] },
     education: { type: [educationEntrySchema], default: [] },
     projects: { type: [projectEntrySchema], default: [] },
+    certifications: { type: [String], default: [] },
+    languages: { type: [String], default: [] },
+    awards: { type: [String], default: [] },
   },
   { _id: false },
 );

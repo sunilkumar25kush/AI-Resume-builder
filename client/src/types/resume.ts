@@ -13,6 +13,8 @@ export interface ExperienceEntry {
   startDate: string;
   endDate: string;
   description: string;
+  achievements: string;
+  technologies: string;
 }
 
 export interface EducationEntry {
@@ -27,15 +29,21 @@ export interface ProjectEntry {
   name: string;
   description: string;
   link: string;
+  technologies: string;
+  liveDemo: string;
 }
 
 export interface ParsedResumeData {
+  name: string;
   summary: string;
   contact: ContactInfo;
   skills: string[];
   experience: ExperienceEntry[];
   education: EducationEntry[];
   projects: ProjectEntry[];
+  certifications: string[];
+  languages: string[];
+  awards: string[];
 }
 
 export type ResumeTemplate = "classic" | "modern" | "minimal" | "compact";

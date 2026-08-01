@@ -80,7 +80,7 @@ export function createResumePdfElement(
 
   const children: Array<ReactElement | null> = [
     h(View, { key: "header", style: styles.header }, [
-      title ? h(Text, { key: "name", style: styles.name }, title) : null,
+      title || data.name ? h(Text, { key: "name", style: styles.name }, title || data.name) : null,
       contact.length > 0 ? h(Text, { key: "contact", style: styles.contact }, contact.join("  ·  ")) : null,
     ]),
     data.summary
@@ -107,6 +107,8 @@ export function createResumePdfElement(
                   : null,
               ]),
               h(Text, { key: "m", style: styles.meta }, [entry.company, entry.location].filter(Boolean).join(" · ")),
+              entry.achievements ? h(Text, { key: "a", style: styles.body }, entry.achievements) : null,
+              entry.technologies ? h(Text, { key: "t2", style: styles.meta }, `Technologies: ${entry.technologies}`) : null,
               entry.description ? h(Text, { key: "b", style: styles.body }, entry.description) : null,
             ]),
           ),
@@ -136,9 +138,28 @@ export function createResumePdfElement(
             h(View, { key: i, style: { marginBottom: 6 } }, [
               h(Text, { key: "t", style: styles.title }, entry.name || "Untitled project"),
               entry.description ? h(Text, { key: "b", style: styles.body }, entry.description) : null,
-              entry.link ? h(Text, { key: "m", style: styles.meta }, entry.link) : null,
+              entry.technologies ? h(Text, { key: "t2", style: styles.meta }, `Technologies: ${entry.technologies}`) : null,
+              [entry.link, entry.liveDemo].filter(Boolean).map((link) => h(Text, { key: link, style: styles.meta }, link)),
             ]),
           ),
+        ])
+      : null,
+    data.certifications.length > 0
+      ? h(View, { key: "certifications" }, [
+          h(Text, { key: "h", style: styles.heading }, "Certifications"),
+          h(View, { key: "list", style: styles.skills }, data.certifications.map((item) => h(Text, { key: item, style: styles.skill }, item))),
+        ])
+      : null,
+    data.languages.length > 0
+      ? h(View, { key: "languages" }, [
+          h(Text, { key: "h", style: styles.heading }, "Languages"),
+          h(View, { key: "list", style: styles.skills }, data.languages.map((item) => h(Text, { key: item, style: styles.skill }, item))),
+        ])
+      : null,
+    data.awards.length > 0
+      ? h(View, { key: "awards" }, [
+          h(Text, { key: "h", style: styles.heading }, "Awards"),
+          ...data.awards.map((item, i) => h(Text, { key: i, style: styles.meta }, item)),
         ])
       : null,
   ];

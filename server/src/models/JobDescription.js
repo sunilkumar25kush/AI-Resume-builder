@@ -18,8 +18,13 @@ const jobDescriptionSchema = new mongoose.Schema(
     title: { type: String, default: "", maxlength: 200 },
     company: { type: String, default: "", maxlength: 200 },
     skills: { type: [String], default: [] },
+    preferredSkills: { type: [String], default: [] },
     qualifications: { type: [String], default: [] },
     responsibilities: { type: [String], default: [] },
+    atsKeywords: { type: [String], default: [] },
+    softSkills: { type: [String], default: [] },
+    industryKeywords: { type: [String], default: [] },
+    experienceRequired: { type: String, default: "", maxlength: 100 },
   },
   { timestamps: true },
 );

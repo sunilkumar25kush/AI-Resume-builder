@@ -73,7 +73,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
       spacing: { after: 40 },
       children: [
         new TextRun({
-          text: title ?? "Resume",
+          text: title ?? data.name ?? "Resume",
           bold: true,
           size: Math.round((style.headingSize + 8) * 2),
           color: template === "modern" ? accent : "111827",
@@ -128,7 +128,7 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
           entryData.title || "Untitled role",
           [entryData.company, entryData.location].filter(Boolean).join(" · "),
           [entryData.startDate, entryData.endDate].filter(Boolean).join(" – "),
-          entryData.description,
+          [entryData.achievements, entryData.technologies ? `Technologies: ${entryData.technologies}` : "", entryData.description].filter(Boolean).join("\n"),
         ),
       );
     }
@@ -154,12 +154,42 @@ export async function buildResumeDocx({ data, template, title }: BuildDocxOption
       children.push(
         ...entry(
           entryData.name || "Untitled project",
-          entryData.link,
+          [entryData.technologies ? `Technologies: ${entryData.technologies}` : "", entryData.link, entryData.liveDemo].filter(Boolean).join("\n"),
           "",
           entryData.description,
         ),
       );
     }
+  }
+
+  if (data.certifications.length > 0) {
+    children.push(heading("Certifications"));
+    children.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [new TextRun({ text: data.certifications.join("  ·  "), size: Math.round(style.bodySize * 2), color: "374151", font: style.docxFont })],
+      }),
+    );
+  }
+
+  if (data.languages.length > 0) {
+    children.push(heading("Languages"));
+    children.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [new TextRun({ text: data.languages.join("  ·  "), size: Math.round(style.bodySize * 2), color: "374151", font: style.docxFont })],
+      }),
+    );
+  }
+
+  if (data.awards.length > 0) {
+    children.push(heading("Awards"));
+    children.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [new TextRun({ text: data.awards.join("  ·  "), size: Math.round(style.bodySize * 2), color: "374151", font: style.docxFont })],
+      }),
+    );
   }
 
   const doc = new Document({

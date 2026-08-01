@@ -19,6 +19,15 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {data.name ? (
+        <section className="flex flex-col gap-1">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <UserRound className="h-4 w-4" aria-hidden />
+            Name
+          </h2>
+          <p className="text-base font-semibold">{data.name}</p>
+        </section>
+      ) : null}
       {contactItems.length > 0 || links.length > 0 ? (
         <section className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           {contactItems.map(({ icon: Icon, value }) => (
@@ -76,6 +85,12 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
                 <p className="text-sm text-muted-foreground">
                   {[entry.company, entry.location].filter(Boolean).join(" · ") || " "}
                 </p>
+                {entry.achievements ? (
+                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground/90">{entry.achievements}</p>
+                ) : null}
+                {entry.technologies ? (
+                  <p className="mt-1 text-xs text-muted-foreground/80">Technologies: {entry.technologies}</p>
+                ) : null}
                 {entry.description ? (
                   <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground/90">{entry.description}</p>
                 ) : null}
@@ -114,22 +129,62 @@ export function ResumeSections({ data }: ResumeSectionsProps) {
             {data.projects.map((entry, i) => (
               <article key={i} className="flex flex-col gap-1">
                 <h3 className="font-semibold">{entry.name || "—"}</h3>
+                {entry.technologies ? (
+                  <p className="text-xs text-muted-foreground/80">Technologies: {entry.technologies}</p>
+                ) : null}
                 {entry.description ? (
                   <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground/90">{entry.description}</p>
                 ) : null}
-                {entry.link ? (
+                {[entry.link, entry.liveDemo].filter(Boolean).map((link) => (
                   <a
-                    href={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`}
+                    key={link}
+                    href={link.startsWith("http") ? link : `https://${link}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-sm text-primary hover:underline"
                   >
-                    {entry.link}
+                    {link}
                   </a>
-                ) : null}
+                ))}
               </article>
             ))}
           </div>
+        </Section>
+      ) : null}
+
+      {data.certifications.length > 0 ? (
+        <Section title="Certifications">
+          <div className="flex flex-wrap gap-2">
+            {data.certifications.map((item) => (
+              <Badge key={item} variant="secondary">
+                {item}
+              </Badge>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
+      {data.languages.length > 0 ? (
+        <Section title="Languages">
+          <div className="flex flex-wrap gap-2">
+            {data.languages.map((item) => (
+              <Badge key={item} variant="secondary">
+                {item}
+              </Badge>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
+      {data.awards.length > 0 ? (
+        <Section title="Awards">
+          <ul className="flex flex-col gap-1.5">
+            {data.awards.map((item) => (
+              <li key={item} className="text-sm text-muted-foreground">
+                {item}
+              </li>
+            ))}
+          </ul>
         </Section>
       ) : null}
     </div>

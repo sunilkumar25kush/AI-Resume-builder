@@ -26,7 +26,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
   return (
     <div className={`resume-paper flex h-full w-full flex-col gap-1 p-6 text-left ${tpl.className} ${className ?? ""}`}>
       <header className="rv-header">
-        {title ? <h1 className="rv-name">{title}</h1> : null}
+        {title || data.name ? <h1 className="rv-name">{title || data.name}</h1> : null}
         {contact.length > 0 ? (
           <p className="rv-contact">
             {contact.map((item) => (
@@ -71,6 +71,8 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
               </div>
               <span className="rv-meta">{[entry.company, entry.location].filter(Boolean).join(" · ")}</span>
               {entry.description ? <p className="rv-summary-text whitespace-pre-line">{entry.description}</p> : null}
+              {entry.achievements ? <p className="rv-summary-text whitespace-pre-line">{entry.achievements}</p> : null}
+              {entry.technologies ? <span className="rv-meta">Technologies: {entry.technologies}</span> : null}
             </article>
           ))}
         </section>
@@ -103,13 +105,55 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
             <article key={i} className="rv-entry">
               <span className="rv-title">{entry.name || "Untitled project"}</span>
               {entry.description ? <p className="rv-summary-text whitespace-pre-line">{entry.description}</p> : null}
-              {entry.link ? <span className="rv-meta">{entry.link}</span> : null}
+              {entry.technologies ? <span className="rv-meta">Technologies: {entry.technologies}</span> : null}
+              {[entry.link, entry.liveDemo].filter(Boolean).map((link) => (
+                <span key={link} className="rv-meta">
+                  {link}
+                </span>
+              ))}
             </article>
           ))}
         </section>
       ) : null}
 
-      {!title && !contact.length && !data.summary && data.skills.length === 0 ? (
+      {data.certifications.length > 0 ? (
+        <section className="rv-section">
+          <h2 className="rv-heading">Certifications</h2>
+          <div className="rv-skills">
+            {data.certifications.map((item) => (
+              <span key={item} className="rv-skill">
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {data.languages.length > 0 ? (
+        <section className="rv-section">
+          <h2 className="rv-heading">Languages</h2>
+          <div className="rv-skills">
+            {data.languages.map((item) => (
+              <span key={item} className="rv-skill">
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {data.awards.length > 0 ? (
+        <section className="rv-section">
+          <h2 className="rv-heading">Awards</h2>
+          {data.awards.map((item) => (
+            <p key={item} className="rv-meta">
+              {item}
+            </p>
+          ))}
+        </section>
+      ) : null}
+
+      {!title && !data.name && !contact.length && !data.summary && data.skills.length === 0 ? (
         <p className="rv-empty">Nothing parsed yet — edit the sections to fill this resume.</p>
       ) : null}
     </div>

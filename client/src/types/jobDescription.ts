@@ -7,8 +7,13 @@ export interface JobDescription {
   title: string;
   company: string;
   skills: string[];
+  preferredSkills: string[];
   qualifications: string[];
   responsibilities: string[];
+  atsKeywords: string[];
+  softSkills: string[];
+  industryKeywords: string[];
+  experienceRequired: string;
   createdAt: string;
   updatedAt: string;
 }

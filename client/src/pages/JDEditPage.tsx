@@ -19,7 +19,12 @@ import type { JobDescription } from "@/types";
 const editSchema = z.object({
   title: z.string().max(200).default(""),
   company: z.string().max(200).default(""),
+  experienceRequired: z.string().max(100).default(""),
   skillsText: z.string().max(10000).default(""),
+  preferredSkillsText: z.string().max(10000).default(""),
+  atsKeywordsText: z.string().max(10000).default(""),
+  softSkillsText: z.string().max(5000).default(""),
+  industryKeywordsText: z.string().max(5000).default(""),
   qualificationsText: z.string().max(25000).default(""),
   responsibilitiesText: z.string().max(25000).default(""),
 });
@@ -30,7 +35,12 @@ function toFormValues(jd: JobDescription): EditFormValues {
   return {
     title: jd.title,
     company: jd.company,
+    experienceRequired: jd.experienceRequired,
     skillsText: jd.skills.join("\n"),
+    preferredSkillsText: jd.preferredSkills.join("\n"),
+    atsKeywordsText: jd.atsKeywords.join("\n"),
+    softSkillsText: jd.softSkills.join("\n"),
+    industryKeywordsText: jd.industryKeywords.join("\n"),
     qualificationsText: jd.qualifications.join("\n"),
     responsibilitiesText: jd.responsibilities.join("\n"),
   };
@@ -79,7 +89,12 @@ export default function JDEditPage() {
       await jdsApi.update(jd._id, {
         title: values.title,
         company: values.company,
+        experienceRequired: values.experienceRequired,
         skills: splitLines(values.skillsText),
+        preferredSkills: splitLines(values.preferredSkillsText),
+        atsKeywords: splitLines(values.atsKeywordsText),
+        softSkills: splitLines(values.softSkillsText),
+        industryKeywords: splitLines(values.industryKeywordsText),
         qualifications: splitLines(values.qualificationsText),
         responsibilities: splitLines(values.responsibilitiesText),
       });
@@ -130,6 +145,10 @@ export default function JDEditPage() {
               <Label htmlFor="company">Company</Label>
               <Input id="company" placeholder="Acme Corp" {...form.register("company")} />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="experienceRequired">Experience required</Label>
+              <Input id="experienceRequired" placeholder="5+ years" {...form.register("experienceRequired")} />
+            </div>
           </CardContent>
         </Card>
 
@@ -140,6 +159,46 @@ export default function JDEditPage() {
           </CardHeader>
           <CardContent>
             <Textarea id="skillsText" rows={5} placeholder={"React\nTypeScript\nNode.js"} {...form.register("skillsText")} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Preferred skills</CardTitle>
+            <CardDescription>Nice-to-have skills — one per line</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea id="preferredSkillsText" rows={3} placeholder={"Docker\nAWS"} {...form.register("preferredSkillsText")} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">ATS keywords</CardTitle>
+            <CardDescription>Keywords ATS should match — one per line</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea id="atsKeywordsText" rows={3} placeholder={"performance optimization\nREST APIs"} {...form.register("atsKeywordsText")} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Soft skills</CardTitle>
+            <CardDescription>One per line</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea id="softSkillsText" rows={3} placeholder={"Communication\nTeamwork"} {...form.register("softSkillsText")} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Industry keywords</CardTitle>
+            <CardDescription>One per line</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea id="industryKeywordsText" rows={3} placeholder={"Agile\nSaaS"} {...form.register("industryKeywordsText")} />
           </CardContent>
         </Card>
 
