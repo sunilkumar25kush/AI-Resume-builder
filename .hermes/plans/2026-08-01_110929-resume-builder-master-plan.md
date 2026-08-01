@@ -107,7 +107,7 @@ AI Resume Builder/
 - **server:** `ai/providers/` — base interface (`generate(prompt, opts)`), `OllamaProvider` (fetch to 11434, model from env), `GeminiProvider` (REST via fetch, no SDK dep), factory switching via `AI_PROVIDER` env, JSON-output parsing + retry/timeout + fallback chain.
 - **Verify:** both providers respond to a test prompt via a `/api/ai/ping` (dev-only) route; provider switch via env.
 
-### M7 — AI Resume Optimization
+### M7 — AI Resume Optimization ✅
 - **server:** `Optimization` model, optimizer service — ATS score, match % vs JD, missing skills, keyword suggestions; prompt engineering for consistent JSON; streaming optional.
 - **client:** Optimize page — pick resume + JD → run → results dashboard (score ring, match bar, missing-skill chips, keyword table), save to history.
 - **Verify:** deterministic JSON parse, sensible scores on sample data, loading/skeleton/error states, history list.

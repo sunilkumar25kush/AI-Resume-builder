@@ -1,0 +1,199 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { getApiErrorMessage } from "@/api/client";
+import { optimizationsApi } from "@/api/optimizations";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Optimization, OptimizationResult } from "@/types";
+
+const RING_RADIUS = 54;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function ringTone(score: number): string {
+  if (score >= 80) return "stroke-emerald-500";
+  if (score >= 60) return "stroke-amber-500";
+  return "stroke-red-500";
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const clamped = Math.min(100, Math.max(0, score));
+  const offset = RING_CIRCUMFERENCE * (1 - clamped / 100);
+  return (
+    <div className="relative h-32 w-32" role="img" aria-label={`ATS score ${clamped} out of 100`}>
+      <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
+        <circle cx="64" cy="64" r={RING_RADIUS} fill="none" strokeWidth="10" className="stroke-muted" />
+        <circle
+          cx="64"
+          cy="64"
+          r={RING_RADIUS}
+          fill="none"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          className={ringTone(clamped)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold">{clamped}</span>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">/ 100</span>
+      </div>
+    </div>
+  );
+}
+
+function ResultCard({ optimization }: { optimization: Optimization }) {
+  const result: OptimizationResult = optimization.result;
+  return (
+    <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
+      <div className="flex flex-col items-center gap-3">
+        <ScoreRing score={result.atsScore} />
+        <p className="text-center text-xs text-muted-foreground">ATS score</p>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <section className="flex flex-col gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <Gauge className="h-4 w-4" aria-hidden />
+            Job match
+          </h3>
+          <div className="flex items-center gap-3">
+            <Progress value={result.matchPercent} className="h-2.5 flex-1" aria-label={`${result.matchPercent}% match`} />
+            <span className="w-12 text-right text-sm font-semibold">{result.matchPercent}%</span>
+          </div>
+          {result.summary ? <p className="text-sm leading-relaxed text-muted-foreground">{result.summary}</p> : null}
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            Missing skills
+          </h3>
+          {result.missingSkills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {result.missingSkills.map((skill) => (
+                <Badge key={skill} variant="destructive">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+              No missing skills detected — great coverage!
+            </p>
+          )}
+        </section>
+
+        {result.keywordSuggestions.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <Lightbulb className="h-4 w-4" aria-hidden />
+              Keyword suggestions
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {result.keywordSuggestions.map((keyword) => (
+                <li key={keyword} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" aria-hidden />
+                  {keyword}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export default function OptimizeResultPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [optimization, setOptimization] = useState<Optimization | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setLoading(true);
+    optimizationsApi
+      .get(id)
+      .then((data) => {
+        if (!cancelled) setOptimization(data);
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error));
+        if (!cancelled) navigate("/optimize");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, navigate]);
+
+  const onDelete = async () => {
+    if (!optimization) return;
+    setDeleting(true);
+    try {
+      await optimizationsApi.remove(optimization._id);
+      toast.success("Analysis deleted");
+      navigate("/optimize");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
+  }
+
+  if (!optimization) return null;
+
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Link to="/optimize" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            All analyses
+          </Link>
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+            {optimization.resumeTitle}
+            <span className="text-muted-foreground"> → </span>
+            {optimization.jdTitle}
+          </h1>
+          {optimization.jdCompany ? (
+            <p className="text-sm text-muted-foreground">{optimization.jdCompany}</p>
+          ) : null}
+        </div>
+        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => void onDelete()} disabled={deleting} aria-label="Delete analysis">
+          {deleting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Analysis results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResultCard optimization={optimization} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

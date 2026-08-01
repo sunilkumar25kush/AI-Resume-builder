@@ -38,7 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", href: "/", icon: LayoutDashboard },
       { label: "Resume Builder", href: "/resumes", icon: FileText },
       { label: "JD Parser", href: "/jds", icon: ScanSearch },
-      { label: "AI Optimizer", icon: Wand2, soon: true },
+      { label: "AI Optimizer", href: "/optimize", icon: Wand2 },
     ],
   },
   {

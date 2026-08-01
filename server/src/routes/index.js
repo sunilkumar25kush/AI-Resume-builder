@@ -5,6 +5,7 @@ import authRoutes from "./auth.routes.js";
 import healthRoutes from "./health.routes.js";
 import jdRoutes from "./jd.routes.js";
 import notificationRoutes from "./notification.routes.js";
+import optimizationRoutes from "./optimization.routes.js";
 import resumeRoutes from "./resume.routes.js";
 import userRoutes from "./user.routes.js";
 
@@ -17,5 +18,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/resumes", resumeRoutes);
 router.use("/jds", jdRoutes);
 router.use("/ai", aiRoutes);
+router.use("/optimizations", optimizationRoutes);
 
 export default router;

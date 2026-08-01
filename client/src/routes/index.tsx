@@ -21,6 +21,8 @@ const ResumeEditPage = lazy(() => import("@/pages/ResumeEditPage"));
 const JDsPage = lazy(() => import("@/pages/JDsPage"));
 const JDPreviewPage = lazy(() => import("@/pages/JDPreviewPage"));
 const JDEditPage = lazy(() => import("@/pages/JDEditPage"));
+const OptimizationsPage = lazy(() => import("@/pages/OptimizationsPage"));
+const OptimizeResultPage = lazy(() => import("@/pages/OptimizeResultPage"));
 
 export const router = createBrowserRouter([
   {
@@ -103,6 +105,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <JDEditPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/optimize",
+        element: (
+          <ProtectedRoute>
+            <OptimizationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/optimize/:id",
+        element: (
+          <ProtectedRoute>
+            <OptimizeResultPage />
           </ProtectedRoute>
         ),
       },
