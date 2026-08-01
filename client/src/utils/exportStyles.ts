@@ -44,6 +44,56 @@ export const EXPORT_STYLES: Record<ResumeTemplate, ExportStyle> = {
     headingSize: 9.5,
     bodySize: 8.5,
   },
+  executive: {
+    pdfFont: "Times-Roman",
+    docxFont: "Georgia",
+    accent: "#b45309",
+    headingSize: 12,
+    bodySize: 10.5,
+  },
+  creative: {
+    pdfFont: "Helvetica",
+    docxFont: "Calibri",
+    accent: "#c026d3",
+    headingSize: 11,
+    bodySize: 10,
+  },
+  startup: {
+    pdfFont: "Helvetica",
+    docxFont: "Calibri",
+    accent: "#4f46e5",
+    headingSize: 11,
+    bodySize: 10,
+  },
+  google: {
+    pdfFont: "Helvetica",
+    docxFont: "Arial",
+    accent: "#4285f4",
+    headingSize: 11,
+    bodySize: 10,
+    centered: true,
+  },
+  microsoft: {
+    pdfFont: "Helvetica",
+    docxFont: "Calibri",
+    accent: "#0078d4",
+    headingSize: 11,
+    bodySize: 10,
+  },
+  harvard: {
+    pdfFont: "Times-Roman",
+    docxFont: "Georgia",
+    accent: "#A51C30",
+    headingSize: 11.5,
+    bodySize: 10.5,
+  },
+  elegant: {
+    pdfFont: "Times-Roman",
+    docxFont: "Georgia",
+    accent: "#fb7185",
+    headingSize: 11,
+    bodySize: 10,
+  },
 };
 
 export function exportFileName(fileName: string, extension: string): string {

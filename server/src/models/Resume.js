@@ -73,7 +73,11 @@ const resumeSchema = new mongoose.Schema(
     status: { type: String, enum: ["parsed", "error"], default: "parsed" },
     parseError: { type: String, default: "" },
     parsedData: { type: parsedDataSchema, default: () => ({}) },
-    template: { type: String, enum: ["classic", "modern", "minimal", "compact"], default: "classic" },
+    template: {
+      type: String,
+      enum: ["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant"],
+      default: "classic",
+    },
   },
   { timestamps: true },
 );

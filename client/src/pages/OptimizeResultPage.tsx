@@ -6,12 +6,13 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/api/client";
 import { optimizationsApi } from "@/api/optimizations";
 import { resumesApi } from "@/api/resumes";
+import { DesignChoiceDialog } from "@/components/resumes/DesignChoiceDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Optimization, OptimizationResult } from "@/types";
+import type { Optimization, OptimizationResult, Resume } from "@/types";
 
 const RING_RADIUS = 54;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
@@ -191,6 +192,7 @@ export default function OptimizeResultPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatedResume, setGeneratedResume] = useState<Resume | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -231,11 +233,20 @@ export default function OptimizeResultPage() {
     setGenerating(true);
     try {
       const generated = await resumesApi.generate(optimization.resumeId, optimization.jdId);
-      toast.success("Optimized resume generated");
-      navigate(`/resumes/${generated._id}/edit`);
+      setGeneratedResume(generated);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
       setGenerating(false);
+    }
+  };
+
+  const onDesignDone = () => {
+    const generated = generatedResume;
+    setGeneratedResume(null);
+    setGenerating(false);
+    if (generated) {
+      toast.success("Optimized resume generated");
+      navigate(`/resumes/${generated._id}/edit`);
     }
   };
 
@@ -298,6 +309,8 @@ export default function OptimizeResultPage() {
           <ResultCard optimization={optimization} />
         </CardContent>
       </Card>
+
+      <DesignChoiceDialog resume={generatedResume} onOpenChange={(open) => !open && setGeneratedResume(null)} onDone={onDesignDone} />
     </div>
   );
 }

@@ -68,5 +68,7 @@ const parsedDataUpdateSchema = z.object({
 
 export const updateResumeSchema = z.object({
   parsedData: parsedDataUpdateSchema.optional(),
-  template: z.enum(["classic", "modern", "minimal", "compact"]).optional(),
+  template: z
+    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant"])
+    .optional(),
 });

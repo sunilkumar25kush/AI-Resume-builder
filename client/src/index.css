@@ -247,3 +247,168 @@
 .rv-empty {
   @apply text-sm italic text-neutral-400;
 }
+
+/* Executive — bold serif + gold */
+.resume-tpl-executive {
+  font-family: Georgia, "Times New Roman", serif;
+}
+.resume-tpl-executive .rv-header {
+  @apply border-b-2 border-amber-500 pb-3;
+}
+.resume-tpl-executive .rv-name {
+  @apply text-3xl font-bold tracking-tight;
+}
+.resume-tpl-executive .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-executive .rv-heading {
+  @apply mt-4 mb-1 text-[13px] font-bold uppercase tracking-[0.18em] text-amber-700;
+}
+.resume-tpl-executive .rv-title {
+  @apply font-bold;
+}
+.resume-tpl-executive .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Creative — vibrant purple/pink */
+.resume-tpl-creative {
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-creative .rv-header {
+  @apply rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-3 text-white;
+}
+.resume-tpl-creative .rv-name {
+  @apply text-2xl font-extrabold;
+}
+.resume-tpl-creative .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-xs text-white/85;
+}
+.resume-tpl-creative .rv-heading {
+  @apply mt-4 mb-1.5 text-sm font-bold uppercase tracking-wider text-fuchsia-600;
+}
+.resume-tpl-creative .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-creative .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Startup — bold indigo */
+.resume-tpl-startup {
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-startup .rv-header {
+  @apply border-b-4 border-indigo-600 pb-2;
+}
+.resume-tpl-startup .rv-name {
+  @apply text-2xl font-black tracking-tight text-indigo-950;
+}
+.resume-tpl-startup .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-startup .rv-heading {
+  @apply mt-4 mb-1 text-xs font-extrabold uppercase tracking-widest text-indigo-600;
+}
+.resume-tpl-startup .rv-title {
+  @apply font-bold;
+}
+.resume-tpl-startup .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Google Style — multi-color name, clean body */
+.resume-tpl-google {
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-google .rv-header {
+  @apply pb-2 text-center;
+}
+.resume-tpl-google .rv-name {
+  @apply text-3xl font-medium tracking-tight;
+  background: linear-gradient(90deg, #4285f4, #ea4335, #fbbc05, #34a853);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.resume-tpl-google .rv-contact {
+  @apply mt-1 flex flex-wrap justify-center gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-google .rv-heading {
+  @apply mt-4 mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-700;
+}
+.resume-tpl-google .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-google .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Microsoft Style — crisp blue */
+.resume-tpl-microsoft {
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-microsoft .rv-header {
+  @apply border-b-2 border-[#0078d4] pb-2;
+}
+.resume-tpl-microsoft .rv-name {
+  @apply text-2xl font-semibold text-[#1a1a1a];
+}
+.resume-tpl-microsoft .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-microsoft .rv-heading {
+  @apply mt-4 mb-1 text-[13px] font-bold uppercase tracking-wider text-[#0078d4];
+}
+.resume-tpl-microsoft .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-microsoft .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Harvard — academic crimson serif */
+.resume-tpl-harvard {
+  font-family: Georgia, "Times New Roman", serif;
+}
+.resume-tpl-harvard .rv-header {
+  @apply border-b-2 border-[#A51C30] pb-2;
+}
+.resume-tpl-harvard .rv-name {
+  @apply text-3xl font-bold text-[#1a1a1a];
+}
+.resume-tpl-harvard .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-harvard .rv-heading {
+  @apply mt-4 mb-1 text-sm font-bold uppercase tracking-[0.15em] text-[#A51C30];
+}
+.resume-tpl-harvard .rv-title {
+  @apply font-bold;
+}
+.resume-tpl-harvard .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+
+/* Elegant — refined serif + rose gold */
+.resume-tpl-elegant {
+  font-family: Georgia, "Times New Roman", serif;
+}
+.resume-tpl-elegant .rv-header {
+  @apply border-b border-rose-200 pb-3;
+}
+.resume-tpl-elegant .rv-name {
+  @apply text-3xl font-light tracking-wide text-[#1a1a1a];
+}
+.resume-tpl-elegant .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm italic text-neutral-500;
+}
+.resume-tpl-elegant .rv-heading {
+  @apply mt-5 mb-1 text-xs font-semibold uppercase tracking-[0.25em] text-rose-400;
+}
+.resume-tpl-elegant .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-elegant .rv-meta {
+  @apply text-sm italic text-neutral-500;
+}

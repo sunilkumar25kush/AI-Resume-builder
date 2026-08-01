@@ -46,7 +46,18 @@ export interface ParsedResumeData {
   awards: string[];
 }
 
-export type ResumeTemplate = "classic" | "modern" | "minimal" | "compact";
+export type ResumeTemplate =
+  | "classic"
+  | "modern"
+  | "minimal"
+  | "compact"
+  | "executive"
+  | "creative"
+  | "startup"
+  | "google"
+  | "microsoft"
+  | "harvard"
+  | "elegant";
 
 export interface Resume {
   _id: string;
