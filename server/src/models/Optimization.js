@@ -4,7 +4,12 @@ const resultSchema = new mongoose.Schema(
   {
     atsScore: { type: Number, default: 0, min: 0, max: 100 },
     matchPercent: { type: Number, default: 0, min: 0, max: 100 },
+    keywordDensity: { type: Number, default: 0, min: 0, max: 100 },
     missingSkills: { type: [String], default: [] },
+    matchedSkills: { type: [String], default: [] },
+    weakBullets: { type: [String], default: [] },
+    grammarIssues: { type: [String], default: [] },
+    formattingSuggestions: { type: [String], default: [] },
     keywordSuggestions: { type: [String], default: [] },
     summary: { type: String, default: "" },
   },

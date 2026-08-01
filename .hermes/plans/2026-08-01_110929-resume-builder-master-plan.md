@@ -156,7 +156,12 @@ AI Resume Builder/
 - **client:** admin layout + user table (→ cards on mobile), actions with confirm dialogs.
 - **Verify:** non-admin blocked (403), actions work, audit log.
 
-### M14 — Hardening & Final QA
+### M14 — Analysis Expansion + Skill Match ✅ (spec)
+- **server:** optimization result + matchedSkills, keywordDensity, weakBullets, grammarIssues, formattingSuggestions (prompt + normalization + model).
+- **client:** Optimize result dashboard — matched skill chips (green), keyword density bar, weak bullets (amber), grammar issues (red), formatting suggestions.
+- **Verify:** 20/20 unit+live (real matched skills from AI), full regression green.
+
+### M14b — Hardening & Final QA
 - Full pass: security (helmet headers, rate limits everywhere, input sanitization everywhere, cookie flags), performance (lazy routes, code splitting, memoization, debounced calls), a11y audit, all breakpoints, dark/light contrast, empty/loading/error states everywhere, lint + build clean, README.
 
 ---

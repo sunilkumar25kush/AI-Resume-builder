@@ -38,8 +38,9 @@ check("summary improve 200", res.status === 200, String(res.status));
 check("summary improved", typeof improved === "string" && improved.length > 0, improved?.slice(0, 50));
 check("summary changed", improved !== "I am a developer who works on web apps and likes to build things.");
 
-// Shorten — must produce strictly shorter text (retry once for model variance)
-const longSummary = "I am a developer who works on web apps and likes to build things. I also enjoy learning new technologies and contributing to open source projects in my free time.";
+// Shorten — must produce strictly shorter text (long input + retry for model variance)
+const longSummary =
+  "I am a full-stack developer with experience building web applications. I enjoy working with modern frameworks and learning new technologies. I have worked on several projects including e-commerce platforms and internal dashboards. I also contribute to open source projects and participate in hackathons. In my free time I write technical blog posts about software development best practices.";
 let short = "";
 for (let attempt = 0; attempt < 2 && !(typeof short === "string" && short.length > 0 && short.length < longSummary.length); attempt += 1) {
   res = await assistCall({ section: "summary", action: "shorten", content: longSummary });

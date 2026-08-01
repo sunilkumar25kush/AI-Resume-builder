@@ -1,7 +1,12 @@
 export interface OptimizationResult {
   atsScore: number;
   matchPercent: number;
+  keywordDensity: number;
   missingSkills: string[];
+  matchedSkills: string[];
+  weakBullets: string[];
+  grammarIssues: string[];
+  formattingSuggestions: string[];
   keywordSuggestions: string[];
   summary: string;
 }

@@ -68,6 +68,12 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
             <Progress value={result.matchPercent} className="h-2.5 flex-1" aria-label={`${result.matchPercent}% match`} />
             <span className="w-12 text-right text-sm font-semibold">{result.matchPercent}%</span>
           </div>
+          {result.keywordDensity > 0 ? (
+            <div className="flex items-center gap-3">
+              <Progress value={result.keywordDensity} className="h-2 flex-1" aria-label={`${result.keywordDensity}% keyword density`} />
+              <span className="w-12 text-right text-xs text-muted-foreground">{result.keywordDensity}%</span>
+            </div>
+          ) : null}
           {result.summary ? <p className="text-sm leading-relaxed text-muted-foreground">{result.summary}</p> : null}
         </section>
 
@@ -91,6 +97,71 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
             </p>
           )}
         </section>
+
+        {result.matchedSkills.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4" aria-hidden />
+              Matched skills
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {result.matchedSkills.map((skill) => (
+                <Badge key={skill} className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {result.weakBullets.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+              Weak bullets
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {result.weakBullets.map((bullet) => (
+                <li key={bullet} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-800">
+                  “{bullet}”
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {result.grammarIssues.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+              Grammar issues
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {result.grammarIssues.map((issue) => (
+                <li key={issue} className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-800">
+                  {issue}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {result.formattingSuggestions.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <Lightbulb className="h-4 w-4" aria-hidden />
+              Formatting suggestions
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {result.formattingSuggestions.map((suggestion) => (
+                <li key={suggestion} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" aria-hidden />
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {result.keywordSuggestions.length > 0 ? (
           <section className="flex flex-col gap-2">

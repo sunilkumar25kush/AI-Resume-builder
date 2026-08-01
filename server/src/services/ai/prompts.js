@@ -3,6 +3,11 @@ const OPTIMIZE_INSTRUCTIONS = `You are an expert ATS resume reviewer. Compare th
   "atsScore": number from 0 to 100 (how ATS-friendly and well-structured the resume is),
   "matchPercent": number from 0 to 100 (how well the resume matches this specific job),
   "missingSkills": string[] (skills mentioned in the job description but missing from the resume, max 12),
+  "matchedSkills": string[] (skills present in BOTH the resume and the job description, max 20),
+  "keywordDensity": number from 0 to 100 (how densely the JD's keywords appear in the resume),
+  "weakBullets": string[] (specific weak bullet points from the resume's experience/projects that read passively or lack impact, quoted as-is, max 8),
+  "grammarIssues": string[] (specific grammar/spelling/wording issues found in the resume, quoted as-is, max 8),
+  "formattingSuggestions": string[] (concrete ATS formatting fixes, max 8),
   "keywordSuggestions": string[] (specific phrases or keywords to add, max 8),
   "summary": string (2-3 sentences, plain English, no markdown)
 }
@@ -10,6 +15,9 @@ Rules:
 - atsScore: penalize missing sections, poor structure, sparse contact info; reward clear headings and keyword density.
 - matchPercent: based on skills overlap, relevant experience and education.
 - missingSkills: only include skills that are actually in the job description; do not invent skills.
+- matchedSkills: only skills that literally appear in the resume AND the job description.
+- weakBullets/grammarIssues: quote real text from the resume; do not fabricate.
+- formattingSuggestions: concrete, copy-paste-ready fixes (e.g. "Use standard section headings like SKILLS and EXPERIENCE").
 - keywordSuggestions: concrete, copy-paste-ready phrases (e.g. "Cross-functional team collaboration").
 - Do not add any text outside the JSON object.`;
 
