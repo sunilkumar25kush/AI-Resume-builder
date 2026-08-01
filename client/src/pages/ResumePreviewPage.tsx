@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { exportResumeDocx } from "@/utils/exportDocx";
+import { exportResumeJson } from "@/utils/exportJson";
 import { exportResumePdf } from "@/utils/exportPdfClient";
 import type { Resume } from "@/types";
 
@@ -115,6 +116,9 @@ export default function ResumePreviewPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => void onExport("pdf")}>Download PDF</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void onExport("docx")}>Download DOCX</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => resume && exportResumeJson(resume.parsedData, resume.fileName)}>
+                Download JSON
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button asChild variant="outline" size="sm">

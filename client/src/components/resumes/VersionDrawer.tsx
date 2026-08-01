@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, GitCompareArrows, History, Loader2, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, GitCompareArrows, History, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -27,10 +27,12 @@ function VersionRow({
   version,
   onCompare,
   onRestore,
+  onDuplicate,
 }: {
   version: ResumeVersion;
   onCompare: () => void;
   onRestore: () => void;
+  onDuplicate: () => void;
 }) {
   return (
     <li className="flex items-center gap-3 rounded-lg border p-3">
@@ -48,6 +50,10 @@ function VersionRow({
       <Button type="button" variant="ghost" size="sm" className="text-primary" onClick={onRestore} aria-label={`Restore version ${version.version}`}>
         <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
         Restore
+      </Button>
+      <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={onDuplicate} aria-label={`Duplicate version ${version.version}`}>
+        <Copy className="mr-1.5 h-4 w-4" aria-hidden />
+        Duplicate
       </Button>
     </li>
   );
@@ -95,6 +101,17 @@ export function VersionDrawer({ resume, open, onOpenChange, onRestored }: Versio
       toast.error(getApiErrorMessage(error));
     } finally {
       setRestoring(false);
+    }
+  };
+
+  const onDuplicate = async (version: ResumeVersion) => {
+    try {
+      await versionsApi.duplicate(resume._id, version._id);
+      toast.success(`Duplicated v${version.version} as a new version`);
+      const data = await versionsApi.list(resume._id);
+      setVersions(data);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -158,6 +175,7 @@ export function VersionDrawer({ resume, open, onOpenChange, onRestored }: Versio
                   version={version}
                   onCompare={() => setCompare(version)}
                   onRestore={() => setRestoreTarget(version)}
+                  onDuplicate={() => void onDuplicate(version)}
                 />
               ))}
             </ul>

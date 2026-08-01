@@ -9,7 +9,7 @@ import {
   updateResume,
   uploadResume,
 } from "../controllers/resume.controller.js";
-import { getVersion, listVersions, restoreVersion } from "../controllers/versions.controller.js";
+import { duplicateVersion, getVersion, listVersions, restoreVersion } from "../controllers/versions.controller.js";
 import { generateResume } from "../controllers/generation.controller.js";
 import { validate } from "../middlewares/validate.js";
 import { updateResumeSchema } from "../validations/resume.js";
@@ -28,6 +28,7 @@ router.delete("/:id", deleteResume);
 router.get("/:id/versions", listVersions);
 router.get("/:id/versions/:versionId", getVersion);
 router.post("/:id/versions/:versionId/restore", restoreVersion);
+router.post("/:id/versions/:versionId/duplicate", duplicateVersion);
 router.post("/:id/generate", validate({ body: generateResumeSchema }), generateResume);
 
 export default router;

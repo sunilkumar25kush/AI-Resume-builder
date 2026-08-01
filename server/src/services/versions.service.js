@@ -76,3 +76,25 @@ export async function restoreVersion(userId, resumeId, versionId) {
   delete updated.__v;
   return updated;
 }
+
+/**
+ * Duplicate a version: copies its snapshot as a NEW version (branch point)
+ * so edits from that state get their own history line.
+ */
+export async function duplicateVersion(userId, resumeId, versionId) {
+  const resume = await Resume.findOne({ _id: resumeId, user: userId }).select("_id").lean();
+  if (!resume) throw new ApiError(404, "Resume not found");
+  const version = await ResumeVersion.findOne({ _id: versionId, resume: resumeId, user: userId }).lean();
+  if (!version) throw new ApiError(404, "Version not found");
+
+  const latest = await ResumeVersion.findOne({ resume: resumeId }).sort({ version: -1 }).lean();
+  const created = await ResumeVersion.create({
+    user: userId,
+    resume: resumeId,
+    version: (latest?.version ?? 0) + 1,
+    parsedData: version.parsedData,
+    template: version.template,
+  });
+  await prune(resumeId);
+  return created.toObject();
+}

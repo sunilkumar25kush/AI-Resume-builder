@@ -18,4 +18,9 @@ export const versionsApi = {
     const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(`/resumes/${resumeId}/versions/${versionId}/restore`);
     return res.data.data.resume;
   },
+
+  async duplicate(resumeId: string, versionId: string): Promise<ResumeVersion> {
+    const res = await apiClient.post<ApiEnvelope<{ version: ResumeVersion }>>(`/resumes/${resumeId}/versions/${versionId}/duplicate`);
+    return res.data.data.version;
+  },
 };

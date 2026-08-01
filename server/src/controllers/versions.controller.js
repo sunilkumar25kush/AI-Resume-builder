@@ -15,3 +15,8 @@ export const restoreVersion = asyncHandler(async (req, res) => {
   const resume = await versionsService.restoreVersion(req.user.id, req.params.id, req.params.versionId);
   res.json({ success: true, data: { resume } });
 });
+
+export const duplicateVersion = asyncHandler(async (req, res) => {
+  const version = await versionsService.duplicateVersion(req.user.id, req.params.id, req.params.versionId);
+  res.status(201).json({ success: true, data: { version } });
+});
