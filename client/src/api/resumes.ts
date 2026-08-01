@@ -30,6 +30,12 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
+  /** AI-generate an optimized resume against a job description (saved as a new resume). */
+  async generate(id: string, jdId: string): Promise<Resume> {
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}/generate`, { jdId });
+    return res.data.data.resume;
+  },
+
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/resumes/${id}`);
   },

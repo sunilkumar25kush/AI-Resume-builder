@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { optimizationsApi } from "@/api/optimizations";
+import { resumesApi } from "@/api/resumes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,6 +119,7 @@ export default function OptimizeResultPage() {
   const [optimization, setOptimization] = useState<Optimization | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -153,6 +155,19 @@ export default function OptimizeResultPage() {
     }
   };
 
+  const onGenerate = async () => {
+    if (!optimization) return;
+    setGenerating(true);
+    try {
+      const generated = await resumesApi.generate(optimization.resumeId, optimization.jdId);
+      toast.success("Optimized resume generated");
+      navigate(`/resumes/${generated._id}/edit`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+      setGenerating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -185,6 +200,24 @@ export default function OptimizeResultPage() {
           {deleting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
         </Button>
       </div>
+
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+              Generate optimized resume
+            </p>
+            <p className="text-xs text-muted-foreground">
+              AI rewrites your resume for this job description — companies, dates and facts stay untouched, only wording improves. Takes 30–120 seconds.
+            </p>
+          </div>
+          <Button onClick={() => void onGenerate()} disabled={generating} className="shrink-0">
+            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="mr-2 h-4 w-4" aria-hidden />}
+            {generating ? "Generating…" : "Generate"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

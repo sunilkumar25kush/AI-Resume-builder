@@ -126,7 +126,12 @@ AI Resume Builder/
 - **server or client:** PDF via react-pdf (browser) or server-side puppeteer; DOCX via `docx` lib. Template-aware export.
 - **Verify:** downloads open correctly, content matches preview, file size sane.
 
-### M11 — Generators (Cover Letter / LinkedIn / Interview Qs / Portfolio)
+### M11 — AI Resume Generation ✅ (spec core feature)
+- **server:** `POST /api/resumes/:id/generate` — truth-preserving rewrite (summary + descriptions improved, facts verbatim from original, skills never invented, entries never dropped), merged as a NEW resume doc (original untouched).
+- **client:** Optimize result page → "Generate optimized resume" CTA → opens generated resume in editor.
+- **Verify:** generate 201, facts match original, invented data rejected (unit), cross-user 404.
+
+### M11b — Generators (Cover Letter / LinkedIn / Interview Qs / Portfolio)
 - **server:** generator service + prompts, history model.
 - **client:** generator pages with copy-to-clipboard, download (txt/md), regenerate.
 - **Verify:** each generator returns usable content, loading states, copy works.
