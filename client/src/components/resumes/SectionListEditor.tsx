@@ -15,13 +15,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { useFieldArray, useFormContext, type Path } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch, type Path } from "react-hook-form";
 
+import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { EditFormValues } from "@/components/resumes/editorForm";
+import type { AssistSection } from "@/api/ai";
 
 interface FieldDef {
   key: string;
@@ -35,6 +37,8 @@ interface SectionListEditorProps<N extends "experience" | "education" | "project
   fieldDefs: FieldDef[];
   emptyEntry: EditFormValues[N][number];
   addLabel: string;
+  /** When set, each entry row gets an AI-assist menu that rewrites its description. */
+  assistSection?: "experience" | "education" | "project";
 }
 
 /** One sortable row: drag handle + fields + remove. */
@@ -43,15 +47,19 @@ function SortableRow({
   index,
   name,
   fieldDefs,
+  assistSection,
   onRemove,
 }: {
   id: string;
   index: number;
   name: "experience" | "education" | "projects";
   fieldDefs: FieldDef[];
+  assistSection?: "experience" | "education" | "project";
   onRemove: () => void;
 }) {
-  const { register } = useFormContext<EditFormValues>();
+  const { control, register, setValue } = useFormContext<EditFormValues>();
+  const rowPath = `${name}.${index}` as Path<EditFormValues>;
+  const entry = useWatch<EditFormValues>({ control, name: rowPath });
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   return (
@@ -84,19 +92,31 @@ function SortableRow({
         ))}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="cursor-grab text-muted-foreground active:cursor-grabbing"
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          aria-label={`Drag to reorder ${name} entry ${index + 1}`}
-        >
-          <GripVertical className="h-4 w-4" aria-hidden />
-          Drag
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="cursor-grab text-muted-foreground active:cursor-grabbing"
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-label={`Drag to reorder ${name} entry ${index + 1}`}
+          >
+            <GripVertical className="h-4 w-4" aria-hidden />
+            Drag
+          </Button>
+          {assistSection ? (
+            <AiAssistMenu
+              section={assistSection as AssistSection}
+              getContent={() => entry}
+              onResult={(result) =>
+                setValue(`${rowPath}.description` as Path<EditFormValues>, (result as { description?: string }).description ?? "")
+              }
+              compact
+            />
+          ) : null}
+        </div>
         <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={onRemove}>
           <Trash2 className="mr-1.5 h-4 w-4" aria-hidden />
           Remove
@@ -112,6 +132,7 @@ export function SectionListEditor<N extends "experience" | "education" | "projec
   fieldDefs,
   emptyEntry,
   addLabel,
+  assistSection,
 }: SectionListEditorProps<N>) {
   const { control } = useFormContext<EditFormValues>();
   const { fields, append, remove, move } = useFieldArray({ control, name });
@@ -144,6 +165,7 @@ export function SectionListEditor<N extends "experience" | "education" | "projec
                   index={index}
                   name={name}
                   fieldDefs={fieldDefs}
+                  assistSection={assistSection}
                   onRemove={() => remove(index)}
                 />
               ))}

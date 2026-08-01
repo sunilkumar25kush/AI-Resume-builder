@@ -108,7 +108,7 @@ AI Resume Builder/
 - **Verify:** both providers respond to a test prompt via a `/api/ai/ping` (dev-only) route; provider switch via env.
 
 ### M7 — AI Resume Optimization ✅
-- **server:** `Optimization` model, optimizer service — ATS score, match % vs JD, missing skills, keyword suggestions; prompt engineering for consistent JSON; streaming optional.
+- **server:** `Optimization` model, optimizer service — ATS score, match % vs JD, missing skills, keyword suggestions; prompt engineering for consistent JSON.
 - **client:** Optimize page — pick resume + JD → run → results dashboard (score ring, match bar, missing-skill chips, keyword table), save to history.
 - **Verify:** deterministic JSON parse, sensible scores on sample data, loading/skeleton/error states, history list.
 
@@ -136,7 +136,12 @@ AI Resume Builder/
 - **client:** generator pages with copy-to-clipboard, download (txt/md), regenerate.
 - **Verify:** each generator returns usable content, loading states, copy works.
 
-### M12 — Dashboard Analytics
+### M12 — Per-Section AI Assist ✅ (spec)
+- **server:** `POST /api/ai/assist` — 5 section types × 9 actions (improve/shorten/expand/rewrite/professional/technical/entry/senior/executive); entry facts verbatim, only writing rewritten; skills never invented.
+- **client:** editor me har section pe Sparkles dropdown — summary/skills cards + har experience/education/project row.
+- **Verify:** 200 with improved content, facts preserved, skills subset, 400 on invalid action/section, 401 unauth.
+
+### M12b — Dashboard Analytics
 - **server:** aggregation endpoints (optimizations count, avg ATS score trend, resume count, activity).
 - **client:** analytics cards + charts (recharts), skeletons, empty states.
 - **Verify:** numbers match DB, responsive charts.

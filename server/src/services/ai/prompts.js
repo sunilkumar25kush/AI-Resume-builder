@@ -62,3 +62,49 @@ ${JSON.stringify(resume, null, 2)}
 JOB DESCRIPTION:
 ${JSON.stringify(jd, null, 2)}`;
 }
+
+const ASSIST_BASE = `You are an expert resume writing assistant. Apply the instruction to the given content only.
+STRICT RULES:
+- Never invent or change facts: companies, titles, dates, institutions, names, links, numbers.
+- Never add content that is not already implied by the given content.
+- Rewrite ONLY the writing (wording, structure, tone, length).
+- Return ONLY the improved content — no explanations, no preamble, no markdown.
+
+INSTRUCTION:`;
+
+/** Action-specific instruction lines (appended after ASSIST_BASE). */
+export const ASSIST_ACTIONS = {
+  improve: "Improve the writing quality: stronger phrasing, clearer structure, more professional.",
+  shorten: "Shorten it: keep the key facts, cut filler. Aim for roughly half the length.",
+  expand: "Expand it with more detail while keeping every fact true — flesh out ideas already present.",
+  rewrite: "Rewrite it from scratch, keeping every fact identical, improving flow and impact.",
+  professional: "Rewrite in a professional, corporate tone — precise, confident, no slang.",
+  technical: "Rewrite in a technical tone — specific, concrete, using precise engineering vocabulary.",
+  entry: "Rewrite for an entry-level audience: emphasize potential, learning, and fundamentals.",
+  senior: "Rewrite for a senior-level audience: emphasize leadership, architecture, and ownership.",
+  executive: "Rewrite in an executive tone: strategic, concise, results-oriented.",
+};
+
+const ASSIST_FORMATS = {
+  summary: "Return the improved text as a single plain string (no quotes, no markdown).",
+  skills: "Return ONLY a JSON array of strings (no other text). Keep the same skills; you may reorder or reword them.",
+  entry: `Return ONLY a JSON object with exactly these keys, keeping the fact fields (title/company/location/dates/degree/institution/name/link) VERBATIM identical to the input:
+{
+  "title": string,
+  "company": string,
+  "location": string,
+  "startDate": string,
+  "endDate": string,
+  "description": string
+}
+Only the "description" value may be rewritten. For section "education" use degree/institution instead of title/company; for "project" use name/link/description.`,
+};
+
+/** Build the prompt for a single-section AI assist call. */
+export function buildAssistPrompt({ section, action, content }) {
+  const instruction = ASSIST_ACTIONS[action] ?? ASSIST_ACTIONS.improve;
+  const formatKey = ["experience", "education", "project"].includes(section) ? "entry" : section;
+  const format = ASSIST_FORMATS[formatKey] ?? ASSIST_FORMATS.summary;
+  const serialized = typeof content === "string" ? content : JSON.stringify(content, null, 2);
+  return `${ASSIST_BASE} ${instruction}\n${format}\n\nSECTION: ${section}\nCONTENT:\n${serialized}`;
+}

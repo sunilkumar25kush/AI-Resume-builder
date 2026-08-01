@@ -3,7 +3,11 @@ import { Router } from "express";
 import { env } from "../config/env.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { protect } from "../middlewares/auth.js";
+import { validate } from "../middlewares/validate.js";
 import { pingProvider } from "../services/ai/index.js";
+import { assist } from "../controllers/assist.controller.js";
+import { assistSchema } from "../validations/assist.js";
 
 const router = Router();
 
@@ -25,5 +29,8 @@ router.get(
     res.json(ApiResponse.ok(result, "AI provider is responding"));
   }),
 );
+
+// Per-section AI assist (rewrite one summary/entry/skill set).
+router.post("/assist", protect, validate({ body: assistSchema }), assist);
 
 export default router;

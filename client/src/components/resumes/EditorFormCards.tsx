@@ -1,10 +1,12 @@
 import { useFormContext } from "react-hook-form";
 
+import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { SectionListEditor } from "@/components/resumes/SectionListEditor";
 import {
   EMPTY_EDUCATION,
   EMPTY_EXPERIENCE,
   EMPTY_PROJECT,
+  splitSkills,
   type EditFormValues,
 } from "@/components/resumes/editorForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +24,7 @@ const CONTACT_FIELDS: Array<[keyof EditFormValues["contact"], string]> = [
 
 /** All editable resume sections — rendered inside a FormProvider. */
 export function EditorFormCards() {
-  const { register } = useFormContext<EditFormValues>();
+  const { register, getValues, setValue } = useFormContext<EditFormValues>();
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,8 +44,15 @@ export function EditorFormCards() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Summary</CardTitle>
+        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base">Summary</CardTitle>
+          </div>
+          <AiAssistMenu
+            section="summary"
+            getContent={() => getValues("summary")}
+            onResult={(result) => setValue("summary", result as string)}
+          />
         </CardHeader>
         <CardContent>
           <Textarea id="summary" rows={4} placeholder="Professional summary…" {...register("summary")} />
@@ -51,9 +60,16 @@ export function EditorFormCards() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Skills</CardTitle>
-          <CardDescription>One per line — or separated by commas</CardDescription>
+        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base">Skills</CardTitle>
+            <CardDescription>One per line — or separated by commas</CardDescription>
+          </div>
+          <AiAssistMenu
+            section="skills"
+            getContent={() => splitSkills(getValues("skillsText"))}
+            onResult={(result) => setValue("skillsText", (result as string[]).join("\n"))}
+          />
         </CardHeader>
         <CardContent>
           <Textarea id="skillsText" rows={5} placeholder={"JavaScript\nReact\nNode.js"} {...register("skillsText")} />
@@ -70,6 +86,7 @@ export function EditorFormCards() {
             name="experience"
             addLabel="Add experience"
             emptyEntry={EMPTY_EXPERIENCE}
+            assistSection="experience"
             fieldDefs={[
               { key: "title", label: "Job title" },
               { key: "company", label: "Company" },
@@ -92,6 +109,7 @@ export function EditorFormCards() {
             name="education"
             addLabel="Add education"
             emptyEntry={EMPTY_EDUCATION}
+            assistSection="education"
             fieldDefs={[
               { key: "degree", label: "Degree" },
               { key: "institution", label: "Institution" },
@@ -113,6 +131,7 @@ export function EditorFormCards() {
             name="projects"
             addLabel="Add project"
             emptyEntry={EMPTY_PROJECT}
+            assistSection="project"
             fieldDefs={[
               { key: "name", label: "Project name" },
               { key: "link", label: "Link" },
