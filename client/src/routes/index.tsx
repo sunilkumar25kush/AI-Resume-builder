@@ -17,7 +17,7 @@ const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
 const ResumesPage = lazy(() => import("@/pages/ResumesPage"));
 const ResumePreviewPage = lazy(() => import("@/pages/ResumePreviewPage"));
-const ResumeEditPage = lazy(() => import("@/pages/ResumeEditPage"));
+const ResumeEditorPage = lazy(() => import("@/pages/ResumeEditorPage"));
 const JDsPage = lazy(() => import("@/pages/JDsPage"));
 const JDPreviewPage = lazy(() => import("@/pages/JDPreviewPage"));
 const JDEditPage = lazy(() => import("@/pages/JDEditPage"));
@@ -80,7 +80,7 @@ export const router = createBrowserRouter([
         path: "/resumes/:id/edit",
         element: (
           <ProtectedRoute>
-            <ResumeEditPage />
+            <ResumeEditorPage />
           </ProtectedRoute>
         ),
       },

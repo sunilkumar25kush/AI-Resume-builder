@@ -17,7 +17,10 @@ export const getResume = asyncHandler(async (req, res) => {
 });
 
 export const updateResume = asyncHandler(async (req, res) => {
-  const resume = await resumeService.updateResume(req.user.id, req.params.id, { parsedData: req.body.parsedData });
+  const update = {};
+  if (req.validatedBody.parsedData) update.parsedData = req.validatedBody.parsedData;
+  if (req.validatedBody.template) update.template = req.validatedBody.template;
+  const resume = await resumeService.updateResume(req.user.id, req.params.id, update);
   res.json({ success: true, data: { resume } });
 });
 

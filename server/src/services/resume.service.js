@@ -51,7 +51,14 @@ export async function getResume(userId, resumeId) {
 }
 
 export async function updateResume(userId, resumeId, update) {
-  const resume = await Resume.findOneAndUpdate({ _id: resumeId, user: userId }, update, { new: true, runValidators: true })
+  // $set with dotted paths so partial parsedData patches never wipe
+  // the sibling sections (nested object assignment would replace them).
+  const set = {};
+  if (update.parsedData) {
+    for (const [key, value] of Object.entries(update.parsedData)) set[`parsedData.${key}`] = value;
+  }
+  if (update.template) set.template = update.template;
+  const resume = await Resume.findOneAndUpdate({ _id: resumeId, user: userId }, { $set: set }, { new: true, runValidators: true })
     .select("-filePath -__v")
     .lean();
   if (!resume) throw new ApiError(404, "Resume not found");

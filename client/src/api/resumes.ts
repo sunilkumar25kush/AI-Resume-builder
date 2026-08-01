@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { ApiEnvelope, ParsedResumeData, Resume } from "@/types";
+import type { ApiEnvelope, ParsedResumeData, Resume, ResumeTemplate } from "@/types";
 
 export const resumesApi = {
   async list(): Promise<Resume[]> {
@@ -25,8 +25,8 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
-  async update(id: string, parsedData: Partial<ParsedResumeData>): Promise<Resume> {
-    const res = await apiClient.patch<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`, { parsedData });
+  async update(id: string, update: { parsedData?: Partial<ParsedResumeData>; template?: ResumeTemplate }): Promise<Resume> {
+    const res = await apiClient.patch<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`, update);
     return res.data.data.resume;
   },
 

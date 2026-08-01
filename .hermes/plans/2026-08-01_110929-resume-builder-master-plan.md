@@ -112,7 +112,7 @@ AI Resume Builder/
 - **client:** Optimize page — pick resume + JD → run → results dashboard (score ring, match bar, missing-skill chips, keyword table), save to history.
 - **Verify:** deterministic JSON parse, sensible scores on sample data, loading/skeleton/error states, history list.
 
-### M8 — Resume Editor (Drag & Drop + Templates + Live Preview)
+### M8 — Resume Editor (Drag & Drop + Templates + Live Preview) ✅
 - **client:** editor with dnd-kit section reorder, section add/edit forms (RHF+Zod), 3-4 built-in templates, live preview pane (desktop side-by-side, mobile toggle), autosave (debounced).
 - **server:** update endpoints for Resume sections, autosave persistence.
 - **Verify:** reorder persists, template switch, preview matches data, mobile usability.

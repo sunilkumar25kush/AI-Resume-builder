@@ -38,12 +38,15 @@ export interface ParsedResumeData {
   projects: ProjectEntry[];
 }
 
+export type ResumeTemplate = "classic" | "modern" | "minimal" | "compact";
+
 export interface Resume {
   _id: string;
   fileName: string;
   fileType: string;
   fileSize: number;
   parsedData: ParsedResumeData;
+  template: ResumeTemplate;
   createdAt: string;
   updatedAt: string;
 }

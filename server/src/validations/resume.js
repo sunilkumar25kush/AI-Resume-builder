@@ -40,6 +40,21 @@ export const parsedDataSchema = z.object({
   projects: z.array(projectEntrySchema).max(100).optional().default([]),
 });
 
+/**
+ * PATCH shape — top-level fields are optional WITHOUT defaults so that
+ * only the keys the client actually sent end up in the $set (defaults
+ * would silently overwrite sibling sections with empty values).
+ */
+const parsedDataUpdateSchema = z.object({
+  summary: z.string().trim().max(10000).optional(),
+  contact: contactSchema.optional(),
+  skills: z.array(z.string().trim().max(100)).max(500).optional(),
+  experience: z.array(experienceEntrySchema).max(100).optional(),
+  education: z.array(educationEntrySchema).max(100).optional(),
+  projects: z.array(projectEntrySchema).max(100).optional(),
+});
+
 export const updateResumeSchema = z.object({
-  parsedData: parsedDataSchema.partial(),
+  parsedData: parsedDataUpdateSchema.optional(),
+  template: z.enum(["classic", "modern", "minimal", "compact"]).optional(),
 });

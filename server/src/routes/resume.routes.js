@@ -19,7 +19,7 @@ router.use(protect);
 router.post("/", uploadResumeMulter.single("resume"), uploadResume);
 router.get("/", listResumes);
 router.get("/:id", getResume);
-router.patch("/:id", validate(updateResumeSchema), updateResume);
+router.patch("/:id", validate({ body: updateResumeSchema }), updateResume);
 router.delete("/:id", deleteResume);
 
 export default router;
