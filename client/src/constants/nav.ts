@@ -35,7 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [
       { label: "Dashboard", href: "/", icon: LayoutDashboard },
-      { label: "Resume Builder", icon: FileText, soon: true },
+      { label: "Resume Builder", href: "/resumes", icon: FileText },
       { label: "AI Optimizer", icon: Wand2, soon: true },
     ],
   },

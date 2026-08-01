@@ -1,9 +1,10 @@
 import { FileText, ScanSearch, Wand2, Briefcase } from "lucide-react";
+import { Link } from "react-router";
 
 import { useAuthStore } from "@/stores/auth";
 
 const features = [
-  { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Soon" },
+  { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Live", to: "/resumes" },
   { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Soon" },
   { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Soon" },
   { icon: Briefcase, title: "Generators", description: "Cover letters, LinkedIn summaries, interview questions.", stage: "Soon" },
@@ -32,23 +33,33 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {features.map(({ icon: Icon, title, description, stage }) => (
-          <article
-            key={title}
-            className="flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/50"
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Icon className="h-6 w-6" aria-hidden />
-            </span>
-            <div className="flex flex-col gap-1">
-              <h2 className="font-semibold">{title}</h2>
-              <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-            <span className="mt-auto w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-              {stage}
-            </span>
-          </article>
-        ))}
+          {features.map(({ icon: Icon, title, description, stage, to }) => {
+            const content = (
+              <>
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-6 w-6" aria-hidden />
+                </span>
+                <div className="flex flex-col gap-1">
+                  <h2 className="font-semibold">{title}</h2>
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+                <span className="mt-auto w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {stage}
+                </span>
+              </>
+            );
+            const className =
+              "flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/50";
+            return to ? (
+              <Link key={title} to={to} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <article key={title} className={className}>
+                {content}
+              </article>
+            );
+          })}
       </section>
     </div>
   );

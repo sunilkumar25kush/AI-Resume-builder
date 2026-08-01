@@ -93,7 +93,7 @@ AI Resume Builder/
 - Responsive layout: desktop sidebar, tablet collapsible, mobile bottom-nav + drawer. Theme toggle. User profile page (edit, avatar upload via multer), Settings page, Notifications (bell + list, read/unread).
 - **Verify:** 320→1920px widths, no horizontal scroll, keyboard nav, ARIA labels.
 
-### M4 — Resume Upload + Parser
+### M4 — Resume Upload + Parser ✅
 - **server:** `Resume` model, multer upload (pdf/docx, size/type limits), parsing service — pdf-parse + mammoth → normalized JSON (contact, education, experience, skills, projects...), validation.
 - **client:** Upload page (drag-drop, progress, skeletons, empty/error states), parsed resume preview + edit before save.
 - **Verify:** PDF + DOCX parse, garbage file rejected, big file rejected, Unicode text handled.

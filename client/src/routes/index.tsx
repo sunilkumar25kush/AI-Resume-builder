@@ -15,6 +15,9 @@ const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
+const ResumesPage = lazy(() => import("@/pages/ResumesPage"));
+const ResumePreviewPage = lazy(() => import("@/pages/ResumePreviewPage"));
+const ResumeEditPage = lazy(() => import("@/pages/ResumeEditPage"));
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +52,30 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <NotificationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/resumes",
+        element: (
+          <ProtectedRoute>
+            <ResumesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/resumes/:id",
+        element: (
+          <ProtectedRoute>
+            <ResumePreviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/resumes/:id/edit",
+        element: (
+          <ProtectedRoute>
+            <ResumeEditPage />
           </ProtectedRoute>
         ),
       },

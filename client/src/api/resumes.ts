@@ -1,0 +1,36 @@
+import { apiClient } from "./client";
+import type { ApiEnvelope, ParsedResumeData, Resume } from "@/types";
+
+export const resumesApi = {
+  async list(): Promise<Resume[]> {
+    const res = await apiClient.get<ApiEnvelope<{ resumes: Resume[] }>>("/resumes");
+    return res.data.data.resumes;
+  },
+
+  async upload(file: File, onProgress?: (percent: number) => void): Promise<Resume> {
+    const form = new FormData();
+    form.append("resume", file);
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes", form, {
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      },
+    });
+    return res.data.data.resume;
+  },
+
+  async get(id: string): Promise<Resume> {
+    const res = await apiClient.get<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`);
+    return res.data.data.resume;
+  },
+
+  async update(id: string, parsedData: Partial<ParsedResumeData>): Promise<Resume> {
+    const res = await apiClient.patch<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`, { parsedData });
+    return res.data.data.resume;
+  },
+
+  async remove(id: string): Promise<void> {
+    await apiClient.delete(`/resumes/${id}`);
+  },
+};
