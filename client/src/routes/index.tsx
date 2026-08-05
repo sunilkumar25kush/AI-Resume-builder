@@ -24,6 +24,8 @@ const JDEditPage = lazy(() => import("@/pages/JDEditPage"));
 const OptimizationsPage = lazy(() => import("@/pages/OptimizationsPage"));
 const OptimizeResultPage = lazy(() => import("@/pages/OptimizeResultPage"));
 const ResumeWizardPage = lazy(() => import("@/pages/ResumeWizardPage"));
+const AtsCheckPage = lazy(() => import("@/pages/AtsCheckPage"));
+const ScratchBuildPage = lazy(() => import("@/pages/ScratchBuildPage"));
 
 export const router = createBrowserRouter([
   {
@@ -66,6 +68,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ResumeWizardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/ats-check",
+        element: (
+          <ProtectedRoute>
+            <AtsCheckPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/build",
+        element: (
+          <ProtectedRoute>
+            <ScratchBuildPage />
           </ProtectedRoute>
         ),
       },

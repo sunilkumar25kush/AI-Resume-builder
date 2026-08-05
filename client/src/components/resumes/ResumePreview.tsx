@@ -38,14 +38,14 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       </header>
 
       {!hidden("summary") && data.summary ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-summary">
           <h2 className="rv-heading">Summary</h2>
           <p className="rv-summary-text whitespace-pre-line">{data.summary}</p>
         </section>
       ) : null}
 
       {!hidden("skills") && data.skills.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-skills">
           <h2 className="rv-heading">Skills</h2>
           <div className="rv-skills">
             {data.skills.map((skill) => (
@@ -58,7 +58,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("experience") && data.experience.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-experience">
           <h2 className="rv-heading">Experience</h2>
           {data.experience.map((entry, i) => (
             <article key={i} className="rv-entry">
@@ -80,7 +80,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("education") && data.education.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-education">
           <h2 className="rv-heading">Education</h2>
           {data.education.map((entry, i) => (
             <article key={i} className="rv-entry">
@@ -100,7 +100,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("projects") && data.projects.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-projects">
           <h2 className="rv-heading">Projects</h2>
           {data.projects.map((entry, i) => (
             <article key={i} className="rv-entry">
@@ -118,7 +118,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("certifications") && data.certifications.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-certifications">
           <h2 className="rv-heading">Certifications</h2>
           <div className="rv-skills">
             {data.certifications.map((item) => (
@@ -131,7 +131,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("languages") && data.languages.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-languages">
           <h2 className="rv-heading">Languages</h2>
           <div className="rv-skills">
             {data.languages.map((item) => (
@@ -144,7 +144,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       ) : null}
 
       {!hidden("awards") && data.awards.length > 0 ? (
-        <section className="rv-section">
+        <section className="rv-section rv-section-awards">
           <h2 className="rv-heading">Awards</h2>
           {data.awards.map((item) => (
             <p key={item} className="rv-meta">
@@ -157,7 +157,7 @@ export function ResumePreview({ data, template, title, className }: ResumePrevie
       {(data.customSections ?? []).length > 0
         ? data.customSections.map((section, i) =>
             section.title || section.content ? (
-              <section key={i} className="rv-section">
+              <section key={i} className="rv-section rv-section-custom">
                 <h2 className="rv-heading">{section.title || "Custom"}</h2>
                 <p className="rv-summary-text whitespace-pre-line">{section.content}</p>
               </section>

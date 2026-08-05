@@ -1,5 +1,5 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
-import { Eye, EyeOff, Plus, Trash2, type LucideIcon } from "lucide-react";
+import { Eye, EyeOff, Plus, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 
 import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { SectionListEditor } from "@/components/resumes/SectionListEditor";
@@ -8,7 +8,11 @@ import {
   EMPTY_EDUCATION,
   EMPTY_EXPERIENCE,
   EMPTY_PROJECT,
+  aiChangesForSection,
+  pendingSkillChanges,
+  skillChangesApplied,
   splitSkills,
+  textChangesApplied,
   type EditFormValues,
 } from "@/components/resumes/editorForm";
 import { Button } from "@/components/ui/button";
@@ -16,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import type { AiChange } from "@/types";
 
 const CONTACT_FIELDS: Array<[keyof EditFormValues["contact"], string]> = [
   ["email", "Email"],
@@ -30,11 +36,13 @@ interface SectionCardProps {
   description?: string;
   sectionKey: string;
   icon?: LucideIcon;
+  /** Green highlight: the AI added/recommended content in this section. */
+  highlighted?: boolean;
   children: React.ReactNode;
 }
 
 /** Section card with a hide/show toggle (hidden sections skip preview + export). */
-function SectionCard({ title, description, sectionKey, icon: Icon, children }: SectionCardProps) {
+function SectionCard({ title, description, sectionKey, icon: Icon, highlighted, children }: SectionCardProps) {
   const { getValues, setValue } = useFormContext<EditFormValues>();
   const hidden = getValues("hiddenSections").includes(sectionKey);
 
@@ -48,13 +56,19 @@ function SectionCard({ title, description, sectionKey, icon: Icon, children }: S
   };
 
   return (
-    <Card className={hidden ? "opacity-60" : ""}>
+    <Card className={cn(hidden && "opacity-60", highlighted && "border-emerald-400 ring-1 ring-emerald-300")}>
       <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="flex items-center gap-2 text-base">
             {Icon ? <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
             {title}
             {hidden ? <span className="text-xs font-normal text-muted-foreground">(hidden)</span> : null}
+            {highlighted ? (
+              <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                <Sparkles className="h-3 w-3" aria-hidden />
+                AI added
+              </span>
+            ) : null}
           </CardTitle>
           {description ? <CardDescription>{description}</CardDescription> : null}
         </div>
@@ -75,9 +89,33 @@ function SectionCard({ title, description, sectionKey, icon: Icon, children }: S
 }
 
 /** All editable resume sections — rendered inside a FormProvider. */
-export function EditorFormCards() {
+export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) {
   const { register, getValues, setValue, control } = useFormContext<EditFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: "customSections" });
+
+  // Green-highlight detection: a section lights up while the form still
+  // contains the content the AI added; editing it away drops the highlight.
+  const summaryChanges = aiChangesForSection(aiChanges, "summary");
+  const summaryHighlighted = summaryChanges.length > 0 && textChangesApplied(summaryChanges, [getValues("summary")]);
+  const skillsChanges = aiChangesForSection(aiChanges, "skills");
+  const skillsHighlighted = skillsChanges.length > 0 && skillChangesApplied(skillsChanges, getValues("skillsText"));
+  const pendingSkills = pendingSkillChanges(skillsChanges, getValues("skillsText"));
+  const experienceChanges = aiChangesForSection(aiChanges, "experience");
+  const experienceHighlighted =
+    experienceChanges.length > 0 &&
+    textChangesApplied(experienceChanges, getValues("experience").map((entry) => entry.description));
+  const projectsChanges = aiChangesForSection(aiChanges, "projects");
+  const projectsHighlighted =
+    projectsChanges.length > 0 &&
+    textChangesApplied(
+      projectsChanges,
+      getValues("projects").flatMap((project) => [project.description, project.technologies]),
+    );
+
+  const applyPendingSkill = (change: AiChange) => {
+    const current = splitSkills(getValues("skillsText"));
+    setValue("skillsText", [...current, change.value].join("\n"), { shouldDirty: true });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,14 +140,14 @@ export function EditorFormCards() {
         </CardContent>
       </Card>
 
-      <SectionCard title="Summary" sectionKey="summary">
+      <SectionCard title="Summary" sectionKey="summary" highlighted={summaryHighlighted}>
         <div className="flex items-start justify-end gap-2">
           <AiAssistMenu section="summary" getContent={() => getValues("summary")} onResult={(result) => setValue("summary", result as string)} />
         </div>
         <Textarea id="summary" rows={4} placeholder="Professional summary…" {...register("summary")} />
       </SectionCard>
 
-      <SectionCard title="Skills" description="One per line — or separated by commas" sectionKey="skills">
+      <SectionCard title="Skills" description="One per line — or separated by commas" sectionKey="skills" highlighted={skillsHighlighted}>
         <div className="flex items-start justify-end gap-2">
           <AiAssistMenu
             section="skills"
@@ -117,10 +155,25 @@ export function EditorFormCards() {
             onResult={(result) => setValue("skillsText", (result as string[]).join("\n"))}
           />
         </div>
+        {pendingSkills.length > 0 ? (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-emerald-700">AI suggests adding:</span>
+            {pendingSkills.map((change) => (
+              <button
+                key={`${change.value}-${change.reason}`}
+                type="button"
+                onClick={() => applyPendingSkill(change)}
+                className="flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+              >
+                + {change.value}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <Textarea id="skillsText" rows={5} placeholder={"JavaScript\nReact\nNode.js"} {...register("skillsText")} />
       </SectionCard>
 
-      <SectionCard title="Experience" description="Drag the handle to reorder" sectionKey="experience">
+      <SectionCard title="Experience" description="Drag the handle to reorder" sectionKey="experience" highlighted={experienceHighlighted}>
         <SectionListEditor
           name="experience"
           addLabel="Add experience"
@@ -155,7 +208,7 @@ export function EditorFormCards() {
         />
       </SectionCard>
 
-      <SectionCard title="Projects" description="Drag the handle to reorder" sectionKey="projects">
+      <SectionCard title="Projects" description="Drag the handle to reorder" sectionKey="projects" highlighted={projectsHighlighted}>
         <SectionListEditor
           name="projects"
           addLabel="Add project"

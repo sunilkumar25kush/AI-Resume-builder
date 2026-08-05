@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { jdsApi } from "@/api/jds";
+import { jdsApi, type JdUpdateData } from "@/api/jds";
 import type { JobDescription } from "@/types";
 
 interface JdsState {
@@ -8,6 +8,7 @@ interface JdsState {
   loading: boolean;
   fetch: () => Promise<void>;
   prepend: (jd: JobDescription) => void;
+  update: (id: string, data: JdUpdateData) => Promise<JobDescription>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -26,6 +27,12 @@ export const useJdsStore = create<JdsState>((set) => ({
   },
 
   prepend: (jd) => set((state) => ({ items: [jd, ...state.items.filter((item) => item._id !== jd._id)] })),
+
+  update: async (id, data) => {
+    const updated = await jdsApi.update(id, data);
+    set((state) => ({ items: state.items.map((item) => (item._id === id ? updated : item)) }));
+    return updated;
+  },
 
   remove: async (id) => {
     await jdsApi.remove(id);

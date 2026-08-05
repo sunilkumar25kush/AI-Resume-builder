@@ -22,3 +22,14 @@ const shutdown = (signal) => {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// Never let a stray async error kill the server mid-request. Ollama/DB
+// hiccups surface as unhandled rejections; without these handlers Node
+// crashes the WHOLE process -> node --watch restarts -> every in-flight
+// AI request dies with 502/ECONNRESET. Log and keep serving instead.
+process.on("unhandledRejection", (reason) => {
+  console.error("[server] unhandledRejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[server] uncaughtException:", err);
+});

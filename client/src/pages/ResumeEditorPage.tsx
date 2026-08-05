@@ -2,13 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, Redo2, Undo2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";
+import { RenameDialog } from "@/components/common/RenameDialog";
 import { EditorFormCards } from "@/components/resumes/EditorFormCards";
+import { AiSuggestPanel } from "@/components/resumes/AiSuggestPanel";
+import { suggestionToChange } from "@/components/resumes/editorForm";
+import type { AiSuggestion } from "@/api/ai";
 import { PreviewPane } from "@/components/resumes/PreviewPane";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
 import { VersionDrawer } from "@/components/resumes/VersionDrawer";
@@ -16,7 +20,7 @@ import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Resume, ResumeTemplate } from "@/types";
+import type { AiChange, Resume, ResumeTemplate } from "@/types";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -54,6 +58,10 @@ export default function ResumeEditorPage() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [aiBannerDismissed, setAiBannerDismissed] = useState(false);
+  const [appliedSuggestions, setAppliedSuggestions] = useState<AiChange[]>([]);
 
   const lastSavedRef = useRef<string>("");
   const saveTimerRef = useRef<number | undefined>(undefined);
@@ -207,6 +215,9 @@ export default function ResumeEditorPage() {
             <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
               <FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden />
               <span className="truncate">{resume.fileName}</span>
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setRenameOpen(true)} aria-label="Rename resume">
+                <PenLine className="h-4 w-4" aria-hidden />
+              </Button>
             </h1>
           </div>
           <div className="flex items-center gap-1">
@@ -223,6 +234,23 @@ export default function ResumeEditorPage() {
             <SaveIndicator state={saveState} />
           </div>
         </div>
+
+        {resume.aiChanges.length > 0 && !aiBannerDismissed ? (
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50/70 p-4">
+            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+            <div className="flex flex-1 flex-col gap-1">
+              <p className="text-sm font-medium text-emerald-800">
+                AI added {resume.aiChanges.length} improvement{resume.aiChanges.length === 1 ? "" : "s"} — green highlights show what changed
+              </p>
+              <p className="text-xs text-emerald-700/80">
+                Edit karte hi highlight hat jata hai. Aap kisi bhi AI addition ko change ya remove kar sakte ho — yeh sirf suggestions hain.
+              </p>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAiBannerDismissed(true)}>
+              Dismiss
+            </Button>
+          </div>
+        ) : null}
 
         <Card>
           <CardHeader>
@@ -264,8 +292,14 @@ export default function ResumeEditorPage() {
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-2">
-          <div className={mobileTab === "edit" ? "" : "hidden lg:block"}>
-            <EditorFormCards />
+          <div className={`flex flex-col gap-6 ${mobileTab === "edit" ? "" : "hidden lg:flex"}`}>
+            <AiSuggestPanel
+              resumeId={resume._id}
+              onApplied={(suggestion: AiSuggestion) =>
+                setAppliedSuggestions((prev) => [...prev, suggestionToChange(suggestion)])
+              }
+            />
+            <EditorFormCards aiChanges={[...(resume.aiChanges ?? []), ...appliedSuggestions]} />
           </div>
           <div className={mobileTab === "preview" ? "lg:sticky lg:top-4" : "hidden lg:sticky lg:top-4 lg:block"}>
             <PreviewPane data={previewData} template={template} title={title} />
@@ -274,6 +308,29 @@ export default function ResumeEditorPage() {
       </div>
 
       <VersionDrawer resume={resume} open={historyOpen} onOpenChange={setHistoryOpen} onRestored={handleRestored} />
+
+      <RenameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title="Rename resume"
+        description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
+        value={title}
+        saving={renaming}
+        onSave={async (name) => {
+          setRenaming(true);
+          try {
+            const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
+            const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
+            setResume(updated);
+            toast.success("Resume renamed");
+            setRenameOpen(false);
+          } catch (error) {
+            toast.error(getApiErrorMessage(error));
+          } finally {
+            setRenaming(false);
+          }
+        }}
+      />
     </FormProvider>
   );
 }

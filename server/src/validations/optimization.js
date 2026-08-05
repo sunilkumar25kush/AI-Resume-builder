@@ -6,6 +6,17 @@ export const runOptimizationSchema = z.object({
   jdId: z.string().min(1),
 });
 
+/** One concrete addition the AI recommends (or made) to raise the ATS score. */
+const aiChangeSchema = z.object({
+  type: z
+    .enum(["add-skill", "add-keyword", "add-section", "improve-description", "add-technologies", "add-project"])
+    .catch("add-skill"),
+  section: z.string().max(100).default("skills"),
+  field: z.string().max(100).default("skills"),
+  value: z.string().max(2000).default(""),
+  reason: z.string().max(500).default(""),
+});
+
 /**
  * Normalizes whatever the AI returned into the guaranteed result shape —
  * a degraded score is still a usable score.
@@ -20,6 +31,7 @@ const optimizationResultSchema = z.object({
   grammarIssues: z.array(z.string().max(500)).max(30).catch([]),
   formattingSuggestions: z.array(z.string().max(500)).max(30).catch([]),
   keywordSuggestions: z.array(z.string().max(200)).max(50).catch([]),
+  changes: z.array(aiChangeSchema).max(50).catch([]),
   summary: z.string().max(2000).catch(""),
 });
 
@@ -44,6 +56,9 @@ export function normalizeResult(raw) {
     grammarIssues: unique(parsed.grammarIssues).slice(0, 30),
     formattingSuggestions: unique(parsed.formattingSuggestions).slice(0, 30),
     keywordSuggestions: unique(parsed.keywordSuggestions).slice(0, 50),
+    changes: parsed.changes
+      .filter((change) => typeof change.value === "string" && change.value.trim().length > 0)
+      .slice(0, 50),
     summary: parsed.summary,
   };
 }

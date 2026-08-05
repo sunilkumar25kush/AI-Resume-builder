@@ -94,6 +94,20 @@ export const EXPORT_STYLES: Record<ResumeTemplate, ExportStyle> = {
     headingSize: 11,
     bodySize: 10,
   },
+  "modern-pro": {
+    pdfFont: "Helvetica",
+    docxFont: "Calibri",
+    accent: "#2563eb",
+    headingSize: 11,
+    bodySize: 10,
+  },
+  "tech-engineer": {
+    pdfFont: "Helvetica",
+    docxFont: "Calibri",
+    accent: "#0f766e",
+    headingSize: 10.5,
+    bodySize: 10,
+  },
 };
 
 export function exportFileName(fileName: string, extension: string): string {

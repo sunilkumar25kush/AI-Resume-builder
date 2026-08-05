@@ -113,8 +113,21 @@ export async function runOptimization(userId, resumeId, jdId) {
   // Override every verifiable metric with the deterministic computation so a
   // hallucinating LLM can never inflate scores or invent matches.
   const metrics = computeMatchMetrics({ resume: resumeSnapshot(resume), jd });
+  // Changes: prefer the AI's concrete additions; fall back to the
+  // deterministic missing-skills list so the report always has actions.
+  const changes =
+    Array.isArray(aiResult.changes) && aiResult.changes.length > 0
+      ? aiResult.changes
+      : metrics.missingSkills.map((skill) => ({
+          type: "add-skill",
+          section: "skills",
+          field: "skills",
+          value: skill,
+          reason: "Missing skill from the job description",
+        }));
   const result = {
     ...aiResult,
+    changes,
     atsScore: metrics.atsScore,
     matchPercent: metrics.matchPercent,
     keywordDensity: metrics.keywordDensity,

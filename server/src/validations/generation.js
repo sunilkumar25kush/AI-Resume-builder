@@ -59,6 +59,21 @@ const generatedDataSchema = z.object({
         name: z.string().trim().max(200).optional(),
         description: z.string().trim().max(3000).optional(),
         link: z.string().trim().max(500).optional(),
+        technologies: z.string().trim().max(1000).optional(),
+      }),
+    )
+    .max(100)
+    .optional(),
+  changes: z
+    .array(
+      z.object({
+        type: z
+          .enum(["add-skill", "add-keyword", "add-section", "improve-description", "add-technologies", "add-project"])
+          .catch("add-skill"),
+        section: z.string().max(100).default("skills"),
+        field: z.string().max(100).default("skills"),
+        value: z.string().max(2000).default(""),
+        reason: z.string().max(500).default(""),
       }),
     )
     .max(100)
@@ -88,22 +103,47 @@ function mergeEntries(originalList, aiList, descKey) {
   return Array.from({ length: original.length }, (_, i) => mergeEntry(original[i], aiList[i], descKey));
 }
 
-/** Skills: allow AI to REORDER the original skills, never to invent new ones. */
-function mergeSkills(originalSkills, aiSkills) {
+/**
+ * Skills merge: keeps the original order, then appends JD-derived skills
+ * the AI added (up to `addedLimit`). The AI may also reorder the original
+ * skills so the JD's most-valued ones come first. Added skills are tracked
+ * by `extractAiChanges` so the editor can highlight them.
+ */
+function mergeSkills(originalSkills, aiSkills, addedLimit = 8) {
   const original = Array.isArray(originalSkills) ? originalSkills : [];
   if (!Array.isArray(aiSkills) || aiSkills.length === 0) return original;
-  const lower = new Set(original.map((skill) => skill.toLowerCase()));
-  const ordered = aiSkills.filter((skill) => lower.has(skill.toLowerCase()));
-  if (ordered.length === 0) return original;
-  const tail = original.filter((skill) => !ordered.some((o) => o.toLowerCase() === skill.toLowerCase()));
-  return [...ordered, ...tail];
+  const norm = (skill) => String(skill).toLowerCase().trim();
+  const originalLower = new Set(original.map(norm));
+  const ordered = aiSkills.filter((skill) => originalLower.has(norm(skill)));
+  const added = aiSkills.filter((skill) => !originalLower.has(norm(skill))).slice(0, addedLimit);
+  if (ordered.length === 0 && added.length === 0) return original;
+  const tail = original.filter((skill) => !ordered.some((o) => norm(o) === norm(skill)));
+  return [...ordered, ...tail, ...added];
+}
+
+/**
+ * Project merge: descriptions may be rewritten, and the AI may fill a
+ * missing "technologies" field (from the resume text or the JD stack).
+ */
+function mergeProjects(originalProjects, aiProjects) {
+  const original = Array.isArray(originalProjects) ? originalProjects : [];
+  if (!Array.isArray(aiProjects) || aiProjects.length === 0) return original;
+  return original.map((project, i) => {
+    const entry = { ...(project ?? {}) };
+    const ai = aiProjects[i];
+    const rewritten = ai?.description?.trim();
+    if (rewritten) entry.description = rewritten;
+    const technologies = ai?.technologies?.trim();
+    if (technologies && !String(entry.technologies ?? "").trim()) entry.technologies = technologies;
+    return entry;
+  });
 }
 
 /**
  * Merge the AI output over the original parsed data with truth
- * enforcement: the AI may rewrite summaries and descriptions, but factual
- * data (contact, companies, titles, dates, institutions, projects,
- * skills) always comes from the original resume.
+ * enforcement: the AI may rewrite summaries and descriptions, and add
+ * JD-derived skills + project technologies, but factual data (contact,
+ * companies, titles, dates, institutions) always comes from the original.
  */
 export function mergeGeneratedData(raw, original) {
   const parsed = generatedDataSchema.parse(raw ?? {});
@@ -115,7 +155,7 @@ export function mergeGeneratedData(raw, original) {
     skills: mergeSkills(orig.skills, parsed.skills),
     experience: mergeEntries(orig.experience, parsed.experience, "description"),
     education: mergeEntries(orig.education, parsed.education, "description"),
-    projects: mergeEntries(orig.projects, parsed.projects, "description"),
+    projects: mergeProjects(orig.projects, parsed.projects),
     certifications: orig.certifications ?? [],
     languages: orig.languages ?? [],
     awards: orig.awards ?? [],
@@ -148,6 +188,7 @@ export function mergeJdOnlyData(raw) {
             name: p.name.trim(),
             description: typeof p.description === "string" ? p.description.trim() : "",
             link: typeof p.link === "string" ? p.link.trim() : "",
+            technologies: typeof p.technologies === "string" ? p.technologies.trim() : "",
           }))
       : [],
     certifications: [],
@@ -156,4 +197,19 @@ export function mergeJdOnlyData(raw) {
     customSections: [],
     hiddenSections: [],
   };
+}
+
+/**
+ * Pull the "changes" the AI reported out of a generation response. Empty or
+ * malformed AI output falls back to the deterministic `fallback` list
+ * (usually missing JD skills), so the editor always has something to
+ * highlight.
+ */
+export function extractAiChanges(raw, fallback = []) {
+  const parsed = generatedDataSchema.parse(raw ?? {});
+  const changes = (parsed.changes ?? [])
+    .filter((change) => typeof change.value === "string" && change.value.trim().length > 0)
+    .slice(0, 100);
+  if (changes.length > 0) return changes;
+  return Array.isArray(fallback) ? fallback.slice(0, 50) : [];
 }

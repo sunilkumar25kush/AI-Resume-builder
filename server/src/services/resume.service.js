@@ -45,6 +45,42 @@ export async function listResumes(userId) {
     .lean();
 }
 
+/**
+ * Scratch-build entry point: a fresh resume with empty content, prefilled
+ * with the user's own name/email so they only fill in what's missing.
+ */
+export async function createBlankResume(userId, template, user) {
+  const parsedData = {
+    name: user?.name ?? "",
+    summary: "",
+    contact: {
+      email: user?.email ?? "",
+      phone: "",
+      location: "",
+      linkedin: "",
+      github: "",
+    },
+    skills: [],
+    experience: [],
+    education: [],
+    projects: [],
+    certifications: [],
+    languages: [],
+    awards: [],
+    customSections: [],
+    hiddenSections: [],
+  };
+  return Resume.create({
+    user: userId,
+    fileName: "untitled-resume.pdf",
+    fileType: "application/pdf",
+    fileSize: 0,
+    filePath: "",
+    parsedData,
+    template: template ?? "classic",
+  });
+}
+
 export async function getResume(userId, resumeId) {
   const resume = await Resume.findOne({ _id: resumeId, user: userId }).select("-filePath -__v").lean();
   if (!resume) throw new ApiError(404, "Resume not found");
@@ -59,6 +95,7 @@ export async function updateResume(userId, resumeId, update) {
     for (const [key, value] of Object.entries(update.parsedData)) set[`parsedData.${key}`] = value;
   }
   if (update.template) set.template = update.template;
+  if (update.fileName) set.fileName = update.fileName;
   const resume = await Resume.findOneAndUpdate({ _id: resumeId, user: userId }, { $set: set }, { new: true, runValidators: true })
     .select("-filePath -__v")
     .lean();

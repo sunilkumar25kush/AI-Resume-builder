@@ -79,6 +79,18 @@ export const RESUME_TEMPLATES: ResumeTemplateDef[] = [
     description: "Refined serif, thin rules and a rose-gold accent.",
     className: "resume-tpl-elegant",
   },
+  {
+    id: "modern-pro",
+    name: "Modern Professional",
+    description: "Two-column layout with a blue skills sidebar — classic tech-role look.",
+    className: "resume-tpl-modern-pro",
+  },
+  {
+    id: "tech-engineer",
+    name: "Tech Engineer",
+    description: "Skills-first, project-focused single column for developers.",
+    className: "resume-tpl-tech-engineer",
+  },
 ];
 
 export function getTemplate(id: ResumeTemplate | undefined): ResumeTemplateDef {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, PenLine, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { jdsApi } from "@/api/jds";
+import { RenameDialog } from "@/components/common/RenameDialog";
 import { JDSections } from "@/components/jds/JDSections";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,8 @@ export default function JDPreviewPage() {
   const [jd, setJd] = useState<JobDescription | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -78,6 +81,10 @@ export default function JDPreviewPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)} disabled={renaming} aria-label="Rename job description">
+            <PenLine className="mr-1.5 h-4 w-4" aria-hidden />
+            Rename
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link to={`/jds/${jd._id}/edit`}>
               <Pencil className="mr-1.5 h-4 w-4" aria-hidden />
@@ -98,6 +105,28 @@ export default function JDPreviewPage() {
           <JDSections jd={jd} />
         </CardContent>
       </Card>
+
+      <RenameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title="Rename job description"
+        description="Give this job description a clear name — it's shown in lists and the wizard."
+        value={jd.title || jd.fileName || ""}
+        saving={renaming}
+        onSave={async (name) => {
+          setRenaming(true);
+          try {
+            const updated = await jdsApi.update(jd._id, { title: name });
+            setJd(updated);
+            toast.success("Job description renamed");
+            setRenameOpen(false);
+          } catch (error) {
+            toast.error(getApiErrorMessage(error));
+          } finally {
+            setRenaming(false);
+          }
+        }}
+      />
     </div>
   );
 }

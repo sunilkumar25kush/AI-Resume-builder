@@ -1,3 +1,5 @@
+import type { AiChange } from "@/types/resume";
+
 export interface OptimizationResult {
   atsScore: number;
   matchPercent: number;
@@ -8,6 +10,7 @@ export interface OptimizationResult {
   grammarIssues: string[];
   formattingSuggestions: string[];
   keywordSuggestions: string[];
+  changes: AiChange[];
   summary: string;
 }
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FileText, Loader2, ScanSearch, Trash2, ChevronRight } from "lucide-react";
+import { FileText, Loader2, Pencil, ScanSearch, Trash2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { jdsApi } from "@/api/jds";
+import { RenameDialog } from "@/components/common/RenameDialog";
 import { EmptyState } from "@/components/common/EmptyState";
 import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,14 @@ function formatDate(value: string): string {
 }
 
 export default function JDsPage() {
-  const { items, loading, fetch, prepend, remove } = useJdsStore();
+  const { items, loading, fetch, prepend, update, remove } = useJdsStore();
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [parsing, setParsing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [renameTarget, setRenameTarget] = useState<JobDescription | null>(null);
+  const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
     void fetch();
@@ -157,6 +160,15 @@ export default function JDsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="text-muted-foreground opacity-60 transition-opacity hover:text-foreground group-hover:opacity-100"
+                    onClick={() => setRenameTarget(jd)}
+                    aria-label={`Rename ${jd.title || jd.fileName}`}
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-muted-foreground opacity-60 transition-opacity hover:text-destructive group-hover:opacity-100"
                     onClick={() => void onDelete(jd)}
                     aria-label={`Delete ${jd.title || jd.fileName}`}
@@ -170,6 +182,30 @@ export default function JDsPage() {
           </ul>
         )}
       </section>
+
+      <RenameDialog
+        open={renameTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameTarget(null);
+        }}
+        title="Rename job description"
+        description="Give this job description a clear name — it's shown in lists and the wizard."
+        value={renameTarget ? renameTarget.title || renameTarget.fileName || "" : ""}
+        saving={renaming}
+        onSave={async (name) => {
+          if (!renameTarget) return;
+          setRenaming(true);
+          try {
+            await update(renameTarget._id, { title: name });
+            toast.success("Job description renamed");
+            setRenameTarget(null);
+          } catch (error) {
+            toast.error(getApiErrorMessage(error));
+          } finally {
+            setRenaming(false);
+          }
+        }}
+      />
     </div>
   );
 }

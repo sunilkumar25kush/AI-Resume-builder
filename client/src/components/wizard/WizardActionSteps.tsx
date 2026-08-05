@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScoreRing } from "@/pages/OptimizeResultPage";
+import { ScoreRing } from "@/components/resumes/ScoreRing";
 import type { JobDescription, Optimization, Resume } from "@/types";
 import type { ExperienceLevel } from "@/components/wizard/WizardSteps";
 

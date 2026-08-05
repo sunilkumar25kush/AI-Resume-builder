@@ -64,7 +64,26 @@ export type ResumeTemplate =
   | "google"
   | "microsoft"
   | "harvard"
-  | "elegant";
+  | "elegant"
+  | "modern-pro"
+  | "tech-engineer";
+
+export type AiChangeType =
+  | "add-skill"
+  | "add-keyword"
+  | "add-section"
+  | "improve-description"
+  | "add-technologies"
+  | "add-project";
+
+/** One addition the AI made (or recommends) to raise the ATS score. */
+export interface AiChange {
+  type: AiChangeType;
+  section: string;
+  field: string;
+  value: string;
+  reason: string;
+}
 
 export interface Resume {
   _id: string;
@@ -72,6 +91,7 @@ export interface Resume {
   fileType: string;
   fileSize: number;
   parsedData: ParsedResumeData;
+  aiChanges: AiChange[];
   template: ResumeTemplate;
   createdAt: string;
   updatedAt: string;

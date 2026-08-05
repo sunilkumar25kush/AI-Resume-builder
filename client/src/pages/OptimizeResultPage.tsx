@@ -7,48 +7,13 @@ import { getApiErrorMessage } from "@/api/client";
 import { optimizationsApi } from "@/api/optimizations";
 import { resumesApi } from "@/api/resumes";
 import { DesignChoiceDialog } from "@/components/resumes/DesignChoiceDialog";
+import { ScoreRing } from "@/components/resumes/ScoreRing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Optimization, OptimizationResult, Resume } from "@/types";
-
-const RING_RADIUS = 54;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-function ringTone(score: number): string {
-  if (score >= 80) return "stroke-emerald-500";
-  if (score >= 60) return "stroke-amber-500";
-  return "stroke-red-500";
-}
-
-export function ScoreRing({ score }: { score: number }) {
-  const clamped = Math.min(100, Math.max(0, score));
-  const offset = RING_CIRCUMFERENCE * (1 - clamped / 100);
-  return (
-    <div className="relative h-32 w-32" role="img" aria-label={`ATS score ${clamped} out of 100`}>
-      <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
-        <circle cx="64" cy="64" r={RING_RADIUS} fill="none" strokeWidth="10" className="stroke-muted" />
-        <circle
-          cx="64"
-          cy="64"
-          r={RING_RADIUS}
-          fill="none"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={offset}
-          className={ringTone(clamped)}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold">{clamped}</span>
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">/ 100</span>
-      </div>
-    </div>
-  );
-}
 
 function ResultCard({ optimization }: { optimization: Optimization }) {
   const result: OptimizationResult = optimization.result;
@@ -98,6 +63,28 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
             </p>
           )}
         </section>
+
+        {result.changes.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <Sparkles className="h-4 w-4" aria-hidden />
+              Suggested additions
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {result.changes.map((change, index) => (
+                <li key={`${change.value}-${index}`} className="rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="border-emerald-300 bg-white/70 text-[10px] uppercase tracking-wide text-emerald-700">
+                      {change.type.replace(/-/g, " ")}
+                    </Badge>
+                    <span className="text-sm font-medium text-emerald-900">{change.value}</span>
+                  </div>
+                  {change.reason ? <p className="mt-0.5 text-xs text-emerald-700/70">{change.reason}</p> : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {result.matchedSkills.length > 0 ? (
           <section className="flex flex-col gap-2">

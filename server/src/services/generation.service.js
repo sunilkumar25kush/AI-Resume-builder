@@ -5,7 +5,31 @@ import { JobDescription } from "../models/JobDescription.js";
 import { Resume } from "../models/Resume.js";
 import { generateJson } from "./ai/index.js";
 import { buildGenerationPrompt, buildJdOnlyPrompt } from "./ai/prompts.js";
-import { mergeGeneratedData, mergeJdOnlyData } from "../validations/generation.js";
+import { extractAiChanges, mergeGeneratedData, mergeJdOnlyData } from "../validations/generation.js";
+
+/** Case-insensitive skill compare token (same rules as optimizer.service). */
+function normalizeToken(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9+#.]/g, "");
+}
+
+/** Deterministic changes list: JD skills missing from the resume. */
+function missingSkillChanges(jd, originalSkills) {
+  const existing = new Set((originalSkills ?? []).map(normalizeToken));
+  return (jd.skills ?? [])
+    .map((skill) => String(skill).trim())
+    .filter((skill) => skill && !existing.has(normalizeToken(skill)))
+    .slice(0, 12)
+    .map((skill) => ({
+      type: "add-skill",
+      section: "skills",
+      field: "skills",
+      value: skill,
+      reason: "Required by the job description",
+    }));
+}
 
 /** Compact display snapshot of a resume's parsed data for the prompt. */
 function resumeSnapshot(resume) {
@@ -55,6 +79,7 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
 
   const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.3 });
   const parsedData = mergeGeneratedData(raw, resume.parsedData ?? {});
+  const aiChanges = extractAiChanges(raw, missingSkillChanges(jd, resume.parsedData?.skills ?? []));
 
   const base = resume.fileName.replace(/\.[^.]+$/, "");
   return Resume.create({
@@ -66,6 +91,7 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
     filePath: `ai-generated/${randomUUID()}`,
     status: "parsed",
     parsedData,
+    aiChanges,
     template: resume.template,
   });
 }
@@ -99,6 +125,18 @@ export async function generateFromJd(userId, { jdId, targetTitle, experienceLeve
 
   const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.3 });
   const parsedData = mergeJdOnlyData(raw);
+  // JD-only resume: everything the AI wrote comes from the JD — highlight
+  // the skills so the editor shows what ATS coverage was added.
+  const aiChanges = extractAiChanges(
+    raw,
+    parsedData.skills.slice(0, 15).map((skill) => ({
+      type: "add-skill",
+      section: "skills",
+      field: "skills",
+      value: skill,
+      reason: "From the job description",
+    })),
+  );
 
   const slug = (targetTitle || jd.title || "job").replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 60);
   return Resume.create({
@@ -110,6 +148,7 @@ export async function generateFromJd(userId, { jdId, targetTitle, experienceLeve
     filePath: `ai-generated/${randomUUID()}`,
     status: "parsed",
     parsedData,
+    aiChanges,
     template: "classic",
   });
 }

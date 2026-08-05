@@ -79,13 +79,29 @@ const resumeSchema = new mongoose.Schema(
     fileName: { type: String, required: true, trim: true, maxlength: 255 },
     fileType: { type: String, required: true, enum: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"] },
     fileSize: { type: Number, required: true },
-    filePath: { type: String, required: true },
+    filePath: { type: String, default: "" },
     status: { type: String, enum: ["parsed", "error"], default: "parsed" },
     parseError: { type: String, default: "" },
     parsedData: { type: parsedDataSchema, default: () => ({}) },
+    // AI-reported additions from the last generation/optimization — the
+    // editor highlights these so the user sees exactly what was added.
+    // Free-form objects (type/section/field/value/reason) — never edited
+    // through the update API, only set at creation by the AI services.
+    aiChanges: {
+      type: [
+        {
+          type: { type: String, default: "add-skill" },
+          section: { type: String, default: "skills" },
+          field: { type: String, default: "skills" },
+          value: { type: String, default: "" },
+          reason: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
     template: {
       type: String,
-      enum: ["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant"],
+      enum: ["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant", "modern-pro", "tech-engineer"],
       default: "classic",
     },
   },

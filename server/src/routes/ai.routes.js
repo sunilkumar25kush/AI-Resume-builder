@@ -7,7 +7,9 @@ import { protect } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import { pingProvider } from "../services/ai/index.js";
 import { assist } from "../controllers/assist.controller.js";
+import { getSuggestions } from "../controllers/suggestions.controller.js";
 import { assistSchema } from "../validations/assist.js";
+import { suggestionsSchema } from "../validations/suggestions.js";
 
 const router = Router();
 
@@ -32,5 +34,8 @@ router.get(
 
 // Per-section AI assist (rewrite one summary/entry/skill set).
 router.post("/assist", protect, validate({ body: assistSchema }), assist);
+
+// Editor-time "what else should I add?" — JD-aware suggestions.
+router.post("/suggestions", protect, validate({ body: suggestionsSchema }), getSuggestions);
 
 export default router;

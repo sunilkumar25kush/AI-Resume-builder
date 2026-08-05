@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import type { ParsedResumeData, ResumeTemplate } from "@/types";
+import type { AiSuggestion } from "@/api/ai";
+import type { AiChange, ParsedResumeData, ResumeTemplate } from "@/types";
 
 export const entrySchema = z.object({
   title: z.string().max(200).default(""),
@@ -112,9 +113,76 @@ function splitLines(value: string): string[] {
     .slice(0, 100);
 }
 
+/** Convert a suggestion into the shared AiChange shape so applied ones light up green. */
+export function suggestionToChange(suggestion: AiSuggestion): AiChange {
+  const typeMap: Record<AiSuggestion["type"], AiChange["type"]> = {
+    "add-skill": "add-skill",
+    "add-keyword": "add-keyword",
+    "add-project": "add-project",
+    "improve-summary": "improve-description",
+    "add-section": "add-section",
+  };
+  return {
+    type: typeMap[suggestion.type],
+    section: suggestion.section,
+    field: suggestion.field,
+    value: suggestion.value,
+    reason: suggestion.reason,
+  };
+}
+
 export function toApiPayload(values: EditFormValues, template: ResumeTemplate) {
   return {
     parsedData: toParsedData(values),
     template,
   };
+}
+
+/** Case-insensitive compare token (same rules as the server optimizer). */
+export function normalizeToken(value: string): string {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9+#.]/g, "");
+}
+
+/** AI changes that target a given section (skills / summary / experience…). */
+export function aiChangesForSection(changes: AiChange[], section: string): AiChange[] {
+  return changes.filter((change) => change.section === section);
+}
+
+/**
+ * True when the form's current skills text already contains every value a
+ * change added (e.g. an AI-added skill). Editing the text away drops the
+ * highlight automatically — the highlight follows the data, not a flag.
+ */
+export function skillChangesApplied(changes: AiChange[], skillsText: string | undefined): boolean {
+  const present = new Set(splitSkills(skillsText ?? "").map(normalizeToken));
+  const skillChanges = changes.filter((change) => change.type === "add-skill");
+  return skillChanges.length > 0 && skillChanges.every((change) => present.has(normalizeToken(change.value)));
+}
+
+/**
+ * True when any of the form's entry descriptions (experience/projects) or
+ * the summary text contains an AI-added value. Used to light up the
+ * section cards green until the user edits the text away.
+ */
+export function textChangesApplied(changes: AiChange[], texts: string[]): boolean {
+  const haystack = texts
+    .filter((text) => typeof text === "string" && text.length > 0)
+    .map((text) => normalizeToken(text));
+  return changes.some((change) => {
+    const value = normalizeToken(change.value);
+    if (!value) return false;
+    return haystack.some((text) => text.includes(value));
+  });
+}
+
+/**
+ * All AI-added skills that are NOT yet in the skills text — used to render
+ * "AI suggests adding" chips the user can one-click apply.
+ */
+export function pendingSkillChanges(changes: AiChange[], skillsText: string | undefined): AiChange[] {
+  const present = new Set(splitSkills(skillsText ?? "").map(normalizeToken));
+  return changes.filter((change) => change.type === "add-skill" && !present.has(normalizeToken(change.value)));
 }

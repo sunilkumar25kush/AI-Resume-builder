@@ -25,7 +25,7 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
-  async update(id: string, update: { parsedData?: Partial<ParsedResumeData>; template?: ResumeTemplate }): Promise<Resume> {
+  async update(id: string, update: { parsedData?: Partial<ParsedResumeData>; template?: ResumeTemplate; fileName?: string }): Promise<Resume> {
     const res = await apiClient.patch<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`, update);
     return res.data.data.resume;
   },
@@ -39,6 +39,12 @@ export const resumesApi = {
   /** Wizard Workflow 1: generate a fresh resume from a job description only. */
   async generateFromJd(input: { jdId: string; targetTitle: string; experienceLevel: "fresher" | "junior" | "senior" }): Promise<Resume> {
     const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/generate-from-jd", input, { timeout: AI_REQUEST_TIMEOUT });
+    return res.data.data.resume;
+  },
+
+  /** Scratch builder: create a fresh empty resume (name/email prefilled from the account). */
+  async createBlank(template?: ResumeTemplate): Promise<Resume> {
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/blank", { template });
     return res.data.data.resume;
   },
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, Download, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, FileText, Loader2, PenLine, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";
+import { RenameDialog } from "@/components/common/RenameDialog";
 import { ResumeSections } from "@/components/resumes/ResumeSections";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,8 @@ export default function ResumePreviewPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -121,6 +124,10 @@ export default function ResumePreviewPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)} aria-label="Rename resume">
+            <PenLine className="mr-1.5 h-4 w-4" aria-hidden />
+            Rename
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link to={`/resumes/${resume._id}/edit`}>
               <Pencil className="mr-1.5 h-4 w-4" aria-hidden />
@@ -141,6 +148,29 @@ export default function ResumePreviewPage() {
           <ResumeSections data={resume.parsedData} />
         </CardContent>
       </Card>
+
+      <RenameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title="Rename resume"
+        description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
+        value={resume.fileName.replace(/\.[^.]+$/, "")}
+        saving={renaming}
+        onSave={async (name) => {
+          setRenaming(true);
+          try {
+            const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
+            const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
+            setResume(updated);
+            toast.success("Resume renamed");
+            setRenameOpen(false);
+          } catch (error) {
+            toast.error(getApiErrorMessage(error));
+          } finally {
+            setRenaming(false);
+          }
+        }}
+      />
     </div>
   );
 }

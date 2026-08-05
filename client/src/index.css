@@ -412,3 +412,80 @@
 .resume-tpl-elegant .rv-meta {
   @apply text-sm italic text-neutral-500;
 }
+
+/* Modern Professional — two-column grid with a blue skills sidebar.
+   The rv-section-* classes let the same DOM be re-flowed into a grid:
+   main sections (summary/experience/education/projects/custom) occupy
+   column 1, sidebar sections (skills/certs/languages/awards) column 2. */
+.resume-tpl-modern-pro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34%;
+  align-items: start;
+  column-gap: 14px;
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-modern-pro .rv-header {
+  @apply mb-2 border-b-2 border-blue-600 pb-2;
+  grid-column: 1 / -1;
+}
+.resume-tpl-modern-pro .rv-name {
+  @apply text-2xl font-bold text-blue-700;
+}
+.resume-tpl-modern-pro .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-modern-pro .rv-section-summary,
+.resume-tpl-modern-pro .rv-section-experience,
+.resume-tpl-modern-pro .rv-section-education,
+.resume-tpl-modern-pro .rv-section-projects,
+.resume-tpl-modern-pro .rv-section-custom {
+  grid-column: 1;
+}
+.resume-tpl-modern-pro .rv-section-skills,
+.resume-tpl-modern-pro .rv-section-certifications,
+.resume-tpl-modern-pro .rv-section-languages,
+.resume-tpl-modern-pro .rv-section-awards {
+  @apply rounded bg-blue-50/70 p-3;
+  grid-column: 2;
+}
+.resume-tpl-modern-pro .rv-heading {
+  @apply mb-1 mt-1 text-xs font-bold uppercase tracking-wider text-blue-700;
+}
+.resume-tpl-modern-pro .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-modern-pro .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+.resume-tpl-modern-pro .rv-skill {
+  @apply inline-block rounded bg-white/70 px-1.5 py-0.5 text-xs text-blue-900;
+}
+
+/* Tech Engineer — skills-first, project-focused single column */
+.resume-tpl-tech-engineer {
+  font-family: "Geist Variable", system-ui, sans-serif;
+}
+.resume-tpl-tech-engineer .rv-header {
+  @apply border-b-2 border-teal-600 pb-2;
+}
+.resume-tpl-tech-engineer .rv-name {
+  @apply text-2xl font-bold text-teal-800;
+}
+.resume-tpl-tech-engineer .rv-contact {
+  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+}
+.resume-tpl-tech-engineer .rv-heading {
+  @apply mt-4 mb-1.5 text-xs font-bold uppercase tracking-widest text-teal-700;
+}
+.resume-tpl-tech-engineer .rv-title {
+  @apply font-semibold;
+}
+.resume-tpl-tech-engineer .rv-meta {
+  @apply text-sm text-neutral-600;
+}
+.resume-tpl-tech-engineer .rv-skills {
+  @apply flex flex-wrap gap-1.5;
+}
+.resume-tpl-tech-engineer .rv-skill {
+  @apply rounded bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-900;
+}

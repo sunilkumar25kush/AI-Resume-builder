@@ -78,6 +78,14 @@ const parsedDataUpdateSchema = z.object({
 export const updateResumeSchema = z.object({
   parsedData: parsedDataUpdateSchema.optional(),
   template: z
-    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant"])
+    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant", "modern-pro", "tech-engineer"])
+    .optional(),
+  fileName: z.string().trim().min(1).max(255).optional(),
+});
+
+/** POST /api/resumes/blank — scratch builder; template optional, defaults to classic. */
+export const createBlankResumeSchema = z.object({
+  template: z
+    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant", "modern-pro", "tech-engineer"])
     .optional(),
 });

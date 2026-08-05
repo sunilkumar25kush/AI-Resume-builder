@@ -34,7 +34,7 @@ export interface ResetPasswordInput {
 }
 
 export type { NotificationItem, NotificationsPage } from "./notifications";
-export type { ContactInfo, EducationEntry, ExperienceEntry, ParsedResumeData, ProjectEntry, Resume, ResumeTemplate } from "./resume";
+export type { AiChange, AiChangeType, ContactInfo, EducationEntry, ExperienceEntry, ParsedResumeData, ProjectEntry, Resume, ResumeTemplate } from "./resume";
 export type { ResumeVersion } from "./resumeVersion";
 export type { JobDescription } from "./jobDescription";
 export type { Optimization, OptimizationResult } from "./optimization";
