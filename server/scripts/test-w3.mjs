@@ -118,7 +118,7 @@ Java, Spring Boot, Hibernate, MySQL, OOP`,
 const jd = (await jdRes.json()).data?.jd;
 check("java JD pasted", jdRes.status === 201, String(jdRes.status));
 
-console.log("  running live AI analysis (Ollama, 30-120s)…");
+console.log("  running live AI analysis (Gemini, 10-60s)…");
 const optRes = await fetch(`${BASE}/optimizations`, {
   method: "POST",
   headers: { cookie, "content-type": "application/json" },

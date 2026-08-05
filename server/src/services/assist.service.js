@@ -1,5 +1,4 @@
-import { generateJson, generateWithFallback } from "./ai/index.js";
-import { buildAssistPrompt } from "./ai/prompts.js";
+import { geminiService } from "./ai/gemini.service.js";
 
 /** Strip quotes/fences/markdown that a model may wrap around plain text. */
 function cleanText(text) {
@@ -29,20 +28,17 @@ function normalizeSkills(raw, original) {
  * may be changed by the AI.
  */
 export async function assistSection({ section, action, content }) {
-  const prompt = buildAssistPrompt({ section, action, content });
+  const raw = await geminiService.assistSection({ section, action, content });
 
   if (section === "skills") {
-    const raw = await generateJson(prompt, { timeoutMs: 60_000, temperature: 0.5 });
     return normalizeSkills(raw, content);
   }
 
   if (section === "summary") {
-    const text = await generateWithFallback(prompt, { timeoutMs: 60_000, temperature: 0.6 });
-    return cleanText(text) || content;
+    return cleanText(raw) || content;
   }
 
   // Entry sections: JSON in → fact-merged entry out.
-  const raw = await generateJson(prompt, { timeoutMs: 60_000, temperature: 0.5 });
   const description = cleanText(raw?.description) || content.description || "";
   return { ...content, description };
 }

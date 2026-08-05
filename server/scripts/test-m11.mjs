@@ -119,7 +119,7 @@ const jdRes = await fetch(`${BASE}/jds`, {
 const jdId = (await jdRes.json()).data?.jd?._id;
 check("jd pasted", jdRes.status === 201);
 
-console.log("  running AI generation (Ollama, 30-150s)…");
+console.log("  running AI generation (Gemini, 10-60s)…");
 const start = Date.now();
 const genRes = await fetch(`${BASE}/resumes/${resume._id}/generate`, {
   method: "POST",

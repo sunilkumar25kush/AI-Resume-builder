@@ -35,7 +35,7 @@ const prompt = buildOptimizePrompt({
 check("prompt contains resume json", prompt.includes("a@b.c") && prompt.includes("React"));
 check("prompt contains jd json", prompt.includes("GraphQL"));
 
-// --- Live: full flow with a real Ollama call ---
+// --- Live: full flow with a real Gemini call ---
 const reg = await fetch(`${BASE}/auth/register`, {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -91,7 +91,7 @@ const jdRes = await fetch(`${BASE}/jds`, {
 const jdId = (await jdRes.json()).data?.jd?._id;
 check("jd pasted", jdRes.status === 201 && Boolean(jdId));
 
-console.log("  running AI optimization (Ollama can take 30-120s)…");
+console.log("  running AI optimization (Gemini, 10-60s)…");
 const start = Date.now();
 const optRes = await fetch(`${BASE}/optimizations`, {
   method: "POST",

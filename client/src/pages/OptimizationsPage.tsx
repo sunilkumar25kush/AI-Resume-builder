@@ -119,7 +119,7 @@ export default function OptimizationsPage() {
           </div>
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              {running ? "AI is reviewing — this can take 30–120 seconds…" : "Powered by Ollama (llama3.2) locally"}
+              {running ? "AI is reviewing — this can take 30–120 seconds…" : "Powered by Google Gemini"}
             </p>
             <Button onClick={() => void onRun()} disabled={!canRun}>
               {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Gauge className="mr-2 h-4 w-4" aria-hidden />}

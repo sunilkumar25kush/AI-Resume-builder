@@ -11,7 +11,7 @@ function check(label, ok, extra = "") {
 
 const ping = await fetch(`${BASE}/ai/ping`).catch(() => null);
 if (ping?.status !== 200) {
-  console.log("SKIP — AI/Ollama down or proxy not ready");
+  console.log("SKIP — AI/Gemini down or proxy not ready");
   process.exit(0);
 }
 

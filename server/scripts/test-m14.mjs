@@ -81,7 +81,7 @@ const jdRes = await fetch(`${BASE}/jds`, {
 const jdId = (await jdRes.json()).data?.jd?._id;
 check("jd pasted", jdRes.status === 201);
 
-console.log("  running AI analysis (Ollama, 20-120s)…");
+console.log("  running AI analysis (Gemini, 10-60s)…");
 const optRes = await fetch(`${BASE}/optimizations`, {
   method: "POST",
   headers: { cookie, "content-type": "application/json" },

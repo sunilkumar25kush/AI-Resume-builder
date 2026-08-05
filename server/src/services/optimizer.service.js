@@ -2,8 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { JobDescription } from "../models/JobDescription.js";
 import { Optimization } from "../models/Optimization.js";
 import { Resume } from "../models/Resume.js";
-import { generateJson } from "./ai/index.js";
-import { buildOptimizePrompt } from "./ai/prompts.js";
+import { geminiService } from "./ai/gemini.service.js";
 import { normalizeResult } from "../validations/optimization.js";
 
 /**
@@ -91,7 +90,7 @@ export async function runOptimization(userId, resumeId, jdId) {
   if (!resume) throw new ApiError(404, "Resume not found");
   if (!jd) throw new ApiError(404, "Job description not found");
 
-  const prompt = buildOptimizePrompt({
+  const raw = await geminiService.optimizeResume({
     resume: resumeSnapshot(resume),
     jd: {
       title: jd.title,
@@ -106,8 +105,6 @@ export async function runOptimization(userId, resumeId, jdId) {
       experienceRequired: jd.experienceRequired,
     },
   });
-
-  const raw = await generateJson(prompt, { timeoutMs: 120_000, temperature: 0.2 });
   const aiResult = normalizeResult(raw);
 
   // Override every verifiable metric with the deterministic computation so a

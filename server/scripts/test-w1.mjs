@@ -12,7 +12,7 @@ const ping = await fetch(`${BASE}/ai/ping`).catch(() => null);
 const aiUp = ping?.status === 200;
 console.log("ai/ping:", ping?.status ?? "down");
 if (!aiUp) {
-  console.log("SKIP AI-dependent tests (Ollama down) — running non-AI checks only");
+  console.log("SKIP AI-dependent tests (Gemini down) — running non-AI checks only");
 }
 
 const reg = await fetch(`${BASE}/auth/register`, {

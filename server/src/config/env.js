@@ -9,12 +9,8 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  AI_PROVIDER: z.enum(["ollama", "gemini"]).default("ollama"),
-  OLLAMA_URL: z.string().url().default("http://localhost:11434"),
-  OLLAMA_MODEL: z.string().default("llama3.2"),
-  OLLAMA_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-2.0-flash"),
+  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
 });
 
 const parsed = envSchema.safeParse(process.env);

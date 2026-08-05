@@ -1,5 +1,5 @@
 // M6 tests — AI provider layer: JSON parsing, retry/timeout logic,
-// and a live /api/ai/ping against the running server (Ollama).
+// and a live /api/ai/ping against the running server (Gemini).
 import http from "node:http";
 
 import { extractJson } from "../src/services/ai/json.js";
@@ -76,7 +76,7 @@ check("timeout maps to AI_TIMEOUT", timedOut);
 
 mock.close();
 
-// --- Live ping against the running server (Ollama) ---
+// --- Live ping against the running server (Gemini) ---
 const health = await fetch("http://localhost:5001/api/health");
 const healthJson = await health.json();
 check("health has ai.model", Boolean(healthJson.data?.ai?.model), healthJson.data?.ai?.model);
@@ -85,7 +85,7 @@ const ping = await fetch("http://localhost:5001/api/ai/ping");
 const pingJson = await ping.json();
 check("ping 200", ping.status === 200, `status ${ping.status}`);
 check("ping ok:true", pingJson.data?.ok === true);
-check("ping provider = ollama", pingJson.data?.provider === "ollama", pingJson.data?.provider);
+check("ping provider = gemini", pingJson.data?.provider === "gemini", pingJson.data?.provider);
 check("ping model set", Boolean(pingJson.data?.model), pingJson.data?.model);
 check("ping latency reported", typeof pingJson.data?.latencyMs === "number");
 

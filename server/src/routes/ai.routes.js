@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { protect } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
-import { pingProvider } from "../services/ai/index.js";
+import { geminiService } from "../services/ai/gemini.service.js";
 import { assist } from "../controllers/assist.controller.js";
 import { getSuggestions } from "../controllers/suggestions.controller.js";
 import { assistSchema } from "../validations/assist.js";
@@ -20,7 +20,7 @@ router.get(
     if (env.NODE_ENV === "production") {
       return res.status(404).json({ success: false, message: "Not found" });
     }
-    const result = await pingProvider();
+    const result = await geminiService.ping();
     if (!result.ok) {
       return res.status(503).json({
         success: false,

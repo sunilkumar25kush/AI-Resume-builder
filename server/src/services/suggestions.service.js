@@ -1,7 +1,6 @@
 import { JobDescription } from "../models/JobDescription.js";
 import { Resume } from "../models/Resume.js";
-import { generateJson } from "./ai/index.js";
-import { buildSuggestPrompt } from "./ai/prompts.js";
+import { geminiService } from "./ai/gemini.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeSuggestions } from "../validations/suggestions.js";
 
@@ -21,7 +20,9 @@ export async function suggestAdditions({ userId, resumeId, jdId, jdText }) {
     jd = { title: "Pasted job description", text: jdText };
   }
 
-  const prompt = buildSuggestPrompt({ resume: resume.parsedData ?? {}, jd });
-  const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.4 });
+  const raw = await geminiService.generateSuggestions({
+    resume: resume.parsedData ?? {},
+    jd,
+  });
   return normalizeSuggestions(raw);
 }

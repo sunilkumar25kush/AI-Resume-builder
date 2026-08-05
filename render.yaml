@@ -14,8 +14,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: AI_PROVIDER
-        value: gemini
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
       # Required — set values in Render dashboard -> Environment:

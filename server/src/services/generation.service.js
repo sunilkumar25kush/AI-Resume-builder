@@ -3,8 +3,7 @@ import { randomUUID } from "node:crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { JobDescription } from "../models/JobDescription.js";
 import { Resume } from "../models/Resume.js";
-import { generateJson } from "./ai/index.js";
-import { buildGenerationPrompt, buildJdOnlyPrompt } from "./ai/prompts.js";
+import { geminiService } from "./ai/gemini.service.js";
 import { extractAiChanges, mergeGeneratedData, mergeJdOnlyData } from "../validations/generation.js";
 
 /** Case-insensitive skill compare token (same rules as optimizer.service). */
@@ -61,7 +60,7 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
   if (!resume) throw new ApiError(404, "Resume not found");
   if (!jd) throw new ApiError(404, "Job description not found");
 
-  const prompt = buildGenerationPrompt({
+  const raw = await geminiService.generateResume({
     resume: resumeSnapshot(resume),
     jd: {
       title: jd.title,
@@ -76,8 +75,6 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
       experienceRequired: jd.experienceRequired,
     },
   });
-
-  const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.3 });
   const parsedData = mergeGeneratedData(raw, resume.parsedData ?? {});
   const aiChanges = extractAiChanges(raw, missingSkillChanges(jd, resume.parsedData?.skills ?? []));
 
@@ -106,7 +103,7 @@ export async function generateFromJd(userId, { jdId, targetTitle, experienceLeve
   const jd = await JobDescription.findOne({ _id: jdId, user: userId });
   if (!jd) throw new ApiError(404, "Job description not found");
 
-  const prompt = buildJdOnlyPrompt({
+  const raw = await geminiService.analyzeJd({
     jd: {
       title: jd.title,
       company: jd.company,
@@ -122,8 +119,6 @@ export async function generateFromJd(userId, { jdId, targetTitle, experienceLeve
     targetTitle,
     experienceLevel,
   });
-
-  const raw = await generateJson(prompt, { timeoutMs: 150_000, temperature: 0.3 });
   const parsedData = mergeJdOnlyData(raw);
   // JD-only resume: everything the AI wrote comes from the JD — highlight
   // the skills so the editor shows what ATS coverage was added.
