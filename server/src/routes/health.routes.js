@@ -16,7 +16,7 @@ router.get(
           service: "ai-resume-builder-api",
           status: "ok",
           db: isDbConnected() ? "connected" : "disconnected",
-          ai: { provider: env.AI_PROVIDER, model: env.OLLAMA_MODEL },
+          ai: { provider: env.AI_PROVIDER, model: env.AI_PROVIDER === "gemini" ? env.GEMINI_MODEL : env.OLLAMA_MODEL },
           uptime: process.uptime(),
           timestamp: new Date().toISOString(),
         },

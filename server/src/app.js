@@ -1,4 +1,6 @@
 import { existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -37,6 +39,18 @@ app.use("/api", apiLimiter, routes);
 
 // User-uploaded files (avatars)
 app.use("/uploads", express.static("uploads", { maxAge: "7d", immutable: true }));
+
+// Production: serve the built client from this same service (single deploy).
+// Skipped automatically in dev — Vite serves the client on its own port.
+const CLIENT_DIST = fileURLToPath(new URL("../../client/dist", import.meta.url));
+if (existsSync(CLIENT_DIST)) {
+  app.use(express.static(CLIENT_DIST, { maxAge: "1d", index: "index.html" }));
+  // SPA fallback — anything that is not an API/upload path gets index.html
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api") || req.path.startsWith("/uploads")) return next();
+    res.sendFile(join(CLIENT_DIST, "index.html"));
+  });
+}
 
 // 404 + centralized error handling
 app.use(notFound);

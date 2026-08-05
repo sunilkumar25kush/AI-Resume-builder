@@ -1,0 +1,30 @@
+# Render Blueprint — AI Resume Builder single-service deploy (API + built client)
+# Use: Render Dashboard -> New -> Blueprint -> select this repo.
+# Then set the "sync: false" env vars in the service's Environment tab.
+services:
+  - type: web
+    name: ai-resume-builder-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      # Required — set values in Render dashboard -> Environment:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      # Comma-separated list of allowed client origins (cookies need exact origin, no *)
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
