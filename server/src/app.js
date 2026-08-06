@@ -22,12 +22,15 @@ const app = express();
 app.use(helmet());
 
 // CORS — allow configured client origin with credentials (cookies)
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()),
-    credentials: true,
-  }),
-);
+const corsOptions = {
+  origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()),
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
+// Handle preflight requests for all routes
+app.options("*", cors(corsOptions));
 
 // Body parsing with size limits
 app.use(express.json({ limit: "1mb" }));
