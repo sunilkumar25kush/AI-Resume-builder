@@ -12,6 +12,10 @@ interface UserPayload {
   user: User;
 }
 
+interface MePayload {
+  user: User | null;
+}
+
 export const authApi = {
   async register(data: RegisterInput): Promise<User> {
     const res = await apiClient.post<ApiEnvelope<UserPayload>>("/auth/register", data);
@@ -27,8 +31,8 @@ export const authApi = {
     await apiClient.post<ApiEnvelope<null>>("/auth/logout");
   },
 
-  async me(): Promise<User> {
-    const res = await apiClient.get<ApiEnvelope<UserPayload>>("/auth/me");
+  async me(): Promise<User | null> {
+    const res = await apiClient.get<ApiEnvelope<MePayload>>("/auth/me");
     return res.data.data.user;
   },
 

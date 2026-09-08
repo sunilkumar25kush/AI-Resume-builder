@@ -28,7 +28,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
   fetchMe: async () => {
     try {
       const user = await authApi.me();
-      set({ user, status: "authenticated" });
+      if (user) {
+        set({ user, status: "authenticated" });
+      } else {
+        set({ user: null, status: "guest" });
+      }
     } catch {
       set({ user: null, status: "guest" });
     }

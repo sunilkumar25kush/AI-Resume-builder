@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import * as authController from "../controllers/auth.controller.js";
-import { protect } from "../middlewares/auth.js";
+import { optionalProtect, protect } from "../middlewares/auth.js";
 import { authLimiter } from "../middlewares/rateLimiter.js";
 import { validate } from "../middlewares/validate.js";
 import * as authValidations from "../validations/auth.js";
@@ -34,6 +34,6 @@ router.post(
   validate({ body: authValidations.resetPasswordSchema }),
   authController.resetPassword,
 );
-router.get("/me", protect, authController.getMe);
+router.get("/me", optionalProtect, authController.getMe);
 
 export default router;

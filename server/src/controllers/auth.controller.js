@@ -23,6 +23,9 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const getMe = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.json(ApiResponse.ok({ user: null }, "Not authenticated"));
+  }
   const user = await authService.getMe(req.user._id);
   res.json(ApiResponse.ok({ user }, "Profile fetched"));
 });

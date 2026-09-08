@@ -8,6 +8,7 @@ import express from "express";
 import helmet from "helmet";
 
 import { env } from "./config/env.js";
+import { isDbConnected, getDbError } from "./config/db.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js";
 import routes from "./routes/index.js";
@@ -36,6 +37,17 @@ app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
+
+// Database availability check — fail fast with 503 instead of hanging for 10s and causing Vite proxy 502
+app.use("/api", (req, res, next) => {
+  const isGuestMe = req.path === "/auth/me" && !req.cookies?.token && !req.headers.authorization;
+  if (req.path === "/health" || isGuestMe || isDbConnected()) return next();
+  const detail = getDbError() ? ` (${getDbError()})` : "";
+  res.status(503).json({
+    success: false,
+    message: `Database connection unavailable${detail}. Please check your MONGO_URI in server/.env.`,
+  });
+});
 
 // Global rate limit + routes
 app.use("/api", apiLimiter, routes);
