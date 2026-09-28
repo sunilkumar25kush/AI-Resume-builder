@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { fileTypeFromFile } from "file-type";
 
 import multer from "multer";
 
@@ -12,12 +13,12 @@ for (const dir of [AVATAR_DIR, RESUME_DIR, JD_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-const AVATAR_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const RESUME_MIME = new Set([
+export const AVATAR_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+export const RESUME_MIME = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
-const JD_MIME = new Set([
+export const JD_MIME = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "text/plain",
@@ -38,6 +39,7 @@ function createUpload({ dir, maxBytes, allowedMime, message }) {
     filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}.${extensionFor(file.mimetype)}`),
   });
 
+  // First gate: reject bad Content-Type headers before the file hits disk.
   const fileFilter = (_req, file, cb) => {
     if (!allowedMime.has(file.mimetype)) {
       return cb(ApiError.badRequest(message));
@@ -68,3 +70,40 @@ export const uploadJd = createUpload({
   allowedMime: JD_MIME,
   message: "Only PDF, DOCX or TXT files are allowed",
 });
+
+/**
+ * Second gate: validate actual file content via magic bytes.
+ * Call AFTER multer has saved the file (req.file is populated).
+ *
+ * Reads the first bytes from disk and confirms the real MIME type is in the
+ * allowed set. Deletes the file and throws 400 if it does not match.
+ * Plain-text files have no magic bytes — file-type returns undefined for them,
+ * which we allow through (content is harmless text the parser handles safely).
+ *
+ * @param {Express.Multer.File} file   req.file from the multer middleware
+ * @param {Set<string>}         allowedMime  same set used by the fileFilter
+ * @param {string}              message      user-facing rejection message
+ */
+export async function validateMagicBytes(file, allowedMime, message) {
+  if (!file) return;
+
+  let detected;
+  try {
+    detected = await fileTypeFromFile(file.path);
+  } catch {
+    fs.unlink(file.path, () => {});
+    throw ApiError.badRequest("Could not verify file integrity — please try again");
+  }
+
+  // Plain-text files have no binary magic bytes — allow only if text/plain is in allowedMime.
+  if (detected === undefined) {
+    if (allowedMime.has("text/plain")) return;
+    fs.unlink(file.path, () => {});
+    throw ApiError.badRequest(message);
+  }
+
+  if (!allowedMime.has(detected.mime)) {
+    fs.unlink(file.path, () => {});
+    throw ApiError.badRequest(message);
+  }
+}

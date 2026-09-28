@@ -143,8 +143,25 @@ export async function runOptimization(userId, resumeId, jdId) {
   });
 }
 
-export function listOptimizations(userId) {
-  return Optimization.find({ user: userId }).sort({ createdAt: -1 }).lean();
+export async function listOptimizations(userId, { page = 1, limit = 20 } = {}) {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+  const skip = (safePage - 1) * safeLimit;
+
+  const [optimizations, total] = await Promise.all([
+    Optimization.find({ user: userId }).sort({ createdAt: -1 }).skip(skip).limit(safeLimit).lean(),
+    Optimization.countDocuments({ user: userId }),
+  ]);
+
+  return {
+    optimizations,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
 }
 
 export async function getOptimization(userId, id) {

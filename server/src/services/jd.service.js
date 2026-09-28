@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { ApiError } from "../utils/ApiError.js";
 import { JobDescription } from "../models/JobDescription.js";
+import { validateMagicBytes, JD_MIME } from "../middlewares/upload.js";
 import { extractText } from "./resumeParser.js";
 import { parseJdText } from "./jdParser.js";
 
@@ -31,14 +32,25 @@ export async function createFromText(userId, text) {
 
 /** Create a JD from an uploaded PDF/DOCX file. */
 export async function createFromFile(userId, file) {
+  // Second gate: validate actual file magic bytes (client may spoof Content-Type).
+  await validateMagicBytes(file, JD_MIME, "Only PDF, DOCX or TXT files are allowed");
   let parsed;
   try {
-    const text = await extractText(fs.readFileSync(file.path), file.mimetype);
-    parsed = parseJdText(text);
-    if (!text.trim()) throw Object.assign(new Error("empty"), { code: "UNREADABLE" });
-    parsed.text = text.trim();
-  } catch {
+    const fileBuffer = await fs.promises.readFile(file.path);
+    const text = await extractText(fileBuffer, file.mimetype);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      throw Object.assign(new Error("File contains no readable text"), { code: "UNREADABLE" });
+    }
+    parsed = parseJdText(trimmed);
+    parsed.text = trimmed;
+  } catch (err) {
     fs.unlink(file.path, () => {});
+    if (err instanceof ApiError) throw err;
+    if (err?.code === "UNREADABLE") {
+      throw new ApiError(400, err.message || "File contains no readable text");
+    }
+    console.error("[jd-upload-error]", err);
     throw new ApiError(422, "Could not extract a job description from this file");
   }
 
@@ -51,8 +63,25 @@ export async function createFromFile(userId, file) {
   });
 }
 
-export async function listJds(userId) {
-  return JobDescription.find({ user: userId }).sort({ createdAt: -1 }).lean();
+export async function listJds(userId, { page = 1, limit = 20 } = {}) {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+  const skip = (safePage - 1) * safeLimit;
+
+  const [jds, total] = await Promise.all([
+    JobDescription.find({ user: userId }).sort({ createdAt: -1 }).skip(skip).limit(safeLimit).lean(),
+    JobDescription.countDocuments({ user: userId }),
+  ]);
+
+  return {
+    jds,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
 }
 
 export async function getJd(userId, id) {
@@ -62,11 +91,13 @@ export async function getJd(userId, id) {
 }
 
 export async function updateJd(userId, id, patch) {
-  const jd = await JobDescription.findOne({ _id: id, user: userId });
+  const jd = await JobDescription.findOneAndUpdate(
+    { _id: id, user: userId },
+    { $set: patch },
+    { new: true, runValidators: true }
+  ).lean();
   if (!jd) throw new ApiError(404, "Job description not found");
-  Object.assign(jd, patch);
-  await jd.save();
-  return jd.toObject();
+  return jd;
 }
 
 export async function deleteJd(userId, id) {

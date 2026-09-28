@@ -26,12 +26,20 @@ async function issueAuthPayload(user) {
 }
 
 async function register({ name, email, password }) {
-  const existing = await User.findOne({ email });
-  if (existing) throw ApiError.conflict("An account with this email already exists");
+  let user;
+  try {
+    user = await User.create({ name, email, passwordHash: await hashPassword(password) });
+  } catch (err) {
+    if (err.code === DUP_KEY_CODE) {
+      // Email already registered — return a null sentinel so the caller cannot
+      // enumerate which emails exist (account enumeration / user privacy).
+      // The controller will NOT set an auth cookie for this path.
+      return { user: null, token: null };
+    }
+    throw err;
+  }
 
-  const user = await User.create({ name, email, passwordHash: await hashPassword(password) });
-
-  // Welcome notification — gives the bell something real on first login.
+  // Welcome notification — only sent for genuinely new accounts.
   await notificationService.createNotification({
     userId: user._id,
     type: "info",
@@ -70,9 +78,12 @@ async function forgotPassword({ email }) {
   user.passwordResetExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
   await user.save();
 
-  // No email provider configured yet — dev mode returns the token so the
-  // flow is testable; production would send it by email.
-  if (env.NODE_ENV === "development") return { resetToken: rawToken };
+  // In development, log the token to the server console so the flow is
+  // testable without an email provider. NEVER return it in the HTTP response
+  // — a misconfigured NODE_ENV=development on staging would expose it to any caller.
+  if (env.NODE_ENV === "development") {
+    console.log(`[dev] password reset token for ${user.email}:`, rawToken);
+  }
   return { resetToken: null };
 }
 

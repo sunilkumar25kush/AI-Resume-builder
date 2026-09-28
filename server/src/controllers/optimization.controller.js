@@ -8,8 +8,10 @@ export const runOptimization = asyncHandler(async (req, res) => {
 });
 
 export const listOptimizations = asyncHandler(async (req, res) => {
-  const optimizations = await optimizerService.listOptimizations(req.user.id);
-  res.json({ success: true, data: { optimizations } });
+  const page = Number.parseInt(req.query.page ?? "1", 10) || 1;
+  const limit = Number.parseInt(req.query.limit ?? "20", 10) || 20;
+  const result = await optimizerService.listOptimizations(req.user.id, { page, limit });
+  res.json({ success: true, data: result });
 });
 
 export const getOptimization = asyncHandler(async (req, res) => {

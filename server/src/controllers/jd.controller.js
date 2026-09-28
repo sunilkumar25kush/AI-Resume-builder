@@ -7,8 +7,10 @@ export const uploadJd = asyncHandler(async (req, res) => {
 });
 
 export const listJds = asyncHandler(async (req, res) => {
-  const jds = await jdService.listJds(req.user.id);
-  res.json({ success: true, data: { jds } });
+  const page = Number.parseInt(req.query.page ?? "1", 10) || 1;
+  const limit = Number.parseInt(req.query.limit ?? "20", 10) || 20;
+  const result = await jdService.listJds(req.user.id, { page, limit });
+  res.json({ success: true, data: result });
 });
 
 export const getJd = asyncHandler(async (req, res) => {
