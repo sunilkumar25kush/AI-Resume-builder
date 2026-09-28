@@ -19,6 +19,7 @@ export function AppLayout() {
 
   return (
     <TooltipProvider delayDuration={200}>
+      {/* Outer wrapper: no transform/filter so `fixed` children stay viewport-relative */}
       <div className="min-h-dvh bg-background">
         <Sidebar />
         <div
@@ -34,6 +35,7 @@ export function AppLayout() {
             </Suspense>
           </main>
         </div>
+        {/* BottomNav is a sibling of the layout shell so no ancestor transform can break fixed positioning */}
         <BottomNav />
         <MobileDrawer />
       </div>

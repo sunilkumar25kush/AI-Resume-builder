@@ -67,7 +67,7 @@ export default function ResumeEditorPage() {
   const saveTimerRef = useRef<number | undefined>(undefined);
   const pendingRef = useRef(false);
   const versionRef = useRef(0);
-  const saveRef = useRef<() => Promise<void>>(async () => {});
+  const saveRef = useRef<() => Promise<void>>(async () => { });
   const undoStackRef = useRef<EditFormValues[]>([]);
   const redoStackRef = useRef<EditFormValues[]>([]);
   const [, setHistoryTick] = useState(0);
@@ -271,9 +271,8 @@ export default function ResumeEditorPage() {
               role="tab"
               aria-selected={mobileTab === "edit"}
               onClick={() => setMobileTab("edit")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               Edit
             </button>
@@ -282,9 +281,8 @@ export default function ResumeEditorPage() {
               role="tab"
               aria-selected={mobileTab === "preview"}
               onClick={() => setMobileTab("preview")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               Preview
             </button>

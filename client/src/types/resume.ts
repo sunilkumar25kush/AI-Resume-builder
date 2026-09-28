@@ -54,6 +54,18 @@ export interface ParsedResumeData {
 }
 
 export type ResumeTemplate =
+  | "classic-rose-serif"
+  | "navy-sidebar-timeline"
+  | "classic-ats-executive"
+  | "photo-header-split-timeline"
+  | "dense-analyst-serif"
+  | "right-sidebar-light"
+  | "banner-header"
+  | "compact-fresher-ats"
+  | "creative-blocks"
+  | "elegant-serif-gold"
+  | "modern-two-column-pro"
+  | "tech-engineer-clean"
   | "classic"
   | "modern"
   | "minimal"
@@ -66,7 +78,8 @@ export type ResumeTemplate =
   | "harvard"
   | "elegant"
   | "modern-pro"
-  | "tech-engineer";
+  | "tech-engineer"
+  | string;
 
 export type AiChangeType =
   | "add-skill"

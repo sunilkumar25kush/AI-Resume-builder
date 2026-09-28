@@ -6,486 +6,358 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+
   body {
     @apply bg-background text-foreground;
-    }
+  }
+
   html {
     @apply font-sans;
-    }
+  }
+
+  #root {
+    isolation: auto;
+  }
+}
+
+/* Guarantee bottom nav is always viewport-pinned */
+nav[aria-label="Bottom navigation"] {
+  position: fixed !important;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
 }
 
 /* ------------------------------------------------------------------ */
-/* Resume templates — preview rendering (static class names so the    */
-/* Tailwind scanner never purges them; used by ResumePreview).        */
+/* True A4 Resume Canvas & Scoped Typography                          */
 /* ------------------------------------------------------------------ */
-.resume-paper {
-  @apply bg-white text-neutral-900;
+
+.font-garamond {
+  font-family: "EB Garamond", Garamond, Georgia, "Times New Roman", serif;
 }
 
-.resume-tpl-classic {
-  font-family: Georgia, "Times New Roman", serif;
-}
-.resume-tpl-classic .rv-header {
-  @apply border-b-4 border-double border-neutral-800 pb-3 text-center;
-}
-.resume-tpl-classic .rv-name {
-  @apply text-3xl font-bold uppercase tracking-wide;
-}
-.resume-tpl-classic .rv-contact {
-  @apply mt-1 flex flex-wrap justify-center gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-classic .rv-heading {
-  @apply mt-4 mb-1 border-b border-neutral-400 pb-0.5 text-sm font-bold uppercase tracking-widest;
-}
-.resume-tpl-classic .rv-title {
-  @apply font-bold;
-}
-.resume-tpl-classic .rv-meta {
-  @apply text-sm text-neutral-600;
+.font-raleway {
+  font-family: "Raleway", "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
-.resume-tpl-modern {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-modern .rv-header {
-  @apply border-l-4 border-blue-600 bg-blue-50/60 px-4 py-3;
-}
-.resume-tpl-modern .rv-name {
-  @apply text-2xl font-bold text-blue-950;
-}
-.resume-tpl-modern .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-modern .rv-heading {
-  @apply mt-4 mb-1.5 text-sm font-bold uppercase tracking-wider text-blue-700;
-}
-.resume-tpl-modern .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-modern .rv-meta {
-  @apply text-sm text-neutral-600;
+.font-serif-classic {
+  font-family: "Latin Modern Roman", "Computer Modern", Georgia, Cambria, "Times New Roman", serif;
 }
 
-.resume-tpl-minimal {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-minimal .rv-header {
-  @apply pb-2;
-}
-.resume-tpl-minimal .rv-name {
-  @apply text-2xl font-light tracking-tight;
-}
-.resume-tpl-minimal .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-500;
-}
-.resume-tpl-minimal .rv-heading {
-  @apply mt-5 mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400;
-}
-.resume-tpl-minimal .rv-title {
-  @apply font-medium;
-}
-.resume-tpl-minimal .rv-meta {
-  @apply text-sm text-neutral-500;
+.font-montserrat {
+  font-family: "Montserrat", system-ui, sans-serif;
 }
 
-.resume-tpl-compact {
-  font-family: "Geist Variable", system-ui, sans-serif;
-  font-size: 0.8125rem;
-}
-.resume-tpl-compact .rv-header {
-  @apply border-b border-neutral-300 pb-1.5;
-}
-.resume-tpl-compact .rv-name {
-  @apply text-xl font-bold;
-}
-.resume-tpl-compact .rv-contact {
-  @apply mt-0.5 flex flex-wrap gap-x-2.5 text-xs text-neutral-600;
-}
-.resume-tpl-compact .rv-heading {
-  @apply mt-3 mb-0.5 text-[11px] font-bold uppercase tracking-wider text-neutral-700;
-}
-.resume-tpl-compact .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-compact .rv-meta {
-  @apply text-xs text-neutral-600;
+.font-opensans {
+  font-family: "Open Sans", system-ui, sans-serif;
 }
 
-.rv-section {
-  @apply flex flex-col gap-0.5;
-}
-.rv-summary-text {
-  @apply text-sm leading-relaxed text-neutral-700;
-}
-.rv-entry {
-  @apply flex flex-col gap-0.5;
-}
-.rv-dates {
-  @apply text-xs text-neutral-500;
-}
-.rv-skills {
-  @apply flex flex-wrap gap-1.5;
-}
-.rv-skill {
-  @apply rounded-sm border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-700;
-}
-.rv-empty {
-  @apply text-sm italic text-neutral-400;
+.font-playfair {
+  font-family: "Playfair Display", Georgia, serif;
 }
 
-/* Executive — bold serif + gold */
-.resume-tpl-executive {
-  font-family: Georgia, "Times New Roman", serif;
-}
-.resume-tpl-executive .rv-header {
-  @apply border-b-2 border-amber-500 pb-3;
-}
-.resume-tpl-executive .rv-name {
-  @apply text-3xl font-bold tracking-tight;
-}
-.resume-tpl-executive .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-executive .rv-heading {
-  @apply mt-4 mb-1 text-[13px] font-bold uppercase tracking-[0.18em] text-amber-700;
-}
-.resume-tpl-executive .rv-title {
-  @apply font-bold;
-}
-.resume-tpl-executive .rv-meta {
-  @apply text-sm text-neutral-600;
+.font-lora {
+  font-family: "Lora", Georgia, serif;
 }
 
-/* Creative — vibrant purple/pink */
-.resume-tpl-creative {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-creative .rv-header {
-  @apply rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-3 text-white;
-}
-.resume-tpl-creative .rv-name {
-  @apply text-2xl font-extrabold;
-}
-.resume-tpl-creative .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-xs text-white/85;
-}
-.resume-tpl-creative .rv-heading {
-  @apply mt-4 mb-1.5 text-sm font-bold uppercase tracking-wider text-fuchsia-600;
-}
-.resume-tpl-creative .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-creative .rv-meta {
-  @apply text-sm text-neutral-600;
+/* True A4 paper container: 794px x 1123px at 96 DPI */
+.resume-a4-page {
+  width: 794px;
+  min-height: 1123px;
+  background-color: #ffffff;
+  color: #111827;
+  font-size: 14px; /* 10.5pt */
+  line-height: 1.4;
+  box-sizing: border-box;
+  position: relative;
+  text-align: left;
+  margin: 0 auto;
 }
 
-/* Startup — bold indigo */
-.resume-tpl-startup {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-startup .rv-header {
-  @apply border-b-4 border-indigo-600 pb-2;
-}
-.resume-tpl-startup .rv-name {
-  @apply text-2xl font-black tracking-tight text-indigo-950;
-}
-.resume-tpl-startup .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-startup .rv-heading {
-  @apply mt-4 mb-1 text-xs font-extrabold uppercase tracking-widest text-indigo-600;
-}
-.resume-tpl-startup .rv-title {
-  @apply font-bold;
-}
-.resume-tpl-startup .rv-meta {
-  @apply text-sm text-neutral-600;
+/* Print page setup */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
 }
 
-/* Google Style — multi-color name, clean body */
-.resume-tpl-google {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-google .rv-header {
-  @apply pb-2 text-center;
-}
-.resume-tpl-google .rv-name {
-  @apply text-3xl font-medium tracking-tight;
-  background: linear-gradient(90deg, #4285f4, #ea4335, #fbbc05, #34a853);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.resume-tpl-google .rv-contact {
-  @apply mt-1 flex flex-wrap justify-center gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-google .rv-heading {
-  @apply mt-4 mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-700;
-}
-.resume-tpl-google .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-google .rv-meta {
-  @apply text-sm text-neutral-600;
+@page full-bleed {
+  size: A4 portrait;
+  margin: 0;
 }
 
-/* Microsoft Style — crisp blue */
-.resume-tpl-microsoft {
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-microsoft .rv-header {
-  @apply border-b-2 border-[#0078d4] pb-2;
-}
-.resume-tpl-microsoft .rv-name {
-  @apply text-2xl font-semibold text-[#1a1a1a];
-}
-.resume-tpl-microsoft .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-microsoft .rv-heading {
-  @apply mt-4 mb-1 text-[13px] font-bold uppercase tracking-wider text-[#0078d4];
-}
-.resume-tpl-microsoft .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-microsoft .rv-meta {
-  @apply text-sm text-neutral-600;
+.resume-single-col {
+  page: auto;
 }
 
-/* Harvard — academic crimson serif */
-.resume-tpl-harvard {
-  font-family: Georgia, "Times New Roman", serif;
-}
-.resume-tpl-harvard .rv-header {
-  @apply border-b-2 border-[#A51C30] pb-2;
-}
-.resume-tpl-harvard .rv-name {
-  @apply text-3xl font-bold text-[#1a1a1a];
-}
-.resume-tpl-harvard .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-harvard .rv-heading {
-  @apply mt-4 mb-1 text-sm font-bold uppercase tracking-[0.15em] text-[#A51C30];
-}
-.resume-tpl-harvard .rv-title {
-  @apply font-bold;
-}
-.resume-tpl-harvard .rv-meta {
-  @apply text-sm text-neutral-600;
+.resume-full-bleed {
+  page: full-bleed;
 }
 
-/* Elegant — refined serif + rose gold */
-.resume-tpl-elegant {
-  font-family: Georgia, "Times New Roman", serif;
+/* ------------------------------------------------------------------ */
+/* Auto-Fit Density Levels for Short / Dense Content                  */
+/* ------------------------------------------------------------------ */
+.density-compact .resume-a4-page {
+  font-size: 12.5px !important; /* ~9.5pt */
+  line-height: 1.3 !important;
+  padding: 1.5rem 2rem !important;
 }
-.resume-tpl-elegant .rv-header {
-  @apply border-b border-rose-200 pb-3;
+.density-compact .resume-a4-page p,
+.density-compact .resume-a4-page li,
+.density-compact .resume-a4-page ul,
+.density-compact .resume-a4-page [class*="text-[13"],
+.density-compact .resume-a4-page [class*="text-[14"],
+.density-compact .resume-a4-page [class*="text-sm"] {
+  font-size: 12.5px !important;
+  line-height: 1.3 !important;
 }
-.resume-tpl-elegant .rv-name {
-  @apply text-3xl font-light tracking-wide text-[#1a1a1a];
+.density-compact .resume-header {
+  margin-bottom: 0.75rem !important;
 }
-.resume-tpl-elegant .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm italic text-neutral-500;
-}
-.resume-tpl-elegant .rv-heading {
-  @apply mt-5 mb-1 text-xs font-semibold uppercase tracking-[0.25em] text-rose-400;
-}
-.resume-tpl-elegant .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-elegant .rv-meta {
-  @apply text-sm italic text-neutral-500;
-}
-
-/* Modern Professional — two-column grid with a blue skills sidebar.
-   The rv-section-* classes let the same DOM be re-flowed into a grid:
-   main sections (summary/experience/education/projects/custom) occupy
-   column 1, sidebar sections (skills/certs/languages/awards) column 2. */
-.resume-tpl-modern-pro {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34%;
-  align-items: start;
-  column-gap: 14px;
-  font-family: "Geist Variable", system-ui, sans-serif;
-}
-.resume-tpl-modern-pro .rv-header {
-  @apply mb-2 border-b-2 border-blue-600 pb-2;
-  grid-column: 1 / -1;
-}
-.resume-tpl-modern-pro .rv-name {
-  @apply text-2xl font-bold text-blue-700;
-}
-.resume-tpl-modern-pro .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
-}
-.resume-tpl-modern-pro .rv-section-summary,
-.resume-tpl-modern-pro .rv-section-experience,
-.resume-tpl-modern-pro .rv-section-education,
-.resume-tpl-modern-pro .rv-section-projects,
-.resume-tpl-modern-pro .rv-section-custom {
-  grid-column: 1;
-}
-.resume-tpl-modern-pro .rv-section-skills,
-.resume-tpl-modern-pro .rv-section-certifications,
-.resume-tpl-modern-pro .rv-section-languages,
-.resume-tpl-modern-pro .rv-section-awards {
-  @apply rounded bg-blue-50/70 p-3;
-  grid-column: 2;
-}
-.resume-tpl-modern-pro .rv-heading {
-  @apply mb-1 mt-1 text-xs font-bold uppercase tracking-wider text-blue-700;
-}
-.resume-tpl-modern-pro .rv-title {
-  @apply font-semibold;
-}
-.resume-tpl-modern-pro .rv-meta {
-  @apply text-sm text-neutral-600;
-}
-.resume-tpl-modern-pro .rv-skill {
-  @apply inline-block rounded bg-white/70 px-1.5 py-0.5 text-xs text-blue-900;
+.density-compact section,
+.density-compact .resume-section,
+.density-compact [class*="space-y-4"] > * + * {
+  margin-top: 0.65rem !important;
+  margin-bottom: 0.65rem !important;
 }
 
-/* Tech Engineer — skills-first, project-focused single column */
-.resume-tpl-tech-engineer {
-  font-family: "Geist Variable", system-ui, sans-serif;
+.density-1 .resume-a4-page {
+  font-size: 14px !important; /* 10.5pt standard */
+  line-height: 1.4 !important;
 }
-.resume-tpl-tech-engineer .rv-header {
-  @apply border-b-2 border-teal-600 pb-2;
+
+.density-2 .resume-a4-page {
+  font-size: 14.8px !important; /* ~11pt */
+  line-height: 1.48 !important;
+  padding: 2.75rem 2.5rem !important;
 }
-.resume-tpl-tech-engineer .rv-name {
-  @apply text-2xl font-bold text-teal-800;
+.density-2 .resume-a4-page p,
+.density-2 .resume-a4-page li,
+.density-2 .resume-a4-page ul,
+.density-2 .resume-a4-page [class*="text-[13"],
+.density-2 .resume-a4-page [class*="text-[14"],
+.density-2 .resume-a4-page [class*="text-sm"] {
+  font-size: 14.7px !important;
+  line-height: 1.48 !important;
 }
-.resume-tpl-tech-engineer .rv-contact {
-  @apply mt-1 flex flex-wrap gap-x-3 text-sm text-neutral-600;
+.density-2 .resume-header {
+  margin-bottom: 1.4rem !important;
 }
-.resume-tpl-tech-engineer .rv-heading {
-  @apply mt-4 mb-1.5 text-xs font-bold uppercase tracking-widest text-teal-700;
+.density-2 section,
+.density-2 .resume-section,
+.density-2 [class*="space-y-4"] > * + * {
+  margin-top: 1.25rem !important;
+  margin-bottom: 1.25rem !important;
 }
-.resume-tpl-tech-engineer .rv-title {
-  @apply font-semibold;
+
+.density-3 .resume-a4-page {
+  font-size: 15.6px !important; /* ~11.5pt */
+  line-height: 1.58 !important;
+  padding: 3.25rem 2.5rem !important;
 }
-.resume-tpl-tech-engineer .rv-meta {
-  @apply text-sm text-neutral-600;
+.density-3 .resume-a4-page p,
+.density-3 .resume-a4-page li,
+.density-3 .resume-a4-page ul,
+.density-3 .resume-a4-page [class*="text-[13"],
+.density-3 .resume-a4-page [class*="text-[14"],
+.density-3 .resume-a4-page [class*="text-sm"] {
+  font-size: 15.3px !important;
+  line-height: 1.58 !important;
 }
-.resume-tpl-tech-engineer .rv-skills {
-  @apply flex flex-wrap gap-1.5;
+.density-3 .resume-header {
+  margin-bottom: 1.85rem !important;
 }
-.resume-tpl-tech-engineer .rv-skill {
-  @apply rounded bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-900;
+.density-3 section,
+.density-3 .resume-section,
+.density-3 [class*="space-y-4"] > * + * {
+  margin-top: 1.55rem !important;
+  margin-bottom: 1.55rem !important;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Remove transforms, fixed heights, and overflow hidden from all ancestors */
+  #root,
+  .print-wrapper,
+  .resume-print-canvas {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Hide app header, bottom nav, buttons, dialogs, etc. */
+  header:not(.resume-header),
+  nav,
+  footer,
+  aside:not(.resume-sidebar),
+  .no-print,
+  [data-no-print="true"],
+  button {
+    display: none !important;
+  }
+
+  .resume-a4-page {
+    width: 210mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    transform: none !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .resume-single-col {
+    padding: 0 !important;
+  }
+
+  .resume-full-bleed {
+    padding: 0 !important;
+  }
+
+  .break-inside-avoid,
+  .break-inside-avoid-page {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  a {
+    text-decoration: underline !important;
+    color: inherit !important;
+  }
 }

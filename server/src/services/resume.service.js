@@ -3,10 +3,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Resume } from "../models/Resume.js";
+import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
 import { validateMagicBytes, RESUME_MIME } from "../middlewares/upload.js";
 import { extractText, normalizeResumeText } from "./resumeParser.js";
 import { createSnapshot } from "./versions.service.js";
+import { renderResumePdf, verifyPrintToken } from "./pdfExport.service.js";
+import { verifyToken } from "../utils/token.js";
 
 const UPLOADS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..", "uploads");
 
@@ -137,3 +140,34 @@ export async function deleteResume(userId, resumeId) {
   }
   return { id: resumeId };
 }
+
+export async function exportPdf(userId, resumeId, { density, theme }) {
+  return renderResumePdf(userId, resumeId, { density, theme });
+}
+
+export async function getPrintData(req) {
+  const resumeId = req.params.id;
+  const token = req.query.token;
+  let userId;
+
+  if (token) {
+    userId = verifyPrintToken(token, resumeId);
+  } else {
+    const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const sessionToken = req.cookies?.token || bearer;
+    if (!sessionToken) throw ApiError.unauthorized("Authentication required");
+    const payload = verifyToken(sessionToken);
+    const user = await User.findById(payload.sub);
+    if (!user || !user.isActive) throw ApiError.unauthorized("Account unavailable");
+    userId = user._id;
+  }
+
+  const resume = await Resume.findById(resumeId).select("-filePath -__v").lean();
+  if (!resume) throw ApiError.notFound("Resume not found");
+  if (String(resume.user) !== String(userId)) {
+    throw ApiError.forbidden("Access denied");
+  }
+
+  return resume;
+}
+
