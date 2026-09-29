@@ -1,3 +1,21 @@
 {
-  "buildPath": "code"
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "montserrat",
+        "createdAt": "2026-09-29T06:17:06.158Z",
+        "reason": "Resume template typography option"
+      },
+      {
+        "rule": "overused-font",
+        "value": "open sans",
+        "createdAt": "2026-09-29T06:17:07.509Z",
+        "reason": "Resume template typography option"
+      }
+    ]
+  }
 }

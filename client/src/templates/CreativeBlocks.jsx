@@ -155,8 +155,7 @@ export function CreativeBlocks({ data, theme = {} }) {
             {projects.map((proj, idx) => (
               <div
                 key={idx}
-                className="rounded-b-lg border border-neutral-200 border-t-4 p-4 bg-neutral-50/60 shadow-2xs break-inside-avoid"
-                style={{ borderTopColor: purple }}
+                className="rounded-lg border border-neutral-200 p-4 bg-neutral-50/60 shadow-2xs break-inside-avoid"
               >
                 <div className="flex justify-between items-baseline mb-1">
                   <div className="flex items-baseline gap-2">

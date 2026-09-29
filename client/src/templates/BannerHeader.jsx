@@ -100,7 +100,7 @@ export function BannerHeader({ data, theme = {} }) {
         {summary && (
           <section className="break-inside-avoid">
             <h2
-              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
               style={{ borderColor: bannerColor, color: bannerColor }}
             >
               Professional Summary
@@ -115,7 +115,7 @@ export function BannerHeader({ data, theme = {} }) {
         {experience.length > 0 && (
           <section className="break-inside-avoid-page space-y-3.5">
             <h2
-              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
               style={{ borderColor: bannerColor, color: bannerColor }}
             >
               Work Experience
@@ -153,7 +153,7 @@ export function BannerHeader({ data, theme = {} }) {
         {projects.length > 0 && (
           <section className="break-inside-avoid-page">
             <h2
-              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-3 border-l-4"
+              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-3 border-l-2"
               style={{ borderColor: bannerColor, color: bannerColor }}
             >
               Key Projects
@@ -210,7 +210,7 @@ export function BannerHeader({ data, theme = {} }) {
         {skills.length > 0 && (
           <section className="break-inside-avoid">
             <h2
-              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
               style={{ borderColor: bannerColor, color: bannerColor }}
             >
               Skills
@@ -230,7 +230,7 @@ export function BannerHeader({ data, theme = {} }) {
         {education.length > 0 && (
           <section className="break-inside-avoid">
             <h2
-              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+              className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
               style={{ borderColor: bannerColor, color: bannerColor }}
             >
               Education
@@ -258,7 +258,7 @@ export function BannerHeader({ data, theme = {} }) {
             {certifications.length > 0 && (
               <section>
                 <h2
-                  className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+                  className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
                   style={{ borderColor: bannerColor, color: bannerColor }}
                 >
                   Certifications
@@ -276,7 +276,7 @@ export function BannerHeader({ data, theme = {} }) {
             {languages.length > 0 && (
               <section>
                 <h2
-                  className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-4"
+                  className="text-[13.5px] font-bold uppercase tracking-wider pl-3 py-0.5 mb-2 border-l-2"
                   style={{ borderColor: bannerColor, color: bannerColor }}
                 >
                   Languages
