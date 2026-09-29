@@ -24,11 +24,26 @@ const app = express();
 app.set("trust proxy", 1);
 
 // Security headers
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
-// CORS — allow configured client origin with credentials (cookies)
+// CORS — allow configured client origins + all Vercel deployment URLs (*.vercel.app)
+const configuredOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+
 const corsOptions = {
-  origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()),
+  origin: (origin, callback) => {
+    // Allow non-browser requests or same-origin
+    if (!origin) return callback(null, true);
+
+    // Allow explicitly configured origins
+    if (configuredOrigins.includes(origin)) return callback(null, true);
+
+    // Automatically allow any Vercel deployment (*.vercel.app)
+    if (origin.endsWith(".vercel.app") || /^https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(null, false);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
