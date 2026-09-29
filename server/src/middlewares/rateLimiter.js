@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import { RATE_LIMITS } from "../constants/index.js";
 import { ApiError } from "../utils/ApiError.js";
 
-const handler = () => ApiError.tooManyRequests();
+const handler = (req, res, next) => next(ApiError.tooManyRequests());
 
 /** Global limiter — applied to all /api routes. */
 export const apiLimiter = rateLimit({

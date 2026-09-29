@@ -4,7 +4,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
   MONGO_URI: z.string().url().optional().or(z.literal("")),
-  JWT_SECRET: z.string().min(16).default("dev-only-secret-change-in-production"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters — generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""),
   JWT_EXPIRES_IN: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   GOOGLE_CLIENT_ID: z.string().optional(),

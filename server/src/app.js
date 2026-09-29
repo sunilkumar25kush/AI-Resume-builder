@@ -9,6 +9,7 @@ import helmet from "helmet";
 
 import { env } from "./config/env.js";
 import { isDbConnected, getDbError } from "./config/db.js";
+import { protect as _protect } from "./middlewares/auth.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js";
 import routes from "./routes/index.js";
@@ -52,8 +53,12 @@ app.use("/api", (req, res, next) => {
 // Global rate limit + routes
 app.use("/api", apiLimiter, routes);
 
-// User-uploaded files (avatars)
-app.use("/uploads", express.static("uploads", { maxAge: "7d", immutable: true }));
+// User-uploaded files.
+// Avatars are public (profile pictures). Resumes and JDs contain PII and
+// must only be accessible to authenticated users — protect() guards them.
+app.use("/uploads/avatars", express.static(join("uploads", "avatars"), { maxAge: "7d" }));
+app.use("/uploads/resumes", _protect, express.static(join("uploads", "resumes"), { maxAge: "7d" }));
+app.use("/uploads/jds", _protect, express.static(join("uploads", "jds"), { maxAge: "7d" }));
 
 // Production: serve the built client from this same service (single deploy).
 // Skipped automatically in dev — Vite serves the client on its own port.

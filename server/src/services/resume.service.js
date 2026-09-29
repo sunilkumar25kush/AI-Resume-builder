@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { Resume } from "../models/Resume.js";
 import { ApiError } from "../utils/ApiError.js";
+import { validateMagicBytes, RESUME_MIME } from "../middlewares/upload.js";
 import { extractText, normalizeResumeText } from "./resumeParser.js";
 import { createSnapshot } from "./versions.service.js";
 
@@ -13,11 +14,15 @@ const UPLOADS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 export async function createResume({ userId, file }) {
   if (!file) throw ApiError.badRequest("No file uploaded");
 
+  // Second gate: validate actual file magic bytes (client may spoof Content-Type).
+  await validateMagicBytes(file, RESUME_MIME, "Only PDF or DOCX files are allowed");
+
   let parsedData;
   let parseError = "";
 
   try {
-    const text = await extractText(fs.readFileSync(file.path), file.mimetype);
+    const fileBuffer = await fs.promises.readFile(file.path);
+    const text = await extractText(fileBuffer, file.mimetype);
     parsedData = normalizeResumeText(text);
   } catch (error) {
     parseError = error.code === "UNREADABLE" ? error.message : "Could not parse this file — it may be corrupted or scanned (no selectable text)";
@@ -38,11 +43,30 @@ export async function createResume({ userId, file }) {
   });
 }
 
-export async function listResumes(userId) {
-  return Resume.find({ user: userId })
-    .sort({ createdAt: -1 })
-    .select("-filePath -__v")
-    .lean();
+export async function listResumes(userId, { page = 1, limit = 20 } = {}) {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+  const skip = (safePage - 1) * safeLimit;
+
+  const [resumes, total] = await Promise.all([
+    Resume.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(safeLimit)
+      .select("-filePath -__v")
+      .lean(),
+    Resume.countDocuments({ user: userId }),
+  ]);
+
+  return {
+    resumes,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
 }
 
 /**

@@ -7,8 +7,10 @@ export const uploadResume = asyncHandler(async (req, res) => {
 });
 
 export const listResumes = asyncHandler(async (req, res) => {
-  const resumes = await resumeService.listResumes(req.user.id);
-  res.json({ success: true, data: { resumes } });
+  const page = Number.parseInt(req.query.page ?? "1", 10) || 1;
+  const limit = Number.parseInt(req.query.limit ?? "20", 10) || 20;
+  const result = await resumeService.listResumes(req.user.id, { page, limit });
+  res.json({ success: true, data: result });
 });
 
 /** Create a fresh blank resume (scratch builder) — name/email prefilled. */

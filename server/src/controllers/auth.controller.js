@@ -7,7 +7,7 @@ const setAuthCookie = (res, token) => res.cookie(COOKIE_NAME, token, COOKIE_OPTI
 
 export const register = asyncHandler(async (req, res) => {
   const { user, token } = await authService.register(req.validatedBody);
-  setAuthCookie(res, token);
+  if (token) setAuthCookie(res, token);
   res.status(201).json(ApiResponse.created({ user }, "Account created successfully"));
 });
 
@@ -31,10 +31,10 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
-  const { resetToken } = await authService.forgotPassword(req.validatedBody);
+  await authService.forgotPassword(req.validatedBody);
   res.json(
     ApiResponse.ok(
-      { devResetToken: resetToken ?? undefined },
+      null,
       "If an account exists for this email, a reset link has been sent",
     ),
   );

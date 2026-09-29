@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
     isActive: { type: Boolean, default: true },
-    passwordResetToken: { type: String, select: false },
+    passwordResetToken: { type: String, select: false, index: { sparse: true } },
     passwordResetExpires: { type: Date, select: false },
   },
   { timestamps: true },

@@ -13,6 +13,11 @@ export function errorHandler(err, req, res, next) {
     return res.status(413).json({ success: false, message });
   }
 
+  // MongoDB malformed ObjectId → 400
+  if (err.name === "CastError") {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid ID format" });
+  }
+
   const statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
 
   if (statusCode >= 500) {
