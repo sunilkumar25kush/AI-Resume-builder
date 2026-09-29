@@ -1,35 +1,52 @@
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Builds
 dist/
 build/
 *.tsbuildinfo
+.output/
 
-# Environment
+# Environment files
 .env
 .env.local
 .env.*.local
+!.env.example
+!.env.production
 
 # Logs
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# OS
+# OS / Editor
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
+!.vscode/extensions.json
 .idea/
+*.swp
+*.swo
+
+# AI / IDE tooling cache
+.hermes/
+.gemini/
+.turbo/
 
 # Coverage
 coverage/
+*.lcov
 
-# Uploads (runtime files)
+# Uploads & Temporary runtime files
+uploads/
 server/uploads/
 server/public/
+scratch/
 
 # Vite
 .vite/

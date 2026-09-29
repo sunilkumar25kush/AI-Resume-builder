@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getTemplateById } from "@/templates";
 import type { ParsedResumeData, ResumeTemplate } from "@/types";
 
@@ -47,10 +47,13 @@ export function ResumePreview({
   const TemplateComponent = tplDef.component;
 
   // Active theme (custom theme or template default)
-  const activeTheme = {
-    ...tplDef.defaultTheme,
-    ...theme,
-  };
+  const activeTheme = useMemo(
+    () => ({
+      ...tplDef.defaultTheme,
+      ...theme,
+    }),
+    [tplDef.defaultTheme, theme]
+  );
 
   // Measure container and content to compute pixel-perfect scale
   useEffect(() => {
@@ -89,6 +92,8 @@ export function ResumePreview({
   // Triggered only when data or template changes, preventing recursive feedback loops
   const onDensityDetectedRef = useRef(onDensityDetected);
   onDensityDetectedRef.current = onDensityDetected;
+  const densityRef = useRef(density);
+  densityRef.current = density;
 
   useEffect(() => {
     if (!contentRef.current || !onDensityDetectedRef.current) return;
@@ -100,11 +105,12 @@ export function ResumePreview({
       const threshold88 = a4PrintableHeight * 0.88;
 
       let baselineHeight = height;
-      if (density === "density-compact") {
+      const currentDensity = densityRef.current;
+      if (currentDensity === "density-compact") {
         baselineHeight = height / 0.88;
-      } else if (density === "density-2") {
+      } else if (currentDensity === "density-2") {
         baselineHeight = height / 1.08;
-      } else if (density === "density-3") {
+      } else if (currentDensity === "density-3") {
         baselineHeight = height / 1.18;
       }
 

@@ -30,9 +30,16 @@ export async function exportResumePdf(
   }
 
   if (resumeId) {
-    const blob = await resumesApi.exportPdf(resumeId, density, theme);
-    downloadBlob(blob, exportFileName(fileName, "pdf"));
-    return;
+    try {
+      const blob = await resumesApi.exportPdf(resumeId, density, theme);
+      downloadBlob(blob, exportFileName(fileName, "pdf"));
+      return;
+    } catch (err) {
+      console.warn("Server PDF export failed, falling back to browser print:", err);
+      // Fallback: trigger browser print
+      window.print();
+      return;
+    }
   }
 
   // Fallback for scratch instances: trigger browser print

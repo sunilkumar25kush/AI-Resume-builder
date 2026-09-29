@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText, ContactItem } from "./primitives";
+import { BulletList, DateRange, ContactItem } from "./primitives";
 
 /**
  * T5 - Dense Analyst Serif (Reference D)

@@ -1,7 +1,12 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { env } from "../config/env.js";
 import { Resume } from "../models/Resume.js";
 import { ApiError } from "../utils/ApiError.js";
 import { signToken, verifyToken } from "../utils/token.js";
+
+const CLIENT_DIST = fileURLToPath(new URL("../../../client/dist", import.meta.url));
 
 let browserPromise = null;
 
@@ -66,7 +71,11 @@ export async function renderResumePdf(userId, resumeId, { density = "density-1",
   }
 
   const printToken = createPrintToken(userId, resumeId);
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const clientUrl =
+    env.CLIENT_URL ||
+    (env.NODE_ENV === "production"
+      ? (existsSync(CLIENT_DIST) ? `http://127.0.0.1:${env.PORT}` : env.CORS_ORIGIN.split(",")[0].trim())
+      : "http://localhost:5173");
   const themeParam = encodeURIComponent(typeof theme === "string" ? theme : JSON.stringify(theme));
   const printUrl = `${clientUrl}/print/${resumeId}?token=${printToken}&density=${density}&theme=${themeParam}`;
 

@@ -10,7 +10,7 @@ import { Section, BulletList, DateRange, RichText, CandidateName } from "./primi
  */
 export function ClassicRoseSerif({ data, theme = {} }) {
   const resume = normalizeResume(data);
-  const { personal, summary, experience, education, projects, skills, coursework, certifications, languages, references } = resume;
+  const { personal, summary, experience, education, projects, skills, certifications, languages } = resume;
 
   const accent = theme.accentColor || "#C2185B";
   const fontSizeBase = theme.fontSize || "14px";

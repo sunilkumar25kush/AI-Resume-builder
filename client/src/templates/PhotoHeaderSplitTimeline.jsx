@@ -13,7 +13,7 @@ import { BulletList, DateRange, RichText, Icon } from "./primitives";
  */
 export function PhotoHeaderSplitTimeline({ data, theme = {} }) {
   const resume = normalizeResume(data);
-  const { personal, summary, experience, education, projects, skills, certifications, languages, references } = resume;
+  const { personal, summary, experience, education, projects, skills, references } = resume;
 
   const accent = theme.accentColor || "#222222";
   const fontSizeBase = theme.fontSize || "14px";

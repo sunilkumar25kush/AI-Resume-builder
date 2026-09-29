@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import axios from "axios";
+import { apiClient } from "@/api/client";
 import { getTemplateById } from "@/templates";
 import type { Resume } from "@/types";
 
@@ -30,9 +30,9 @@ export default function PrintResumePage() {
     if (!id) return;
     let cancelled = false;
 
-    const url = `/api/resumes/${id}/print-data${token ? `?token=${encodeURIComponent(token)}` : ""}`;
-    axios
-      .get(url, { withCredentials: true })
+    const url = `/resumes/${id}/print-data${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    apiClient
+      .get(url)
       .then((res) => {
         if (!cancelled) {
           setResume(res.data.data.resume);
