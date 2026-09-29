@@ -5,7 +5,9 @@ import { uploadResume as uploadResumeMulter } from "../middlewares/upload.js";
 import {
   createBlankResume,
   deleteResume,
+  exportResumePdf,
   getResume,
+  getResumePrintData,
   listResumes,
   updateResume,
   uploadResume,
@@ -18,8 +20,12 @@ import { generateFromJdSchema, generateResumeSchema } from "../validations/gener
 
 const router = Router();
 
+// Print data endpoint accepts short-lived query token (for Puppeteer) or user session
+router.get("/:id/print-data", getResumePrintData);
+
 router.use(protect);
 
+router.get("/:id/export/pdf", exportResumePdf);
 router.post("/", uploadResumeMulter.single("resume"), uploadResume);
 router.post("/generate-from-jd", validate({ body: generateFromJdSchema }), generateResumeFromJd);
 router.post("/blank", validate({ body: createBlankResumeSchema }), createBlankResume);

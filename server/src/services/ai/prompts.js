@@ -48,8 +48,11 @@ YOU MAY ADD (this is the point of the rewrite):
 
 HOW TO IMPROVE (writing quality):
 - Rewrite the summary: strong, specific, tailored to this job description, 2-4 sentences.
-- Rewrite experience and project descriptions as 3-5 achievement-focused bullets, each starting with a strong action verb (led, built, shipped, optimized, designed, delivered, reduced, automated). Separate bullets with newlines.
-- Where the resume already has numbers, emphasize them ("reduced load time by 40%", not "made site faster").
+- Rewrite experience and project descriptions as 3-5 achievement-focused bullets.
+- Each bullet MUST start with a strong action verb (led, built, shipped, optimized, designed, delivered, reduced, automated).
+- Keep each bullet concise (max 2 lines each, no fluff).
+- Wrap 1-2 key metrics or technologies per bullet in **bold** (e.g. "**40%** latency reduction", "**React** and **Node.js**").
+- NEVER generate HTML or CSS tags. The output must be pure clean text and markdown bold inside the JSON structure.
 - Keep the same tone and factual content; improve structure and word choice only.
 
 OUTPUT FORMAT:

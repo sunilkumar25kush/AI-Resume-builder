@@ -48,6 +48,18 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
+  /** Server-side Puppeteer PDF export matching the live React preview exactly */
+  async exportPdf(id: string, density?: string, theme?: { accentColor?: string; fontSize?: string }): Promise<Blob> {
+    const res = await apiClient.get(`/resumes/${id}/export/pdf`, {
+      params: {
+        density,
+        theme: theme ? JSON.stringify(theme) : undefined,
+      },
+      responseType: "blob",
+    });
+    return res.data;
+  },
+
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/resumes/${id}`);
   },

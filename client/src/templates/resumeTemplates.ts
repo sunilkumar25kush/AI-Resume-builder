@@ -4,95 +4,100 @@ export interface ResumeTemplateDef {
   id: ResumeTemplate;
   name: string;
   description: string;
-  className: string;
+  reference?: string;
+  accentColor?: string;
 }
 
-/**
- * Built-in resume templates. The `className` is applied to the preview
- * wrapper — the actual styles live in `src/index.css` under the same
- * class names (static strings so Tailwind/shadcn never purge them).
- */
 export const RESUME_TEMPLATES: ResumeTemplateDef[] = [
   {
-    id: "classic",
-    name: "ATS Professional",
-    description: "Serif type, centered header — the traditional ATS-safe standard.",
-    className: "resume-tpl-classic",
+    id: "classic-rose-serif",
+    name: "Classic Rose Serif",
+    description: "Centered serif with crimson accent (#C2185B), justified summary, and full-width wrapped skills line.",
+    reference: "Reference E",
+    accentColor: "#C2185B",
   },
   {
-    id: "modern",
-    name: "Modern",
-    description: "Clean sans-serif with a blue accent bar.",
-    className: "resume-tpl-modern",
+    id: "navy-sidebar-timeline",
+    name: "Navy Sidebar Timeline",
+    description: "Two-column layout (33/67) with dark navy sidebar (#2B3450), 140px photo, white badges, and work timeline.",
+    reference: "Reference A",
+    accentColor: "#2B3450",
   },
   {
-    id: "minimal",
-    name: "Minimal",
-    description: "Light spacing, no accent color, lots of air.",
-    className: "resume-tpl-minimal",
+    id: "classic-ats-executive",
+    name: "Classic ATS Executive",
+    description: "Monochrome serif with small-caps name, 3-column skills bullet grid, 1.5px divider, and maximum ATS safety.",
+    reference: "Reference B",
+    accentColor: "#000000",
   },
   {
-    id: "compact",
-    name: "Compact",
-    description: "Smaller type for dense, one-page resumes.",
-    className: "resume-tpl-compact",
+    id: "photo-header-split-timeline",
+    name: "Photo Header Split Timeline",
+    description: "140x140 photo header, Montserrat name, and 2-column split experience (Left date/company, Right role/bullets).",
+    reference: "Reference C",
+    accentColor: "#222222",
   },
   {
-    id: "executive",
-    name: "Executive",
-    description: "Bold serif with a gold accent — boardroom-ready.",
-    className: "resume-tpl-executive",
+    id: "dense-analyst-serif",
+    name: "Dense Analyst Serif",
+    description: "Centered small-caps name, contact icons, summary bullets, 4-col coursework, and dense one-page vertical rhythm.",
+    reference: "Reference D",
+    accentColor: "#000000",
   },
   {
-    id: "creative",
-    name: "Creative",
-    description: "Vibrant purple/pink accents for design roles.",
-    className: "resume-tpl-creative",
+    id: "right-sidebar-light",
+    name: "Right Sidebar Light",
+    description: "Two-column (68/32) with light gray right sidebar (#F3F4F6), indigo accent (#4F46E5), and skill pills.",
+    reference: "T6 Light",
+    accentColor: "#4F46E5",
   },
   {
-    id: "startup",
-    name: "Startup",
-    description: "Bold indigo and modern sans — product-team energy.",
-    className: "resume-tpl-startup",
+    id: "banner-header",
+    name: "Banner Header",
+    description: "Full-width colored banner (#0F4C81) with white text, left-accent headings, and bordered project cards.",
+    reference: "T7 Banner",
+    accentColor: "#0F4C81",
   },
   {
-    id: "google",
-    name: "Google Style",
-    description: "Playful multi-color name, clean and minimal body.",
-    className: "resume-tpl-google",
+    id: "compact-fresher-ats",
+    name: "Compact Fresher ATS",
+    description: "Pure B&W Arial, ultra-compact. Education & projects placed before experience, one-line skills rows.",
+    reference: "T8 Fresher",
+    accentColor: "#000000",
   },
   {
-    id: "microsoft",
-    name: "Microsoft Style",
-    description: "Crisp sans-serif with a single strong blue accent.",
-    className: "resume-tpl-microsoft",
+    id: "creative-blocks",
+    name: "Creative Blocks",
+    description: "Purple pill headings (#7C3AED), colored surname, rounded skill tags, and top-bordered project cards.",
+    reference: "T9 Creative",
+    accentColor: "#7C3AED",
   },
   {
-    id: "harvard",
-    name: "Harvard",
-    description: "Academic serif with a crimson accent.",
-    className: "resume-tpl-harvard",
-  },
-  {
-    id: "elegant",
-    name: "Elegant",
-    description: "Refined serif, thin rules and a rose-gold accent.",
-    className: "resume-tpl-elegant",
-  },
-  {
-    id: "modern-pro",
-    name: "Modern Professional",
-    description: "Two-column layout with a blue skills sidebar — classic tech-role look.",
-    className: "resume-tpl-modern-pro",
-  },
-  {
-    id: "tech-engineer",
-    name: "Tech Engineer",
-    description: "Skills-first, project-focused single column for developers.",
-    className: "resume-tpl-tech-engineer",
+    id: "elegant-serif-gold",
+    name: "Elegant Serif Gold",
+    description: "Centered Playfair Display name, gold divider (#B08D57), headings with side lines (— Experience —), Lora body.",
+    reference: "T10 Gold",
+    accentColor: "#B08D57",
   },
 ];
 
+const LEGACY_MAP: Record<string, ResumeTemplate> = {
+  classic: "classic-rose-serif",
+  "classic-serif-rose": "classic-rose-serif",
+  modern: "photo-header-split-timeline",
+  minimal: "classic-ats-executive",
+  compact: "dense-analyst-serif",
+  executive: "classic-ats-executive",
+  creative: "classic-rose-serif",
+  startup: "right-sidebar-light",
+  "modern-pro": "photo-header-split-timeline",
+  "tech-engineer": "dense-analyst-serif",
+  "navy-executive": "classic-ats-executive",
+  timeline: "navy-sidebar-timeline",
+};
+
 export function getTemplate(id: ResumeTemplate | undefined): ResumeTemplateDef {
-  return RESUME_TEMPLATES.find((t) => t.id === id) ?? RESUME_TEMPLATES[0];
+  if (!id) return RESUME_TEMPLATES[0];
+  const targetId = LEGACY_MAP[id] || id;
+  return RESUME_TEMPLATES.find((t) => t.id === targetId) ?? RESUME_TEMPLATES[0];
 }

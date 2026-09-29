@@ -64,28 +64,27 @@ const parsedDataUpdateSchema = z.object({
   name: z.string().trim().max(200).optional(),
   summary: z.string().trim().max(10000).optional(),
   contact: contactSchema.optional(),
-  skills: z.array(z.string().trim().max(100)).max(500).optional(),
+  personal: z.record(z.any()).optional(),
+  skills: z.union([z.array(z.string().trim().max(100)).max(500), z.array(z.any())]).optional(),
   experience: z.array(experienceEntrySchema).max(100).optional(),
   education: z.array(educationEntrySchema).max(100).optional(),
   projects: z.array(projectEntrySchema).max(100).optional(),
-  certifications: z.array(z.string().trim().max(200)).max(100).optional(),
-  languages: z.array(z.string().trim().max(100)).max(50).optional(),
-  awards: z.array(z.string().trim().max(200)).max(100).optional(),
+  certifications: z.union([z.array(z.string().trim().max(200)).max(100), z.array(z.any())]).optional(),
+  languages: z.union([z.array(z.string().trim().max(100)).max(50), z.array(z.any())]).optional(),
+  awards: z.union([z.array(z.string().trim().max(200)).max(100), z.array(z.any())]).optional(),
+  coursework: z.array(z.any()).optional(),
   customSections: z.array(customSectionSchema).max(20).optional(),
   hiddenSections: z.array(z.string().trim().max(100)).max(50).optional(),
-});
+}).passthrough();
 
 export const updateResumeSchema = z.object({
   parsedData: parsedDataUpdateSchema.optional(),
-  template: z
-    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant", "modern-pro", "tech-engineer"])
-    .optional(),
+  template: z.string().trim().min(1).max(100).optional(),
   fileName: z.string().trim().min(1).max(255).optional(),
 });
 
 /** POST /api/resumes/blank — scratch builder; template optional, defaults to classic. */
 export const createBlankResumeSchema = z.object({
-  template: z
-    .enum(["classic", "modern", "minimal", "compact", "executive", "creative", "startup", "google", "microsoft", "harvard", "elegant", "modern-pro", "tech-engineer"])
-    .optional(),
+  template: z.string().trim().min(1).max(100).optional(),
 });
+

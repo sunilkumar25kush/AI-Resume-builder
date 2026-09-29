@@ -26,8 +26,13 @@ const OptimizeResultPage = lazy(() => import("@/pages/OptimizeResultPage"));
 const ResumeWizardPage = lazy(() => import("@/pages/ResumeWizardPage"));
 const AtsCheckPage = lazy(() => import("@/pages/AtsCheckPage"));
 const ScratchBuildPage = lazy(() => import("@/pages/ScratchBuildPage"));
+const PrintResumePage = lazy(() => import("@/pages/PrintResumePage"));
 
 export const router = createBrowserRouter([
+  {
+    path: "/print/:id",
+    element: <PrintResumePage />,
+  },
   {
     element: <AppLayout />,
     children: [

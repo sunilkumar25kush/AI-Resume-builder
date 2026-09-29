@@ -20,6 +20,16 @@ export function PreviewPane({ data, template, title }: PreviewPaneProps) {
       <div className="flex items-center justify-end gap-2">
         <Button
           type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 ml-auto"
+          onClick={() => window.print()}
+          aria-label="Print or Save PDF"
+        >
+          Print / PDF
+        </Button>
+        <Button
+          type="button"
           variant={width === "full" ? "default" : "outline"}
           size="sm"
           className="gap-1.5"
@@ -45,9 +55,8 @@ export function PreviewPane({ data, template, title }: PreviewPaneProps) {
       </div>
       <div className="min-h-[420px] flex-1 overflow-hidden rounded-lg border bg-muted/40 p-4 sm:p-6">
         <div
-          className={`mx-auto overflow-hidden rounded-sm shadow-md ring-1 ring-black/5 transition-[max-width] duration-300 ${
-            width === "mobile" ? "max-w-[375px]" : "max-w-[820px]"
-          }`}
+          className={`mx-auto overflow-hidden rounded-sm shadow-md ring-1 ring-black/5 transition-[max-width] duration-300 ${width === "mobile" ? "max-w-[375px]" : "max-w-[820px]"
+            }`}
         >
           <ResumePreview data={data} template={template} title={title} className="min-h-[520px]" />
         </div>
