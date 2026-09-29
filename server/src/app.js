@@ -20,6 +20,9 @@ if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const app = express();
 
+// Trust reverse proxy (Render, Cloudflare, AWS) so express-rate-limit correctly resolves client IP
+app.set("trust proxy", 1);
+
 // Security headers
 app.use(helmet());
 

@@ -11,6 +11,7 @@ export const apiLimiter = rateLimit({
   limit: RATE_LIMITS.GLOBAL.max,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler,
 });
 
@@ -20,6 +21,7 @@ export const authLimiter = rateLimit({
   limit: RATE_LIMITS.AUTH.max,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler,
 });
 
@@ -29,5 +31,6 @@ export const aiLimiter = rateLimit({
   limit: RATE_LIMITS.AI.max,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler,
 });
