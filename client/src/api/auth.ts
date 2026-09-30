@@ -50,8 +50,8 @@ export const authApi = {
     return res.data.data.user;
   },
 
-  async getProfile(): Promise<User> {
-    const res = await apiClient.get<ApiEnvelope<UserPayload>>("/users/me");
+  async getProfile(): Promise<User | null> {
+    const res = await apiClient.get<ApiEnvelope<MePayload>>("/users/me");
     return res.data.data.user;
   },
 

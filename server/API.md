@@ -161,7 +161,6 @@ All error responses return standard HTTP `4xx` or `5xx` with:
     "success": true,
     "message": "Account created successfully",
     "data": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
       "user": {
         "_id": "674a2b1c8f9d0e1a2b3c4d5e",
         "name": "Jane Doe",
@@ -181,7 +180,7 @@ All error responses return standard HTTP `4xx` or `5xx` with:
 ### 5.2 Login User
 - **HTTP Method:** `POST`
 - **Endpoint:** `/api/auth/login`
-- **Description:** Verifies credentials, issues JWT token via HTTP-only cookie and JSON response.
+- **Description:** Verifies credentials and issues JWT authentication token via HTTP-only cookie.
 - **Authentication:** Public.
 - **Request Body:**
   ```json
@@ -196,7 +195,6 @@ All error responses return standard HTTP `4xx` or `5xx` with:
     "success": true,
     "message": "Login successful",
     "data": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
       "user": {
         "_id": "674a2b1c8f9d0e1a2b3c4d5e",
         "name": "Jane Doe",
@@ -246,7 +244,6 @@ All error responses return standard HTTP `4xx` or `5xx` with:
   {
     "success": true,
     "data": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
       "user": {
         "_id": "674a2b1c8f9d0e1a2b3c4d5e",
         "name": "Jane Doe",
@@ -896,8 +893,7 @@ All error responses return standard HTTP `4xx` or `5xx` with:
 - **Request Body:**
   ```json
   {
-    "jdId": "674d3e4f5a6b7c8d9e0f1122",
-    "targetRole": "Senior DevOps Engineer"
+    "jdId": "674d3e4f5a6b7c8d9e0f1122"
   }
   ```
 - **Successful Response (`201 Created`):** Returns new Resume document with optimized bullet points and tracked `aiChanges`.
@@ -913,7 +909,8 @@ All error responses return standard HTTP `4xx` or `5xx` with:
   ```json
   {
     "jdId": "674d3e4f5a6b7c8d9e0f1122",
-    "template": "tech-engineer-clean"
+    "targetTitle": "Senior Full Stack Engineer",
+    "experienceLevel": "senior"
   }
   ```
 - **Successful Response (`201 Created`):** Returns newly generated tailored resume.

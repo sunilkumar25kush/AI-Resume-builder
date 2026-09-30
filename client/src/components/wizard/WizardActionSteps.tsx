@@ -112,6 +112,16 @@ export function StepAnalysis({
   const result = analysis.result;
   return (
     <div className="flex flex-col gap-6">
+      {error ? (
+        <div className="flex w-full flex-col items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-left text-sm text-destructive" role="alert">
+          <div className="flex items-center gap-1.5 font-semibold">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Re-analysis failed</span>
+          </div>
+          <p className="text-xs text-destructive/90">{error}</p>
+        </div>
+      ) : null}
+
       <div className="flex flex-col items-center gap-3">
         <ScoreRing score={result.atsScore} />
         <p className="text-xs text-muted-foreground">ATS score</p>
@@ -144,9 +154,16 @@ export function StepAnalysis({
         </p>
       ) : null}
 
-      <Button type="button" variant="outline" size="sm" className="self-start" onClick={onAnalyze} disabled={analyzing}>
+      <Button
+        type="button"
+        variant={error ? "destructive" : "outline"}
+        size="sm"
+        className="self-start"
+        onClick={onAnalyze}
+        disabled={analyzing}
+      >
         <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-        Re-run analysis
+        {error ? "Retry re-analysis" : "Re-run analysis"}
       </Button>
     </div>
   );
