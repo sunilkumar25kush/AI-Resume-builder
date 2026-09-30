@@ -59,7 +59,11 @@ app.use(cookieParser());
 
 // Database availability check — fail fast with 503 instead of hanging for 10s and causing Vite proxy 502
 app.use("/api", (req, res, next) => {
-  const isAuthMe = req.path === "/auth/me" || req.path === "/auth/me/";
+  const isAuthMe =
+    req.path === "/auth/me" ||
+    req.path === "/auth/me/" ||
+    req.path === "/users/me" ||
+    req.path === "/users/me/";
   if (req.path === "/health" || isAuthMe || isDbConnected()) return next();
   const detail = getDbError() ? ` (${getDbError()})` : "";
   res.status(503).json({
@@ -76,7 +80,9 @@ app.use("/api", apiLimiter, routes);
 // must only be accessible to authenticated users — protect() guards them.
 app.use("/uploads/avatars", express.static(join("uploads", "avatars"), { maxAge: "7d" }));
 app.use("/uploads/resumes", _protect, express.static(join("uploads", "resumes"), { maxAge: "7d" }));
-app.use("/uploads/jds", _protect, express.static(join("uploads", "jds"), { maxAge: "7d" }));
+app.use("/uploads/job-descriptions", _protect, express.static(join("uploads", "jds"), { maxAge: "7d" }));
+app.use("/uploads/jds", _protect, express.static(join("uploads", "jds"), { maxAge: "7d" })); // Alias
+
 
 // Production: serve the built client from this same service (single deploy).
 // Skipped automatically in dev — Vite serves the client on its own port.

@@ -29,18 +29,23 @@ export default function ResumeWizardPage() {
   const [jd, setJd] = useState<JobDescription | null>(null);
   const [analysis, setAnalysis] = useState<Optimization | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Resume | null>(null);
   const [designOpen, setDesignOpen] = useState(false);
 
   const runAnalysis = async () => {
     if (!jd || !resume || analyzing) return;
     setAnalyzing(true);
+    setAnalysisError(null);
     try {
       const result = await optimizationsApi.run(resume._id, jd._id);
       setAnalysis(result);
     } catch (error) {
-      toast.error(getApiErrorMessage(error));
+      const msg = getApiErrorMessage(error);
+      setAnalysisError(msg);
+      toast.error(msg);
     } finally {
       setAnalyzing(false);
     }
@@ -48,17 +53,17 @@ export default function ResumeWizardPage() {
 
   // Auto-run analysis when entering the analysis step with a resume + JD.
   useEffect(() => {
-    if (step === ANALYSIS_STEP && resume && jd && !analysis && !analyzing) {
+    if (step === ANALYSIS_STEP && resume && jd && !analysis && !analyzing && !analysisError) {
       void runAnalysis();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, resume, jd, analysis]);
+  }, [step, resume, jd, analysis, analysisError]);
 
   const canNext = (): boolean => {
     if (step === 0) return true;
     if (step === 1) return hasResume !== null && (!hasResume || resume !== null);
     if (step === 2) return jd !== null;
-    if (step === ANALYSIS_STEP) return true;
+    if (step === ANALYSIS_STEP) return !analyzing;
     return true;
   };
 
@@ -72,6 +77,7 @@ export default function ResumeWizardPage() {
   const onGenerate = async () => {
     if (!jd || generating) return;
     setGenerating(true);
+    setGenerationError(null);
     try {
       const created = resume
         ? await resumesApi.generate(resume._id, jd._id)
@@ -79,7 +85,9 @@ export default function ResumeWizardPage() {
       setGenerated(created);
       setDesignOpen(true);
     } catch (error) {
-      toast.error(getApiErrorMessage(error));
+      const msg = getApiErrorMessage(error);
+      setGenerationError(msg);
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }
@@ -148,7 +156,16 @@ export default function ResumeWizardPage() {
         ) : null}
         {step === 1 ? <StepResume hasResume={hasResume} setHasResume={setHasResume} resume={resume} setResume={setResume} /> : null}
         {step === 2 ? <StepJd jd={jd} setJd={setJd} /> : null}
-        {step === ANALYSIS_STEP && jd ? <StepAnalysis resume={resume} jd={jd} analysis={analysis} analyzing={analyzing} onAnalyze={() => void runAnalysis()} /> : null}
+        {step === ANALYSIS_STEP && jd ? (
+          <StepAnalysis
+            resume={resume}
+            jd={jd}
+            analysis={analysis}
+            analyzing={analyzing}
+            onAnalyze={() => void runAnalysis()}
+            error={analysisError}
+          />
+        ) : null}
         {step === GENERATE_STEP && jd ? (
           <StepGenerate
             resume={resume}
@@ -157,6 +174,7 @@ export default function ResumeWizardPage() {
             experienceLevel={experienceLevel}
             generating={generating}
             onGenerate={() => void onGenerate()}
+            error={generationError}
           />
         ) : null}
         {step > GENERATE_STEP ? (
@@ -181,11 +199,11 @@ export default function ResumeWizardPage() {
 
       {step < GENERATE_STEP ? (
         <footer className="flex items-center justify-between gap-3">
-          <Button type="button" variant="ghost" onClick={onBack} disabled={step === 0}>
+          <Button type="button" variant="ghost" onClick={onBack} disabled={step === 0 || analyzing}>
             <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
             Back
           </Button>
-          <Button type="button" onClick={onNext} disabled={!canNext()}>
+          <Button type="button" onClick={onNext} disabled={!canNext() || analyzing}>
             Next
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Button>

@@ -26,7 +26,7 @@ export function DesignChoiceDialog({ resume, onOpenChange, onDone }: DesignChoic
   const [applying, setApplying] = useState(false);
 
   const apply = async (template: ResumeTemplate | null) => {
-    if (!resume) return;
+    if (!resume || applying) return;
     setApplying(true);
     try {
       if (template && template !== resume.template) {
@@ -35,6 +35,7 @@ export function DesignChoiceDialog({ resume, onOpenChange, onDone }: DesignChoic
       onDone();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
+    } finally {
       setApplying(false);
     }
   };

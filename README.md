@@ -36,3 +36,8 @@ Production-ready AI resume builder: resume/JD parsing, AI-driven optimization (A
 Switchable via `AI_PROVIDER` in `server/.env`:
 - `ollama` (default) — uses local Ollama at `OLLAMA_URL` with `OLLAMA_MODEL`
 - `gemini` — uses `GEMINI_API_KEY`
+
+## API Documentation
+
+The backend adheres strictly to RESTful conventions. Full route mappings, backward compatibility aliases, and controller schemas are documented in [server/API.md](server/API.md).
+

@@ -30,7 +30,7 @@ export default function PrintResumePage() {
     if (!id) return;
     let cancelled = false;
 
-    const url = `/resumes/${id}/print-data${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    const url = `/resumes/${id}/print-preview${token ? `?token=${encodeURIComponent(token)}` : ""}`;
     apiClient
       .get(url)
       .then((res) => {

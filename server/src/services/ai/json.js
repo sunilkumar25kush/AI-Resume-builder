@@ -18,8 +18,53 @@ export function extractJson(text) {
   const fenceMatch = body.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenceMatch) body = fenceMatch[1].trim();
 
-  // Strip trailing commas before braces/brackets which LLMs frequently emit
-  const stripTrailingCommas = (s) => s.replace(/,(\s*[}\]])/g, "$1");
+  // Strip trailing commas before braces/brackets only outside quoted string values
+  const stripTrailingCommas = (str) => {
+    let result = "";
+    let inString = false;
+    let escaped = false;
+    let lastCommaIdx = -1;
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === "\\") {
+          escaped = true;
+        } else if (char === '"') {
+          inString = false;
+        }
+        result += char;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = true;
+        result += char;
+      } else if (char === ",") {
+        lastCommaIdx = result.length;
+        result += char;
+      } else if (char === "}" || char === "]") {
+        if (lastCommaIdx !== -1) {
+          const between = result.slice(lastCommaIdx + 1);
+          if (/^\s*$/.test(between)) {
+            result = result.slice(0, lastCommaIdx) + between + char;
+            lastCommaIdx = -1;
+            continue;
+          }
+        }
+        lastCommaIdx = -1;
+        result += char;
+      } else {
+        if (!/\s/.test(char)) {
+          lastCommaIdx = -1;
+        }
+        result += char;
+      }
+    }
+    return result;
+  };
 
   // Balanced-scan for the first complete {…} or […].
   for (const open of ["{", "["]) {

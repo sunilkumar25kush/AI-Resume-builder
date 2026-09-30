@@ -32,25 +32,33 @@ export const resumesApi = {
 
   /** AI-generate an optimized resume against a job description (saved as a new resume). */
   async generate(id: string, jdId: string): Promise<Resume> {
-    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}/generate`, { jdId }, { timeout: AI_REQUEST_TIMEOUT });
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(
+      `/resumes/${id}/tailored-variants`,
+      { jdId },
+      { timeout: AI_REQUEST_TIMEOUT },
+    );
     return res.data.data.resume;
   },
 
   /** Wizard Workflow 1: generate a fresh resume from a job description only. */
   async generateFromJd(input: { jdId: string; targetTitle: string; experienceLevel: "fresher" | "junior" | "senior" }): Promise<Resume> {
-    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/generate-from-jd", input, { timeout: AI_REQUEST_TIMEOUT });
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>(
+      "/resumes/from-job-description",
+      input,
+      { timeout: AI_REQUEST_TIMEOUT },
+    );
     return res.data.data.resume;
   },
 
   /** Scratch builder: create a fresh empty resume (name/email prefilled from the account). */
   async createBlank(template?: ResumeTemplate): Promise<Resume> {
-    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/blank", { template });
+    const res = await apiClient.post<ApiEnvelope<{ resume: Resume }>>("/resumes/templates/blank", { template });
     return res.data.data.resume;
   },
 
   /** Server-side Puppeteer PDF export matching the live React preview exactly */
   async exportPdf(id: string, density?: string, theme?: { accentColor?: string; fontSize?: string }): Promise<Blob> {
-    const res = await apiClient.get(`/resumes/${id}/export/pdf`, {
+    const res = await apiClient.get(`/resumes/${id}/pdf`, {
       params: {
         density,
         theme: theme ? JSON.stringify(theme) : undefined,
@@ -64,3 +72,4 @@ export const resumesApi = {
     await apiClient.delete(`/resumes/${id}`);
   },
 };
+

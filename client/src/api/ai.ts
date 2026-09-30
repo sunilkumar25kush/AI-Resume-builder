@@ -29,11 +29,16 @@ export const aiApi = {
   /** Rewrite one section (summary text, skill list, or an entry object). */
   async assist(section: AssistSection, action: AssistAction, content: unknown): Promise<unknown> {
     const res = await apiClient.post<ApiEnvelope<{ result: unknown }>>(
-      "/ai/assist",
+      "/ai/section-rewrites",
       { section, action, content },
       { timeout: AI_REQUEST_TIMEOUT },
     );
     return res.data.data.result;
+  },
+
+  /** Alias matching canonical naming */
+  async rewriteSection(section: AssistSection, action: AssistAction, content: unknown): Promise<unknown> {
+    return this.assist(section, action, content);
   },
 
   /** Editor-time JD-aware "what else should I add?" suggestions. */
@@ -42,7 +47,7 @@ export const aiApi = {
     input: { jdId?: string; jdText?: string },
   ): Promise<{ suggestions: AiSuggestion[] }> {
     const res = await apiClient.post<ApiEnvelope<{ suggestions: AiSuggestion[] }>>(
-      "/ai/suggestions",
+      "/ai/content-suggestions",
       {
         resumeId,
         jdId: input.jdId,
@@ -51,6 +56,14 @@ export const aiApi = {
       { timeout: AI_REQUEST_TIMEOUT },
     );
     return res.data.data;
+  },
+
+  /** Alias matching canonical naming */
+  async getSuggestions(
+    resumeId: string,
+    input: { jdId?: string; jdText?: string },
+  ): Promise<{ suggestions: AiSuggestion[] }> {
+    return this.suggestions(resumeId, input);
   },
 };
 

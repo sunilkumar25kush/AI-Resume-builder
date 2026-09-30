@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { ChevronRight, Gauge, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Gauge, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -37,6 +37,7 @@ export default function OptimizationsPage() {
   const [resumeId, setResumeId] = useState("");
   const [jdId, setJdId] = useState("");
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchResumes();
@@ -49,13 +50,17 @@ export default function OptimizationsPage() {
   const onRun = async () => {
     if (!canRun) return;
     setRunning(true);
+    setError(null);
     try {
       const optimization = await optimizationsApi.run(resumeId, jdId);
       prepend(optimization);
       toast.success("Analysis complete");
       navigate(`/optimize/${optimization._id}`);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+    } catch (err) {
+      const msg = getApiErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
+    } finally {
       setRunning(false);
     }
   };
@@ -88,7 +93,7 @@ export default function OptimizationsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="resume-select">Resume</Label>
-              <Select value={resumeId} onValueChange={setResumeId}>
+              <Select value={resumeId} onValueChange={(val) => { setError(null); setResumeId(val); }}>
                 <SelectTrigger id="resume-select" aria-label="Select resume">
                   <SelectValue placeholder="Choose a resume…" />
                 </SelectTrigger>
@@ -103,7 +108,7 @@ export default function OptimizationsPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="jd-select">Job description</Label>
-              <Select value={jdId} onValueChange={setJdId}>
+              <Select value={jdId} onValueChange={(val) => { setError(null); setJdId(val); }}>
                 <SelectTrigger id="jd-select" aria-label="Select job description">
                   <SelectValue placeholder="Choose a JD…" />
                 </SelectTrigger>
@@ -117,13 +122,27 @@ export default function OptimizationsPage() {
               </Select>
             </div>
           </div>
+
+          {error ? (
+            <div className="flex flex-col gap-1 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+              <span className="font-semibold">Analysis failed</span>
+              <span className="text-xs text-destructive/90">{error}</span>
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
               {running ? "AI is reviewing — this can take 30–120 seconds…" : "Powered by Google Gemini"}
             </p>
             <Button onClick={() => void onRun()} disabled={!canRun}>
-              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Gauge className="mr-2 h-4 w-4" aria-hidden />}
-              {running ? "Analyzing…" : "Run analysis"}
+              {running ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+              ) : error ? (
+                <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
+              ) : (
+                <Gauge className="mr-2 h-4 w-4" aria-hidden />
+              )}
+              {running ? "Analyzing…" : error ? "Retry analysis" : "Run analysis"}
             </Button>
           </div>
         </CardContent>

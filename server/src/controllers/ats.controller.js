@@ -9,7 +9,7 @@ import { normalizeResumeText } from "../services/resumeParser.js";
  * Deterministic ATS check for any resume the user owns — instant, no AI call.
  * Optional JD (saved or pasted text) adds match metrics to the report.
  */
-export const checkAts = asyncHandler(async (req, res) => {
+export const evaluateAtsScorecard = asyncHandler(async (req, res) => {
   const { resumeId, jdId, jdText } = req.validatedBody;
 
   const resume = await Resume.findOne({ _id: resumeId, user: req.user.id }).select("-filePath -__v").lean();
@@ -29,3 +29,7 @@ export const checkAts = asyncHandler(async (req, res) => {
   const report = computeAtsReport({ parsedData: resume.parsedData ?? {}, jd });
   res.json({ success: true, data: report });
 });
+
+// Backward-compatible alias
+export const checkAts = evaluateAtsScorecard;
+

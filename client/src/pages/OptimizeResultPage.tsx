@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -179,6 +179,7 @@ export default function OptimizeResultPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [generatedResume, setGeneratedResume] = useState<Resume | null>(null);
 
   useEffect(() => {
@@ -216,13 +217,17 @@ export default function OptimizeResultPage() {
   };
 
   const onGenerate = async () => {
-    if (!optimization) return;
+    if (!optimization || generating) return;
     setGenerating(true);
+    setGenerateError(null);
     try {
       const generated = await resumesApi.generate(optimization.resumeId, optimization.jdId);
       setGeneratedResume(generated);
     } catch (error) {
-      toast.error(getApiErrorMessage(error));
+      const msg = getApiErrorMessage(error);
+      setGenerateError(msg);
+      toast.error(msg);
+    } finally {
       setGenerating(false);
     }
   };
@@ -280,10 +285,19 @@ export default function OptimizeResultPage() {
             <p className="text-xs text-muted-foreground">
               AI rewrites your resume for this job description — companies, dates and facts stay untouched, only wording improves. Takes 30–120 seconds.
             </p>
+            {generateError ? (
+              <p className="mt-1 text-xs font-medium text-destructive">{generateError}</p>
+            ) : null}
           </div>
           <Button onClick={() => void onGenerate()} disabled={generating} className="shrink-0">
-            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="mr-2 h-4 w-4" aria-hidden />}
-            {generating ? "Generating…" : "Generate"}
+            {generating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+            ) : generateError ? (
+              <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+            )}
+            {generating ? "Generating…" : generateError ? "Retry generation" : "Generate"}
           </Button>
         </CardContent>
       </Card>

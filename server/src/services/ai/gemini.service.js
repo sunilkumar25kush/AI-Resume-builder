@@ -54,9 +54,7 @@ class GeminiService {
     }
 
     return withRetry(
-      async () => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs ?? this.timeoutMs);
+      async (attempt, signal) => {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
           const res = await fetch(url, {
@@ -69,7 +67,7 @@ class GeminiService {
                 ...(json ? { responseMimeType: "application/json" } : {}),
               },
             }),
-            signal: controller.signal,
+            signal,
           });
 
           if (!res.ok) {
@@ -109,7 +107,7 @@ class GeminiService {
           }
           return text;
         } catch (error) {
-          if (error?.name === "AbortError") {
+          if (error?.name === "AbortError" || signal?.aborted) {
             throw new AiError(
               `Gemini request timed out after ${Math.round((timeoutMs ?? this.timeoutMs) / 1000)}s`,
               "AI_TIMEOUT",
@@ -119,8 +117,6 @@ class GeminiService {
             throw new AiError("Network error reaching Gemini — check connectivity", "AI_NETWORK");
           }
           throw error;
-        } finally {
-          clearTimeout(timeout);
         }
       },
       { attempts: 2, timeoutMs: timeoutMs ?? this.timeoutMs },

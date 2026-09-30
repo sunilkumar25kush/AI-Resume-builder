@@ -50,6 +50,11 @@ export const authApi = {
     return res.data.data.user;
   },
 
+  async getProfile(): Promise<User> {
+    const res = await apiClient.get<ApiEnvelope<UserPayload>>("/users/me");
+    return res.data.data.user;
+  },
+
   async updateProfile(data: { name: string }): Promise<User> {
     const res = await apiClient.patch<ApiEnvelope<UserPayload>>("/users/me", data);
     return res.data.data.user;

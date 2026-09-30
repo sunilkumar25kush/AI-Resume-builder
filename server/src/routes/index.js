@@ -17,9 +17,18 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/resumes", resumeRoutes);
-router.use("/jds", jdRoutes);
+
+// Canonical REST resources with backward-compatible aliases
+router.use("/job-descriptions", jdRoutes);
+router.use("/jds", jdRoutes); // Alias
+
+router.use("/resume-optimizations", optimizationRoutes);
+router.use("/optimizations", optimizationRoutes); // Alias
+
+router.use("/ats-evaluations", atsRoutes);
+router.use("/ats", atsRoutes); // Alias
+
 router.use("/ai", aiRoutes);
-router.use("/ats", atsRoutes);
-router.use("/optimizations", optimizationRoutes);
 
 export default router;
+

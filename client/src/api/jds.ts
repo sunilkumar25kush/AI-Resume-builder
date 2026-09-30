@@ -14,26 +14,26 @@ export interface JdUpdateData {
   experienceRequired?: string;
 }
 
-export const jdsApi = {
+export const jobDescriptionsApi = {
   async list(): Promise<JobDescription[]> {
-    const res = await apiClient.get<ApiEnvelope<{ jds: JobDescription[] }>>("/jds");
+    const res = await apiClient.get<ApiEnvelope<{ jds: JobDescription[] }>>("/job-descriptions");
     return res.data.data.jds;
   },
 
   async get(id: string): Promise<JobDescription> {
-    const res = await apiClient.get<ApiEnvelope<{ jd: JobDescription }>>(`/jds/${id}`);
+    const res = await apiClient.get<ApiEnvelope<{ jd: JobDescription }>>(`/job-descriptions/${id}`);
     return res.data.data.jd;
   },
 
   async createFromText(text: string): Promise<JobDescription> {
-    const res = await apiClient.post<ApiEnvelope<{ jd: JobDescription }>>("/jds", { text });
+    const res = await apiClient.post<ApiEnvelope<{ jd: JobDescription }>>("/job-descriptions", { text });
     return res.data.data.jd;
   },
 
   async uploadFile(file: File, onProgress?: (percent: number) => void): Promise<JobDescription> {
     const form = new FormData();
     form.append("jd", file);
-    const res = await apiClient.post<ApiEnvelope<{ jd: JobDescription }>>("/jds", form, {
+    const res = await apiClient.post<ApiEnvelope<{ jd: JobDescription }>>("/job-descriptions", form, {
       onUploadProgress: (event) => {
         if (event.total) onProgress?.(Math.round((event.loaded / event.total) * 100));
       },
@@ -42,11 +42,14 @@ export const jdsApi = {
   },
 
   async update(id: string, data: JdUpdateData): Promise<JobDescription> {
-    const res = await apiClient.patch<ApiEnvelope<{ jd: JobDescription }>>(`/jds/${id}`, data);
+    const res = await apiClient.patch<ApiEnvelope<{ jd: JobDescription }>>(`/job-descriptions/${id}`, data);
     return res.data.data.jd;
   },
 
   async remove(id: string): Promise<void> {
-    await apiClient.delete(`/jds/${id}`);
+    await apiClient.delete(`/job-descriptions/${id}`);
   },
 };
+
+/** Backward-compatibility alias */
+export const jdsApi = jobDescriptionsApi;

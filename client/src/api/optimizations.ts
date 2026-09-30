@@ -1,10 +1,10 @@
 import { AI_REQUEST_TIMEOUT, apiClient } from "./client";
 import type { ApiEnvelope, Optimization } from "@/types";
 
-export const optimizationsApi = {
+export const resumeOptimizationsApi = {
   async run(resumeId: string, jdId: string): Promise<Optimization> {
     const res = await apiClient.post<ApiEnvelope<{ optimization: Optimization }>>(
-      "/optimizations",
+      "/resume-optimizations",
       {
         resumeId,
         jdId,
@@ -15,16 +15,19 @@ export const optimizationsApi = {
   },
 
   async list(): Promise<Optimization[]> {
-    const res = await apiClient.get<ApiEnvelope<{ optimizations: Optimization[] }>>("/optimizations");
+    const res = await apiClient.get<ApiEnvelope<{ optimizations: Optimization[] }>>("/resume-optimizations");
     return res.data.data.optimizations;
   },
 
   async get(id: string): Promise<Optimization> {
-    const res = await apiClient.get<ApiEnvelope<{ optimization: Optimization }>>(`/optimizations/${id}`);
+    const res = await apiClient.get<ApiEnvelope<{ optimization: Optimization }>>(`/resume-optimizations/${id}`);
     return res.data.data.optimization;
   },
 
   async remove(id: string): Promise<void> {
-    await apiClient.delete(`/optimizations/${id}`);
+    await apiClient.delete(`/resume-optimizations/${id}`);
   },
 };
+
+/** Backward-compatibility alias */
+export const optimizationsApi = resumeOptimizationsApi;

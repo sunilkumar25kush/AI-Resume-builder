@@ -24,10 +24,18 @@ export interface AtsCheckInput {
   jdText?: string;
 }
 
-export const atsApi = {
+export const atsEvaluationsApi = {
   /** Instant deterministic ATS check — no AI call. Optional JD adds match metrics. */
-  async check(input: AtsCheckInput): Promise<AtsReport> {
-    const res = await apiClient.post<ApiEnvelope<AtsReport>>("/ats/check", input);
+  async evaluate(input: AtsCheckInput): Promise<AtsReport> {
+    const res = await apiClient.post<ApiEnvelope<AtsReport>>("/ats-evaluations", input);
     return res.data.data;
   },
+
+  /** Alias matching legacy signature */
+  async check(input: AtsCheckInput): Promise<AtsReport> {
+    return this.evaluate(input);
+  },
 };
+
+/** Backward-compatibility alias */
+export const atsApi = atsEvaluationsApi;

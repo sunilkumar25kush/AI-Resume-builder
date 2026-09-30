@@ -90,9 +90,9 @@ export async function runOptimization(userId, resumeId, jdId) {
   if (!resume) throw new ApiError(404, "Resume not found");
   if (!jd) throw new ApiError(404, "Job description not found");
 
-  let raw;
+  let aiResult;
   try {
-    raw = await geminiService.optimizeResume({
+    const raw = await geminiService.optimizeResume({
       resume: resumeSnapshot(resume),
       jd: {
         title: jd.title,
@@ -107,18 +107,18 @@ export async function runOptimization(userId, resumeId, jdId) {
         experienceRequired: jd.experienceRequired,
       },
     });
+    aiResult = normalizeResult(raw);
   } catch (error) {
-    console.warn(`[optimizer] AI call failed (${error.code || error.message}) — falling back to deterministic ATS analysis`);
-    raw = {
+    console.warn(`[optimizer] AI call or validation failed (${error.code || error.message}) — falling back to deterministic ATS analysis`);
+    aiResult = normalizeResult({
       summary: "ATS scoring and keyword analysis completed. AI qualitative suggestions were temporarily unavailable.",
       weakBullets: [],
       grammarIssues: [],
       formattingSuggestions: [],
       keywordSuggestions: [],
       changes: [],
-    };
+    });
   }
-  const aiResult = normalizeResult(raw);
 
   // Override every verifiable metric with the deterministic computation so a
   // hallucinating LLM can never inflate scores or invent matches.

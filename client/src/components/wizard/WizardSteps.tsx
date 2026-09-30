@@ -90,16 +90,21 @@ export function StepResume({
 }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const onFile = async (file: File) => {
+    if (uploading) return;
     setUploading(true);
+    setError(null);
     setProgress(0);
     try {
       const uploaded = await resumesApi.upload(file, setProgress);
       setResume(uploaded);
       toast.success("Resume uploaded and parsed");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+    } catch (err) {
+      const msg = getApiErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setUploading(false);
       setProgress(null);
@@ -112,7 +117,10 @@ export function StepResume({
         <button
           type="button"
           aria-pressed={hasResume === true}
-          onClick={() => setHasResume(true)}
+          onClick={() => {
+            setError(null);
+            setHasResume(true);
+          }}
           className={cn(
             "flex flex-col gap-1 rounded-xl border p-4 text-left transition-colors",
             hasResume === true ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50",
@@ -124,7 +132,10 @@ export function StepResume({
         <button
           type="button"
           aria-pressed={hasResume === false}
-          onClick={() => setHasResume(false)}
+          onClick={() => {
+            setError(null);
+            setHasResume(false);
+          }}
           className={cn(
             "flex flex-col gap-1 rounded-xl border p-4 text-left transition-colors",
             hasResume === false ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50",
@@ -134,6 +145,12 @@ export function StepResume({
           <span className="text-xs text-muted-foreground">AI builds a fresher-friendly resume from the job description</span>
         </button>
       </div>
+
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive" role="alert">
+          {error}
+        </div>
+      ) : null}
 
       {hasResume === true ? (
         resume ? (
@@ -176,30 +193,38 @@ export function StepJd({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const onPaste = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || busy) return;
     setBusy(true);
+    setError(null);
     try {
       const parsed = await jdsApi.createFromText(text);
       setJd(parsed);
       toast.success("Job description parsed");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+    } catch (err) {
+      const msg = getApiErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
   };
 
   const onFile = async (file: File) => {
+    if (busy) return;
     setBusy(true);
+    setError(null);
     setProgress(0);
     try {
       const parsed = await jdsApi.uploadFile(file, setProgress);
       setJd(parsed);
       toast.success("Job description uploaded and parsed");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+    } catch (err) {
+      const msg = getApiErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
       setProgress(null);
@@ -226,44 +251,55 @@ export function StepJd({
   }
 
   return (
-    <Tabs value={tab} onValueChange={setTab}>
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="paste">
-          <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />
-          Paste text
-        </TabsTrigger>
-        <TabsTrigger value="upload">
-          <FileText className="mr-1.5 h-4 w-4" aria-hidden />
-          Upload file
-        </TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-4">
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive" role="alert">
+          {error}
+        </div>
+      ) : null}
 
-      <TabsContent value="paste" className="flex flex-col gap-3">
-        <Textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Paste the full job description here…"
-          rows={10}
-          maxLength={50000}
-          aria-label="Job description text"
-        />
-        <Button type="button" onClick={() => void onPaste()} disabled={busy || !text.trim()}>
-          {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden /> : null}
-          {busy ? "Parsing…" : "Parse job description"}
-        </Button>
-      </TabsContent>
+      <Tabs value={tab} onValueChange={(val) => { setError(null); setTab(val); }}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="paste">
+            <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />
+            Paste text
+          </TabsTrigger>
+          <TabsTrigger value="upload">
+            <FileText className="mr-1.5 h-4 w-4" aria-hidden />
+            Upload file
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="upload">
-        <UploadDropzone
-          uploading={busy}
-          progress={progress}
-          onFile={(file) => void onFile(file)}
-          accept=".pdf,.docx,.txt"
-          copyTitle="Drag & drop the job description"
-          copyHint="or click to browse — PDF, DOCX or TXT, up to 10 MB"
-          ariaLabel="Upload job description"
-        />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="paste" className="flex flex-col gap-3">
+          <Textarea
+            value={text}
+            onChange={(event) => {
+              if (error) setError(null);
+              setText(event.target.value);
+            }}
+            placeholder="Paste the full job description here…"
+            rows={10}
+            maxLength={50000}
+            aria-label="Job description text"
+          />
+          <Button type="button" onClick={() => void onPaste()} disabled={busy || !text.trim()}>
+            {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden /> : null}
+            {busy ? "Parsing…" : "Parse job description"}
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="upload">
+          <UploadDropzone
+            uploading={busy}
+            progress={progress}
+            onFile={(file) => void onFile(file)}
+            accept=".pdf,.docx,.txt"
+            copyTitle="Drag & drop the job description"
+            copyHint="or click to browse — PDF, DOCX or TXT, up to 10 MB"
+            ariaLabel="Upload job description"
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

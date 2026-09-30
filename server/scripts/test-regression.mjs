@@ -319,6 +319,91 @@ await test("Database: User model defines sparse index on passwordResetToken", as
 });
 
 // -------------------------------------------------------------
+// Test 13: Canonical GET /api/users/me returns authenticated user
+// -------------------------------------------------------------
+await test("REST: GET /api/users/me returns authenticated user profile", async () => {
+  const res = await fetch(`${BASE}/users/me`, {
+    headers: authHeaders,
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.success, true);
+  assert.equal(data.data?.user?.email, testUser.email);
+});
+
+// -------------------------------------------------------------
+// Test 14: Canonical GET /api/job-descriptions matches /api/jds
+// -------------------------------------------------------------
+await test("REST: GET /api/job-descriptions works with pagination and matches /api/jds", async () => {
+  const resCanonical = await fetch(`${BASE}/job-descriptions?page=1&limit=5`, {
+    headers: authHeaders,
+  });
+  assert.equal(resCanonical.status, 200);
+  const jsonCanonical = await resCanonical.json();
+  assert.equal(jsonCanonical.success, true);
+  assert.ok(Array.isArray(jsonCanonical.data?.jds));
+
+  const resAlias = await fetch(`${BASE}/jds?page=1&limit=5`, {
+    headers: authHeaders,
+  });
+  assert.equal(resAlias.status, 200);
+  const jsonAlias = await resAlias.json();
+  assert.equal(jsonCanonical.data.pagination.total, jsonAlias.data.pagination.total);
+});
+
+// -------------------------------------------------------------
+// Test 15: Canonical GET /api/resume-optimizations matches /api/optimizations
+// -------------------------------------------------------------
+await test("REST: GET /api/resume-optimizations works and matches /api/optimizations", async () => {
+  const resCanonical = await fetch(`${BASE}/resume-optimizations?page=1&limit=5`, {
+    headers: authHeaders,
+  });
+  assert.equal(resCanonical.status, 200);
+  const jsonCanonical = await resCanonical.json();
+  assert.equal(jsonCanonical.success, true);
+  assert.ok(Array.isArray(jsonCanonical.data?.optimizations));
+
+  const resAlias = await fetch(`${BASE}/optimizations?page=1&limit=5`, {
+    headers: authHeaders,
+  });
+  assert.equal(resAlias.status, 200);
+});
+
+// -------------------------------------------------------------
+// Test 16: Canonical POST /api/resumes/templates/blank creates a resume
+// -------------------------------------------------------------
+let testResumeId = "";
+await test("REST: POST /api/resumes/templates/blank creates new resume", async () => {
+  const res = await fetch(`${BASE}/resumes/templates/blank`, {
+    method: "POST",
+    headers: { ...authHeaders, "content-type": "application/json" },
+    body: JSON.stringify({ template: "modern-clean" }),
+  });
+  assert.equal(res.status, 201);
+  const data = await res.json();
+  assert.equal(data.success, true);
+  testResumeId = data.data?.resume?._id;
+  assert.ok(testResumeId, "Expected created resume ID");
+});
+
+// -------------------------------------------------------------
+// Test 17: Canonical POST /api/ats-evaluations evaluates scorecard
+// -------------------------------------------------------------
+await test("REST: POST /api/ats-evaluations returns scorecard for resume", async () => {
+  if (!testResumeId) return;
+  const res = await fetch(`${BASE}/ats-evaluations`, {
+    method: "POST",
+    headers: { ...authHeaders, "content-type": "application/json" },
+    body: JSON.stringify({ resumeId: testResumeId }),
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.success, true);
+  assert.equal(typeof data.data?.atsScore, "number");
+  assert.ok(Array.isArray(data.data?.checklist));
+});
+
+// -------------------------------------------------------------
 // Summary
 // -------------------------------------------------------------
 console.log("\n==================================================");

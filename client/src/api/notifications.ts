@@ -8,10 +8,10 @@ export const notificationsApi = {
   },
 
   async markRead(id: string): Promise<void> {
-    await apiClient.patch<ApiEnvelope<null>>(`/notifications/${id}/read`);
+    await apiClient.patch<ApiEnvelope<null>>(`/notifications/${id}`);
   },
 
   async markAllRead(): Promise<void> {
-    await apiClient.patch<ApiEnvelope<null>>("/notifications/read-all");
+    await apiClient.patch<ApiEnvelope<null>>("/notifications");
   },
 };

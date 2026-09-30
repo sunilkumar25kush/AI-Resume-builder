@@ -1,4 +1,4 @@
-import { CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
+import { AlertCircle, CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,20 +63,25 @@ export function StepAnalysis({
   analysis,
   analyzing,
   onAnalyze,
+  error,
 }: {
   resume: Resume | null;
   jd: JobDescription;
   analysis: Optimization | null;
   analyzing: boolean;
   onAnalyze: () => void;
+  error?: string | null;
 }) {
   if (analyzing) {
     return (
-      <div className="flex flex-col gap-4" aria-busy="true" aria-label="Running AI analysis">
-        <Skeleton className="h-40 w-40 self-center rounded-full" />
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
+      <div className="flex flex-col items-center gap-4 py-8 text-center" aria-busy="true" aria-label="Running AI analysis">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium">Analyzing resume against job description…</p>
+          <p className="text-xs text-muted-foreground">Evaluating ATS keywords, skills match, and bullet impact (takes 15–45s)</p>
+        </div>
+        <Skeleton className="h-4 w-3/4 max-w-sm" />
+        <Skeleton className="h-4 w-1/2 max-w-xs" />
       </div>
     );
   }
@@ -85,10 +90,20 @@ export function StepAnalysis({
   if (!analysis) {
     return (
       <div className="flex flex-col items-center gap-4 py-8 text-center">
-        <p className="text-sm text-muted-foreground">Run the AI analysis to compare your resume with the job description.</p>
-        <Button type="button" onClick={onAnalyze}>
-          <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
-          Run analysis
+        {error ? (
+          <div className="flex w-full max-w-md flex-col items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-left text-sm text-destructive" role="alert">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Analysis failed</span>
+            </div>
+            <p className="text-xs text-destructive/90">{error}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Run the AI analysis to compare your resume with the job description.</p>
+        )}
+        <Button type="button" onClick={onAnalyze} disabled={analyzing}>
+          {error ? <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden /> : <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />}
+          {error ? "Retry analysis" : "Run analysis"}
         </Button>
       </div>
     );
@@ -129,7 +144,7 @@ export function StepAnalysis({
         </p>
       ) : null}
 
-      <Button type="button" variant="outline" size="sm" className="self-start" onClick={onAnalyze}>
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={onAnalyze} disabled={analyzing}>
         <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
         Re-run analysis
       </Button>
@@ -145,6 +160,7 @@ export function StepGenerate({
   experienceLevel,
   generating,
   onGenerate,
+  error,
 }: {
   resume: Resume | null;
   jd: JobDescription;
@@ -152,6 +168,7 @@ export function StepGenerate({
   experienceLevel: ExperienceLevel;
   generating: boolean;
   onGenerate: () => void;
+  error?: string | null;
 }) {
   const levelLabel = experienceLevel === "fresher" ? "Fresher" : experienceLevel === "junior" ? "1-3 Years" : "Senior";
   return (
@@ -183,9 +200,25 @@ export function StepGenerate({
           : "The AI will write a professional summary, pick skills from the job description, and suggest portfolio projects. It will never invent companies, experience, degrees or achievements — you add those in the editor."}
       </p>
 
+      {error ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+          <div className="flex items-center gap-1.5 font-semibold">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Resume generation failed</span>
+          </div>
+          <p className="text-xs text-destructive/90">{error}</p>
+        </div>
+      ) : null}
+
       <Button type="button" size="lg" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
-        {generating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden /> : <WandSparkles className="mr-1.5 h-4 w-4" aria-hidden />}
-        {generating ? "Generating with AI…" : "Generate resume"}
+        {generating ? (
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+        ) : error ? (
+          <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
+        ) : (
+          <WandSparkles className="mr-1.5 h-4 w-4" aria-hidden />
+        )}
+        {generating ? "Generating with AI…" : error ? "Retry generation" : "Generate resume"}
       </Button>
     </div>
   );

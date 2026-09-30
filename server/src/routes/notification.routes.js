@@ -7,8 +7,15 @@ const router = Router();
 
 router.use(protect);
 
-router.get("/", notificationController.listNotifications);
-router.patch("/read-all", notificationController.markAllNotificationsRead);
-router.patch("/:id/read", notificationController.markNotificationRead);
+router.get("/", notificationController.getUserNotifications);
+
+// Canonical REST bulk update & legacy alias
+router.patch("/", notificationController.markAllNotificationsAsRead);
+router.patch("/read-all", notificationController.markAllNotificationsAsRead);
+
+// Canonical REST document update & legacy alias
+router.patch("/:id", notificationController.markNotificationAsRead);
+router.patch("/:id/read", notificationController.markNotificationAsRead);
 
 export default router;
+
