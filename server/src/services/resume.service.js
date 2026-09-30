@@ -123,7 +123,7 @@ export async function updateResume(userId, resumeId, update) {
   }
   if (update.template) set.template = update.template;
   if (update.fileName) set.fileName = update.fileName;
-  const resume = await Resume.findOneAndUpdate({ _id: resumeId, user: userId }, { $set: set }, { new: true, runValidators: true })
+  const resume = await Resume.findOneAndUpdate({ _id: resumeId, user: userId }, { $set: set }, { returnDocument: "after", runValidators: true })
     .select("-filePath -__v")
     .lean();
   if (!resume) throw new ApiError(404, "Resume not found");

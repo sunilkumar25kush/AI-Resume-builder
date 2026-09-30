@@ -94,7 +94,7 @@ export async function updateJd(userId, id, patch) {
   const jd = await JobDescription.findOneAndUpdate(
     { _id: id, user: userId },
     { $set: patch },
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   ).lean();
   if (!jd) throw new ApiError(404, "Job description not found");
   return jd;
