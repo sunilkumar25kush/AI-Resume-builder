@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, FileText, History, Loader2, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, Download, FileDown, FileText, History, Loader2, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -17,6 +17,8 @@ import { PreviewPane } from "@/components/resumes/PreviewPane";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
 import { VersionDrawer } from "@/components/resumes/VersionDrawer";
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
+import { exportResumePdf } from "@/utils/exportPdfClient";
+import { exportResumeDocx } from "@/utils/exportDocx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +64,7 @@ export default function ResumeEditorPage() {
   const [renaming, setRenaming] = useState(false);
   const [aiBannerDismissed, setAiBannerDismissed] = useState(false);
   const [appliedSuggestions, setAppliedSuggestions] = useState<AiChange[]>([]);
+  const [downloading, setDownloading] = useState<"pdf" | "docx" | null>(null);
 
   const lastSavedRef = useRef<string>("");
   const saveTimerRef = useRef<number | undefined>(undefined);
@@ -190,6 +193,26 @@ export default function ResumeEditorPage() {
     };
   }, []);
 
+  const onDownload = async (kind: "pdf" | "docx") => {
+    if (!resume) return;
+    await save();
+    setDownloading(kind);
+    const title = resume.fileName.replace(/\.[^.]+$/, "");
+    const currentData = toParsedData(values);
+    try {
+      if (kind === "pdf") {
+        await exportResumePdf(currentData, template, resume.fileName, title, resume._id);
+      } else {
+        await exportResumeDocx(currentData, template, resume.fileName, title);
+      }
+      toast.success(`${kind.toUpperCase()} downloaded`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   if (!resume || !formReady) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -220,7 +243,7 @@ export default function ResumeEditorPage() {
               </Button>
             </h1>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Button type="button" variant="ghost" size="icon" onClick={onUndo} disabled={undoStackRef.current.length === 0} aria-label="Undo">
               <Undo2 className="h-4 w-4" aria-hidden />
             </Button>
@@ -230,6 +253,36 @@ export default function ResumeEditorPage() {
             <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)} aria-label="Open version history">
               <History className="mr-1.5 h-4 w-4" aria-hidden />
               History
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              disabled={downloading !== null}
+              onClick={() => void onDownload("pdf")}
+              aria-label="Download PDF"
+            >
+              {downloading === "pdf" ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Download className="mr-1.5 h-4 w-4" aria-hidden />
+              )}
+              Download PDF
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={downloading !== null}
+              onClick={() => void onDownload("docx")}
+              aria-label="Download DOCX"
+            >
+              {downloading === "docx" ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
+              )}
+              DOCX
             </Button>
             <SaveIndicator state={saveState} />
           </div>

@@ -47,5 +47,6 @@ server/uploads/
 server/public/
 scratch/
 
-# Vite
+# Vite & Puppeteer Cache
 .vite/
+.cache/

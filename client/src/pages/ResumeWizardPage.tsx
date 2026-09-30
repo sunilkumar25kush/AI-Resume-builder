@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, ArrowRight, Check, Route } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, ExternalLink, FileDown, FileText, Loader2, PenLine, Route } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -9,9 +9,14 @@ import { resumesApi } from "@/api/resumes";
 import { DesignChoiceDialog } from "@/components/resumes/DesignChoiceDialog";
 import { StepAnalysis, StepGenerate } from "@/components/wizard/WizardActionSteps";
 import { StepJd, StepResume, StepTarget, type ExperienceLevel } from "@/components/wizard/WizardSteps";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { exportResumePdf } from "@/utils/exportPdfClient";
+import { exportResumeDocx } from "@/utils/exportDocx";
+import { exportResumeJson } from "@/utils/exportJson";
 import type { JobDescription, Optimization, Resume } from "@/types";
 
 const STEPS = ["Target", "Resume", "Job Description", "Analysis", "Generate", "Template", "Edit", "Export"];
@@ -34,6 +39,8 @@ export default function ResumeWizardPage() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Resume | null>(null);
   const [designOpen, setDesignOpen] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
 
   const runAnalysis = async () => {
     if (!jd || !resume || analyzing) return;
@@ -59,11 +66,61 @@ export default function ResumeWizardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, resume, jd, analysis, analysisError]);
 
+  const handleDownloadPdf = async (targetResume = generated) => {
+    if (!targetResume) return;
+    setDownloadingPdf(true);
+    try {
+      const title = targetResume.fileName.replace(/\.[^.]+$/, "");
+      await exportResumePdf(
+        targetResume.parsedData,
+        targetResume.template,
+        targetResume.fileName,
+        title,
+        targetResume._id,
+      );
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadDocx = async (targetResume = generated) => {
+    if (!targetResume) return;
+    setDownloadingDocx(true);
+    try {
+      const title = targetResume.fileName.replace(/\.[^.]+$/, "");
+      await exportResumeDocx(
+        targetResume.parsedData,
+        targetResume.template,
+        targetResume.fileName,
+        title,
+      );
+      toast.success("DOCX downloaded successfully");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setDownloadingDocx(false);
+    }
+  };
+
+  const handleDownloadJson = (targetResume = generated) => {
+    if (!targetResume) return;
+    try {
+      exportResumeJson(targetResume.parsedData, targetResume.fileName);
+      toast.success("JSON downloaded successfully");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
   const canNext = (): boolean => {
     if (step === 0) return true;
     if (step === 1) return hasResume !== null && (!hasResume || resume !== null);
     if (step === 2) return jd !== null;
     if (step === ANALYSIS_STEP) return !analyzing;
+    if (step === GENERATE_STEP) return generated !== null;
     return true;
   };
 
@@ -175,43 +232,142 @@ export default function ResumeWizardPage() {
             generating={generating}
             onGenerate={() => void onGenerate()}
             error={generationError}
+            generated={generated}
+            onDownloadPdf={() => void handleDownloadPdf()}
+            onDownloadDocx={() => void handleDownloadDocx()}
+            downloadingPdf={downloadingPdf}
+            downloadingDocx={downloadingDocx}
+            onOpenEditor={() => generated && navigate(`/resumes/${generated._id}/edit`)}
+            onPreview={() => generated && navigate(`/resumes/${generated._id}`)}
+            onChangeTemplate={() => setDesignOpen(true)}
           />
         ) : null}
         {step > GENERATE_STEP ? (
-          <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              {step === 5
-                ? "Choose how your resume looks — or keep the original design."
-                : step === 6
-                  ? "Fine-tune every section in the live editor."
-                  : "Export to PDF, DOCX or JSON when you are done."}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(generated ? `/resumes/${generated._id}/edit` : "/resumes")}
-            >
-              {step === 5 || step === 6 ? "Open editor" : "Go to resumes"}
-            </Button>
+          <div className="flex flex-col gap-6">
+            {generated ? (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="flex flex-col gap-4 p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Download Your Generated Resume</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {generated.fileName} · Template: {generated.template} · {generated.parsedData.skills.length} skills
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="border-primary/30 text-primary">
+                      Ready to Download
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="default"
+                      disabled={downloadingPdf}
+                      onClick={() => void handleDownloadPdf()}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {downloadingPdf ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" aria-hidden />
+                      )}
+                      Download PDF
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      disabled={downloadingDocx}
+                      onClick={() => void handleDownloadDocx()}
+                    >
+                      {downloadingDocx ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                      ) : (
+                        <FileDown className="mr-2 h-4 w-4" aria-hidden />
+                      )}
+                      Download DOCX
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      onClick={() => void handleDownloadJson()}
+                    >
+                      <FileText className="mr-2 h-4 w-4" aria-hidden />
+                      Download JSON
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="default"
+                      onClick={() => navigate(`/resumes/${generated._id}/edit`)}
+                    >
+                      <PenLine className="mr-2 h-4 w-4" aria-hidden />
+                      Open in Editor
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="default"
+                      onClick={() => navigate(`/resumes/${generated._id}`)}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
+                      Live Preview
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            <div className="flex flex-col items-center gap-4 py-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                {step === 5
+                  ? "Choose how your resume looks — or keep the original design."
+                  : step === 6
+                    ? "Fine-tune every section in the live editor."
+                    : "Your AI-tailored resume is generated and ready to download or submit."}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(generated ? `/resumes/${generated._id}/edit` : "/resumes")}
+                >
+                  {step === 5 || step === 6 ? "Open editor" : "Go to all resumes"}
+                </Button>
+              </div>
+            </div>
           </div>
         ) : null}
       </section>
 
-      {step < GENERATE_STEP ? (
-        <footer className="flex items-center justify-between gap-3">
-          <Button type="button" variant="ghost" onClick={onBack} disabled={step === 0 || analyzing}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
-            Back
-          </Button>
-          <Button type="button" onClick={onNext} disabled={!canNext() || analyzing}>
+      <footer className="flex items-center justify-between gap-3">
+        <Button type="button" variant="ghost" onClick={onBack} disabled={step === 0 || analyzing || generating}>
+          <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
+          Back
+        </Button>
+        {step < STEPS.length - 1 ? (
+          <Button type="button" onClick={onNext} disabled={!canNext() || analyzing || generating}>
             Next
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Button>
-        </footer>
-      ) : null}
+        ) : null}
+      </footer>
 
       {generated && designOpen ? (
-        <DesignChoiceDialog resume={generated} onOpenChange={setDesignOpen} onDone={onDesignDone} />
+        <DesignChoiceDialog
+          resume={generated}
+          onOpenChange={setDesignOpen}
+          onDone={onDesignDone}
+          onDownloadPdf={() => void handleDownloadPdf()}
+          downloadingPdf={downloadingPdf}
+        />
       ) : null}
     </div>
   );

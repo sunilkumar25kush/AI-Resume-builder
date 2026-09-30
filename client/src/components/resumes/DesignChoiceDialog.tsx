@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -14,6 +14,8 @@ interface DesignChoiceDialogProps {
   resume: Resume | null;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
+  onDownloadPdf?: () => void;
+  downloadingPdf?: boolean;
 }
 
 /**
@@ -21,7 +23,13 @@ interface DesignChoiceDialogProps {
  * "Generate New Design"). Choosing a template PATCHes it onto the
  * generated resume; "keep" leaves the inherited template.
  */
-export function DesignChoiceDialog({ resume, onOpenChange, onDone }: DesignChoiceDialogProps) {
+export function DesignChoiceDialog({
+  resume,
+  onOpenChange,
+  onDone,
+  onDownloadPdf,
+  downloadingPdf,
+}: DesignChoiceDialogProps) {
   const [selected, setSelected] = useState<ResumeTemplate | null>(null);
   const [applying, setApplying] = useState(false);
 
@@ -59,16 +67,33 @@ export function DesignChoiceDialog({ resume, onOpenChange, onDone }: DesignChoic
             <p className="text-xs text-muted-foreground">
               Preserves the original layout ({resume ? getTemplate(resume.template).name : ""}) — content only.
             </p>
-            <Button variant="outline" className="self-start" onClick={() => void apply(null)} disabled={applying}>
-              {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Check className="mr-2 h-4 w-4" aria-hidden />}
-              Open with current design
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" className="self-start" onClick={() => void apply(null)} disabled={applying}>
+                {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Check className="mr-2 h-4 w-4" aria-hidden />}
+                Open in Editor
+              </Button>
+              {onDownloadPdf ? (
+                <Button
+                  variant="default"
+                  className="self-start"
+                  onClick={onDownloadPdf}
+                  disabled={downloadingPdf || applying}
+                >
+                  {downloadingPdf ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" aria-hidden />
+                  )}
+                  Download PDF
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <p className="text-sm font-semibold">Option 2 — Choose a new design</p>
             <TemplatePicker value={selected ?? "classic"} onChange={setSelected} />
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <Button onClick={() => void apply(selected)} disabled={applying || selected === null}>
                 {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="mr-2 h-4 w-4" aria-hidden />}
                 Apply design &amp; open

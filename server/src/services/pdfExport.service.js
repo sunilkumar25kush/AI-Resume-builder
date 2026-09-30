@@ -12,7 +12,7 @@ let browserPromise = null;
 
 export async function getBrowser() {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
+    const launchOptions = {
       headless: true,
       args: [
         "--no-sandbox",
@@ -21,7 +21,26 @@ export async function getBrowser() {
         "--font-render-hinting=medium",
         "--disable-gpu",
       ],
-    }).catch((err) => {
+    };
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH && existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    } else {
+      // In containerized Linux environments (Render/Docker), if system chromium is installed, use it
+      const linuxCandidates = [
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+      ];
+      for (const candidate of linuxCandidates) {
+        if (existsSync(candidate)) {
+          launchOptions.executablePath = candidate;
+          break;
+        }
+      }
+    }
+
+    browserPromise = puppeteer.launch(launchOptions).catch((err) => {
       browserPromise = null;
       throw err;
     });

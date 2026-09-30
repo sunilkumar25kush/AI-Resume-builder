@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "node --watch-path=src src/server.js",
+    "postinstall": "puppeteer browsers install chrome",
     "start": "node src/server.js"
   },
   "dependencies": {

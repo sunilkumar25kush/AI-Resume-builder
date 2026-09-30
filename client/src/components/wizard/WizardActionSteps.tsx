@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, ExternalLink, FileDown, Gauge, Lightbulb, Loader2, PenLine, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -178,6 +178,14 @@ export function StepGenerate({
   generating,
   onGenerate,
   error,
+  generated,
+  onDownloadPdf,
+  onDownloadDocx,
+  downloadingPdf,
+  downloadingDocx,
+  onOpenEditor,
+  onPreview,
+  onChangeTemplate,
 }: {
   resume: Resume | null;
   jd: JobDescription;
@@ -186,8 +194,130 @@ export function StepGenerate({
   generating: boolean;
   onGenerate: () => void;
   error?: string | null;
+  generated?: Resume | null;
+  onDownloadPdf?: () => void;
+  onDownloadDocx?: () => void;
+  downloadingPdf?: boolean;
+  downloadingDocx?: boolean;
+  onOpenEditor?: () => void;
+  onPreview?: () => void;
+  onChangeTemplate?: () => void;
 }) {
   const levelLabel = experienceLevel === "fresher" ? "Fresher" : experienceLevel === "junior" ? "1-3 Years" : "Senior";
+
+  if (generated) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h3 className="text-base font-semibold text-foreground">AI Resume Ready!</h3>
+                <p className="text-xs text-muted-foreground">
+                  Optimized for {targetTitle || jd.title || "your target role"} · {generated.parsedData.skills.length} skills included
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 capitalize">
+              Template: {generated.template}
+            </Badge>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+            {onDownloadPdf ? (
+              <Button
+                type="button"
+                variant="default"
+                size="default"
+                disabled={downloadingPdf}
+                onClick={onDownloadPdf}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {downloadingPdf ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                Download PDF
+              </Button>
+            ) : null}
+
+            {onDownloadDocx ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                disabled={downloadingDocx}
+                onClick={onDownloadDocx}
+              >
+                {downloadingDocx ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                Download DOCX
+              </Button>
+            ) : null}
+
+            {onOpenEditor ? (
+              <Button type="button" variant="secondary" size="default" onClick={onOpenEditor}>
+                <PenLine className="mr-2 h-4 w-4" aria-hidden />
+                Open in Editor
+              </Button>
+            ) : null}
+
+            {onPreview ? (
+              <Button type="button" variant="ghost" size="default" onClick={onPreview}>
+                <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
+                Live Preview
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">File Name</p>
+                <p className="text-sm text-muted-foreground">{generated.fileName}</p>
+              </div>
+              <Badge variant="secondary">{levelLabel}</Badge>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-t pt-3">
+              <div>
+                <p className="text-sm font-semibold">Matched Job</p>
+                <p className="text-sm text-muted-foreground">
+                  {jd.title || jd.fileName || "JD"} · {jd.skills.length} required skills
+                </p>
+              </div>
+              <Badge variant="outline">{resume ? "Optimized existing" : "Built fresh"}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            Want to pick another visual theme or tweak parameters?
+          </p>
+          <div className="flex items-center gap-2">
+            {onChangeTemplate ? (
+              <Button type="button" variant="outline" size="sm" onClick={onChangeTemplate}>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Change Template
+              </Button>
+            ) : null}
+            <Button type="button" variant="ghost" size="sm" onClick={onGenerate} disabled={generating}>
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              Regenerate
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
