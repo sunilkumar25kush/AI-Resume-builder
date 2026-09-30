@@ -11,6 +11,18 @@ const resultSchema = new mongoose.Schema(
     grammarIssues: { type: [String], default: [] },
     formattingSuggestions: { type: [String], default: [] },
     keywordSuggestions: { type: [String], default: [] },
+    changes: {
+      type: [
+        {
+          type: { type: String, default: "add-skill" },
+          section: { type: String, default: "skills" },
+          field: { type: String, default: "skills" },
+          value: { type: String, default: "" },
+          reason: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
     summary: { type: String, default: "" },
   },
   { _id: false },

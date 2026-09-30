@@ -4,13 +4,13 @@ import app from "./app.js";
 import { connectDB } from "./config/db.js";
 import { env } from "./config/env.js";
 
-const server = app.listen(env.PORT, () => {
-  console.log(`[server] API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+// Best-effort DB connection — attempt before listening so initial cold-start requests aren't rejected with 503
+await connectDB().catch((err) => {
+  console.error("[db] initial connection failed:", err.message);
 });
 
-// Best-effort DB connection — never blocks startup
-connectDB().catch((err) => {
-  console.error("[db] initial connection failed:", err.message);
+const server = app.listen(env.PORT, () => {
+  console.log(`[server] API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
 });
 
 // Graceful shutdown

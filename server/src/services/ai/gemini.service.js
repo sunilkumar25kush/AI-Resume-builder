@@ -74,6 +74,7 @@ class GeminiService {
 
           if (!res.ok) {
             const body = await res.text().catch(() => "");
+            console.error(`[ai] Gemini API error HTTP ${res.status}:`, body.slice(0, 150));
             if (res.status === 401 || res.status === 403) {
               throw new AiError(
                 `Gemini rejected the API key (${res.status}) — check GEMINI_API_KEY in the environment`,
@@ -99,9 +100,12 @@ class GeminiService {
           }
 
           const data = await res.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const candidate = data?.candidates?.[0];
+          const text = candidate?.content?.parts?.[0]?.text;
           if (typeof text !== "string" || !text.trim()) {
-            throw new AiError("Gemini returned an empty response — try again", "AI_BAD_RESPONSE");
+            const reason = candidate?.finishReason || data?.promptFeedback?.blockReason || "empty";
+            console.warn(`[ai] Gemini returned empty text (finishReason: ${reason})`);
+            throw new AiError(`Gemini returned an empty response (${reason}) — try again`, "AI_BAD_RESPONSE", { reason });
           }
           return text;
         } catch (error) {
@@ -165,7 +169,7 @@ class GeminiService {
   /** Rewrite an existing resume against a job description. */
   generateResume({ resume, jd }) {
     return this.generateJson(buildGenerationPrompt({ resume, jd }), {
-      timeoutMs: 150_000,
+      timeoutMs: 75_000,
       temperature: 0.3,
     });
   }
@@ -173,7 +177,7 @@ class GeminiService {
   /** Build a fresh resume from a JD alone (Workflow 1 — no existing resume). */
   analyzeJd({ jd, targetTitle, experienceLevel }) {
     return this.generateJson(buildJdOnlyPrompt({ jd, targetTitle, experienceLevel }), {
-      timeoutMs: 150_000,
+      timeoutMs: 75_000,
       temperature: 0.3,
     });
   }
@@ -181,7 +185,7 @@ class GeminiService {
   /** ATS optimization report for a resume + JD pair. */
   optimizeResume({ resume, jd }) {
     return this.generateJson(buildOptimizePrompt({ resume, jd }), {
-      timeoutMs: 120_000,
+      timeoutMs: 75_000,
       temperature: 0.2,
     });
   }
@@ -189,7 +193,7 @@ class GeminiService {
   /** Editor-time "what else should I add?" suggestions. */
   generateSuggestions({ resume, jd }) {
     return this.generateJson(buildSuggestPrompt({ resume, jd }), {
-      timeoutMs: 150_000,
+      timeoutMs: 75_000,
       temperature: 0.4,
     });
   }

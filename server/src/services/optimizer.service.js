@@ -90,21 +90,34 @@ export async function runOptimization(userId, resumeId, jdId) {
   if (!resume) throw new ApiError(404, "Resume not found");
   if (!jd) throw new ApiError(404, "Job description not found");
 
-  const raw = await geminiService.optimizeResume({
-    resume: resumeSnapshot(resume),
-    jd: {
-      title: jd.title,
-      company: jd.company,
-      skills: jd.skills,
-      preferredSkills: jd.preferredSkills,
-      qualifications: jd.qualifications,
-      responsibilities: jd.responsibilities,
-      atsKeywords: jd.atsKeywords,
-      softSkills: jd.softSkills,
-      industryKeywords: jd.industryKeywords,
-      experienceRequired: jd.experienceRequired,
-    },
-  });
+  let raw;
+  try {
+    raw = await geminiService.optimizeResume({
+      resume: resumeSnapshot(resume),
+      jd: {
+        title: jd.title,
+        company: jd.company,
+        skills: jd.skills,
+        preferredSkills: jd.preferredSkills,
+        qualifications: jd.qualifications,
+        responsibilities: jd.responsibilities,
+        atsKeywords: jd.atsKeywords,
+        softSkills: jd.softSkills,
+        industryKeywords: jd.industryKeywords,
+        experienceRequired: jd.experienceRequired,
+      },
+    });
+  } catch (error) {
+    console.warn(`[optimizer] AI call failed (${error.code || error.message}) — falling back to deterministic ATS analysis`);
+    raw = {
+      summary: "ATS scoring and keyword analysis completed. AI qualitative suggestions were temporarily unavailable.",
+      weakBullets: [],
+      grammarIssues: [],
+      formattingSuggestions: [],
+      keywordSuggestions: [],
+      changes: [],
+    };
+  }
   const aiResult = normalizeResult(raw);
 
   // Override every verifiable metric with the deterministic computation so a

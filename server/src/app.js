@@ -59,8 +59,8 @@ app.use(cookieParser());
 
 // Database availability check — fail fast with 503 instead of hanging for 10s and causing Vite proxy 502
 app.use("/api", (req, res, next) => {
-  const isGuestMe = req.path === "/auth/me" && !req.cookies?.token && !req.headers.authorization;
-  if (req.path === "/health" || isGuestMe || isDbConnected()) return next();
+  const isAuthMe = req.path === "/auth/me" || req.path === "/auth/me/";
+  if (req.path === "/health" || isAuthMe || isDbConnected()) return next();
   const detail = getDbError() ? ` (${getDbError()})` : "";
   res.status(503).json({
     success: false,

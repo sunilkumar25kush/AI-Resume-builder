@@ -9,16 +9,24 @@ import { AiError } from "./base.js";
  * @param {{ attempts?: number, delayMs?: number, timeoutMs?: number }} [opts]
  * @returns {Promise<any>}
  */
-export async function withRetry(fn, { attempts = 2, delayMs = 600, timeoutMs = 60_000 } = {}) {
+export async function withRetry(fn, { attempts = 2, delayMs = 600, timeoutMs = 45_000, totalTimeoutMs = 80_000 } = {}) {
+  const deadline = Date.now() + totalTimeoutMs;
   let lastError = null;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
-    if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+    const remainingTime = deadline - Date.now();
+    if (remainingTime <= 5000) {
+      break; // Not enough time to attempt without breaching Render's proxy timeout
     }
 
+    if (attempt > 0) {
+      const waitTime = Math.min(delayMs * attempt, remainingTime - 1000);
+      if (waitTime > 0) await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+
+    const currentTimeout = Math.min(timeoutMs, Math.max(1000, deadline - Date.now()));
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), currentTimeout);
     try {
       return await fn(attempt, controller.signal);
     } catch (error) {

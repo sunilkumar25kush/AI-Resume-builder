@@ -13,11 +13,33 @@ export const generateFromJdSchema = z.object({
 });
 
 /**
+ * Robustly coerce a string or array of strings from LLM output into a single string.
+ * LLMs frequently return bullet points as an array (e.g. ["bullet 1", "bullet 2"])
+ * instead of a single formatted string.
+ */
+const stringOrBulletArray = (joiner = "\n") =>
+  z.preprocess((val) => {
+    if (Array.isArray(val)) {
+      return val
+        .map((item) =>
+          typeof item === "string"
+            ? item.trim()
+            : typeof item === "object" && item !== null
+              ? Object.values(item).join(" ").trim()
+              : String(item ?? "").trim(),
+        )
+        .filter(Boolean)
+        .join(joiner);
+    }
+    return typeof val === "string" ? val : val != null ? String(val) : "";
+  }, z.string());
+
+/**
  * Whatever the AI returns for a generation run. Every key is optional —
  * garbage sections fall back to the ORIGINAL resume data.
  */
 const generatedDataSchema = z.object({
-  summary: z.string().max(10000).optional(),
+  summary: stringOrBulletArray("\n\n").pipe(z.string().max(10000)).optional(),
   contact: z
     .object({
       email: z.string().max(254).optional(),
@@ -36,7 +58,7 @@ const generatedDataSchema = z.object({
         location: z.string().trim().max(200).optional(),
         startDate: z.string().trim().max(100).optional(),
         endDate: z.string().trim().max(100).optional(),
-        description: z.string().trim().max(5000).optional(),
+        description: stringOrBulletArray("\n").pipe(z.string().trim().max(5000)).optional(),
       }),
     )
     .max(100)
@@ -48,7 +70,7 @@ const generatedDataSchema = z.object({
         institution: z.string().trim().max(200).optional(),
         startDate: z.string().trim().max(100).optional(),
         endDate: z.string().trim().max(100).optional(),
-        description: z.string().trim().max(3000).optional(),
+        description: stringOrBulletArray("\n").pipe(z.string().trim().max(3000)).optional(),
       }),
     )
     .max(100)
@@ -57,9 +79,9 @@ const generatedDataSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().max(200).optional(),
-        description: z.string().trim().max(3000).optional(),
+        description: stringOrBulletArray("\n").pipe(z.string().trim().max(3000)).optional(),
         link: z.string().trim().max(500).optional(),
-        technologies: z.string().trim().max(1000).optional(),
+        technologies: stringOrBulletArray(", ").pipe(z.string().trim().max(1000)).optional(),
       }),
     )
     .max(100)
@@ -72,7 +94,7 @@ const generatedDataSchema = z.object({
           .catch("add-skill"),
         section: z.string().max(100).default("skills"),
         field: z.string().max(100).default("skills"),
-        value: z.string().max(2000).default(""),
+        value: stringOrBulletArray(", ").pipe(z.string().max(2000)).default(""),
         reason: z.string().max(500).default(""),
       }),
     )

@@ -18,6 +18,9 @@ export function extractJson(text) {
   const fenceMatch = body.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenceMatch) body = fenceMatch[1].trim();
 
+  // Strip trailing commas before braces/brackets which LLMs frequently emit
+  const stripTrailingCommas = (s) => s.replace(/,(\s*[}\]])/g, "$1");
+
   // Balanced-scan for the first complete {…} or […].
   for (const open of ["{", "["]) {
     const start = body.indexOf(open);
@@ -28,7 +31,11 @@ export function extractJson(text) {
       try {
         return JSON.parse(candidate);
       } catch {
-        // Fall through — maybe a different fragment parses.
+        try {
+          return JSON.parse(stripTrailingCommas(candidate));
+        } catch {
+          // Fall through — maybe a different fragment parses.
+        }
       }
     }
   }
@@ -37,9 +44,13 @@ export function extractJson(text) {
   try {
     return JSON.parse(body);
   } catch {
-    throw new AiError("Could not parse JSON from model output", "AI_BAD_RESPONSE", {
-      preview: body.slice(0, 200),
-    });
+    try {
+      return JSON.parse(stripTrailingCommas(body));
+    } catch {
+      throw new AiError("Could not parse JSON from model output", "AI_BAD_RESPONSE", {
+        preview: body.slice(0, 200),
+      });
+    }
   }
 }
 

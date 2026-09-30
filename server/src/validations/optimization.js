@@ -6,6 +6,23 @@ export const runOptimizationSchema = z.object({
   jdId: z.string().min(1),
 });
 
+const stringOrArrayToString = (joiner = "\n") =>
+  z.preprocess((val) => {
+    if (Array.isArray(val)) {
+      return val
+        .map((item) =>
+          typeof item === "string"
+            ? item.trim()
+            : typeof item === "object" && item !== null
+              ? Object.values(item).join(" ").trim()
+              : String(item ?? "").trim(),
+        )
+        .filter(Boolean)
+        .join(joiner);
+    }
+    return typeof val === "string" ? val : val != null ? String(val) : "";
+  }, z.string());
+
 /** One concrete addition the AI recommends (or made) to raise the ATS score. */
 const aiChangeSchema = z.object({
   type: z
@@ -13,7 +30,7 @@ const aiChangeSchema = z.object({
     .catch("add-skill"),
   section: z.string().max(100).default("skills"),
   field: z.string().max(100).default("skills"),
-  value: z.string().max(2000).default(""),
+  value: stringOrArrayToString(", ").pipe(z.string().max(2000)).default(""),
   reason: z.string().max(500).default(""),
 });
 
@@ -45,7 +62,13 @@ function clampScore(value, fallback = 0) {
 /** Pick valid result keys only — ignores stray AI fields. */
 export function normalizeResult(raw) {
   const parsed = optimizationResultSchema.parse(raw ?? {});
-  const unique = (list) => [...new Set(list.map((item) => item.trim()).filter(Boolean))];
+  const unique = (list) => [
+    ...new Set(
+      (Array.isArray(list) ? list : [])
+        .map((item) => (typeof item === "string" ? item.trim() : String(item ?? "").trim()))
+        .filter(Boolean),
+    ),
+  ];
   return {
     atsScore: clampScore(parsed.atsScore),
     matchPercent: clampScore(parsed.matchPercent),
