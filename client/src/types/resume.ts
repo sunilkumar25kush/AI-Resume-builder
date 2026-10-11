@@ -1,9 +1,20 @@
+export interface CustomLink {
+  label: string;
+  url: string;
+}
+
 export interface ContactInfo {
   email: string;
   phone: string;
   location: string;
   linkedin: string;
   github: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  websiteUrl?: string;
+  contactOrder?: string[];
+  customLinks?: CustomLink[];
 }
 
 export interface ExperienceEntry {
@@ -40,6 +51,7 @@ export interface CustomSection {
 
 export interface ParsedResumeData {
   name: string;
+  title?: string;
   summary: string;
   contact: ContactInfo;
   skills: string[];
@@ -51,6 +63,7 @@ export interface ParsedResumeData {
   awards: string[];
   customSections: CustomSection[];
   hiddenSections: string[];
+  sectionOrder?: string[];
 }
 
 export type ResumeTemplate =

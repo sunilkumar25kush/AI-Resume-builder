@@ -194,12 +194,27 @@ export function mergeGeneratedData(raw, original) {
  * languages and awards are left EMPTY — the AI must never invent them, and
  * the user fills them in the editor (fresher-friendly flow).
  */
-export function mergeJdOnlyData(raw) {
+export function mergeJdOnlyData(raw, { user, targetTitle } = {}) {
   const parsed = generatedDataSchema.parse(raw ?? {});
+  const shouldPopulate = user && user.autoPopulateResume !== false;
+
   return {
-    name: "",
+    name: shouldPopulate ? (user?.name || "") : "",
+    title: (targetTitle || (shouldPopulate ? user?.targetJobTitle : "") || "").trim(),
     summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
-    contact: { email: "", phone: "", location: "", linkedin: "", github: "" },
+    contact: {
+      email: shouldPopulate ? (user?.email || "") : "",
+      phone: shouldPopulate ? (user?.phone || "") : "",
+      location: shouldPopulate ? (user?.location || "") : "",
+      linkedin: shouldPopulate ? (user?.linkedin || "") : "",
+      github: shouldPopulate ? (user?.github || "") : "",
+      website: shouldPopulate ? (user?.website || "") : "",
+      linkedinUrl: shouldPopulate ? (user?.linkedinUrl || "") : "",
+      githubUrl: shouldPopulate ? (user?.githubUrl || "") : "",
+      websiteUrl: shouldPopulate ? (user?.websiteUrl || "") : "",
+      contactOrder: shouldPopulate ? (user?.contactOrder || []) : [],
+      customLinks: shouldPopulate ? (user?.customLinks || []) : [],
+    },
     skills: Array.isArray(parsed.skills) ? parsed.skills.filter((s) => typeof s === "string" && s.trim().length > 0).map((s) => s.trim()) : [],
     experience: [],
     education: [],
@@ -218,6 +233,17 @@ export function mergeJdOnlyData(raw) {
     awards: [],
     customSections: [],
     hiddenSections: [],
+    sectionOrder: [
+      "summary",
+      "experience",
+      "education",
+      "projects",
+      "skills",
+      "certifications",
+      "languages",
+      "awards",
+      "customSections",
+    ],
   };
 }
 

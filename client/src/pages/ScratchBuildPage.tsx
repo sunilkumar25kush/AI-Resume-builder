@@ -50,8 +50,7 @@ export default function ScratchBuildPage() {
           <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <p>
-              Aapka <strong>naam aur email</strong> account se prefill ho jayenge. Baaki sab (summary, skills, experience,
-              projects) editor mein khud bharna hai — koi JD ya AI wait nahi.
+              Aapka <strong>naam, target job role, contact info aur links</strong> aapki profile se automatically prefill ho jayenge.
             </p>
           </div>
 

@@ -35,8 +35,14 @@ export const customSectionSchema = z.object({
   content: z.string().max(10000).default(""),
 });
 
+export const customLinkSchema = z.object({
+  label: z.string().max(80).default(""),
+  url: z.string().max(500).default(""),
+});
+
 export const editSchema = z.object({
   name: z.string().max(200).default(""),
+  title: z.string().max(200).default(""),
   summary: z.string().max(10000).default(""),
   contact: z.object({
     email: z.string().max(254).default(""),
@@ -44,6 +50,12 @@ export const editSchema = z.object({
     location: z.string().max(200).default(""),
     linkedin: z.string().max(500).default(""),
     github: z.string().max(500).default(""),
+    website: z.string().max(500).default(""),
+    linkedinUrl: z.string().max(500).default(""),
+    githubUrl: z.string().max(500).default(""),
+    websiteUrl: z.string().max(500).default(""),
+    contactOrder: z.array(z.string()).default([]),
+    customLinks: z.array(customLinkSchema).default([]),
   }),
   skillsText: z.string().max(3000).default(""),
   experience: z.array(entrySchema).max(100).default([]),
@@ -54,6 +66,17 @@ export const editSchema = z.object({
   awardsText: z.string().max(5000).default(""),
   customSections: z.array(customSectionSchema).max(20).default([]),
   hiddenSections: z.array(z.string().max(100)).default([]),
+  sectionOrder: z.array(z.string()).default([
+    "summary",
+    "experience",
+    "education",
+    "projects",
+    "skills",
+    "certifications",
+    "languages",
+    "awards",
+    "customSections",
+  ]),
 });
 
 export type EditFormValues = z.output<typeof editSchema>;
@@ -66,18 +89,49 @@ export const EMPTY_CUSTOM_SECTION = { title: "", content: "" };
 
 export function toFormValues(resume: { parsedData: ParsedResumeData }): EditFormValues {
   return {
-    name: resume.parsedData.name,
-    summary: resume.parsedData.summary,
-    contact: resume.parsedData.contact,
-    skillsText: resume.parsedData.skills.join("\n"),
-    experience: resume.parsedData.experience,
-    education: resume.parsedData.education,
-    projects: resume.parsedData.projects,
-    certificationsText: resume.parsedData.certifications.join("\n"),
-    languagesText: resume.parsedData.languages.join("\n"),
-    awardsText: resume.parsedData.awards.join("\n"),
-    customSections: resume.parsedData.customSections,
-    hiddenSections: resume.parsedData.hiddenSections,
+    name: resume.parsedData.name || "",
+    title: resume.parsedData.title || "",
+    summary: resume.parsedData.summary || "",
+    contact: {
+      email: resume.parsedData.contact?.email || "",
+      phone: resume.parsedData.contact?.phone || "",
+      location: resume.parsedData.contact?.location || "",
+      linkedin: resume.parsedData.contact?.linkedin || "",
+      github: resume.parsedData.contact?.github || "",
+      website: resume.parsedData.contact?.website || "",
+      linkedinUrl: resume.parsedData.contact?.linkedinUrl || "",
+      githubUrl: resume.parsedData.contact?.githubUrl || "",
+      websiteUrl: resume.parsedData.contact?.websiteUrl || "",
+      contactOrder:
+        Array.isArray(resume.parsedData.contact?.contactOrder) &&
+        resume.parsedData.contact.contactOrder.length > 0
+          ? resume.parsedData.contact.contactOrder
+          : ["location", "linkedin", "github", "website", "phone", "email"],
+      customLinks: resume.parsedData.contact?.customLinks || [],
+    },
+    skillsText: (resume.parsedData.skills || []).join("\n"),
+    experience: resume.parsedData.experience || [],
+    education: resume.parsedData.education || [],
+    projects: resume.parsedData.projects || [],
+    certificationsText: (resume.parsedData.certifications || []).join("\n"),
+    languagesText: (resume.parsedData.languages || []).join("\n"),
+    awardsText: (resume.parsedData.awards || []).join("\n"),
+    customSections: resume.parsedData.customSections || [],
+    hiddenSections: resume.parsedData.hiddenSections || [],
+    sectionOrder:
+      Array.isArray(resume.parsedData.sectionOrder) && resume.parsedData.sectionOrder.length > 0
+        ? resume.parsedData.sectionOrder
+        : [
+            "summary",
+            "experience",
+            "education",
+            "projects",
+            "skills",
+            "certifications",
+            "languages",
+            "awards",
+            "customSections",
+          ],
   };
 }
 
@@ -91,6 +145,7 @@ export function splitSkills(text: string): string[] {
 export function toParsedData(values: EditFormValues): ParsedResumeData {
   return {
     name: values.name,
+    title: values.title,
     summary: values.summary,
     contact: values.contact,
     skills: splitSkills(values.skillsText ?? ""),
@@ -102,6 +157,7 @@ export function toParsedData(values: EditFormValues): ParsedResumeData {
     awards: splitLines(values.awardsText ?? ""),
     customSections: values.customSections ?? [],
     hiddenSections: values.hiddenSections ?? [],
+    sectionOrder: values.sectionOrder ?? [],
   };
 }
 

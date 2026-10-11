@@ -3,11 +3,25 @@ import { existsSync, unlinkSync } from "node:fs";
 import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
 
-async function updateProfile(userId, { name }) {
+async function updateProfile(userId, data) {
   const user = await User.findById(userId);
   if (!user) throw ApiError.notFound("User not found");
 
-  user.name = name;
+  if (data.name !== undefined) user.name = data.name;
+  if (data.email !== undefined && data.email) user.email = data.email.toLowerCase().trim();
+  if (data.phone !== undefined) user.phone = data.phone;
+  if (data.location !== undefined) user.location = data.location;
+  if (data.targetJobTitle !== undefined) user.targetJobTitle = data.targetJobTitle;
+  if (data.linkedin !== undefined) user.linkedin = data.linkedin;
+  if (data.github !== undefined) user.github = data.github;
+  if (data.website !== undefined) user.website = data.website;
+  if (data.linkedinUrl !== undefined) user.linkedinUrl = data.linkedinUrl;
+  if (data.githubUrl !== undefined) user.githubUrl = data.githubUrl;
+  if (data.websiteUrl !== undefined) user.websiteUrl = data.websiteUrl;
+  if (data.contactOrder !== undefined) user.contactOrder = data.contactOrder;
+  if (data.customLinks !== undefined) user.customLinks = data.customLinks;
+  if (data.autoPopulateResume !== undefined) user.autoPopulateResume = Boolean(data.autoPopulateResume);
+
   await user.save();
   return user.toSafeJSON();
 }

@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import { authApi } from "@/api/auth";
 import { setUnauthorizedHandler } from "@/api/client";
-import type { LoginInput, RegisterInput, User } from "@/types";
+import type { LoginInput, RegisterInput, UpdateProfileInput, User } from "@/types";
 
 type AuthStatus = "loading" | "authenticated" | "guest";
 
@@ -14,7 +14,7 @@ interface AuthState {
   login: (data: LoginInput) => Promise<void>;
   register: (data: RegisterInput) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
-  updateProfile: (data: { name: string }) => Promise<void>;
+  updateProfile: (data: UpdateProfileInput) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   logout: () => Promise<void>;
 }

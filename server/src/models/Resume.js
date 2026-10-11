@@ -7,6 +7,20 @@ const contactSchema = new mongoose.Schema(
     location: { type: String, default: "" },
     linkedin: { type: String, default: "" },
     github: { type: String, default: "" },
+    website: { type: String, default: "" },
+    linkedinUrl: { type: String, default: "" },
+    githubUrl: { type: String, default: "" },
+    websiteUrl: { type: String, default: "" },
+    contactOrder: { type: [String], default: [] },
+    customLinks: {
+      type: [
+        {
+          label: { type: String, default: "" },
+          url: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
   },
   { _id: false },
 );
@@ -58,6 +72,7 @@ const customSectionSchema = new mongoose.Schema(
 const parsedDataSchema = new mongoose.Schema(
   {
     name: { type: String, default: "" },
+    title: { type: String, default: "" },
     summary: { type: String, default: "" },
     contact: { type: contactSchema, default: () => ({}) },
     skills: { type: mongoose.Schema.Types.Mixed, default: [] },
@@ -70,6 +85,7 @@ const parsedDataSchema = new mongoose.Schema(
     coursework: { type: mongoose.Schema.Types.Mixed, default: [] },
     customSections: { type: [customSectionSchema], default: [] },
     hiddenSections: { type: [String], default: [] },
+    sectionOrder: { type: [String], default: [] },
   },
   { _id: false },
 );

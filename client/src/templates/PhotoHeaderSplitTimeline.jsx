@@ -82,13 +82,35 @@ export function PhotoHeaderSplitTimeline({ data, theme = {} }) {
             )}
             {personal.website && (
               <a
-                href={personal.website.startsWith("http") ? personal.website : `https://${personal.website}`}
+                href={personal.websiteUrl || (personal.website.startsWith("http") ? personal.website : `https://${personal.website}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 hover:underline text-neutral-600"
               >
                 <Icon name="website" size={14} className="text-neutral-500" />
                 <span>{personal.website.replace(/^https?:\/\/(www\.)?/, "")}</span>
+              </a>
+            )}
+            {personal.linkedin && (
+              <a
+                href={personal.linkedinUrl || `https://linkedin.com/in/${personal.linkedin}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:underline text-neutral-600"
+              >
+                <Icon name="linkedin" size={14} className="text-neutral-500" />
+                <span>{personal.linkedin}</span>
+              </a>
+            )}
+            {personal.github && (
+              <a
+                href={personal.githubUrl || `https://github.com/${personal.github}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:underline text-neutral-600"
+              >
+                <Icon name="github" size={14} className="text-neutral-500" />
+                <span>{personal.github}</span>
               </a>
             )}
           </div>

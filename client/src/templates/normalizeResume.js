@@ -6,6 +6,61 @@
  * - Header ALWAYS reads personal.fullName, fallback to "Your Name" (NEVER resume title).
  * - Empty sections/fields are normalized to clean arrays or empty strings.
  */
+function cleanDisplayLabel(value, type) {
+  if (!value) return "";
+  const trimmed = String(value).trim();
+  if (type === "linkedin") {
+    if (/^https?:\/\//i.test(trimmed) || /^www\.linkedin\.com/i.test(trimmed) || /^linkedin\.com/i.test(trimmed)) {
+      return (
+        trimmed
+          .replace(/^https?:\/\/(www\.)?linkedin\.com\/in\/?/i, "")
+          .replace(/^https?:\/\/(www\.)?linkedin\.com\/?/i, "")
+          .replace(/\/+$/, "") || "LinkedIn"
+      );
+    }
+    return trimmed;
+  }
+  if (type === "github") {
+    if (/^https?:\/\//i.test(trimmed) || /^www\.github\.com/i.test(trimmed) || /^github\.com/i.test(trimmed)) {
+      return (
+        trimmed
+          .replace(/^https?:\/\/(www\.)?github\.com\/?/i, "")
+          .replace(/\/+$/, "") || "GitHub"
+      );
+    }
+    return trimmed;
+  }
+  if (type === "website" || type === "portfolio") {
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/+$/, "");
+    }
+    return trimmed;
+  }
+  return trimmed;
+}
+
+function resolveDestUrl(url, val, type) {
+  const u = (url || "").trim();
+  if (u) {
+    return u.startsWith("http://") || u.startsWith("https://") ? u : `https://${u}`;
+  }
+  const v = (val || "").trim();
+  if (!v) return "";
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  if (type === "linkedin") {
+    if (v.includes("linkedin.com")) return `https://${v.replace(/^www\./, "")}`;
+    return `https://linkedin.com/in/${v}`;
+  }
+  if (type === "github") {
+    if (v.includes("github.com")) return `https://${v.replace(/^www\./, "")}`;
+    return `https://github.com/${v}`;
+  }
+  if (type === "website" || type === "portfolio") {
+    return `https://${v.replace(/^www\./, "")}`;
+  }
+  return "";
+}
+
 export function normalizeResume(raw) {
   if (!raw) {
     return getEmptyResume();
@@ -25,13 +80,50 @@ export function normalizeResume(raw) {
   const email = (personalRaw.email || contactRaw.email || "").trim();
   const phone = (personalRaw.phone || contactRaw.phone || "").trim();
   const location = (personalRaw.location || contactRaw.location || "").trim();
-  const linkedin = (personalRaw.linkedin || contactRaw.linkedin || "").trim();
-  const github = (personalRaw.github || contactRaw.github || "").trim();
-  const website = (personalRaw.website || contactRaw.website || "").trim();
+
+  // Links & Clean labels: Keep display clean (no raw full URLs on resume)
+  const rawLinkedin = (personalRaw.linkedin || contactRaw.linkedin || "").trim();
+  const linkedinUrl = resolveDestUrl(
+    contactRaw.linkedinUrl || personalRaw.linkedinUrl,
+    rawLinkedin,
+    "linkedin"
+  );
+  const linkedin = cleanDisplayLabel(rawLinkedin, "linkedin");
+
+  const rawGithub = (personalRaw.github || contactRaw.github || "").trim();
+  const githubUrl = resolveDestUrl(
+    contactRaw.githubUrl || personalRaw.githubUrl,
+    rawGithub,
+    "github"
+  );
+  const github = cleanDisplayLabel(rawGithub, "github");
+
+  const rawWebsite = (personalRaw.website || contactRaw.website || "").trim();
+  const websiteUrl = resolveDestUrl(
+    contactRaw.websiteUrl || personalRaw.websiteUrl,
+    rawWebsite,
+    "website"
+  );
+  const website = cleanDisplayLabel(rawWebsite, "website");
+
   const portfolio = (personalRaw.portfolio || contactRaw.portfolio || "").trim();
   const photoUrl = (personalRaw.photoUrl || "").trim();
   const dob = (personalRaw.dob || "").trim();
   const availability = (personalRaw.availability || "").trim();
+
+  const defaultContactOrder = ["location", "linkedin", "github", "website", "phone", "email"];
+  const rawContactOrder =
+    contactRaw.contactOrder || personalRaw.contactOrder || raw.contactOrder;
+  const contactOrder =
+    Array.isArray(rawContactOrder) && rawContactOrder.length > 0
+      ? [...new Set(rawContactOrder.filter(Boolean))]
+      : defaultContactOrder;
+
+  const customLinks = Array.isArray(personalRaw.customLinks)
+    ? personalRaw.customLinks
+    : Array.isArray(contactRaw.customLinks)
+      ? contactRaw.customLinks
+      : [];
 
   const personal = {
     fullName,
@@ -41,12 +133,17 @@ export function normalizeResume(raw) {
     phone,
     location,
     linkedin,
+    linkedinUrl,
     github,
+    githubUrl,
     website,
+    websiteUrl,
     portfolio,
+    customLinks,
     photoUrl,
     dob,
     availability,
+    contactOrder,
   };
 
   // 2. Summary
@@ -213,6 +310,41 @@ export function normalizeResume(raw) {
     })).filter((ref) => ref.name);
   }
 
+  // 11. Awards
+  let awards = [];
+  if (!hidden.has("awards") && Array.isArray(raw.awards)) {
+    awards = raw.awards.map((a) => String(a).trim()).filter(Boolean);
+  }
+
+  // 12. Custom Sections
+  let customSections = [];
+  if (!hidden.has("customSections") && Array.isArray(raw.customSections)) {
+    customSections = raw.customSections
+      .filter((s) => s && (s.title || s.content))
+      .map((s) => ({
+        title: s.title || "Custom Section",
+        content: s.content || "",
+      }));
+  }
+
+  // 13. Section Order
+  const defaultSectionOrder = [
+    "summary",
+    "experience",
+    "education",
+    "projects",
+    "skills",
+    "certifications",
+    "languages",
+    "awards",
+    "customSections",
+  ];
+  const rawSectionOrder = raw.sectionOrder || (raw.parsedData && raw.parsedData.sectionOrder);
+  const sectionOrder =
+    Array.isArray(rawSectionOrder) && rawSectionOrder.length > 0
+      ? [...new Set(rawSectionOrder.filter(Boolean))]
+      : defaultSectionOrder;
+
   return {
     personal,
     summary,
@@ -224,6 +356,10 @@ export function normalizeResume(raw) {
     certifications,
     languages,
     references,
+    awards,
+    customSections,
+    sectionOrder,
+    contactOrder,
   };
 }
 
@@ -236,12 +372,16 @@ export function getEmptyResume() {
       phone: "",
       location: "",
       linkedin: "",
+      linkedinUrl: "",
       github: "",
+      githubUrl: "",
       website: "",
+      websiteUrl: "",
       portfolio: "",
       photoUrl: "",
       dob: "",
       availability: "",
+      contactOrder: ["location", "linkedin", "github", "website", "phone", "email"],
     },
     summary: "",
     experience: [],
@@ -252,5 +392,19 @@ export function getEmptyResume() {
     certifications: [],
     languages: [],
     references: [],
+    awards: [],
+    customSections: [],
+    sectionOrder: [
+      "summary",
+      "experience",
+      "education",
+      "projects",
+      "skills",
+      "certifications",
+      "languages",
+      "awards",
+      "customSections",
+    ],
+    contactOrder: ["location", "linkedin", "github", "website", "phone", "email"],
   };
 }

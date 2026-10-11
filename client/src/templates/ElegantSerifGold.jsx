@@ -15,14 +15,18 @@ export function ElegantSerifGold({ data, theme = {} }) {
   const gold = theme.accentColor || "#B08D57";
   const fontSizeBase = theme.fontSize || "14px";
 
-  const contactParts = [
-    personal.location,
-    personal.phone,
-    personal.email,
-    personal.linkedin ? personal.linkedin.replace(/^https?:\/\/(www\.)?/, "") : null,
-    personal.github ? personal.github.replace(/^https?:\/\/(www\.)?/, "") : null,
-    personal.website ? personal.website.replace(/^https?:\/\/(www\.)?/, "") : null,
-  ].filter(Boolean);
+  const contactMap = {
+    location: personal.location ? { text: personal.location, href: null } : null,
+    phone: personal.phone ? { text: personal.phone, href: `tel:${personal.phone.replace(/[^0-9+]/g, "")}` } : null,
+    email: personal.email ? { text: personal.email, href: `mailto:${personal.email}` } : null,
+    linkedin: personal.linkedin ? { text: personal.linkedin, href: personal.linkedinUrl || `https://linkedin.com/in/${personal.linkedin}` } : null,
+    github: personal.github ? { text: personal.github, href: personal.githubUrl || `https://github.com/${personal.github}` } : null,
+    website: personal.website ? { text: personal.website, href: personal.websiteUrl || (personal.website.startsWith("http") ? personal.website : `https://${personal.website}`) } : null,
+  };
+
+  const contactParts = (personal.contactOrder || ["location", "phone", "email", "linkedin", "github", "website"])
+    .map((k) => contactMap[k])
+    .filter(Boolean);
 
   return (
     <div
@@ -58,8 +62,19 @@ export function ElegantSerifGold({ data, theme = {} }) {
         />
 
         {contactParts.length > 0 && (
-          <p className="text-[12px] text-neutral-600 tracking-wide">
-            {contactParts.join("  •  ")}
+          <p className="text-[12px] text-neutral-600 tracking-wide flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+            {contactParts.map((item, idx) => (
+              <React.Fragment key={idx}>
+                {idx > 0 && <span className="opacity-40 select-none">•</span>}
+                {item.href ? (
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    {item.text}
+                  </a>
+                ) : (
+                  <span>{item.text}</span>
+                )}
+              </React.Fragment>
+            ))}
           </p>
         )}
       </header>

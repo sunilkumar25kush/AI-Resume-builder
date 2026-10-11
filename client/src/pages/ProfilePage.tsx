@@ -1,21 +1,62 @@
 import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save } from "lucide-react";
+import {
+  Briefcase,
+  CheckCircle2,
+  ExternalLink,
+  Globe,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "@/api/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/stores/auth";
 
+const customLinkSchema = z.object({
+  label: z.string().trim().max(80),
+  url: z.string().trim().max(500),
+});
+
 const profileSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
+  name: z.string().trim().min(2, "Full name must be at least 2 characters").max(80),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Email / Gmail address is required")
+    .email("Please enter a valid email address"),
+  phone: z.string().trim().max(40).optional().default(""),
+  location: z.string().trim().max(200).optional().default(""),
+  targetJobTitle: z.string().trim().max(120).optional().default(""),
+  linkedin: z.string().trim().max(500).optional().default(""),
+  github: z.string().trim().max(500).optional().default(""),
+  website: z.string().trim().max(500).optional().default(""),
+  linkedinUrl: z.string().trim().max(500).optional().default(""),
+  githubUrl: z.string().trim().max(500).optional().default(""),
+  websiteUrl: z.string().trim().max(500).optional().default(""),
+  customLinks: z.array(customLinkSchema).optional().default([]),
+  autoPopulateResume: z.boolean().default(true),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -38,18 +79,42 @@ export default function ProfilePage() {
 
   const {
     register,
+    control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: { name: user?.name ?? "" },
+    values: {
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      phone: user?.phone ?? "",
+      location: user?.location ?? "",
+      targetJobTitle: user?.targetJobTitle ?? "",
+      linkedin: user?.linkedin ?? "",
+      github: user?.github ?? "",
+      website: user?.website ?? "",
+      linkedinUrl: user?.linkedinUrl ?? "",
+      githubUrl: user?.githubUrl ?? "",
+      websiteUrl: user?.websiteUrl ?? "",
+      customLinks: user?.customLinks ?? [],
+      autoPopulateResume: user?.autoPopulateResume ?? true,
+    },
   });
 
-  const onSaveName = handleSubmit(async (values) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "customLinks",
+  });
+
+  const watchedValues = watch();
+
+  const onSaveProfile = handleSubmit(async (values) => {
     setSaving(true);
     try {
       await updateProfile(values);
-      toast.success("Profile updated");
+      toast.success("Profile updated — new resumes will auto-fill with these details");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -76,68 +141,397 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-12">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-        <p className="text-sm text-muted-foreground">Manage your account details</p>
+        <h1 className="text-2xl font-bold tracking-tight">Profile &amp; Resume Defaults</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Manage your personal details. Only Name and Gmail address are mandatory — all other fields are optional and will automatically pre-populate your resume.
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Profile picture</CardTitle>
-          <CardDescription>JPEG, PNG or WebP — up to 2 MB</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.name} className="object-cover" />
-            ) : (
-              <AvatarFallback className="text-lg">{getInitials(user?.name ?? "?")}</AvatarFallback>
-            )}
-          </Avatar>
-          <div className="flex flex-col gap-1.5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              aria-label="Upload profile picture"
-              onChange={(event) => void onAvatarChange(event.target.files?.[0])}
-            />
-            <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-              {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
-              {uploading ? "Uploading…" : "Upload new picture"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Personal information</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <form onSubmit={onSaveName} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input id="name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />
-              {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
+      <form onSubmit={onSaveProfile} className="flex flex-col gap-6">
+        {/* Profile Picture Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Profile picture</CardTitle>
+            <CardDescription>JPEG, PNG or WebP — up to 2 MB</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="object-cover" />
+              ) : (
+                <AvatarFallback className="text-lg">
+                  {getInitials(user?.name ?? "?")}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex flex-col gap-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                aria-label="Upload profile picture"
+                onChange={(event) => void onAvatarChange(event.target.files?.[0])}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
+                {uploading ? "Uploading…" : "Upload new picture"}
+              </Button>
             </div>
-            <Button type="submit" className="self-start" disabled={saving}>
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Save className="mr-2 h-4 w-4" aria-hidden />}
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
-          </form>
-          <Separator />
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={user?.email ?? ""} readOnly aria-describedby="email-hint" />
-            <p id="email-hint" className="text-xs text-muted-foreground">
-              Email cannot be changed yet.
-            </p>
+          </CardContent>
+        </Card>
+
+        {/* Live Resume Header Preview */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+              <CardTitle className="text-sm font-semibold">
+                Live Resume Header Preview
+              </CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              Here is how your details will automatically appear on your resume header:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl border bg-background p-5 text-center shadow-xs">
+              <h2 className="text-xl font-bold tracking-tight text-foreground font-serif">
+                {watchedValues.name || "Your Full Name"}
+              </h2>
+              {watchedValues.targetJobTitle ? (
+                <p className="text-sm italic text-muted-foreground mt-0.5 font-serif">
+                  {watchedValues.targetJobTitle}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic mt-0.5">
+                  (Target job role will appear here)
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2.5 text-xs text-muted-foreground">
+                {watchedValues.email && (
+                  <span className="inline-flex items-center gap-1">
+                    <Mail className="h-3 w-3" /> {watchedValues.email}
+                  </span>
+                )}
+                {watchedValues.phone && (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="h-3 w-3" /> {watchedValues.phone}
+                  </span>
+                )}
+                {watchedValues.location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {watchedValues.location}
+                  </span>
+                )}
+                {watchedValues.linkedin && (
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    LinkedIn: {watchedValues.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "")}
+                  </span>
+                )}
+                {watchedValues.github && (
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    GitHub: {watchedValues.github.replace(/^https?:\/\/(www\.)?github\.com\//, "")}
+                  </span>
+                )}
+                {watchedValues.website && (
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    <Globe className="h-3 w-3" /> {watchedValues.website.replace(/^https?:\/\/(www\.)?/, "")}
+                  </span>
+                )}
+                {watchedValues.customLinks?.map((l, i) =>
+                  l?.url ? (
+                    <span key={i} className="inline-flex items-center gap-1 text-primary">
+                      <ExternalLink className="h-3 w-3" /> {l.label || l.url}
+                    </span>
+                  ) : null
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Personal & Professional Details Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Personal &amp; Professional details</CardTitle>
+            <CardDescription>
+              Fields marked with an asterisk (<span className="text-destructive font-bold">*</span>) are mandatory. All others are optional.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Mandatory: Full Name */}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name" className="flex items-center gap-1">
+                  Full name <span className="text-destructive font-bold">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="e.g. Sunil Kumar"
+                  autoComplete="name"
+                  aria-invalid={!!errors.name}
+                  {...register("name")}
+                />
+                {errors.name ? (
+                  <p className="text-xs text-destructive">{errors.name.message}</p>
+                ) : null}
+              </div>
+
+              {/* Mandatory: Email / Gmail */}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="email" className="flex items-center gap-1">
+                  Gmail / Email address <span className="text-destructive font-bold">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="e.g. sunilkumar25@gmail.com"
+                  autoComplete="email"
+                  aria-invalid={!!errors.email}
+                  {...register("email")}
+                />
+                {errors.email ? (
+                  <p className="text-xs text-destructive">{errors.email.message}</p>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Target Job Title (Derives Job Role) */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="targetJobTitle" className="flex items-center gap-1.5 font-medium">
+                  <Briefcase className="h-3.5 w-3.5 text-primary" aria-hidden />
+                  Target Job Title
+                </Label>
+                <span className="text-xs text-muted-foreground">Optional (derives resume job role)</span>
+              </div>
+              <Input
+                id="targetJobTitle"
+                placeholder="e.g. Web Developer, Full Stack Engineer, Data Scientist"
+                {...register("targetJobTitle")}
+              />
+              <p className="text-xs text-muted-foreground">
+                Your resume header will automatically display this as your job title / headline directly underneath your name.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Optional: Phone */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="phone">Phone number</Label>
+                  <span className="text-xs text-muted-foreground">Optional</span>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="e.g. +91 7827598401"
+                  autoComplete="tel"
+                  {...register("phone")}
+                />
+              </div>
+
+              {/* Optional: Location */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="location">Location</Label>
+                  <span className="text-xs text-muted-foreground">Optional</span>
+                </div>
+                <Input
+                  id="location"
+                  placeholder="e.g. Delhi, India"
+                  {...register("location")}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Professional Links & Platforms Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Links &amp; Online Platforms</CardTitle>
+                <CardDescription>
+                  Add URLs for GitHub, LinkedIn, portfolio, and other platforms to populate your resume contact row.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* LinkedIn */}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="linkedin" className="text-xs font-semibold">
+                  LinkedIn Display Name / Handle
+                </Label>
+                <Input
+                  id="linkedin"
+                  placeholder="e.g. Sunil Kumar"
+                  {...register("linkedin")}
+                />
+                <Input
+                  id="linkedinUrl"
+                  placeholder="Destination URL: https://linkedin.com/in/sunilkumar"
+                  className="text-xs text-muted-foreground focus:text-foreground"
+                  {...register("linkedinUrl")}
+                />
+              </div>
+
+              {/* GitHub */}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="github" className="text-xs font-semibold">
+                  GitHub Display Name / Username
+                </Label>
+                <Input
+                  id="github"
+                  placeholder="e.g. sunilkumar25kush"
+                  {...register("github")}
+                />
+                <Input
+                  id="githubUrl"
+                  placeholder="Destination URL: https://github.com/sunilkumar25kush"
+                  className="text-xs text-muted-foreground focus:text-foreground"
+                  {...register("githubUrl")}
+                />
+              </div>
+            </div>
+
+            {/* Portfolio / Personal Website */}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="website" className="text-xs font-semibold">
+                Portfolio / Personal Website
+              </Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  id="website"
+                  placeholder="Display name: e.g. My Portfolio"
+                  {...register("website")}
+                />
+                <Input
+                  id="websiteUrl"
+                  placeholder="Destination URL: https://sunilkumar.dev"
+                  {...register("websiteUrl")}
+                />
+              </div>
+            </div>
+
+            {/* Custom Links / Other Platforms */}
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs font-semibold">Other Platforms &amp; URLs</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Add custom platforms like LeetCode, Twitter/X, Behance, Dribbble, Medium, etc.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ label: "", url: "" })}
+                  className="gap-1.5 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Platform
+                </Button>
+              </div>
+
+              {fields.length > 0 ? (
+                <div className="flex flex-col gap-2.5">
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="flex items-center gap-2 rounded-lg border bg-muted/20 p-2.5"
+                    >
+                      <div className="w-1/3">
+                        <Input
+                          placeholder="Platform (e.g. LeetCode)"
+                          className="bg-background text-xs"
+                          {...register(`customLinks.${index}.label` as const)}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          placeholder="URL (e.g. https://leetcode.com/u/sunil)"
+                          className="bg-background text-xs"
+                          {...register(`customLinks.${index}.url` as const)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => remove(index)}
+                        aria-label="Remove link"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/75 italic">
+                  No additional custom platforms added yet. Click &quot;Add Platform&quot; to include more links.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Resume Auto-population Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Resume Auto-population</CardTitle>
+            <CardDescription>
+              Control whether these profile details are automatically applied to resumes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4 rounded-xl border bg-muted/20 p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="autoPopulateResume" className="text-sm font-semibold cursor-pointer">
+                  Automatically populate into new resumes
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, all newly generated or blank resumes will automatically include your name, target job role, contact details, and platform links.
+                </p>
+              </div>
+              <Switch
+                id="autoPopulateResume"
+                checked={watchedValues.autoPopulateResume}
+                onCheckedChange={(checked) =>
+                  setValue("autoPopulateResume", checked, { shouldDirty: true })
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Save Button */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            Profile updates sync instantly across your resume builder
           </div>
-        </CardContent>
-      </Card>
+          <Button type="submit" size="lg" disabled={saving} className="font-semibold gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
+            {saving ? "Saving…" : "Save profile changes"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { JobDescription } from "../models/JobDescription.js";
 import { Resume } from "../models/Resume.js";
+import User from "../models/User.js";
 import { geminiService } from "./ai/gemini.service.js";
 import { extractAiChanges, mergeGeneratedData, mergeJdOnlyData } from "../validations/generation.js";
 
@@ -100,8 +101,13 @@ export async function generateOptimizedResume(userId, resumeId, jdId) {
  * companies or achievements. Result is a new resume doc (fresher-friendly).
  */
 export async function generateFromJd(userId, { jdId, targetTitle, experienceLevel }) {
-  const jd = await JobDescription.findOne({ _id: jdId, user: userId });
+  const [jd, user] = await Promise.all([
+    JobDescription.findOne({ _id: jdId, user: userId }),
+    User.findById(userId).lean(),
+  ]);
   if (!jd) throw new ApiError(404, "Job description not found");
+
+  const effectiveTargetTitle = targetTitle || user?.targetJobTitle || jd.title || "";
 
   const raw = await geminiService.analyzeJd({
     jd: {
@@ -116,10 +122,10 @@ export async function generateFromJd(userId, { jdId, targetTitle, experienceLeve
       industryKeywords: jd.industryKeywords,
       experienceRequired: jd.experienceRequired,
     },
-    targetTitle,
+    targetTitle: effectiveTargetTitle,
     experienceLevel,
   });
-  const parsedData = mergeJdOnlyData(raw);
+  const parsedData = mergeJdOnlyData(raw, { user, targetTitle: effectiveTargetTitle });
   // JD-only resume: everything the AI wrote comes from the JD — highlight
   // the skills so the editor shows what ATS coverage was added.
   const aiChanges = extractAiChanges(

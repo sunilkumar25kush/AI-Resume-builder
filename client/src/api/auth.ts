@@ -55,7 +55,7 @@ export const authApi = {
     return res.data.data.user;
   },
 
-  async updateProfile(data: { name: string }): Promise<User> {
+  async updateProfile(data: import("@/types").UpdateProfileInput): Promise<User> {
     const res = await apiClient.patch<ApiEnvelope<UserPayload>>("/users/me", data);
     return res.data.data.user;
   },

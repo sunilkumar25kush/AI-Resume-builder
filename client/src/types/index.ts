@@ -1,10 +1,44 @@
+export interface UserCustomLink {
+  label: string;
+  url: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   avatar: string;
   role: "user" | "admin";
+  phone?: string;
+  location?: string;
+  targetJobTitle?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  websiteUrl?: string;
+  contactOrder?: string[];
+  customLinks?: UserCustomLink[];
+  autoPopulateResume?: boolean;
   createdAt: string;
+}
+
+export interface UpdateProfileInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  targetJobTitle?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  websiteUrl?: string;
+  contactOrder?: string[];
+  customLinks?: UserCustomLink[];
+  autoPopulateResume?: boolean;
 }
 
 export interface ApiEnvelope<T> {

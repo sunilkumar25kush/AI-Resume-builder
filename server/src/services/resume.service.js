@@ -77,15 +77,25 @@ export async function listResumes(userId, { page = 1, limit = 20 } = {}) {
  * with the user's own name/email so they only fill in what's missing.
  */
 export async function createBlankResume(userId, template, user) {
+  const fullUser = user?.targetJobTitle !== undefined ? user : await User.findById(userId).lean();
+  const shouldPopulate = fullUser?.autoPopulateResume !== false;
+
   const parsedData = {
-    name: user?.name ?? "",
+    name: shouldPopulate ? (fullUser?.name ?? "") : "",
+    title: shouldPopulate ? (fullUser?.targetJobTitle ?? "") : "",
     summary: "",
     contact: {
-      email: user?.email ?? "",
-      phone: "",
-      location: "",
-      linkedin: "",
-      github: "",
+      email: shouldPopulate ? (fullUser?.email ?? "") : "",
+      phone: shouldPopulate ? (fullUser?.phone ?? "") : "",
+      location: shouldPopulate ? (fullUser?.location ?? "") : "",
+      linkedin: shouldPopulate ? (fullUser?.linkedin ?? "") : "",
+      github: shouldPopulate ? (fullUser?.github ?? "") : "",
+      website: shouldPopulate ? (fullUser?.website ?? "") : "",
+      linkedinUrl: shouldPopulate ? (fullUser?.linkedinUrl ?? "") : "",
+      githubUrl: shouldPopulate ? (fullUser?.githubUrl ?? "") : "",
+      websiteUrl: shouldPopulate ? (fullUser?.websiteUrl ?? "") : "",
+      contactOrder: shouldPopulate ? (fullUser?.contactOrder ?? []) : [],
+      customLinks: shouldPopulate ? (fullUser?.customLinks ?? []) : [],
     },
     skills: [],
     experience: [],
@@ -96,6 +106,17 @@ export async function createBlankResume(userId, template, user) {
     awards: [],
     customSections: [],
     hiddenSections: [],
+    sectionOrder: [
+      "summary",
+      "experience",
+      "education",
+      "projects",
+      "skills",
+      "certifications",
+      "languages",
+      "awards",
+      "customSections",
+    ],
   };
   return Resume.create({
     user: userId,

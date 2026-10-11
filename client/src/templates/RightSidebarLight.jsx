@@ -208,6 +208,7 @@ export function RightSidebarLight({ data, theme = {} }) {
               <ContactItem
                 type="linkedin"
                 value={personal.linkedin}
+                href={personal.linkedinUrl}
                 iconBadge
                 badgeClassName="w-5 h-5 bg-white text-indigo-700 shadow-xs"
               />
@@ -216,6 +217,7 @@ export function RightSidebarLight({ data, theme = {} }) {
               <ContactItem
                 type="github"
                 value={personal.github}
+                href={personal.githubUrl}
                 iconBadge
                 badgeClassName="w-5 h-5 bg-white text-indigo-700 shadow-xs"
               />
@@ -224,6 +226,7 @@ export function RightSidebarLight({ data, theme = {} }) {
               <ContactItem
                 type="website"
                 value={personal.website}
+                href={personal.websiteUrl}
                 iconBadge
                 badgeClassName="w-5 h-5 bg-white text-indigo-700 shadow-xs"
               />
