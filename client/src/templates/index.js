@@ -19,7 +19,7 @@ export const TEMPLATES = [
       accentColor: "#C2185B",
       fontSize: "14px",
     },
-    reference: "Reference E (T1)",
+    reference: "T1",
   },
   {
     id: "navy-sidebar-timeline",
@@ -30,7 +30,7 @@ export const TEMPLATES = [
       accentColor: "#2B3450",
       fontSize: "14px",
     },
-    reference: "Reference A (T2)",
+    reference: "T2",
   },
   {
     id: "classic-ats-executive",
@@ -41,7 +41,7 @@ export const TEMPLATES = [
       accentColor: "#000000",
       fontSize: "14px",
     },
-    reference: "Reference B (T3)",
+    reference: "T3",
   },
   {
     id: "photo-header-split-timeline",
@@ -52,7 +52,7 @@ export const TEMPLATES = [
       accentColor: "#222222",
       fontSize: "14px",
     },
-    reference: "Reference C (T4)",
+    reference: "T4",
   },
   {
     id: "dense-analyst-serif",
@@ -63,7 +63,7 @@ export const TEMPLATES = [
       accentColor: "#000000",
       fontSize: "13.5px",
     },
-    reference: "Reference D (T5)",
+    reference: "T5",
   },
   {
     id: "right-sidebar-light",

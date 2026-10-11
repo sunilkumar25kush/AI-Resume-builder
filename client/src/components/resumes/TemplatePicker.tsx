@@ -71,12 +71,18 @@ export function TemplatePicker({ value, onChange, theme, onThemeChange }: Templa
   return (
     <div className="space-y-4">
       <div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
         role="radiogroup"
         aria-label="Resume template"
       >
         {TEMPLATES.map((template) => {
           const selected = template.id === activeId;
+          const displayRef = template.reference
+            ? template.reference.includes("(")
+              ? template.reference.match(/\(([^)]+)\)/)?.[1] || template.reference
+              : template.reference
+            : null;
+
           return (
             <button
               key={template.id}
@@ -92,15 +98,22 @@ export function TemplatePicker({ value, onChange, theme, onThemeChange }: Templa
                   });
                 }
               }}
-              className={`group relative flex flex-col rounded-xl border p-2.5 text-left transition-all hover:shadow-md cursor-pointer ${
+              className={`group relative flex flex-col rounded-xl border p-2.5 text-left transition-all hover:shadow-md cursor-pointer overflow-hidden ${
                 selected
                   ? "border-primary bg-primary/[0.03] ring-2 ring-primary shadow-sm"
                   : "border-border hover:border-neutral-400 bg-card"
               }`}
             >
-              {/* Selected indicator check badge */}
+              {/* Reference Badge (top-left) */}
+              {displayRef && (
+                <span className="absolute top-2 left-2 z-10 text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-background/90 backdrop-blur-xs text-foreground/80 shadow-xs border border-border/70 select-none">
+                  {displayRef}
+                </span>
+              )}
+
+              {/* Selected indicator check badge (top-right) */}
               {selected && (
-                <span className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                <span className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm ring-2 ring-background">
                   <Check className="h-3 w-3 stroke-[3]" />
                 </span>
               )}
@@ -110,21 +123,20 @@ export function TemplatePicker({ value, onChange, theme, onThemeChange }: Templa
                 <ScaledTemplateThumbnail template={template} />
               </div>
 
-              {/* Title & Reference Badge */}
-              <div className="flex items-center justify-between gap-1 mt-0.5">
-                <span className={`text-[12.5px] font-bold leading-tight ${selected ? "text-primary" : "text-foreground"}`}>
+              {/* Title & Description with full width and zero overlap */}
+              <div className="w-full min-w-0 mt-0.5">
+                <div
+                  className={`text-[12.5px] font-bold leading-snug truncate ${
+                    selected ? "text-primary" : "text-foreground group-hover:text-primary transition-colors"
+                  }`}
+                  title={template.name}
+                >
                   {template.name}
-                </span>
-                {template.reference && (
-                  <span className="shrink-0 text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                    {template.reference}
-                  </span>
-                )}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2 leading-tight">
+                  {template.description}
+                </p>
               </div>
-
-              <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2 leading-tight">
-                {template.description}
-              </p>
             </button>
           );
         })}
