@@ -1,6 +1,7 @@
-import { Sparkles, type LucideIcon } from "lucide-react";
-import { Link, NavLink } from "react-router";
+import type { LucideIcon } from "lucide-react";
+import { NavLink } from "react-router";
 
+import { BrandLogo } from "@/components/common/BrandLogo";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -131,14 +132,5 @@ export function BottomNav() {
 
 /** Brand lockup used in sidebar + drawer. */
 export function Brand({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link to="/" className={cn("flex items-center gap-2 px-3", compact && "justify-center px-0")}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <Sparkles className="h-5 w-5" aria-hidden />
-      </span>
-      {!compact ? (
-        <span className="truncate text-base font-semibold tracking-tight">AI Resume Builder</span>
-      ) : null}
-    </Link>
-  );
+  return <BrandLogo compact={compact} />;
 }

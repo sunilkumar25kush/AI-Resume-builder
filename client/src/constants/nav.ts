@@ -39,10 +39,10 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [
       { label: "Dashboard", href: "/", icon: LayoutDashboard },
-      { label: "AI Resume Wizard", href: "/wizard", icon: Route },
+      { label: "Resume Wizard", href: "/wizard", icon: Route },
       { label: "Resume Builder", href: "/resumes", icon: FileText },
       { label: "JD Parser", href: "/jds", icon: ScanSearch },
-      { label: "AI Optimizer", href: "/optimize", icon: Wand2 },
+      { label: "Role Optimizer", href: "/optimize", icon: Wand2 },
       { label: "ATS Checker", href: "/ats-check", icon: Gauge },
       { label: "Scratch Builder", href: "/build", icon: FilePlus2 },
     ],

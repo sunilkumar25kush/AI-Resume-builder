@@ -95,8 +95,8 @@ export default function AtsCheckPage() {
           ATS Checker
         </h1>
         <p className="max-w-2xl text-muted-foreground">
-          Koi bhi resume check karo — instant ATS score, checklist aur (optional) job match. Sab deterministic, koi AI
-          wait nahi.
+          Audit any resume against industry-standard Applicant Tracking Systems. Instant deterministic scoring,
+          structural validation, and optional job description keyword alignment.
         </p>
       </section>
 
@@ -162,7 +162,7 @@ export default function AtsCheckPage() {
                   onChange={(event) => setJdId(event.target.value)}
                   className="h-10 w-full rounded-lg border bg-background px-3 text-sm"
                 >
-                  <option value="">Bina JD ke sirf structure score</option>
+                  <option value="">General structure audit (no target JD)</option>
                   {jds.map((jd) => (
                     <option key={jd._id} value={jd._id}>
                       {jd.title || jd.company || jd.fileName}
@@ -172,13 +172,13 @@ export default function AtsCheckPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="jd-text">Paste JD text (min 20 chars)</Label>
+                <Label htmlFor="jd-text">Paste job description (min 20 characters)</Label>
                 <textarea
                   id="jd-text"
                   value={jdText}
                   onChange={(event) => setJdText(event.target.value)}
                   rows={5}
-                  placeholder="Job description paste karo…"
+                  placeholder="Paste the target job description or requirements here…"
                   className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
                 />
               </div>
@@ -186,7 +186,7 @@ export default function AtsCheckPage() {
 
             <Button onClick={handleCheck} disabled={!canCheck || checking}>
               {checking ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-              {checking ? "Checking…" : "Check ATS score"}
+              {checking ? "Auditing…" : "Run ATS audit"}
             </Button>
           </CardContent>
         </Card>
@@ -212,7 +212,7 @@ export default function AtsCheckPage() {
             {report.missingSkills.length > 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Missing skills (JD se)</CardTitle>
+                  <CardTitle>Missing Skills from Target Job</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {report.missingSkills.map((skill) => (

@@ -167,7 +167,7 @@ export default function ResumeWizardPage() {
           <Route className="h-6 w-6" aria-hidden />
         </span>
         <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">AI Resume Wizard</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Targeted Resume Wizard</h1>
           <p className="text-sm text-muted-foreground">Step {step + 1} of {STEPS.length} — {STEPS[step]}</p>
         </div>
       </header>

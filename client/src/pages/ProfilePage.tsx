@@ -5,6 +5,7 @@ import {
   Briefcase,
   CheckCircle2,
   ExternalLink,
+  Eye,
   Globe,
   Loader2,
   Mail,
@@ -12,7 +13,6 @@ import {
   Phone,
   Plus,
   Save,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,17 +46,17 @@ const profileSchema = z.object({
     .toLowerCase()
     .min(1, "Email / Gmail address is required")
     .email("Please enter a valid email address"),
-  phone: z.string().trim().max(40).optional().default(""),
-  location: z.string().trim().max(200).optional().default(""),
-  targetJobTitle: z.string().trim().max(120).optional().default(""),
-  linkedin: z.string().trim().max(500).optional().default(""),
-  github: z.string().trim().max(500).optional().default(""),
-  website: z.string().trim().max(500).optional().default(""),
-  linkedinUrl: z.string().trim().max(500).optional().default(""),
-  githubUrl: z.string().trim().max(500).optional().default(""),
-  websiteUrl: z.string().trim().max(500).optional().default(""),
-  customLinks: z.array(customLinkSchema).optional().default([]),
-  autoPopulateResume: z.boolean().default(true),
+  phone: z.string().trim().max(40),
+  location: z.string().trim().max(200),
+  targetJobTitle: z.string().trim().max(120),
+  linkedin: z.string().trim().max(500),
+  github: z.string().trim().max(500),
+  website: z.string().trim().max(500),
+  linkedinUrl: z.string().trim().max(500),
+  githubUrl: z.string().trim().max(500),
+  websiteUrl: z.string().trim().max(500),
+  customLinks: z.array(customLinkSchema),
+  autoPopulateResume: z.boolean(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -110,7 +110,7 @@ export default function ProfilePage() {
 
   const watchedValues = watch();
 
-  const onSaveProfile = handleSubmit(async (values) => {
+  const onSaveProfile = handleSubmit(async (values: ProfileFormValues) => {
     setSaving(true);
     try {
       await updateProfile(values);
@@ -193,7 +193,7 @@ export default function ProfilePage() {
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+              <Eye className="h-4 w-4 text-primary" aria-hidden />
               <CardTitle className="text-sm font-semibold">
                 Live Resume Header Preview
               </CardTitle>

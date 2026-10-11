@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, Download, FileDown, FileText, History, Loader2, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, Download, FileDown, FileText, History, Loader2, PenLine, Redo2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -289,14 +289,14 @@ export default function ResumeEditorPage() {
         </div>
 
         {resume.aiChanges.length > 0 && !aiBannerDismissed ? (
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50/70 p-4">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/30 p-4">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
             <div className="flex flex-1 flex-col gap-1">
-              <p className="text-sm font-medium text-emerald-800">
-                AI added {resume.aiChanges.length} improvement{resume.aiChanges.length === 1 ? "" : "s"} — green highlights show what changed
+              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                Tailored revisions applied ({resume.aiChanges.length} section{resume.aiChanges.length === 1 ? "" : "s"} updated)
               </p>
-              <p className="text-xs text-emerald-700/80">
-                Edit karte hi highlight hat jata hai. Aap kisi bhi AI addition ko change ya remove kar sakte ho — yeh sirf suggestions hain.
+              <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+                Green borders indicate sections improved for role alignment. Highlights clear automatically as you edit or save.
               </p>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAiBannerDismissed(true)}>

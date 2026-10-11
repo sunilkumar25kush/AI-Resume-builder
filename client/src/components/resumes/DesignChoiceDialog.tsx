@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Download, Loader2, Sparkles } from "lucide-react";
+import { Check, Download, Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -73,7 +73,7 @@ export function DesignChoiceDialog({
         <DialogHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm shrink-0 flex flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
-              <Sparkles className="h-5 w-5" aria-hidden />
+              <Palette className="h-5 w-5" aria-hidden />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-foreground">
@@ -191,7 +191,7 @@ export function DesignChoiceDialog({
               {applying ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
               ) : (
-                <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
+                <Check className="mr-1.5 h-4 w-4" aria-hidden />
               )}
               Apply design &amp; open
             </Button>

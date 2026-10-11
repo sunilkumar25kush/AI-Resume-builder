@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, PlusCircle, RefreshCw, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -67,7 +67,7 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
         {result.changes.length > 0 ? (
           <section className="flex flex-col gap-2">
             <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              <Sparkles className="h-4 w-4" aria-hidden />
+              <PlusCircle className="h-4 w-4" aria-hidden />
               Suggested additions
             </h3>
             <ul className="flex flex-col gap-1.5">
@@ -279,25 +279,25 @@ export default function OptimizeResultPage() {
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-1">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-              Generate optimized resume
+              <Wand2 className="h-4 w-4 text-primary" aria-hidden />
+              Generate tailored resume
             </p>
             <p className="text-xs text-muted-foreground">
-              AI rewrites your resume for this job description — companies, dates and facts stay untouched, only wording improves. Takes 30–120 seconds.
+              Tailor resume phrasing and keyword density for this target role — company names, dates, and employment facts remain untouched.
             </p>
             {generateError ? (
               <p className="mt-1 text-xs font-medium text-destructive">{generateError}</p>
             ) : null}
           </div>
-          <Button onClick={() => void onGenerate()} disabled={generating} className="shrink-0">
+          <Button onClick={() => void onGenerate()} disabled={generating} className="shrink-0 font-medium">
             {generating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
             ) : generateError ? (
               <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
             ) : (
-              <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+              <Wand2 className="mr-2 h-4 w-4" aria-hidden />
             )}
-            {generating ? "Generating…" : generateError ? "Retry generation" : "Generate"}
+            {generating ? "Generating tailored draft…" : generateError ? "Retry generation" : "Generate tailored draft"}
           </Button>
         </CardContent>
       </Card>

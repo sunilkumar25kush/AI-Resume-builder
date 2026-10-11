@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Download, ExternalLink, FileDown, Gauge, Lightbulb, Loader2, PenLine, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, ExternalLink, FileDown, Gauge, Lightbulb, Loader2, Palette, PenLine, RefreshCw, Wand2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,8 +102,8 @@ export function StepAnalysis({
           <p className="text-sm text-muted-foreground">Run the AI analysis to compare your resume with the job description.</p>
         )}
         <Button type="button" onClick={onAnalyze} disabled={analyzing}>
-          {error ? <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden /> : <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />}
-          {error ? "Retry analysis" : "Run analysis"}
+          {error ? <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden /> : <Gauge className="mr-1.5 h-4 w-4" aria-hidden />}
+          {error ? "Retry analysis" : "Run role analysis"}
         </Button>
       </div>
     );
@@ -304,7 +304,7 @@ export function StepGenerate({
           <div className="flex items-center gap-2">
             {onChangeTemplate ? (
               <Button type="button" variant="outline" size="sm" onClick={onChangeTemplate}>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                <Palette className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                 Change Template
               </Button>
             ) : null}
@@ -343,8 +343,8 @@ export function StepGenerate({
 
       <p className="text-sm leading-relaxed text-muted-foreground">
         {resume
-          ? "The AI will rewrite your summary, strengthen experience and project bullets, and weave in the JD's ATS keywords — while keeping every company, title, date and fact exactly as they are."
-          : "The AI will write a professional summary, pick skills from the job description, and suggest portfolio projects. It will never invent companies, experience, degrees or achievements — you add those in the editor."}
+          ? "Our tailoring engine refines your executive summary, strengthens experience bullet impact, and integrates target ATS keywords — keeping all employers, job titles, dates, and background facts strictly intact."
+          : "The engine drafts a role-aligned summary, extracts essential skills from the job description, and recommends portfolio project structures. It will never invent past companies, degrees, or false credentials."}
       </p>
 
       {error ? (
@@ -357,15 +357,15 @@ export function StepGenerate({
         </div>
       ) : null}
 
-      <Button type="button" size="lg" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
+      <Button type="button" size="lg" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto font-semibold">
         {generating ? (
           <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
         ) : error ? (
           <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
         ) : (
-          <WandSparkles className="mr-1.5 h-4 w-4" aria-hidden />
+          <Wand2 className="mr-1.5 h-4 w-4" aria-hidden />
         )}
-        {generating ? "Generating with AI…" : error ? "Retry generation" : "Generate resume"}
+        {generating ? "Generating tailored draft…" : error ? "Retry generation" : "Generate tailored resume"}
       </Button>
     </div>
   );

@@ -18,16 +18,16 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  ArrowDown,
-  ArrowUp,
   ArrowUpDown,
   Award,
   Briefcase,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Eye,
   EyeOff,
+  FileText,
   FolderGit2,
   GraduationCap,
   Languages,
@@ -35,9 +35,9 @@ import {
   Link as LinkIcon,
   Plus,
   RotateCcw,
-  Sparkles,
   Trash2,
   Trophy,
+  UserCheck,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -136,7 +136,7 @@ const DEFAULT_SECTION_ORDER = [
 ];
 
 const SECTION_META: Record<string, { title: string; description?: string; icon: LucideIcon }> = {
-  summary: { title: "Summary", description: "Professional summary headline and overview", icon: Sparkles },
+  summary: { title: "Summary", description: "Professional summary headline and overview", icon: FileText },
   skills: { title: "Skills", description: "Technical skills and tool proficiencies", icon: Wrench },
   experience: { title: "Experience", description: "Work history and achievements", icon: Briefcase },
   education: { title: "Education", description: "Degrees, academic background, and dates", icon: GraduationCap },
@@ -361,9 +361,9 @@ function SortableSectionCard({
               {title}
               {hidden ? <span className="text-xs font-normal text-muted-foreground">(hidden)</span> : null}
               {highlighted ? (
-                <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                  <Sparkles className="h-3 w-3" aria-hidden />
-                  AI added
+                <span className="flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  Tailored
                 </span>
               ) : null}
             </CardTitle>
@@ -812,7 +812,7 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
             onClick={handleAutoFillProfile}
             className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
           >
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <UserCheck className="h-3.5 w-3.5 text-primary" />
             Auto-fill from profile
           </Button>
         </CardHeader>
