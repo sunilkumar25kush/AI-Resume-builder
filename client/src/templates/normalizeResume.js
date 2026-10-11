@@ -107,7 +107,7 @@ export function normalizeResume(raw) {
   const website = cleanDisplayLabel(rawWebsite, "website");
 
   const portfolio = (personalRaw.portfolio || contactRaw.portfolio || "").trim();
-  const photoUrl = (personalRaw.photoUrl || "").trim();
+  const photoUrl = (personalRaw.photoUrl || raw.photoUrl || "").trim();
   const dob = (personalRaw.dob || "").trim();
   const availability = (personalRaw.availability || "").trim();
 

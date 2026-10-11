@@ -43,6 +43,7 @@ export const customLinkSchema = z.object({
 export const editSchema = z.object({
   name: z.string().max(200).default(""),
   title: z.string().max(200).default(""),
+  photoUrl: z.string().max(500_000).default(""),
   summary: z.string().max(10000).default(""),
   contact: z.object({
     email: z.string().max(254).default(""),
@@ -91,6 +92,7 @@ export function toFormValues(resume: { parsedData: ParsedResumeData }): EditForm
   return {
     name: resume.parsedData.name || "",
     title: resume.parsedData.title || "",
+    photoUrl: resume.parsedData.photoUrl || "",
     summary: resume.parsedData.summary || "",
     contact: {
       email: resume.parsedData.contact?.email || "",
@@ -146,6 +148,7 @@ export function toParsedData(values: EditFormValues): ParsedResumeData {
   return {
     name: values.name,
     title: values.title,
+    photoUrl: values.photoUrl ?? "",
     summary: values.summary,
     contact: values.contact,
     skills: splitSkills(values.skillsText ?? ""),

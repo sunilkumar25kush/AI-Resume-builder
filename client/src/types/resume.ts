@@ -64,6 +64,7 @@ export interface ParsedResumeData {
   customSections: CustomSection[];
   hiddenSections: string[];
   sectionOrder?: string[];
+  photoUrl?: string;
 }
 
 export type ResumeTemplate =

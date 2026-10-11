@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import {
   DndContext,
@@ -22,22 +22,21 @@ import {
   Award,
   Briefcase,
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Eye,
   EyeOff,
-  FileText,
   FolderGit2,
   GraduationCap,
+  ImagePlus,
   Languages,
   Layers,
   Link as LinkIcon,
   Plus,
   RotateCcw,
+  Sparkles,
   Trash2,
   Trophy,
-  UserCheck,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -72,6 +71,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
+import { ImageCropModal } from "@/components/ui/ImageCropModal";
+import type { CroppedImageResult } from "@/lib/cropImage";
 import type { AiChange } from "@/types";
 
 interface ContactFieldConfig {
@@ -136,7 +137,7 @@ const DEFAULT_SECTION_ORDER = [
 ];
 
 const SECTION_META: Record<string, { title: string; description?: string; icon: LucideIcon }> = {
-  summary: { title: "Summary", description: "Professional summary headline and overview", icon: FileText },
+  summary: { title: "Summary", description: "Professional summary headline and overview", icon: Sparkles },
   skills: { title: "Skills", description: "Technical skills and tool proficiencies", icon: Wrench },
   experience: { title: "Experience", description: "Work history and achievements", icon: Briefcase },
   education: { title: "Education", description: "Degrees, academic background, and dates", icon: GraduationCap },
@@ -260,8 +261,8 @@ function SortableContactRow({
                   id === "linkedin"
                     ? "https://linkedin.com/in/username"
                     : id === "github"
-                    ? "https://github.com/username"
-                    : "https://yourwebsite.com"
+                      ? "https://github.com/username"
+                      : "https://yourwebsite.com"
                 }
                 value={tempUrl}
                 onChange={(e) => setTempUrl(e.target.value)}
@@ -361,9 +362,9 @@ function SortableSectionCard({
               {title}
               {hidden ? <span className="text-xs font-normal text-muted-foreground">(hidden)</span> : null}
               {highlighted ? (
-                <span className="flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3 w-3" aria-hidden />
-                  Tailored
+                <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                  <Sparkles className="h-3 w-3" aria-hidden />
+                  AI added
                 </span>
               ) : null}
             </CardTitle>
@@ -426,8 +427,50 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   } = useFieldArray({ control, name: "contact.customLinks" });
 
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const user = useAuthStore((s) => s.user);
+
+  // Watch photo URL for preview
+  const watchedPhotoUrl = useWatch({ control, name: "photoUrl" });
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+
+  const handlePhotoFileSelect = (file: File | undefined) => {
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      toast.error("Please choose a JPEG, PNG or WebP image");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be smaller than 10 MB for cropping");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageSrc(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropSave = (result: CroppedImageResult) => {
+    setValue("photoUrl", result.dataUrl, { shouldDirty: true });
+    toast.success("Resume photo updated");
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const handleUseProfileAvatar = () => {
+    if (!user?.avatar) return;
+    setValue("photoUrl", user.avatar, { shouldDirty: true });
+    toast.success("Using your account profile picture");
+  };
+
+  const handleRemovePhoto = () => {
+    setValue("photoUrl", "", { shouldDirty: true });
+    if (photoInputRef.current) photoInputRef.current.value = "";
+    toast.info("Resume photo removed");
+  };
 
   // Watch dynamic order arrays
   const rawContactOrder = useWatch({ control, name: "contact.contactOrder" });
@@ -812,7 +855,7 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
             onClick={handleAutoFillProfile}
             className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
           >
-            <UserCheck className="h-3.5 w-3.5 text-primary" />
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             Auto-fill from profile
           </Button>
         </CardHeader>
@@ -825,6 +868,103 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
             <div className="flex flex-col gap-2">
               <Label htmlFor="title">Job Title / Target Role</Label>
               <Input id="title" placeholder="e.g. Web Developer" {...register("title")} />
+            </div>
+          </div>
+
+          {/* Resume Photo Upload */}
+          <div className="flex flex-col gap-2 pt-2 border-t">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <ImagePlus className="h-3.5 w-3.5 text-primary" aria-hidden />
+                  Resume Photo
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Optional — used by templates that display a profile photo (e.g. Photo Header, Navy Sidebar, Right Sidebar).
+                </p>
+              </div>
+            </div>
+
+            <ImageCropModal
+              open={cropModalOpen}
+              imageSrc={selectedImageSrc}
+              title="Crop Resume Photo"
+              description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your resume."
+              cropShape="round"
+              aspect={1}
+              onClose={() => {
+                setCropModalOpen(false);
+                setSelectedImageSrc(null);
+                if (photoInputRef.current) photoInputRef.current.value = "";
+              }}
+              onCropSave={handleCropSave}
+            />
+
+            <div className="flex items-center gap-4">
+              {watchedPhotoUrl ? (
+                <div className="relative shrink-0">
+                  <img
+                    src={watchedPhotoUrl}
+                    alt="Resume photo preview"
+                    className="h-16 w-16 rounded-full object-cover border border-neutral-200 shadow-sm ring-2 ring-primary/20"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-400">
+                  <ImagePlus className="h-5 w-5" />
+                </div>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  aria-label="Upload resume photo"
+                  onChange={(e) => {
+                    handlePhotoFileSelect(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5"
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    {watchedPhotoUrl ? "Change photo" : "Upload photo"}
+                  </Button>
+                  {!watchedPhotoUrl && user?.avatar ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5"
+                      onClick={handleUseProfileAvatar}
+                    >
+                      Use account photo
+                    </Button>
+                  ) : null}
+                  {watchedPhotoUrl ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-destructive hover:text-destructive"
+                      onClick={handleRemovePhoto}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Circle cropped · JPEG, PNG or WebP · Drag to reposition &amp; zoom
+                </p>
+              </div>
             </div>
           </div>
 

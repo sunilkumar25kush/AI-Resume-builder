@@ -37,7 +37,7 @@ export function PhotoHeaderSplitTimeline({ data, theme = {} }) {
             <img
               src={personal.photoUrl}
               alt={personal.fullName}
-              className="w-[140px] h-[140px] rounded-2xl object-cover shadow-sm border border-neutral-200"
+              className="w-[140px] h-[140px] rounded-full object-cover shadow-sm border border-neutral-200"
             />
           </div>
         ) : null}

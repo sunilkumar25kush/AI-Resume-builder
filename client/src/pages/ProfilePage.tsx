@@ -5,7 +5,6 @@ import {
   Briefcase,
   CheckCircle2,
   ExternalLink,
-  Eye,
   Globe,
   Loader2,
   Mail,
@@ -13,6 +12,7 @@ import {
   Phone,
   Plus,
   Save,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import { z } from "zod";
 import { getApiErrorMessage } from "@/api/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/ui/ImageCropModal";
+import type { CroppedImageResult } from "@/lib/cropImage";
 import {
   Card,
   CardContent,
@@ -122,18 +124,35 @@ export default function ProfilePage() {
     }
   });
 
-  const onAvatarChange = async (file: File | undefined) => {
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+
+  const onAvatarSelect = (file: File | undefined) => {
     if (!file) return;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
       toast.error("Please choose a JPEG, PNG or WebP image");
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be smaller than 10 MB for cropping");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageSrc(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onCropSave = async (result: CroppedImageResult) => {
     setUploading(true);
     try {
-      await uploadAvatar(file);
-      toast.success("Avatar updated");
+      await uploadAvatar(result.file);
+      toast.success("Profile picture updated");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
+      throw error;
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -149,19 +168,34 @@ export default function ProfilePage() {
         </p>
       </div>
 
+      <ImageCropModal
+        open={cropModalOpen}
+        imageSrc={selectedImageSrc}
+        title="Crop Profile Picture"
+        description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your profile."
+        cropShape="round"
+        aspect={1}
+        onClose={() => {
+          setCropModalOpen(false);
+          setSelectedImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        onCropSave={onCropSave}
+      />
+
       <form onSubmit={onSaveProfile} className="flex flex-col gap-6">
         {/* Profile Picture Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Profile picture</CardTitle>
-            <CardDescription>JPEG, PNG or WebP — up to 2 MB</CardDescription>
+            <CardDescription>JPEG, PNG or WebP — interactive circle crop &amp; zoom</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
+          <CardContent className="flex items-center gap-5">
+            <Avatar className="h-20 w-20 ring-2 ring-primary/20 shadow-xs overflow-hidden rounded-full shrink-0">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="object-cover" />
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover rounded-full" />
               ) : (
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-xl font-medium">
                   {getInitials(user?.name ?? "?")}
                 </AvatarFallback>
               )}
@@ -173,7 +207,10 @@ export default function ProfilePage() {
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 aria-label="Upload profile picture"
-                onChange={(event) => void onAvatarChange(event.target.files?.[0])}
+                onChange={(event) => {
+                  onAvatarSelect(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
               />
               <Button
                 type="button"
@@ -183,8 +220,11 @@ export default function ProfilePage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
-                {uploading ? "Uploading…" : "Upload new picture"}
+                {uploading ? "Uploading…" : user?.avatar ? "Change picture" : "Upload picture"}
               </Button>
+              <p className="text-xs text-muted-foreground">
+                Circle cropped · Drag to choose position &amp; zoom level
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -193,7 +233,7 @@ export default function ProfilePage() {
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-primary" aria-hidden />
+              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
               <CardTitle className="text-sm font-semibold">
                 Live Resume Header Preview
               </CardTitle>

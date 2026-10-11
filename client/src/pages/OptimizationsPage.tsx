@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { ChevronRight, Gauge, Loader2, RefreshCw, Target, Trash2 } from "lucide-react";
+import { ChevronRight, Gauge, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
@@ -77,17 +77,17 @@ export default function OptimizationsPage() {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Role Comparison Optimizer</h1>
-        <p className="text-sm text-muted-foreground">Compare a target resume against any job description — ATS match percentage, skill gaps, and keyword density</p>
+        <h1 className="text-2xl font-semibold tracking-tight">AI Optimizer</h1>
+        <p className="text-sm text-muted-foreground">Compare a resume against a job description — ATS score, match %, missing skills</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-4 w-4 text-primary" aria-hidden />
-            Run new role alignment audit
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+            Run new analysis
           </CardTitle>
-          <CardDescription>Select one saved resume and one target job description</CardDescription>
+          <CardDescription>Pick one of your resumes and one job description</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -132,7 +132,7 @@ export default function OptimizationsPage() {
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              {running ? "Reviewing alignment against job description (15–45s)…" : "Semantic role matching & ATS validation"}
+              {running ? "AI is reviewing — this can take 30–120 seconds…" : "Powered by Google Gemini"}
             </p>
             <Button onClick={() => void onRun()} disabled={!canRun}>
               {running ? (

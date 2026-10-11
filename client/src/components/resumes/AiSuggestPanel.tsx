@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { CheckCircle2, Lightbulb, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { aiApi, type AiSuggestion } from "@/api/ai";
@@ -26,8 +26,8 @@ interface AiSuggestPanelProps {
 }
 
 /**
- * Targeted keyword and skill addition panel — audits a job description
- * to surface additions that improve ATS coverage and recruiter relevance.
+ * Editor-time "what else should I add?" panel — reads a saved JD (or pasted
+ * JD text) and lists concrete additions that would raise the ATS score.
  */
 export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
   const { getValues, setValue } = useFormContext<EditFormValues>();
@@ -54,7 +54,7 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
         jdText: mode === "paste" ? jdText.trim() : undefined,
       });
       if (result.suggestions.length === 0) {
-        toast.info("No critical gaps identified — your resume is already well-aligned with this job description.");
+        toast.info("AI ko koi missing cheez nahi mili — resume is already strong for this JD");
       }
       setSuggestions(result.suggestions);
     } catch (error) {
@@ -99,12 +99,14 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
         break;
       }
       case "add-section":
-        toast.info(`Add section '${suggestion.value}' using the editor section cards above.`);
+        // Sections are structural — the user adds them via the form; the
+        // suggestion text (detail) shows what to put in it.
+        toast.info(`Section add karo: ${suggestion.value} — ${suggestion.detail || suggestion.reason}`);
         return;
     }
     setApplied((prev) => new Set(prev).add(index));
     onApplied(suggestion);
-    toast.success(`Applied to draft: ${suggestion.value}`);
+    toast.success(`Added: ${suggestion.value}`);
   };
 
   const loadJds = () => {
@@ -119,14 +121,12 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
       >
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Lightbulb className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            Role Alignment &amp; Keyword Insights
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            AI Suggest
           </CardTitle>
-          <CardDescription>
-            Surface high-impact skills and keywords from the job description to strengthen your draft.
-          </CardDescription>
+          <CardDescription>JD se aur kya add kare — ATS score badhane ke liye</CardDescription>
         </div>
-        <Button type="button" variant="ghost" size="sm" aria-label={open ? "Collapse insights" : "Expand insights"}>
+        <Button type="button" variant="ghost" size="sm" aria-label={open ? "Collapse AI Suggest" : "Expand AI Suggest"}>
           {open ? "Close" : "Open"}
         </Button>
       </CardHeader>
@@ -137,16 +137,16 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
             <button
               type="button"
               onClick={() => setMode("jd")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "jd" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "jd" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
-              Saved Job Description
+              Saved JD
             </button>
             <button
               type="button"
               onClick={() => setMode("paste")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "paste" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "paste" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
-              Paste New JD Text
+              Paste JD
             </button>
           </div>
 
@@ -155,40 +155,40 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
               value={jdId}
               onChange={(event) => setJdId(event.target.value)}
               onClick={loadJds}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-hidden focus:ring-2 focus:ring-ring"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">Select a saved job description…</option>
+              <option value="">Select a job description…</option>
               {jds.map((jd) => (
                 <option key={jd._id} value={jd._id}>
-                  {jd.title || jd.company || jd.text.slice(0, 60)}
+                  {jd.title || jd.text.slice(0, 60)}
                 </option>
               ))}
             </select>
           ) : (
             <Textarea
               rows={4}
-              placeholder="Paste the target job description or requirements here…"
+              placeholder="JD text yahan paste karo…"
               value={jdText}
               onChange={(event) => setJdText(event.target.value)}
             />
           )}
 
-          <Button type="button" onClick={run} disabled={busy || !canRun} className="font-medium">
-            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Lightbulb className="mr-2 h-4 w-4" aria-hidden />}
-            {busy ? "Analyzing alignment…" : "Identify Missing Keywords"}
+          <Button type="button" onClick={run} disabled={busy || !canRun}>
+            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
+            {busy ? "AI soch raha hai…" : "Get suggestions"}
           </Button>
 
           {suggestions ? (
-            <ul className="flex flex-col gap-2 pt-1">
+            <ul className="flex flex-col gap-2">
               {suggestions.map((suggestion, index) => {
                 const done = applied.has(index);
                 return (
                   <li
                     key={`${suggestion.type}-${suggestion.value}-${index}`}
-                    className={`rounded-lg border p-3.5 transition-colors ${done ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30" : "border-border bg-background"}`}
+                    className={`rounded-lg border p-3 ${done ? "border-emerald-300 bg-emerald-50/60" : "border-border bg-background"}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
                         {TYPE_LABELS[suggestion.type]}
                       </span>
                       <span className="text-xs text-muted-foreground">{suggestion.reason}</span>
@@ -198,15 +198,15 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{suggestion.detail}</p>
                     ) : null}
                     {suggestion.type === "add-section" ? (
-                      <p className="mt-2 text-xs text-muted-foreground">Add this section using the editor section cards above.</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Section card se manually add karna hoga.</p>
                     ) : done ? (
-                      <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      <p className="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-700">
                         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                        Applied to draft
+                        Added — green highlight mein dikh raha hai
                       </p>
                     ) : (
-                      <Button type="button" variant="outline" size="sm" className="mt-2 text-xs" onClick={() => apply(index)}>
-                        Apply to draft
+                      <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => apply(index)}>
+                        Add
                       </Button>
                     )}
                   </li>
