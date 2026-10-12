@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText, Icon } from "./primitives";
+import { BulletList, DateRange, RichText, Icon, HeaderContactRow } from "./primitives";
 
 /**
  * T4 - Photo Header, Split Timeline (Reference C)
@@ -60,60 +60,11 @@ export function PhotoHeaderSplitTimeline({ data, theme = {} }) {
           {/* Thin Rule */}
           <div className="h-[1px] w-full bg-neutral-200 my-2.5" />
 
-          {/* Phone & Email Row in larger text */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[13.5px] font-medium text-[#222222]">
-            {personal.phone && (
-              <a
-                href={`tel:${personal.phone.replace(/[^0-9+]/g, "")}`}
-                className="flex items-center gap-1.5 hover:underline"
-              >
-                <Icon name="phone" size={14} className="text-neutral-500" />
-                <span>{personal.phone}</span>
-              </a>
-            )}
-            {personal.email && (
-              <a
-                href={`mailto:${personal.email}`}
-                className="flex items-center gap-1.5 hover:underline"
-              >
-                <Icon name="mail" size={14} className="text-neutral-500" />
-                <span>{personal.email}</span>
-              </a>
-            )}
-            {personal.website && (
-              <a
-                href={personal.websiteUrl || (personal.website.startsWith("http") ? personal.website : `https://${personal.website}`)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 hover:underline text-neutral-600"
-              >
-                <Icon name="website" size={14} className="text-neutral-500" />
-                <span>{personal.website.replace(/^https?:\/\/(www\.)?/, "")}</span>
-              </a>
-            )}
-            {personal.linkedin && (
-              <a
-                href={personal.linkedinUrl || `https://linkedin.com/in/${personal.linkedin}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 hover:underline text-neutral-600"
-              >
-                <Icon name="linkedin" size={14} className="text-neutral-500" />
-                <span>{personal.linkedin}</span>
-              </a>
-            )}
-            {personal.github && (
-              <a
-                href={personal.githubUrl || `https://github.com/${personal.github}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 hover:underline text-neutral-600"
-              >
-                <Icon name="github" size={14} className="text-neutral-500" />
-                <span>{personal.github}</span>
-              </a>
-            )}
-          </div>
+          <HeaderContactRow
+            personal={personal}
+            className="text-[13px] text-[#222222] justify-start"
+            defaultSeparator="•"
+          />
 
           {/* Second Thin Rule */}
           <div className="h-[1px] w-full bg-neutral-200 my-2.5" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, ContactItem } from "./primitives";
+import { BulletList, DateRange, ContactItem, HeaderContactRow } from "./primitives";
 
 /**
  * T5 - Dense Analyst Serif (Reference D)
@@ -138,24 +138,11 @@ export function DenseAnalystSerif({ data, theme = {} }) {
           </p>
         )}
 
-        {/* Contact Row with Icons and Underlined Links */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 mt-1 text-[9.5pt] text-neutral-800">
-          {contactKeys.map(renderContactItem)}
-          {Array.isArray(personal.customLinks) &&
-            personal.customLinks.map((link, idx) =>
-              link?.url ? (
-                <ContactItem
-                  key={`custom-${idx}`}
-                  type="link"
-                  value={link.label || link.url}
-                  href={link.url}
-                  icon
-                  className="text-neutral-800"
-                  linkClassName="underline hover:text-blue-700"
-                />
-              ) : null
-            )}
-        </div>
+        <HeaderContactRow
+          personal={personal}
+          className="mt-1 text-[9.5pt] text-neutral-800"
+          defaultSeparator="|"
+        />
       </header>
 
       {/* Dynamic Sections Rendered in User Order */}

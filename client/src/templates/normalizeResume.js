@@ -226,10 +226,20 @@ export function normalizeResume(raw) {
       // Links
       let links = [];
       if (Array.isArray(proj.links)) {
-        links = proj.links.filter((l) => l && l.url);
-      } else {
-        if (proj.link) links.push({ label: "Code", url: proj.link });
-        if (proj.liveDemo) links.push({ label: "Live Demo", url: proj.liveDemo });
+        links = proj.links.filter((l) => l && l.url).map((l) => ({
+          label: l.label || (l.url.includes("github.com") ? "GitHub" : "Live Demo"),
+          url: l.url.startsWith("http") ? l.url : `https://${l.url}`,
+        }));
+      }
+
+      const rawLink = proj.link ? (proj.link.startsWith("http") ? proj.link : `https://${proj.link}`) : "";
+      const rawLiveDemo = proj.liveDemo ? (proj.liveDemo.startsWith("http") ? proj.liveDemo : `https://${proj.liveDemo}`) : "";
+
+      if (rawLink && !links.some((l) => l.url === rawLink)) {
+        links.push({ label: "GitHub", url: rawLink });
+      }
+      if (rawLiveDemo && !links.some((l) => l.url === rawLiveDemo)) {
+        links.push({ label: "Live Demo", url: rawLiveDemo });
       }
 
       return {
@@ -238,6 +248,8 @@ export function normalizeResume(raw) {
         links,
         date: proj.date || "",
         bullets,
+        link: rawLink,
+        liveDemo: rawLiveDemo,
       };
     }).filter((proj) => proj.name);
   }

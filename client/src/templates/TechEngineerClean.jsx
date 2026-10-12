@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText } from "./primitives";
+import { BulletList, DateRange, RichText, HeaderContactRow } from "./primitives";
 
 /**
  * T5 - Tech Engineer Clean (Reference D, tpl-tech-engineer-preview.png)
@@ -42,22 +42,11 @@ export function TechEngineerClean({ data, theme = {} }) {
           {personal.fullName}
         </h1>
 
-        {contactItems.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-2 text-[13px] text-neutral-600 mt-2">
-            {contactItems.map((item, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="text-neutral-400">·</span>}
-                {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {item.text}
-                  </a>
-                ) : (
-                  <span>{item.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
+        <HeaderContactRow
+          personal={personal}
+          className="mt-2 text-[13px] text-neutral-600 justify-start"
+          defaultSeparator="·"
+        />
 
         <div className="h-[2.5px] w-full mt-3 mb-4" style={{ backgroundColor: tealAccent }} />
       </header>
@@ -146,7 +135,24 @@ export function TechEngineerClean({ data, theme = {} }) {
           {projects.map((proj, idx) => (
             <div key={idx} className="break-inside-avoid">
               <div className="flex justify-between items-baseline">
-                <span className="font-bold text-neutral-900 text-[13.5px]">{proj.name}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-bold text-neutral-900 text-[13.5px]">{proj.name}</span>
+                  {proj.links && proj.links.length > 0 && (
+                    <span className="text-[12px] space-x-2" style={{ color: tealAccent }}>
+                      {proj.links.map((link, lIdx) => (
+                        <a
+                          key={lIdx}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:opacity-80"
+                        >
+                          [{link.label}]
+                        </a>
+                      ))}
+                    </span>
+                  )}
+                </div>
                 {proj.techStack && proj.techStack.length > 0 && (
                   <span className="text-[12px] text-neutral-500 font-normal">
                     | {proj.techStack.join(", ")}

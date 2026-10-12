@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText } from "./primitives";
+import { BulletList, DateRange, RichText, HeaderContactRow } from "./primitives";
 
 /**
  * T10 - Elegant Serif Gold
@@ -61,22 +61,11 @@ export function ElegantSerifGold({ data, theme = {} }) {
           style={{ backgroundColor: gold }}
         />
 
-        {contactParts.length > 0 && (
-          <p className="text-[12px] text-neutral-600 tracking-wide flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
-            {contactParts.map((item, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="opacity-40 select-none">•</span>}
-                {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {item.text}
-                  </a>
-                ) : (
-                  <span>{item.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </p>
-        )}
+        <HeaderContactRow
+          personal={personal}
+          className="mt-1 text-[12px] text-neutral-600"
+          defaultSeparator="•"
+        />
       </header>
 
       {/* Summary */}
@@ -154,12 +143,29 @@ export function ElegantSerifGold({ data, theme = {} }) {
             {projects.map((proj, idx) => (
               <div key={idx} className="break-inside-avoid">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-neutral-900 text-[14px]">
-                    {proj.name}
-                    {proj.techStack && proj.techStack.length > 0 && (
-                      <span className="italic text-neutral-500 font-normal text-[12px]"> ({proj.techStack.join(", ")})</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold text-neutral-900 text-[14px]">
+                      {proj.name}
+                      {proj.techStack && proj.techStack.length > 0 && (
+                        <span className="italic text-neutral-500 font-normal text-[12px]"> ({proj.techStack.join(", ")})</span>
+                      )}
+                    </span>
+                    {proj.links && proj.links.length > 0 && (
+                      <span className="text-[12px] space-x-2" style={{ color: gold }}>
+                        {proj.links.map((link, lIdx) => (
+                          <a
+                            key={lIdx}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:opacity-80"
+                          >
+                            [{link.label}]
+                          </a>
+                        ))}
+                      </span>
                     )}
-                  </span>
+                  </div>
                   {proj.date && <span className="text-[12px] text-neutral-500 italic">{proj.date}</span>}
                 </div>
                 <BulletList

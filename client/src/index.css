@@ -699,25 +699,92 @@ nav[aria-label="Bottom navigation"] {
   justify-content: center !important;
 }
 
-/* Header Separator */
-.resume-custom-container.header-sep-bar .resume-header span.select-none {
-  font-size: 0 !important;
-  position: relative !important;
-}
-.resume-custom-container.header-sep-bar .resume-header span.select-none::after {
-  content: "|" !important;
-  font-size: 12px !important;
-  opacity: 0.5 !important;
+/* ==========================================================================
+   Header Contact Details Arrangement: Icons vs Bullets vs Bars
+   ========================================================================== */
+
+/* Remove any faintness from separators across all headers */
+.resume-custom-container .header-sep-symbol,
+.resume-custom-container .resume-header .header-sep-symbol,
+.resume-custom-container .resume-header span.select-none,
+.resume-custom-container .resume-header [class*="opacity-40"] {
+  opacity: 1 !important;
 }
 
+/* 1. When Icon is selected */
+.resume-custom-container.header-sep-icon .header-contact-icon,
+.resume-custom-container.header-sep-icon .resume-header .header-contact-icon {
+  display: inline-flex !important;
+  opacity: 1 !important;
+  margin-right: 4px !important;
+  vertical-align: middle !important;
+}
+.resume-custom-container.header-sep-icon .header-sep-symbol,
+.resume-custom-container.header-sep-icon .resume-header .header-sep-symbol,
+.resume-custom-container.header-sep-icon .resume-header span.select-none {
+  display: none !important;
+}
+.resume-custom-container.header-sep-icon .header-contact-row,
+.resume-custom-container.header-sep-icon .resume-header .header-contact-row,
+.resume-custom-container.header-sep-icon .header-contact-item,
+.resume-custom-container.header-sep-icon .resume-header .header-contact-item {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.resume-custom-container.header-sep-icon .header-contact-row,
+.resume-custom-container.header-sep-icon .resume-header .header-contact-row {
+  column-gap: 16px !important;
+  row-gap: 6px !important;
+}
+
+/* 2. When Bullet is selected */
+.resume-custom-container.header-sep-bullet .header-contact-icon,
+.resume-custom-container.header-sep-bullet .resume-header .header-contact-icon {
+  display: none !important;
+}
+.resume-custom-container.header-sep-bullet .header-sep-symbol,
+.resume-custom-container.header-sep-bullet .resume-header .header-sep-symbol,
 .resume-custom-container.header-sep-bullet .resume-header span.select-none {
+  display: inline !important;
   font-size: 0 !important;
   position: relative !important;
+  opacity: 1 !important;
+  margin: 0 6px !important;
 }
+.resume-custom-container.header-sep-bullet .header-sep-symbol::after,
+.resume-custom-container.header-sep-bullet .resume-header .header-sep-symbol::after,
 .resume-custom-container.header-sep-bullet .resume-header span.select-none::after {
   content: "•" !important;
-  font-size: 12px !important;
-  opacity: 0.5 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  color: currentColor !important;
+}
+
+/* 3. When Bar is selected */
+.resume-custom-container.header-sep-bar .header-contact-icon,
+.resume-custom-container.header-sep-bar .resume-header .header-contact-icon {
+  display: none !important;
+}
+.resume-custom-container.header-sep-bar .header-sep-symbol,
+.resume-custom-container.header-sep-bar .resume-header .header-sep-symbol,
+.resume-custom-container.header-sep-bar .resume-header span.select-none {
+  display: inline !important;
+  font-size: 0 !important;
+  position: relative !important;
+  opacity: 1 !important;
+  margin: 0 6px !important;
+}
+.resume-custom-container.header-sep-bar .header-sep-symbol::after,
+.resume-custom-container.header-sep-bar .resume-header .header-sep-symbol::after,
+.resume-custom-container.header-sep-bar .resume-header span.select-none::after {
+  content: "|" !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  color: currentColor !important;
 }
 
 /* Profile Photo */

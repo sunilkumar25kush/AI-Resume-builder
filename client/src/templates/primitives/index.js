@@ -5,3 +5,4 @@ export { RichText } from "./RichText.jsx";
 export { ContactItem } from "./ContactItem.jsx";
 export { Icon } from "./Icon.jsx";
 export { CandidateName } from "./CandidateName.jsx";
+export { HeaderContactRow } from "./HeaderContactRow.jsx";

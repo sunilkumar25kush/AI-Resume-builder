@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { DateRange, RichText, BulletList } from "./primitives";
+import { DateRange, RichText, BulletList, HeaderContactRow } from "./primitives";
 
 /**
  * T3 - Classic ATS Executive (Reference B)
@@ -170,6 +170,49 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
       </section>
     ) : null,
 
+    projects: projects.length > 0 ? (
+      <section key="projects" className="mb-4 break-inside-avoid">
+        <h2 className="text-[10.5pt] font-bold uppercase tracking-wider text-black border-b border-black pb-0.5 mb-2">
+          Projects
+        </h2>
+        <div className="space-y-3">
+          {projects.map((proj, idx) => (
+            <div key={idx} className="break-inside-avoid">
+              <div className="flex justify-between items-baseline text-[10.5pt]">
+                <div>
+                  <strong className="font-bold text-black">{proj.name}</strong>
+                  {proj.techStack && proj.techStack.length > 0 && (
+                    <span className="text-neutral-700 italic text-[9.5pt]"> | {proj.techStack.join(", ")}</span>
+                  )}
+                </div>
+                {proj.date && <span className="font-bold text-black text-[10pt]">{proj.date}</span>}
+              </div>
+
+              {proj.links && proj.links.length > 0 && (
+                <div className="flex items-center gap-3 text-[9.5pt] mt-0.5 pl-2">
+                  {proj.links.map((link, lIdx) => (
+                    <a
+                      key={lIdx}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-black hover:text-neutral-700 font-medium inline-flex items-center gap-1"
+                    >
+                      <span>[{link.label}]</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {proj.bullets && proj.bullets.length > 0 && (
+                <BulletList bullets={proj.bullets} className="mt-1" />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : null,
+
     certifications: certifications.length > 0 ? (
       <section key="certifications" className="mb-4 break-inside-avoid">
         <h2 className="text-[10.5pt] font-bold uppercase tracking-wider text-black border-b border-black pb-0.5 mb-2">
@@ -249,22 +292,11 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
           {personal.fullName}
         </h1>
 
-        {contactParts.length > 0 && (
-          <p className="text-[10pt] text-black mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
-            {contactParts.map((item, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="opacity-40 select-none">|</span>}
-                {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {item.text}
-                  </a>
-                ) : (
-                  <span>{item.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </p>
-        )}
+        <HeaderContactRow
+          personal={personal}
+          className="mt-1 text-[10pt] text-black"
+          defaultSeparator="|"
+        />
 
         {/* Heavy 1.5px black divider */}
         <div className="w-full h-[1.5px] bg-black mt-2.5 mb-3" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { DateRange, RichText, BulletList } from "./primitives";
+import { DateRange, RichText, BulletList, HeaderContactRow } from "./primitives";
 
 /**
  * T8 - Compact Fresher ATS
@@ -93,6 +93,22 @@ export function CompactFresherAts({ data, theme = {} }) {
                 </div>
                 {proj.date && <span className="text-black font-semibold text-[9pt]">{proj.date}</span>}
               </div>
+
+              {proj.links && proj.links.length > 0 && (
+                <div className="flex items-center gap-2.5 text-[9pt] mt-0.5">
+                  {proj.links.map((link, lIdx) => (
+                    <a
+                      key={lIdx}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-black hover:text-neutral-700 font-medium inline-flex items-center gap-1"
+                    >
+                      <span>[{link.label}]</span>
+                    </a>
+                  ))}
+                </div>
+              )}
 
               {proj.bullets && proj.bullets.length > 0 && (
                 <BulletList bullets={proj.bullets} className="mt-0.5" />
@@ -212,22 +228,11 @@ export function CompactFresherAts({ data, theme = {} }) {
           {personal.fullName}
         </h1>
 
-        {contactParts.length > 0 && (
-          <p className="text-[9.5pt] text-black mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
-            {contactParts.map((item, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="opacity-40 select-none">|</span>}
-                {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {item.text}
-                  </a>
-                ) : (
-                  <span>{item.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </p>
-        )}
+        <HeaderContactRow
+          personal={personal}
+          className="mt-1 text-[9.5pt] text-black"
+          defaultSeparator="|"
+        />
 
         <div className="w-full h-[1px] bg-black mt-2 mb-2" />
       </header>

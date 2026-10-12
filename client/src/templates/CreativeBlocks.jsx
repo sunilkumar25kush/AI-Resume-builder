@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText, ContactItem } from "./primitives";
+import { BulletList, DateRange, RichText, ContactItem, HeaderContactRow } from "./primitives";
 
 /**
  * T9 - Creative Blocks
@@ -39,65 +39,11 @@ export function CreativeBlocks({ data, theme = {} }) {
           </p>
         )}
 
-        {/* Contact items row with subtle pill backgrounds */}
-        <div className="flex flex-wrap items-center gap-2 mt-3 text-[12px] text-neutral-600">
-          {personal.email && (
-            <ContactItem
-              type="email"
-              value={personal.email}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-              linkClassName="hover:underline"
-            />
-          )}
-          {personal.phone && (
-            <ContactItem
-              type="phone"
-              value={personal.phone}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-              linkClassName="hover:underline"
-            />
-          )}
-          {personal.location && (
-            <ContactItem
-              type="location"
-              value={personal.location}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-            />
-          )}
-          {personal.linkedin && (
-            <ContactItem
-              type="linkedin"
-              value={personal.linkedin}
-              href={personal.linkedinUrl}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-              linkClassName="hover:underline"
-            />
-          )}
-          {personal.github && (
-            <ContactItem
-              type="github"
-              value={personal.github}
-              href={personal.githubUrl}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-              linkClassName="hover:underline"
-            />
-          )}
-          {personal.website && (
-            <ContactItem
-              type="website"
-              value={personal.website}
-              href={personal.websiteUrl}
-              iconBadge
-              badgeClassName="w-5 h-5 bg-purple-50 text-purple-700"
-              linkClassName="hover:underline"
-            />
-          )}
-        </div>
+        <HeaderContactRow
+          personal={personal}
+          className="mt-3 text-[12px] text-neutral-600 justify-start"
+          defaultSeparator="•"
+        />
       </header>
 
       {/* Summary */}

@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText, ContactItem } from "./primitives";
+import { BulletList, DateRange, RichText, ContactItem, HeaderContactRow } from "./primitives";
 
 /**
  * T7 - Banner Header
@@ -337,23 +337,12 @@ export function BannerHeader({ data, theme = {} }) {
         )}
 
         {/* Contact Icons Inside the Banner */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-3 text-[12.5px] text-white/90">
-          {contactKeys.map(renderContactItem)}
-          {Array.isArray(personal.customLinks) &&
-            personal.customLinks.map((link, idx) =>
-              link?.url ? (
-                <ContactItem
-                  key={`custom-${idx}`}
-                  type="link"
-                  value={link.label || link.url}
-                  href={link.url}
-                  icon
-                  className="text-white"
-                  linkClassName="text-white hover:text-white/80"
-                />
-              ) : null
-            )}
-        </div>
+        <HeaderContactRow
+          personal={personal}
+          className="mt-3 text-[12.5px] text-white/95 justify-start"
+          linkClassName="text-white hover:text-white/80"
+          defaultSeparator="•"
+        />
       </header>
 
       {/* Body: Single Column */}

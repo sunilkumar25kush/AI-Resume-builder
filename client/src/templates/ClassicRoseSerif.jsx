@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { Section, BulletList, DateRange, RichText, CandidateName } from "./primitives/index.js";
+import { Section, BulletList, DateRange, RichText, CandidateName, HeaderContactRow } from "./primitives/index.js";
 
 /**
  * T1 - Classic Rose Serif (Reference E)
@@ -307,30 +307,11 @@ export function ClassicRoseSerif({ data, theme = {} }) {
           </p>
         )}
 
-        {contactParts.length > 0 && (
-          <div
-            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1 text-[13px] font-medium"
-            style={{ color: accent }}
-          >
-            {contactParts.map((item, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="opacity-40 select-none">•</span>}
-                {item.href ? (
-                  <a
-                    href={item.href}
-                    target={item.type === "email" || item.type === "phone" ? undefined : "_blank"}
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                  >
-                    {item.text}
-                  </a>
-                ) : (
-                  <span>{item.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
+        <HeaderContactRow
+          personal={personal}
+          className="mt-1 text-[13px] font-medium"
+          defaultSeparator="•"
+        />
       </header>
 
       {/* Render sections in user-defined sectionOrder */}
