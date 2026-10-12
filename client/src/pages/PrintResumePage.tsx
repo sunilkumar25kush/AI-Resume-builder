@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { apiClient } from "@/api/client";
 import { getTemplateById } from "@/templates";
-import { getCustomizationCssVariables } from "@/utils/customization";
+import { getCustomizationCssVariables, getCustomizationClassNames } from "@/utils/customization";
 import type { Resume } from "@/types";
 
 export default function PrintResumePage() {
@@ -99,7 +99,7 @@ export default function PrintResumePage() {
   return (
     <div
       id="print-root"
-      className={`resume-print-canvas ${densityParam} resume-custom-container`}
+      className={`resume-print-canvas ${densityParam} resume-custom-container ${getCustomizationClassNames(resume.customization)}`}
       style={{
         width: "210mm",
         margin: "0 auto",

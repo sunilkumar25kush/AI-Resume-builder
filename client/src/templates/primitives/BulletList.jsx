@@ -21,23 +21,25 @@ export function BulletList({
       {validBullets.map((bullet, idx) => (
         <li
           key={idx}
-          className={`break-inside-avoid relative pl-4 leading-snug ${itemClassName}`}
+          className={`break-inside-avoid relative pl-4 leading-snug resume-bullet-item ${itemClassName}`}
         >
-          {bulletStyle === "dot" && (
-            <span
-              className="absolute left-0 top-[0.45em] inline-block h-1.5 w-1.5 rounded-full"
-              style={{ backgroundColor: bulletColor || "currentColor" }}
-              aria-hidden="true"
-            />
-          )}
-          {bulletStyle === "dash" && (
-            <span
-              className="absolute left-0 top-0 select-none text-[inherit] opacity-75 font-normal"
-              aria-hidden="true"
-            >
-              –
-            </span>
-          )}
+          <span
+            className="resume-bullet-icon absolute left-0 top-[0.45em] inline-block h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: bulletColor || "var(--rc-bullet-color, currentColor)" }}
+            aria-hidden="true"
+          />
+          <span
+            className="resume-bullet-dash absolute left-0 top-0 select-none text-[inherit] opacity-75 font-normal hidden"
+            aria-hidden="true"
+          >
+            –
+          </span>
+          <span
+            className="resume-bullet-arrow absolute left-0 top-0 select-none text-[inherit] opacity-80 font-normal hidden text-[11px]"
+            aria-hidden="true"
+          >
+            ▸
+          </span>
           <RichText text={bullet} />
         </li>
       ))}

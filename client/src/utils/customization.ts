@@ -1,38 +1,66 @@
 import type { ResumeCustomization } from "@/types";
 
 export const DEFAULT_CUSTOMIZATION: ResumeCustomization = {
-  // 1. Font Size
+  // 1. Font Size (FlowCV Sliders)
+  baseFontSize: "11.5pt",
+  fullNameSize: "+12.5pt",
+  titleSize: "+8pt",
+  sectionHeadingsSize: "+4pt",
+  entryHeaderSize: "+0.5pt",
   fontSize: "14px",
   fontSizeScale: "normal",
 
-  // 2. Spacing
+  // 2. Spacing (FlowCV Sliders)
+  lineHeight: "1.25",
+  spaceElements: "[0]",
+  leftRightMargin: "22mm",
+  topBottomMargin: "12mm",
   pageMargin: "normal",
   sectionSpacing: "normal",
   entrySpacing: "normal",
-  lineHeight: "1.45",
 
-  // 3. Entries
+  // 3. Entries (FlowCV Layout)
+  entryStructure: "full-width",
+  datePosition: "right",
+  subtitlePlacement: "same-line",
   bulletStyle: "dot",
   datePlacement: "right",
   entryLayout: "standard",
 
-  // 4. Headings
-  headingStyle: "uppercase",
+  // 4. Headings (FlowCV Styles)
+  headingStyle: "line",
+  headingCapitalization: "uppercase",
+  headingIcons: "none",
   headingSize: "16px",
   headingWeight: "bold",
   headingDivider: "line",
   headingAlign: "left",
 
-  // 5. Font
-  fontFamily: "Inter",
+  // 5. Font (FlowCV Body & Name)
+  bodyFont: "Alegreya",
+  nameFont: "same",
+  fontFamily: "Alegreya",
 
-  // 6. Colors
+  // 6. Colors (FlowCV Color targets & checkboxes)
   accentColor: "#4F46E5",
+  colorTarget: "page",
   textColor: "#111827",
   backgroundColor: "#FFFFFF",
+  accentTargets: {
+    name: true,
+    jobTitle: true,
+    headings: true,
+    headingsLine: true,
+    dots: false,
+    dates: false,
+    entrySubtitle: false,
+  },
 
-  // 7. Header
-  headerLayout: "left",
+  // 7. Header (FlowCV Text align & arrangement)
+  headerAlignment: "center",
+  headerArrangement: "horizontal",
+  headerSeparator: "icon",
+  headerLayout: "center",
   headerNameSize: "28px",
   headerNameWeight: "bold",
   showPhoto: true,
@@ -41,6 +69,7 @@ export const DEFAULT_CUSTOMIZATION: ResumeCustomization = {
 };
 
 export const FONT_OPTIONS = [
+  { id: "Alegreya", name: "Alegreya", category: "Classic Serif", font: "'Alegreya', Georgia, serif" },
   { id: "Inter", name: "Inter", category: "Modern Sans", font: "'Inter', sans-serif" },
   { id: "Roboto", name: "Roboto", category: "Clean Sans", font: "'Roboto', sans-serif" },
   { id: "Open Sans", name: "Open Sans", category: "Balanced Sans", font: "'Open Sans', sans-serif" },
@@ -54,15 +83,17 @@ export const FONT_OPTIONS = [
 
 export const COLOR_PALETTES = [
   { name: "FlowCV Indigo", hex: "#4F46E5" },
-  { name: "Rose Crimson", hex: "#C2185B" },
-  { name: "Emerald Green", hex: "#059669" },
-  { name: "Royal Blue", hex: "#2563EB" },
+  { name: "Ocean Blue", hex: "#2563EB" },
   { name: "Deep Navy", hex: "#1E293B" },
-  { name: "Slate Charcoal", hex: "#475569" },
-  { name: "Executive Onyx", hex: "#111827" },
+  { name: "Teal", hex: "#0D9488" },
+  { name: "Sage Emerald", hex: "#059669" },
+  { name: "Rose Crimson", hex: "#C2185B" },
+  { name: "Magenta Berry", hex: "#BE185D" },
+  { name: "Coral Sunset", hex: "#E11D48" },
   { name: "Warm Amber", hex: "#D97706" },
   { name: "Amethyst Violet", hex: "#7C3AED" },
-  { name: "Forest Teal", hex: "#0D9488" },
+  { name: "Slate Charcoal", hex: "#475569" },
+  { name: "Executive Onyx", hex: "#111827" },
 ] as const;
 
 export const TEXT_COLORS = [
@@ -83,55 +114,74 @@ export const BACKGROUND_COLORS = [
 export function getCustomizationCssVariables(customization?: ResumeCustomization, templateAccent?: string) {
   const c = { ...DEFAULT_CUSTOMIZATION, ...customization };
 
-  const fontFamilyObj = FONT_OPTIONS.find((f) => f.id === c.fontFamily) || FONT_OPTIONS[0];
+  const bodyFontObj = FONT_OPTIONS.find((f) => f.id === (c.bodyFont || c.fontFamily)) || FONT_OPTIONS[0];
+  const nameFontObj = c.nameFont && c.nameFont !== "same"
+    ? FONT_OPTIONS.find((f) => f.id === c.nameFont) || bodyFontObj
+    : bodyFontObj;
 
-  const marginMap = {
-    compact: "20px 24px",
-    normal: "32px 36px",
-    relaxed: "44px 48px",
+  const baseFontVal = c.baseFontSize || c.fontSize || "11.5pt";
+
+  // Section gap from spaceElements notch
+  const sectionGapMap: Record<string, string> = {
+    "[--]": "10px",
+    "[-]": "14px",
+    "[0]": "18px",
+    "[+]": "24px",
+    "[++]": "30px",
   };
-
-  const sectionGapMap = {
-    compact: "10px",
-    normal: "18px",
-    relaxed: "26px",
-  };
-
-  const entryGapMap = {
-    compact: "6px",
-    normal: "12px",
-    relaxed: "18px",
-  };
-
-  const headingWeightMap = {
-    normal: "400",
-    semibold: "600",
-    bold: "700",
-    extrabold: "800",
+  const entryGapMap: Record<string, string> = {
+    "[--]": "6px",
+    "[-]": "9px",
+    "[0]": "13px",
+    "[+]": "18px",
+    "[++]": "24px",
   };
 
   const activeAccent = c.accentColor || templateAccent || "#4F46E5";
+  const targets = c.accentTargets || DEFAULT_CUSTOMIZATION.accentTargets || {};
 
   return {
-    "--rc-font-family": fontFamilyObj.font,
-    "--rc-font-size": c.fontSize || "14px",
-    "--rc-line-height": c.lineHeight || "1.45",
-    "--rc-page-padding": marginMap[c.pageMargin as keyof typeof marginMap] || marginMap.normal,
-    "--rc-section-gap": sectionGapMap[c.sectionSpacing as keyof typeof sectionGapMap] || sectionGapMap.normal,
-    "--rc-entry-gap": entryGapMap[c.entrySpacing as keyof typeof entryGapMap] || entryGapMap.normal,
-    "--rc-heading-transform": c.headingStyle || "uppercase",
-    "--rc-heading-size": c.headingSize || "16px",
-    "--rc-heading-weight": headingWeightMap[c.headingWeight as keyof typeof headingWeightMap] || "700",
-    "--rc-heading-align": c.headingAlign || "left",
+    "--rc-font-family": bodyFontObj.font,
+    "--rc-name-font-family": nameFontObj.font,
+    "--rc-font-size": baseFontVal,
+    "--rc-base-font-size": baseFontVal,
+    "--rc-name-size": `calc(${baseFontVal} + ${c.fullNameSize || "+12.5pt"})`,
+    "--rc-title-size": `calc(${baseFontVal} + ${c.titleSize || "+8pt"})`,
+    "--rc-heading-size": `calc(${baseFontVal} + ${c.sectionHeadingsSize || "+4pt"})`,
+    "--rc-entry-header-size": `calc(${baseFontVal} + ${c.entryHeaderSize || "+0.5pt"})`,
+    "--rc-line-height": c.lineHeight || "1.25",
+    "--rc-margin-x": c.leftRightMargin || "22mm",
+    "--rc-margin-y": c.topBottomMargin || "12mm",
+    "--rc-section-gap": sectionGapMap[c.spaceElements || "[0]"] || "18px",
+    "--rc-entry-gap": entryGapMap[c.spaceElements || "[0]"] || "13px",
+    "--rc-heading-transform": c.headingCapitalization || c.headingStyle || "uppercase",
     "--rc-accent-color": activeAccent,
     "--rc-text-color": c.textColor || "#111827",
     "--rc-bg-color": c.backgroundColor || "#FFFFFF",
-    "--rc-name-size": c.headerNameSize || "28px",
-    "--rc-name-weight": c.headerNameWeight === "extrabold" ? "800" : "700",
-    "--rc-header-align": c.headerLayout === "center" ? "center" : "left",
-    "--rc-header-justify": c.headerLayout === "center" ? "center" : c.headerLayout === "split" ? "space-between" : "flex-start",
+    "--rc-name-color": targets.name !== false ? activeAccent : (c.textColor || "#111827"),
+    "--rc-title-color": targets.jobTitle ? activeAccent : "#4B5563",
+    "--rc-heading-color": targets.headings !== false ? activeAccent : (c.textColor || "#111827"),
+    "--rc-heading-line-color": targets.headingsLine !== false ? activeAccent : "#E5E7EB",
+    "--rc-bullet-color": targets.dots ? activeAccent : "currentColor",
+    "--rc-date-color": targets.dates ? activeAccent : "#6B7280",
+    "--rc-entry-subtitle-color": targets.entrySubtitle ? activeAccent : "#374151",
     "--rc-photo-display": c.showPhoto ? "block" : "none",
     "--rc-photo-radius": c.photoShape === "round" ? "9999px" : c.photoShape === "rounded" ? "12px" : "2px",
-    "--rc-photo-size": c.photoSize === "small" ? "60px" : c.photoSize === "large" ? "100px" : "80px",
+    "--rc-photo-size": c.photoSize === "small" ? "65px" : c.photoSize === "large" ? "110px" : "85px",
   } as React.CSSProperties;
+}
+
+/**
+ * Returns helper CSS class names reflecting the customization options for live layout adjustments
+ */
+export function getCustomizationClassNames(customization?: ResumeCustomization): string {
+  const c = { ...DEFAULT_CUSTOMIZATION, ...customization };
+  return [
+    `heading-style-${c.headingStyle || "line"}`,
+    `header-align-${c.headerAlignment || "center"}`,
+    `header-sep-${c.headerSeparator || "icon"}`,
+    `entry-structure-${c.entryStructure || "full-width"}`,
+    `date-pos-${c.datePosition || "right"}`,
+    `bullet-style-${c.bulletStyle || "dot"}`,
+  ].join(" ");
 }

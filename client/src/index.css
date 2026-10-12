@@ -382,44 +382,286 @@ nav[aria-label="Bottom navigation"] {
   }
 }
 
-/* Customization Studio — Dynamic Styling Hooks */
+/* Customization Studio — Force Full Precedence Over Template Defaults */
 .resume-custom-container {
-  font-family: var(--rc-font-family, inherit);
-  font-size: var(--rc-font-size, inherit);
-  line-height: var(--rc-line-height, inherit);
-  color: var(--rc-text-color, inherit);
-  background-color: var(--rc-bg-color, inherit);
+  background-color: var(--rc-bg-color, #ffffff) !important;
+}
+
+.resume-custom-container .resume-a4-page {
+  font-family: var(--rc-font-family, inherit) !important;
+  font-size: var(--rc-font-size, 11.5pt) !important;
+  line-height: var(--rc-line-height, 1.25) !important;
+  color: var(--rc-text-color, #111827) !important;
+  background-color: var(--rc-bg-color, #ffffff) !important;
+  padding-left: var(--rc-margin-x, 22mm) !important;
+  padding-right: var(--rc-margin-x, 22mm) !important;
+  padding-top: var(--rc-margin-y, 12mm) !important;
+  padding-bottom: var(--rc-margin-y, 12mm) !important;
   transition: all 0.15s ease-out;
 }
 
+/* Force body font on all elements inside resume page */
+.resume-custom-container .resume-a4-page *:not(h1):not(.candidate-name):not([data-slot="candidate-name"]) {
+  font-family: var(--rc-font-family, inherit) !important;
+}
+
+/* Base font-size on all standard text & body elements */
+.resume-custom-container .resume-a4-page p,
+.resume-custom-container .resume-a4-page li,
+.resume-custom-container .resume-a4-page div:not([class*="text-[1"]):not([class*="text-[2"]):not([class*="text-[3"]):not([class*="text-[4"]):not(header) {
+  font-size: var(--rc-font-size, inherit) !important;
+  line-height: var(--rc-line-height, inherit) !important;
+}
+
+/* Candidate Full Name */
 .resume-custom-container h1,
 .resume-custom-container .candidate-name,
 .resume-custom-container [data-slot="candidate-name"] {
-  font-size: var(--rc-name-size, inherit) !important;
-  font-weight: var(--rc-name-weight, inherit) !important;
+  font-family: var(--rc-name-font-family, var(--rc-font-family, inherit)) !important;
+  font-size: var(--rc-name-size, 24pt) !important;
+  color: var(--rc-name-color, #111827) !important;
+  line-height: 1.15 !important;
 }
 
+/* Professional Title / Job Title */
+.resume-custom-container .resume-header p.italic,
+.resume-custom-container .resume-header p.text-neutral-700,
+.resume-custom-container .resume-header p.text-neutral-600,
+.resume-custom-container .candidate-title,
+.resume-custom-container [data-slot="candidate-title"] {
+  font-size: var(--rc-title-size, 15.5pt) !important;
+  color: var(--rc-title-color, #4B5563) !important;
+}
+
+/* Section Headings */
 .resume-custom-container h2,
 .resume-custom-container .section-title,
 .resume-custom-container [data-slot="section-title"] {
-  text-transform: var(--rc-heading-transform, inherit) !important;
-  font-size: var(--rc-heading-size, inherit) !important;
-  font-weight: var(--rc-heading-weight, inherit) !important;
-  text-align: var(--rc-heading-align, inherit) !important;
+  font-size: var(--rc-heading-size, 15.5pt) !important;
+  text-transform: var(--rc-heading-transform, uppercase) !important;
+  color: var(--rc-heading-color, #111827) !important;
 }
 
-.resume-custom-container section {
-  margin-bottom: var(--rc-section-gap, inherit);
+/* Heading Style 1: Line */
+.resume-custom-container.heading-style-line h2 {
+  border-bottom: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  padding-bottom: 3px !important;
 }
 
-.resume-custom-container .resume-entry {
-  margin-bottom: var(--rc-entry-gap, inherit);
+/* Heading Style 2: Box */
+.resume-custom-container.heading-style-box h2 {
+  border: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  padding: 3px 10px !important;
+  display: inline-block !important;
 }
 
+/* Heading Style 3: Double Line */
+.resume-custom-container.heading-style-double h2 {
+  border-top: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  padding: 3px 0 !important;
+}
+
+/* Heading Style 4: Split / Centered */
+.resume-custom-container.heading-style-split h2 {
+  display: flex !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+.resume-custom-container.heading-style-split h2::before,
+.resume-custom-container.heading-style-split h2::after {
+  content: "" !important;
+  flex: 1 1 0% !important;
+  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  margin: 0 10px !important;
+}
+
+/* Heading Style 5: Left Bar */
+.resume-custom-container.heading-style-left-bar h2 {
+  border-left: 4px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  padding-left: 8px !important;
+}
+
+/* Heading Style 6: Thick Line */
+.resume-custom-container.heading-style-thick-line h2 {
+  border-bottom: 3px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  padding-bottom: 3px !important;
+}
+
+/* Heading Style 7: Colored Line */
+.resume-custom-container.heading-style-colored-line h2 {
+  border-bottom: 2px solid var(--rc-accent-color, #4F46E5) !important;
+  padding-bottom: 3px !important;
+}
+
+/* Heading Style 8: Wave */
+.resume-custom-container.heading-style-wave h2 {
+  text-decoration: underline wavy var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  text-underline-offset: 4px !important;
+}
+
+/* Heading Style: None */
+.resume-custom-container.heading-style-none h2 {
+  border: none !important;
+  text-decoration: none !important;
+}
+.resume-custom-container.heading-style-none [style*="borderBottom"],
+.resume-custom-container.heading-style-none [style*="border-bottom"] {
+  display: none !important;
+}
+
+/* Update any template border dividers to heading-line-color */
+.resume-custom-container [style*="borderBottom"],
+.resume-custom-container [style*="border-bottom"] {
+  border-bottom-color: var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+}
+
+/* Entry Role / Degree Title */
+.resume-custom-container section strong,
+.resume-custom-container section .font-bold.text-neutral-900,
+.resume-custom-container .resume-entry-title,
+.resume-custom-container [data-slot="entry-title"] {
+  font-size: var(--rc-entry-header-size, 12pt) !important;
+}
+
+/* Entry Subtitle (Company / School) */
+.resume-custom-container .resume-entry-subtitle,
+.resume-custom-container section .text-neutral-800.font-semibold,
+.resume-custom-container section .text-neutral-700 {
+  color: var(--rc-entry-subtitle-color, inherit) !important;
+}
+
+/* Section Gaps & Entry Gaps */
+.resume-custom-container section,
+.resume-custom-container .resume-section {
+  margin-top: var(--rc-section-gap, 18px) !important;
+  margin-bottom: var(--rc-section-gap, 18px) !important;
+}
+
+.resume-custom-container .space-y-4 > * + *,
+.resume-custom-container .space-y-3 > * + * {
+  margin-top: var(--rc-entry-gap, 13px) !important;
+}
+
+/* Entry Layout: Columns structure */
+.resume-custom-container.entry-structure-columns section .space-y-4,
+.resume-custom-container.entry-structure-columns section .space-y-3 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: var(--rc-entry-gap, 13px) !important;
+}
+.resume-custom-container.entry-structure-columns section .space-y-4 > *,
+.resume-custom-container.entry-structure-columns section .space-y-3 > * {
+  margin-top: 0 !important;
+}
+
+/* Date Placement & Color */
+.resume-custom-container .date-range,
+.resume-custom-container [data-slot="date-range"],
+.resume-custom-container [class*="text-neutral-500"]:has(> span) {
+  color: var(--rc-date-color, #6B7280) !important;
+}
+
+.resume-custom-container.date-pos-left .date-range,
+.resume-custom-container.date-pos-left [data-slot="date-range"] {
+  order: -1 !important;
+  margin-right: auto !important;
+}
+.resume-custom-container.date-pos-right .date-range,
+.resume-custom-container.date-pos-right [data-slot="date-range"] {
+  order: 99 !important;
+  margin-left: auto !important;
+}
+
+/* Bullets */
+.resume-custom-container.bullet-style-dot .resume-bullet-icon {
+  display: inline-block !important;
+  border-radius: 9999px !important;
+  background-color: var(--rc-bullet-color, currentColor) !important;
+  border: none !important;
+}
+.resume-custom-container.bullet-style-circle .resume-bullet-icon {
+  display: inline-block !important;
+  border-radius: 9999px !important;
+  background-color: transparent !important;
+  border: 1.5px solid var(--rc-bullet-color, currentColor) !important;
+}
+.resume-custom-container.bullet-style-square .resume-bullet-icon {
+  display: inline-block !important;
+  border-radius: 0 !important;
+  background-color: var(--rc-bullet-color, currentColor) !important;
+  border: none !important;
+}
+.resume-custom-container.bullet-style-dash .resume-bullet-icon {
+  display: none !important;
+}
+.resume-custom-container.bullet-style-dash .resume-bullet-dash {
+  display: inline-block !important;
+  color: var(--rc-bullet-color, currentColor) !important;
+}
+.resume-custom-container.bullet-style-arrow .resume-bullet-icon {
+  display: none !important;
+}
+.resume-custom-container.bullet-style-arrow .resume-bullet-arrow {
+  display: inline-block !important;
+  color: var(--rc-bullet-color, currentColor) !important;
+}
+.resume-custom-container.bullet-style-none .resume-bullet-icon,
+.resume-custom-container.bullet-style-none .resume-bullet-dash,
+.resume-custom-container.bullet-style-none .resume-bullet-arrow {
+  display: none !important;
+}
+.resume-custom-container.bullet-style-none .resume-bullet-item {
+  padding-left: 0 !important;
+}
+
+/* Header alignment */
+.resume-custom-container.header-align-left .resume-header {
+  text-align: left !important;
+}
+.resume-custom-container.header-align-left .resume-header > div,
+.resume-custom-container.header-align-left .resume-header .flex-wrap {
+  justify-content: flex-start !important;
+}
+
+.resume-custom-container.header-align-center .resume-header {
+  text-align: center !important;
+}
+.resume-custom-container.header-align-center .resume-header > div,
+.resume-custom-container.header-align-center .resume-header .flex-wrap {
+  justify-content: center !important;
+}
+
+/* Header Separator */
+.resume-custom-container.header-sep-bar .resume-header span.select-none {
+  font-size: 0 !important;
+  position: relative !important;
+}
+.resume-custom-container.header-sep-bar .resume-header span.select-none::after {
+  content: "|" !important;
+  font-size: 12px !important;
+  opacity: 0.5 !important;
+}
+
+.resume-custom-container.header-sep-bullet .resume-header span.select-none {
+  font-size: 0 !important;
+  position: relative !important;
+}
+.resume-custom-container.header-sep-bullet .resume-header span.select-none::after {
+  content: "•" !important;
+  font-size: 12px !important;
+  opacity: 0.5 !important;
+}
+
+/* Profile Photo */
 .resume-custom-container [data-slot="avatar"],
-.resume-custom-container .resume-photo {
+.resume-custom-container .resume-photo,
+.resume-custom-container img[alt*="photo" i],
+.resume-custom-container img[alt*="profile" i],
+.resume-custom-container img[alt*="avatar" i] {
   display: var(--rc-photo-display, block) !important;
   border-radius: var(--rc-photo-radius, 9999px) !important;
-  width: var(--rc-photo-size, 80px) !important;
-  height: var(--rc-photo-size, 80px) !important;
+  width: var(--rc-photo-size, 85px) !important;
+  height: var(--rc-photo-size, 85px) !important;
+  object-fit: cover !important;
 }

@@ -2,20 +2,18 @@ import { useState } from "react";
 import {
   RotateCcw,
   Check,
-  AlignLeft,
-  AlignCenter,
-  Columns,
+  Minus,
+  Plus,
+  Smile,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   DEFAULT_CUSTOMIZATION,
   FONT_OPTIONS,
   COLOR_PALETTES,
-  TEXT_COLORS,
-  BACKGROUND_COLORS,
 } from "@/utils/customization";
 import type { ResumeCustomization } from "@/types";
 
@@ -44,6 +42,99 @@ const MENU_ITEMS: { id: CustomizationTab; label: string }[] = [
   { id: "header", label: "Header" },
 ];
 
+/** FlowCV-style Notch Slider with - and + step buttons */
+function NotchSlider({
+  label,
+  value,
+  displayValue,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  displayValue?: string;
+  options: string[];
+  onChange: (val: string) => void;
+}) {
+  const currentIndex = Math.max(0, options.indexOf(value));
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      onChange(options[currentIndex - 1]);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < options.length - 1) {
+      onChange(options[currentIndex + 1]);
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200">
+        <span>{label}</span>
+        <span className="text-slate-500 font-medium text-[11px]">{displayValue || value}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Notch Track */}
+        <div className="relative flex-1 h-8 bg-slate-100 dark:bg-slate-800/80 rounded-lg flex items-center px-1 select-none border border-slate-200/60 dark:border-slate-700/60">
+          <div className="w-full flex items-center justify-between relative">
+            {options.map((opt, i) => {
+              const isActive = i === currentIndex;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onChange(opt)}
+                  className="group relative flex items-center justify-center h-7 focus:outline-hidden"
+                  style={{ width: `${100 / options.length}%` }}
+                >
+                  {/* Notch line */}
+                  <span
+                    className={`h-3 w-[1.5px] rounded-full transition-colors ${
+                      isActive
+                        ? "bg-transparent"
+                        : "bg-slate-300 dark:bg-slate-600 group-hover:bg-slate-400"
+                    }`}
+                  />
+                  {/* Purple Thumb Indicator */}
+                  {isActive && (
+                    <span className="absolute inset-0 m-auto h-6 w-8 rounded-md bg-purple-600 dark:bg-purple-500 shadow-sm flex items-center justify-center transition-all animate-in fade-in zoom-in-90" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Stepper Buttons */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            disabled={currentIndex <= 0}
+            onClick={handlePrev}
+            className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            aria-label="Decrease"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={currentIndex >= options.length - 1}
+            onClick={handleNext}
+            className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            aria-label="Increase"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CustomizationStudio({
   customization = {},
   onChange,
@@ -57,6 +148,16 @@ export function CustomizationStudio({
     onChange({
       ...current,
       [key]: value,
+    });
+  };
+
+  const updateAccentTarget = (key: keyof NonNullable<ResumeCustomization["accentTargets"]>, val: boolean) => {
+    onChange({
+      ...current,
+      accentTargets: {
+        ...(current.accentTargets || DEFAULT_CUSTOMIZATION.accentTargets),
+        [key]: val,
+      },
     });
   };
 
@@ -111,66 +212,49 @@ export function CustomizationStudio({
         {/* 1. FONT SIZE */}
         {activeTab === "font-size" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold flex items-center justify-between">
-                <span>Font Size</span>
-                <span className="text-xs text-purple-600 dark:text-purple-400 font-normal">
-                  {current.fontSize}
-                </span>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Font Size
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Body Text Size (Primary Font)
-                </Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {(["12px", "13px", "14px", "15px", "16px"] as const).map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => update("fontSize", size)}
-                      className={`h-11 rounded-xl text-sm font-medium border flex flex-col items-center justify-center transition-all ${
-                        current.fontSize === size
-                          ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:border-purple-400 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      <span>{size}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {size === "12px" ? "Compact" : size === "14px" ? "Standard" : size === "16px" ? "Large" : ""}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <CardContent className="space-y-6 pt-2">
+              <NotchSlider
+                label="Base Font Size"
+                value={current.baseFontSize || "11.5pt"}
+                options={["9pt", "9.5pt", "10pt", "10.5pt", "11pt", "11.5pt", "12pt", "12.5pt", "13pt"]}
+                onChange={(val) => {
+                  update("baseFontSize", val);
+                  update("fontSize", val);
+                }}
+              />
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Text Density Scale
-                </Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "compact", label: "Compact", desc: "Fits more on 1 page" },
-                    { id: "normal", label: "Balanced", desc: "Recommended ATS" },
-                    { id: "large", label: "Spacious", desc: "Easy scanning" },
-                  ].map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => update("fontSizeScale", preset.id as any)}
-                      className={`p-3 rounded-xl text-left border transition-all ${
-                        current.fontSizeScale === preset.id
-                          ? "border-purple-600 bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      <div className="font-medium text-xs">{preset.label}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{preset.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NotchSlider
+                label="Full Name"
+                value={current.fullNameSize || "+12.5pt"}
+                options={["+6pt", "+8pt", "+10pt", "+12.5pt", "+15pt", "+18pt", "+22pt"]}
+                onChange={(val) => update("fullNameSize", val)}
+              />
+
+              <NotchSlider
+                label="Professional Title"
+                value={current.titleSize || "+8pt"}
+                options={["+2pt", "+4pt", "+6pt", "+8pt", "+10pt", "+12pt"]}
+                onChange={(val) => update("titleSize", val)}
+              />
+
+              <NotchSlider
+                label="Section Headings"
+                value={current.sectionHeadingsSize || "+4pt"}
+                options={["+1pt", "+2pt", "+3pt", "+4pt", "+5pt", "+6pt"]}
+                onChange={(val) => update("sectionHeadingsSize", val)}
+              />
+
+              <NotchSlider
+                label="Entry Header"
+                value={current.entryHeaderSize || "+0.5pt"}
+                options={["0pt", "+0.5pt", "+1pt", "+1.5pt", "+2pt", "+2.5pt", "+3pt"]}
+                onChange={(val) => update("entryHeaderSize", val)}
+              />
             </CardContent>
           </Card>
         )}
@@ -178,109 +262,39 @@ export function CustomizationStudio({
         {/* 2. SPACING */}
         {activeTab === "spacing" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Spacing & Margins</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Spacing
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Page Margin (Outer Edge)</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "compact", label: "Compact", sub: "20px / 0.5 in" },
-                    { id: "normal", label: "Normal", sub: "32px / 0.75 in" },
-                    { id: "relaxed", label: "Relaxed", sub: "44px / 1.0 in" },
-                  ].map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => update("pageMargin", m.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.pageMargin === m.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="text-xs font-semibold block">{m.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{m.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <CardContent className="space-y-6 pt-2">
+              <NotchSlider
+                label="Line Height"
+                value={current.lineHeight || "1.25"}
+                options={["1.15", "1.2", "1.25", "1.3", "1.35", "1.45", "1.6"]}
+                onChange={(val) => update("lineHeight", val)}
+              />
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Section Spacing (Gap between sections)</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "compact", label: "Tight", sub: "10px" },
-                    { id: "normal", label: "Standard", sub: "18px" },
-                    { id: "relaxed", label: "Spacious", sub: "26px" },
-                  ].map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => update("sectionSpacing", s.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.sectionSpacing === s.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="text-xs font-semibold block">{s.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{s.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NotchSlider
+                label="Space Between Elements"
+                value={current.spaceElements || "[0]"}
+                options={["[--]", "[-]", "[0]", "[+]", "[++]"]}
+                onChange={(val) => update("spaceElements", val)}
+              />
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Entry Spacing (Gap between jobs / degrees)</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "compact", label: "Tight", sub: "6px" },
-                    { id: "normal", label: "Standard", sub: "12px" },
-                    { id: "relaxed", label: "Spacious", sub: "18px" },
-                  ].map((e) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      onClick={() => update("entrySpacing", e.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.entrySpacing === e.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="text-xs font-semibold block">{e.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{e.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NotchSlider
+                label="Left & Right Margin"
+                value={current.leftRightMargin || "22mm"}
+                options={["12mm", "16mm", "18mm", "22mm", "26mm", "30mm"]}
+                onChange={(val) => update("leftRightMargin", val)}
+              />
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Line Height (Text Leading)</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "1.3", label: "Tight", sub: "1.30" },
-                    { id: "1.45", label: "Normal", sub: "1.45" },
-                    { id: "1.6", label: "Loose", sub: "1.60" },
-                  ].map((lh) => (
-                    <button
-                      key={lh.id}
-                      type="button"
-                      onClick={() => update("lineHeight", lh.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.lineHeight === lh.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="text-xs font-semibold block">{lh.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{lh.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NotchSlider
+                label="Top & Bottom Margin"
+                value={current.topBottomMargin || "12mm"}
+                options={["8mm", "10mm", "12mm", "15mm", "18mm", "22mm"]}
+                onChange={(val) => update("topBottomMargin", val)}
+              />
             </CardContent>
           </Card>
         )}
@@ -288,66 +302,134 @@ export function CustomizationStudio({
         {/* 3. ENTRIES */}
         {activeTab === "entries" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Entry Styling</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Entry Layout
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Bullet Point Style</Label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {[
-                    { id: "dot", label: "Disc", symbol: "•" },
-                    { id: "dash", label: "Dash", symbol: "–" },
-                    { id: "circle", label: "Circle", symbol: "○" },
-                    { id: "square", label: "Square", symbol: "▪" },
-                    { id: "arrow", label: "Arrow", symbol: "▸" },
-                    { id: "none", label: "None", symbol: "—" },
-                  ].map((b) => (
+            <CardContent className="space-y-6 pt-2">
+              {/* Structure */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Structure</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => update("entryStructure", "full-width")}
+                    className={`h-20 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all ${
+                      current.entryStructure !== "columns"
+                        ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1 items-center w-12">
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                    </div>
+                    <span className="text-xs font-medium">Full Width</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => update("entryStructure", "columns")}
+                    className={`h-20 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all ${
+                      current.entryStructure === "columns"
+                        ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600"
+                    }`}
+                  >
+                    <div className="grid grid-cols-2 gap-1.5 w-12">
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                      <div className="h-1 w-full bg-current rounded-full opacity-60" />
+                    </div>
+                    <span className="text-xs font-medium">Columns</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Date & Location Position */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Date & Location Position
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["right", "left", "split"] as const).map((pos) => (
                     <button
-                      key={b.id}
+                      key={pos}
                       type="button"
-                      onClick={() => update("bulletStyle", b.id as any)}
-                      className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${
-                        current.bulletStyle === b.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      onClick={() => update("datePosition", pos)}
+                      className={`h-10 rounded-lg text-xs font-medium border capitalize transition-all ${
+                        (current.datePosition || "right") === pos
+                          ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-base font-semibold">{b.symbol}</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">{b.label}</span>
+                      {pos}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Date Alignment</Label>
+              {/* Subtitle Placement */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Subtitle Placement
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => update("datePlacement", "right")}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      current.datePlacement === "right"
-                        ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300"
-                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                    onClick={() => update("subtitlePlacement", "same-line")}
+                    className={`h-10 rounded-lg text-xs font-medium border transition-all ${
+                      current.subtitlePlacement !== "below"
+                        ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                     }`}
                   >
-                    <div className="text-xs font-semibold">Right Aligned</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">Title on left, dates on far right (Standard)</div>
+                    Try Same Line
                   </button>
-
                   <button
                     type="button"
-                    onClick={() => update("datePlacement", "below")}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      current.datePlacement === "below"
-                        ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300"
-                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                    onClick={() => update("subtitlePlacement", "below")}
+                    className={`h-10 rounded-lg text-xs font-medium border transition-all ${
+                      current.subtitlePlacement === "below"
+                        ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                     }`}
                   >
-                    <div className="text-xs font-semibold">Below Title</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">Dates sit right underneath job or school</div>
+                    Below Title
                   </button>
+                </div>
+              </div>
+
+              {/* Bullet Style */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Bullet Style
+                </span>
+                <div className="grid grid-cols-6 gap-2">
+                  {[
+                    { id: "dot", label: "• Dot" },
+                    { id: "dash", label: "– Dash" },
+                    { id: "circle", label: "○ Circle" },
+                    { id: "square", label: "■ Square" },
+                    { id: "arrow", label: "▸ Arrow" },
+                    { id: "none", label: "None" },
+                  ].map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => update("bulletStyle", b.id as any)}
+                      className={`h-9 rounded-lg text-xs font-medium border transition-all ${
+                        (current.bulletStyle || "dot") === b.id
+                          ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -357,75 +439,150 @@ export function CustomizationStudio({
         {/* 4. HEADINGS */}
         {activeTab === "headings" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Section Headings</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Section Headings
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Text Capitalization</Label>
-                <div className="grid grid-cols-3 gap-2">
+            <CardContent className="space-y-6 pt-2">
+              {/* Style Icons (8 Options from FlowCV) */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Style</span>
+                <div className="grid grid-cols-4 gap-2.5">
                   {[
-                    { id: "uppercase", label: "EXPERIENCE", sub: "ALL CAPS" },
-                    { id: "capitalize", label: "Experience", sub: "Title Case" },
-                    { id: "normal", label: "experience", sub: "Standard" },
-                  ].map((c) => (
+                    {
+                      id: "line",
+                      render: (
+                        <div className="w-10 flex flex-col gap-1 items-start">
+                          <div className="h-1.5 w-7 bg-current rounded-xs" />
+                          <div className="h-[1px] w-full bg-current opacity-60" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "box",
+                      render: (
+                        <div className="w-10 border border-current rounded-xs p-1 flex items-center justify-center">
+                          <div className="h-1.5 w-6 bg-current rounded-xs" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "double",
+                      render: (
+                        <div className="w-10 flex flex-col gap-1 items-start">
+                          <div className="h-[1px] w-full bg-current opacity-60" />
+                          <div className="h-1.5 w-7 bg-current rounded-xs" />
+                          <div className="h-[1px] w-full bg-current opacity-60" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "split",
+                      render: (
+                        <div className="w-10 flex items-center justify-between gap-1">
+                          <div className="h-[1px] flex-1 bg-current opacity-60" />
+                          <div className="h-1.5 w-5 bg-current rounded-xs" />
+                          <div className="h-[1px] flex-1 bg-current opacity-60" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "left-bar",
+                      render: (
+                        <div className="w-10 flex items-center gap-1.5">
+                          <div className="h-4 w-1 bg-purple-600 rounded-xs" />
+                          <div className="h-1.5 w-6 bg-current rounded-xs" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "thick-line",
+                      render: (
+                        <div className="w-10 flex flex-col gap-1 items-start">
+                          <div className="h-1.5 w-7 bg-current rounded-xs" />
+                          <div className="h-1 w-full bg-current opacity-70" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "colored-line",
+                      render: (
+                        <div className="w-10 flex flex-col gap-1 items-start">
+                          <div className="h-1.5 w-7 bg-current rounded-xs" />
+                          <div className="h-1 w-full bg-purple-600 rounded-xs" />
+                        </div>
+                      ),
+                    },
+                    {
+                      id: "wave",
+                      render: (
+                        <div className="w-10 flex flex-col gap-1 items-start">
+                          <div className="h-1.5 w-7 bg-current rounded-xs" />
+                          <div className="w-full text-[9px] tracking-widest leading-none text-current opacity-70">
+                            〰〰〰
+                          </div>
+                        </div>
+                      ),
+                    },
+                  ].map((styleOpt) => (
                     <button
-                      key={c.id}
+                      key={styleOpt.id}
                       type="button"
-                      onClick={() => update("headingStyle", c.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.headingStyle === c.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      onClick={() => update("headingStyle", styleOpt.id as any)}
+                      className={`h-14 rounded-xl border flex items-center justify-center transition-all ${
+                        (current.headingStyle || "line") === styleOpt.id
+                          ? "border-purple-600 bg-purple-50/70 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-2 ring-purple-600/30"
+                          : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 hover:text-slate-800"
                       }`}
                     >
-                      <span className="text-xs font-semibold block">{c.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{c.sub}</span>
+                      {styleOpt.render}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Heading Font Size</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(["14px", "16px", "18px", "20px"] as const).map((s) => (
+              {/* Capitalization */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Capitalization
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["capitalize", "uppercase", "normal"] as const).map((cap) => (
                     <button
-                      key={s}
+                      key={cap}
                       type="button"
-                      onClick={() => update("headingSize", s)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.headingSize === s
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      onClick={() => update("headingCapitalization", cap)}
+                      className={`h-10 rounded-lg text-xs font-medium border capitalize transition-all ${
+                        (current.headingCapitalization || "uppercase") === cap
+                          ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-xs font-semibold block">{s}</span>
+                      {cap}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Divider Line Style</Label>
+              {/* Icons */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Icons
+                </span>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "line", label: "Solid Line", sub: "Underline divider" },
-                    { id: "bar", label: "Accent Bar", sub: "Bold accent bar" },
-                    { id: "none", label: "No Line", sub: "Clean whitespace" },
-                  ].map((div) => (
+                  {(["none", "outline", "filled"] as const).map((ico) => (
                     <button
-                      key={div.id}
+                      key={ico}
                       type="button"
-                      onClick={() => update("headingDivider", div.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.headingDivider === div.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      onClick={() => update("headingIcons", ico)}
+                      className={`h-10 rounded-lg text-xs font-medium border capitalize transition-all ${
+                        (current.headingIcons || "none") === ico
+                          ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-xs font-semibold block">{div.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{div.sub}</span>
+                      {ico}
                     </button>
                   ))}
                 </div>
@@ -437,37 +594,56 @@ export function CustomizationStudio({
         {/* 5. FONT */}
         {activeTab === "font" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Typography & Font Family</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Font
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {FONT_OPTIONS.map((f) => {
-                  const isSelected = current.fontFamily === f.id;
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => update("fontFamily", f.id as any)}
-                      className={`p-3.5 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? "border-purple-600 bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-100 ring-2 ring-purple-600/20 shadow-xs"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-800 dark:text-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-muted-foreground">{f.category}</span>
-                        {isSelected && <Check className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-                      </div>
-                      <div className="text-base font-semibold" style={{ fontFamily: f.font }}>
-                        {f.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground/80 mt-1" style={{ fontFamily: f.font }}>
-                        The quick brown fox
-                      </div>
-                    </button>
-                  );
-                })}
+            <CardContent className="space-y-6 pt-2">
+              {/* Body Font Dropdown */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                  Body Font
+                </label>
+                <div className="relative">
+                  <select
+                    value={current.bodyFont || current.fontFamily || "Alegreya"}
+                    onChange={(e) => {
+                      update("bodyFont", e.target.value);
+                      update("fontFamily", e.target.value);
+                    }}
+                    className="w-full h-11 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-purple-600/30"
+                  >
+                    {FONT_OPTIONS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} ({f.category})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Name Font Dropdown */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                  Name Font
+                </label>
+                <div className="relative">
+                  <select
+                    value={current.nameFont || "same"}
+                    onChange={(e) => update("nameFont", e.target.value)}
+                    className="w-full h-11 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-purple-600/30"
+                  >
+                    <option value="same">Same as body font</option>
+                    {FONT_OPTIONS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} ({f.category})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -476,90 +652,131 @@ export function CustomizationStudio({
         {/* 6. COLORS */}
         {activeTab === "colors" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Color Palette</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Colors
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                  <span>Accent Color (Headings, badges, highlights)</span>
-                  <span className="font-mono text-[11px] font-medium">{current.accentColor}</span>
-                </Label>
-                <div className="flex flex-wrap gap-2.5 mb-3">
+            <CardContent className="space-y-6 pt-2">
+              {/* Target Buttons (Full Page / Header / Border) */}
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  {
+                    id: "page",
+                    label: "Full Page",
+                    render: <div className="h-9 w-6 rounded-xs bg-purple-100 border border-purple-400" />,
+                  },
+                  {
+                    id: "header",
+                    label: "Header",
+                    render: (
+                      <div className="h-9 w-6 rounded-xs border border-slate-300 flex flex-col overflow-hidden">
+                        <div className="h-3 w-full bg-slate-400" />
+                      </div>
+                    ),
+                  },
+                  {
+                    id: "border",
+                    label: "Border",
+                    render: (
+                      <div className="h-9 w-6 rounded-xs border-2 border-slate-400" />
+                    ),
+                  },
+                ].map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    onClick={() => update("colorTarget", target.id as any)}
+                    className={`h-20 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all ${
+                      (current.colorTarget || "page") === target.id
+                        ? "border-purple-600 bg-purple-50/60 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-2 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {target.render}
+                    <span className="text-xs font-medium">{target.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Color Swatches Grid */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Palette Colors
+                </span>
+                <div className="flex flex-wrap items-center gap-2.5">
                   {COLOR_PALETTES.map((color) => {
-                    const isSelected = current.accentColor?.toLowerCase() === color.hex.toLowerCase();
+                    const isSelected = (current.accentColor || "#4F46E5").toLowerCase() === color.hex.toLowerCase();
                     return (
                       <button
                         key={color.hex}
                         type="button"
                         onClick={() => update("accentColor", color.hex)}
                         title={color.name}
-                        className={`h-9 w-9 rounded-full flex items-center justify-center transition-all ${
-                          isSelected ? "ring-2 ring-offset-2 ring-purple-600 scale-110 shadow-sm" : "hover:scale-105"
-                        }`}
+                        className="h-8 w-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 relative"
                         style={{ backgroundColor: color.hex }}
                       >
-                        {isSelected && <Check className="h-4 w-4 text-white" />}
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-white drop-shadow-sm" />
+                        )}
                       </button>
                     );
                   })}
-                </div>
-                <div className="flex items-center gap-2 max-w-xs">
-                  <input
-                    type="color"
-                    value={current.accentColor || "#4F46E5"}
-                    onChange={(e) => update("accentColor", e.target.value)}
-                    className="h-8 w-12 rounded cursor-pointer border border-input p-0 bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={current.accentColor || ""}
-                    onChange={(e) => update("accentColor", e.target.value)}
-                    placeholder="#4F46E5"
-                    className="h-8 px-2.5 rounded-lg border border-input text-xs font-mono uppercase bg-background flex-1"
-                  />
+
+                  {/* Custom Color Rainbow Picker */}
+                  <label
+                    title="Custom color"
+                    className="h-8 w-8 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 border-2 border-dashed border-slate-300 relative overflow-hidden"
+                    style={{
+                      background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
+                    }}
+                  >
+                    <input
+                      type="color"
+                      value={current.accentColor || "#4F46E5"}
+                      onChange={(e) => update("accentColor", e.target.value)}
+                      className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
+                    />
+                  </label>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Text Tone</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TEXT_COLORS.map((t) => (
-                    <button
-                      key={t.hex}
-                      type="button"
-                      onClick={() => update("textColor", t.hex)}
-                      className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all ${
-                        current.textColor === t.hex
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="h-4 w-4 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: t.hex }} />
-                      <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{t.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Page Background Tone</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {BACKGROUND_COLORS.map((bg) => (
-                    <button
-                      key={bg.hex}
-                      type="button"
-                      onClick={() => update("backgroundColor", bg.hex)}
-                      className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all ${
-                        current.backgroundColor === bg.hex
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="h-4 w-4 rounded-full border border-black/20 shrink-0" style={{ backgroundColor: bg.hex }} />
-                      <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{bg.name}</span>
-                    </button>
-                  ))}
+              {/* Apply Accent Color Checkboxes (FlowCV Model) */}
+              <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                  Apply Accent Color
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { key: "name", label: "Name" },
+                    { key: "dots", label: "Dots/bars/bubbles" },
+                    { key: "jobTitle", label: "Job title" },
+                    { key: "dates", label: "Dates" },
+                    { key: "headings", label: "Headings" },
+                    { key: "entrySubtitle", label: "Entry subtitle" },
+                    { key: "headingsLine", label: "Headings line" },
+                  ].map((item) => {
+                    const isChecked = current.accentTargets?.[item.key as keyof NonNullable<ResumeCustomization["accentTargets"]>] ?? false;
+                    return (
+                      <label
+                        key={item.key}
+                        className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) =>
+                            updateAccentTarget(
+                              item.key as keyof NonNullable<ResumeCustomization["accentTargets"]>,
+                              e.target.checked
+                            )
+                          }
+                          className="h-4 w-4 rounded-md border-slate-300 text-purple-600 focus:ring-purple-500 accent-purple-600"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
@@ -569,121 +786,153 @@ export function CustomizationStudio({
         {/* 7. HEADER */}
         {activeTab === "header" && (
           <Card className="border-slate-200/90 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Header & Photo Options</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Header
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Header Layout</Label>
+            <CardContent className="space-y-6 pt-2">
+              {/* Text Alignment */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Text Alignment
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => update("headerAlignment", "left")}
+                    className={`h-20 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all ${
+                      current.headerAlignment === "left"
+                        ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1 items-start w-8">
+                      <div className="h-1.5 w-7 bg-current rounded-full" />
+                      <div className="h-1.5 w-5 bg-current rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium">Left</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => update("headerAlignment", "center")}
+                    className={`h-20 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all ${
+                      current.headerAlignment !== "left"
+                        ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1 items-center w-8">
+                      <div className="h-1.5 w-7 bg-current rounded-full" />
+                      <div className="h-1.5 w-5 bg-current rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium">Center</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Details Arrangement & Separators */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Details Arrangement
+                </span>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "left", label: "Left Aligned", icon: AlignLeft },
-                    { id: "center", label: "Centered", icon: AlignCenter },
-                    { id: "split", label: "2-Column Split", icon: Columns },
-                  ].map((l) => {
-                    const IconComp = l.icon;
-                    return (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() => update("headerLayout", l.id as any)}
-                        className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${
-                          current.headerLayout === l.id
-                            ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                            : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                        }`}
-                      >
-                        <IconComp className="h-4 w-4 mb-1" />
-                        <span className="text-xs font-medium">{l.label}</span>
-                      </button>
-                    );
-                  })}
+                  <button
+                    type="button"
+                    onClick={() => update("headerSeparator", "icon")}
+                    className={`h-11 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                      current.headerSeparator === "icon"
+                        ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Smile className="h-3.5 w-3.5 text-purple-600" />
+                    Icon
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => update("headerSeparator", "bullet")}
+                    className={`h-11 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                      current.headerSeparator === "bullet"
+                        ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-sm">•</span>
+                    Bullet
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => update("headerSeparator", "bar")}
+                    className={`h-11 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                      current.headerSeparator === "bar"
+                        ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 ring-1 ring-purple-600/30"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>|</span>
+                    Bar
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Candidate Name Size</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { id: "24px", label: "Medium", sub: "24px" },
-                    { id: "28px", label: "Standard", sub: "28px" },
-                    { id: "34px", label: "Large", sub: "34px" },
-                    { id: "40px", label: "Bold", sub: "40px" },
-                  ].map((n) => (
-                    <button
-                      key={n.id}
-                      type="button"
-                      onClick={() => update("headerNameSize", n.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        current.headerNameSize === n.id
-                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/20"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="text-xs font-semibold block">{n.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{n.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between mb-4">
+              {/* Profile Photo Controls */}
+              <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Show Photo on Resume</Label>
-                    <p className="text-xs text-muted-foreground">Toggle photo display on templates that support it</p>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      Profile Photo
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Show or hide photo in header
+                    </span>
                   </div>
                   <Switch
                     checked={current.showPhoto !== false}
-                    onCheckedChange={(val) => update("showPhoto", val)}
+                    onCheckedChange={(checked) => update("showPhoto", checked)}
                   />
                 </div>
 
                 {current.showPhoto !== false && (
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-muted-foreground mb-2 block">Photo Shape</Label>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-medium text-slate-500">Shape</span>
                       <div className="grid grid-cols-3 gap-1.5">
-                        {[
-                          { id: "round", label: "Circle" },
-                          { id: "rounded", label: "Rounded" },
-                          { id: "square", label: "Square" },
-                        ].map((s) => (
+                        {(["round", "rounded", "square"] as const).map((shape) => (
                           <button
-                            key={s.id}
+                            key={shape}
                             type="button"
-                            onClick={() => update("photoShape", s.id as any)}
-                            className={`p-2 rounded-lg border text-xs text-center transition-all ${
-                              current.photoShape === s.id
-                                ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 font-medium"
-                                : "border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
+                            onClick={() => update("photoShape", shape)}
+                            className={`h-8 rounded-lg text-xs font-medium border capitalize ${
+                              (current.photoShape || "round") === shape
+                                ? "border-purple-600 bg-purple-50 text-purple-700"
+                                : "border-slate-200 text-slate-600"
                             }`}
                           >
-                            {s.label}
+                            {shape}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-xs text-muted-foreground mb-2 block">Photo Size</Label>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-medium text-slate-500">Size</span>
                       <div className="grid grid-cols-3 gap-1.5">
-                        {[
-                          { id: "small", label: "Small" },
-                          { id: "medium", label: "Medium" },
-                          { id: "large", label: "Large" },
-                        ].map((sz) => (
+                        {(["small", "medium", "large"] as const).map((size) => (
                           <button
-                            key={sz.id}
+                            key={size}
                             type="button"
-                            onClick={() => update("photoSize", sz.id as any)}
-                            className={`p-2 rounded-lg border text-xs text-center transition-all ${
-                              current.photoSize === sz.id
-                                ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 font-medium"
-                                : "border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
+                            onClick={() => update("photoSize", size)}
+                            className={`h-8 rounded-lg text-xs font-medium border capitalize ${
+                              (current.photoSize || "medium") === size
+                                ? "border-purple-600 bg-purple-50 text-purple-700"
+                                : "border-slate-200 text-slate-600"
                             }`}
                           >
-                            {sz.label}
+                            {size}
                           </button>
                         ))}
                       </div>

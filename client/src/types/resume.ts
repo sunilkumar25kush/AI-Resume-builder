@@ -113,40 +113,68 @@ export interface AiChange {
 }
 
 export interface ResumeCustomization {
-  // 1. Font Size
-  fontSize?: "12px" | "13px" | "14px" | "15px" | "16px";
+  // 1. Font Size (FlowCV Sliders)
+  baseFontSize?: string; // e.g. "11.5pt"
+  fullNameSize?: string; // e.g. "+12.5pt"
+  titleSize?: string; // e.g. "+8pt"
+  sectionHeadingsSize?: string; // e.g. "+4pt"
+  entryHeaderSize?: string; // e.g. "+0.5pt"
+  fontSize?: string; // fallback / alias
   fontSizeScale?: "compact" | "normal" | "large";
 
-  // 2. Spacing
+  // 2. Spacing (FlowCV Sliders)
+  lineHeight?: string; // e.g. "1.25"
+  spaceElements?: string; // "[--]" | "[-]" | "[0]" | "[+]" | "[++]"
+  leftRightMargin?: string; // e.g. "22mm"
+  topBottomMargin?: string; // e.g. "12mm"
   pageMargin?: "compact" | "normal" | "relaxed";
   sectionSpacing?: "compact" | "normal" | "relaxed";
   entrySpacing?: "compact" | "normal" | "relaxed";
-  lineHeight?: "1.3" | "1.45" | "1.6";
 
-  // 3. Entries
+  // 3. Entries (FlowCV Layout)
+  entryStructure?: "full-width" | "columns";
+  datePosition?: "right" | "left" | "split";
+  subtitlePlacement?: "same-line" | "below";
   bulletStyle?: "dot" | "dash" | "circle" | "square" | "arrow" | "none";
   datePlacement?: "right" | "below";
   entryLayout?: "standard" | "compact";
 
-  // 4. Headings
-  headingStyle?: "uppercase" | "capitalize" | "normal";
-  headingSize?: "14px" | "16px" | "18px" | "20px";
+  // 4. Headings (FlowCV Styles)
+  headingStyle?: "line" | "box" | "double" | "split" | "left-bar" | "thick-line" | "colored-line" | "wave" | "none" | "uppercase" | "capitalize" | "normal";
+  headingCapitalization?: "uppercase" | "capitalize" | "normal";
+  headingIcons?: "none" | "outline" | "filled";
+  headingSize?: string;
   headingWeight?: "normal" | "semibold" | "bold" | "extrabold";
   headingDivider?: "line" | "bar" | "none";
   headingAlign?: "left" | "center";
 
-  // 5. Font
-  fontFamily?: "Inter" | "Roboto" | "Open Sans" | "Lora" | "Merriweather" | "Playfair Display" | "EB Garamond" | "Montserrat" | "Raleway";
+  // 5. Font (FlowCV Body & Name)
+  bodyFont?: string; // "Inter" | "Roboto" | "Alegreya" | "Lora" | etc.
+  nameFont?: string; // "same" | "Inter" | "Playfair Display" | etc.
+  fontFamily?: string;
 
-  // 6. Colors
+  // 6. Colors (FlowCV Color targets & checkboxes)
   accentColor?: string;
+  colorTarget?: "page" | "header" | "border";
   textColor?: string;
   backgroundColor?: string;
+  accentTargets?: {
+    name?: boolean;
+    jobTitle?: boolean;
+    headings?: boolean;
+    headingsLine?: boolean;
+    dots?: boolean;
+    dates?: boolean;
+    entrySubtitle?: boolean;
+  };
 
-  // 7. Header
+  // 7. Header (FlowCV Text align & arrangement)
+  headerAlignment?: "left" | "center";
+  headerArrangement?: "horizontal" | "columns";
+  headerSeparator?: "icon" | "bullet" | "bar";
   headerLayout?: "left" | "center" | "split";
-  headerNameSize?: "24px" | "28px" | "34px" | "40px";
-  headerNameWeight?: "bold" | "extrabold";
+  headerNameSize?: string;
+  headerNameWeight?: "bold" | "extrabold" | "normal";
   showPhoto?: boolean;
   photoShape?: "round" | "rounded" | "square";
   photoSize?: "small" | "medium" | "large";

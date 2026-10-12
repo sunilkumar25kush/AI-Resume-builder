@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTemplateById } from "@/templates";
-import { getCustomizationCssVariables } from "@/utils/customization";
+import { getCustomizationCssVariables, getCustomizationClassNames } from "@/utils/customization";
 import type { ParsedResumeData, ResumeCustomization, ResumeTemplate } from "@/types";
 
 interface ResumePreviewProps {
@@ -169,7 +169,7 @@ export function ResumePreview({
       >
         <div
           ref={contentRef}
-          className={`shadow-lg print:shadow-none ${density} resume-custom-container`}
+          className={`shadow-lg print:shadow-none ${density} resume-custom-container ${getCustomizationClassNames(customization)}`}
           style={customCssVariables}
         >
           <TemplateComponent data={data} theme={activeTheme} customization={customization} />
