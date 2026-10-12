@@ -1,7 +1,13 @@
 import { existsSync, unlinkSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
+import {
+  isCloudinaryConfigured,
+  uploadAvatarToCloudinary,
+  deleteAvatarFromCloudinary,
+} from "./cloudinary.service.js";
 
 async function updateProfile(userId, data) {
   const user = await User.findById(userId);
@@ -29,8 +35,10 @@ async function updateProfile(userId, data) {
 /** Removes the previous avatar file if it was stored locally on this server. */
 function removeStoredAvatar(avatarPath) {
   if (!avatarPath || !avatarPath.startsWith("/uploads/")) return;
-  const absolute = new URL(`..${avatarPath}`, import.meta.url).pathname;
-  if (existsSync(absolute)) unlinkSync(absolute);
+  try {
+    const absolute = fileURLToPath(new URL(`../../${avatarPath.replace(/^\//, "")}`, import.meta.url));
+    if (existsSync(absolute)) unlinkSync(absolute);
+  } catch {}
 }
 
 async function updateAvatar(userId, file) {
@@ -40,6 +48,38 @@ async function updateAvatar(userId, file) {
   if (!user) throw ApiError.notFound("User not found");
 
   const previousAvatar = user.avatar;
+
+  // Primary: Upload to Cloudinary when configured
+  if (isCloudinaryConfigured()) {
+    try {
+      const uploadResult = await uploadAvatarToCloudinary(file.path, userId);
+      user.avatar = uploadResult.url;
+      await user.save();
+
+      // Clean up the temporary local file written by multer
+      if (file.path && existsSync(file.path)) {
+        try { unlinkSync(file.path); } catch {}
+      }
+
+      // Delete old avatar from Cloudinary or local disk
+      if (previousAvatar) {
+        if (previousAvatar.includes("res.cloudinary.com")) {
+          deleteAvatarFromCloudinary(previousAvatar);
+        } else {
+          removeStoredAvatar(previousAvatar);
+        }
+      }
+
+      return user.toSafeJSON();
+    } catch (err) {
+      if (file.path && existsSync(file.path)) {
+        try { unlinkSync(file.path); } catch {}
+      }
+      throw ApiError.internal(`Cloudinary image upload failed: ${err.message}`);
+    }
+  }
+
+  // Fallback: Local storage (e.g. offline dev without Cloudinary keys)
   user.avatar = `/uploads/avatars/${file.filename}`;
   await user.save();
 
@@ -49,3 +89,4 @@ async function updateAvatar(userId, file) {
 }
 
 export const userService = { updateProfile, updateAvatar };
+

@@ -68,7 +68,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, resolveAvatarUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
@@ -462,7 +462,7 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
 
   const handleUseProfileAvatar = () => {
     if (!user?.avatar) return;
-    setValue("photoUrl", user.avatar, { shouldDirty: true });
+    setValue("photoUrl", resolveAvatarUrl(user.avatar), { shouldDirty: true });
     toast.success("Using your account profile picture");
   };
 

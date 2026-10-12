@@ -3,6 +3,7 @@ import { LogOut, Settings as SettingsIcon, User as UserIcon } from "lucide-react
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { resolveAvatarUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +42,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
           <Avatar className="h-8 w-8">
-            {user.avatar ? <img src={user.avatar} alt={user.name} /> : <AvatarFallback>{getInitials(user.name)}</AvatarFallback>}
+            {user.avatar ? <img src={resolveAvatarUrl(user.avatar)} alt={user.name} /> : <AvatarFallback>{getInitials(user.name)}</AvatarFallback>}
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

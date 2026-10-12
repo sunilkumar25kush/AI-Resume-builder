@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
 import type { CroppedImageResult } from "@/lib/cropImage";
+import { resolveAvatarUrl } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -193,7 +194,7 @@ export default function ProfilePage() {
           <CardContent className="flex items-center gap-5">
             <Avatar className="h-20 w-20 ring-2 ring-primary/20 shadow-xs overflow-hidden rounded-full shrink-0">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover rounded-full" />
+                <img src={resolveAvatarUrl(user.avatar)} alt={user.name} className="h-full w-full object-cover rounded-full" />
               ) : (
                 <AvatarFallback className="text-xl font-medium">
                   {getInitials(user?.name ?? "?")}
