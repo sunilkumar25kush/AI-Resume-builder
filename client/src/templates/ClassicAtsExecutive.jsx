@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { DateRange, RichText } from "./primitives";
+import { DateRange, RichText, BulletList } from "./primitives";
 
 /**
  * T3 - Classic ATS Executive (Reference B)
@@ -94,14 +94,7 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
               </div>
 
               {exp.bullets && exp.bullets.length > 0 && (
-                <ul className="list-none p-0 mt-1 space-y-[3px] text-[10pt] leading-tight">
-                  {exp.bullets.map((b, bIdx) => (
-                    <li key={bIdx} className="relative pl-4 break-inside-avoid">
-                      <span className="absolute left-0 top-[0.45em] w-1.5 h-1.5 rounded-full bg-black" aria-hidden="true" />
-                      <RichText text={b} />
-                    </li>
-                  ))}
-                </ul>
+                <BulletList bullets={exp.bullets} className="mt-1" />
               )}
             </div>
           ))}
@@ -128,14 +121,7 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
               </div>
 
               {proj.bullets && proj.bullets.length > 0 && (
-                <ul className="list-none p-0 mt-1 space-y-[3px] text-[10pt] leading-tight">
-                  {proj.bullets.map((b, bIdx) => (
-                    <li key={bIdx} className="relative pl-4 break-inside-avoid">
-                      <span className="absolute left-0 top-[0.45em] w-1.5 h-1.5 rounded-full bg-black" aria-hidden="true" />
-                      <RichText text={b} />
-                    </li>
-                  ))}
-                </ul>
+                <BulletList bullets={proj.bullets} className="mt-1" />
               )}
             </div>
           ))}
@@ -176,14 +162,7 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
               )}
 
               {edu.details && edu.details.length > 0 && (
-                <ul className="list-none p-0 mt-1 space-y-1 text-[9.5pt] pl-4">
-                  {edu.details.map((d, dIdx) => (
-                    <li key={dIdx} className="relative pl-3">
-                      <span className="absolute left-0 top-[0.45em] w-1 h-1 rounded-full bg-black" aria-hidden="true" />
-                      <RichText text={d} />
-                    </li>
-                  ))}
-                </ul>
+                <BulletList bullets={edu.details} className="mt-1" />
               )}
             </div>
           ))}

@@ -54,7 +54,7 @@ export function ResumePreview({
     () => ({
       ...tplDef.defaultTheme,
       accentColor: customization?.accentColor || theme?.accentColor || tplDef.defaultTheme.accentColor,
-      fontSize: customization?.fontSize || theme?.fontSize || tplDef.defaultTheme.fontSize,
+      fontSize: customization?.baseFontSize || customization?.fontSize || theme?.fontSize || tplDef.defaultTheme.fontSize,
       ...theme,
     }),
     [tplDef.defaultTheme, theme, customization]

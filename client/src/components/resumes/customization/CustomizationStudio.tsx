@@ -151,6 +151,13 @@ export function CustomizationStudio({
     });
   };
 
+  const updateMultiple = (patch: Partial<ResumeCustomization>) => {
+    onChange({
+      ...current,
+      ...patch,
+    });
+  };
+
   const updateAccentTarget = (key: keyof NonNullable<ResumeCustomization["accentTargets"]>, val: boolean) => {
     onChange({
       ...current,
@@ -220,11 +227,13 @@ export function CustomizationStudio({
             <CardContent className="space-y-6 pt-2">
               <NotchSlider
                 label="Base Font Size"
-                value={current.baseFontSize || "11.5pt"}
+                value={current.baseFontSize || current.fontSize || "11.5pt"}
                 options={["9pt", "9.5pt", "10pt", "10.5pt", "11pt", "11.5pt", "12pt", "12.5pt", "13pt"]}
                 onChange={(val) => {
-                  update("baseFontSize", val);
-                  update("fontSize", val);
+                  updateMultiple({
+                    baseFontSize: val,
+                    fontSize: val,
+                  });
                 }}
               />
 

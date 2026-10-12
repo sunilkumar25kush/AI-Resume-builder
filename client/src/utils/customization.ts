@@ -185,3 +185,186 @@ export function getCustomizationClassNames(customization?: ResumeCustomization):
     `bullet-style-${c.bulletStyle || "dot"}`,
   ].join(" ");
 }
+
+/**
+ * Returns authentic default customization settings matching each resume template's native style,
+ * color, font, and format.
+ */
+export function getDefaultCustomizationForTemplate(templateId?: string): ResumeCustomization {
+  const tid = (templateId || "classic-rose-serif").toLowerCase();
+
+  if (tid.includes("rose") || tid === "classic") {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#C2185B", // Rose Crimson
+      bodyFont: "EB Garamond",
+      nameFont: "same",
+      fontFamily: "EB Garamond",
+      headingStyle: "line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "center",
+      bulletStyle: "dot",
+      baseFontSize: "11pt",
+      leftRightMargin: "22mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("navy") || tid.includes("timeline")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#2B3450", // Dark Navy
+      bodyFont: "Inter",
+      nameFont: "same",
+      fontFamily: "Inter",
+      headingStyle: "left-bar",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "dot",
+      baseFontSize: "10.5pt",
+      leftRightMargin: "16mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("executive") || tid.includes("minimal")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#000000", // Monochrome ATS
+      bodyFont: "EB Garamond",
+      nameFont: "same",
+      fontFamily: "EB Garamond",
+      headingStyle: "thick-line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "square",
+      baseFontSize: "10.5pt",
+      leftRightMargin: "18mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("photo") || tid.includes("split") || tid.includes("modern")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#222222",
+      bodyFont: "Montserrat",
+      nameFont: "same",
+      fontFamily: "Montserrat",
+      headingStyle: "line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "dot",
+      baseFontSize: "10.5pt",
+      showPhoto: true,
+      leftRightMargin: "18mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("analyst") || tid.includes("dense") || tid.includes("harvard") || tid.includes("tech")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#111827",
+      bodyFont: "EB Garamond",
+      nameFont: "same",
+      fontFamily: "EB Garamond",
+      headingStyle: "line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "center",
+      bulletStyle: "dot",
+      baseFontSize: "10pt",
+      spaceElements: "[-]",
+      leftRightMargin: "16mm",
+      topBottomMargin: "10mm",
+    };
+  }
+
+  if (tid.includes("right-sidebar") || tid.includes("startup")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#4F46E5", // FlowCV Indigo
+      bodyFont: "Inter",
+      nameFont: "same",
+      fontFamily: "Inter",
+      headingStyle: "line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "dot",
+      baseFontSize: "11pt",
+      leftRightMargin: "18mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("banner") || tid.includes("google") || tid.includes("microsoft")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#0F4C81", // Classic Blue
+      bodyFont: "Roboto",
+      nameFont: "same",
+      fontFamily: "Roboto",
+      headingStyle: "left-bar",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "dot",
+      baseFontSize: "10.5pt",
+      leftRightMargin: "18mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("compact") || tid.includes("fresher")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#111827",
+      bodyFont: "Roboto",
+      nameFont: "same",
+      fontFamily: "Roboto",
+      headingStyle: "line",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "dot",
+      baseFontSize: "9.5pt",
+      spaceElements: "[--]",
+      leftRightMargin: "14mm",
+      topBottomMargin: "10mm",
+    };
+  }
+
+  if (tid.includes("creative")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#7C3AED", // Vibrant Purple
+      bodyFont: "Inter",
+      nameFont: "same",
+      fontFamily: "Inter",
+      headingStyle: "box",
+      headingCapitalization: "uppercase",
+      headerAlignment: "left",
+      bulletStyle: "circle",
+      baseFontSize: "10.5pt",
+      leftRightMargin: "18mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  if (tid.includes("gold") || tid.includes("elegant")) {
+    return {
+      ...DEFAULT_CUSTOMIZATION,
+      accentColor: "#B08D57", // Gold
+      bodyFont: "Lora",
+      nameFont: "Playfair Display",
+      fontFamily: "Lora",
+      headingStyle: "split",
+      headingCapitalization: "uppercase",
+      headerAlignment: "center",
+      bulletStyle: "circle",
+      baseFontSize: "11pt",
+      leftRightMargin: "20mm",
+      topBottomMargin: "12mm",
+    };
+  }
+
+  return DEFAULT_CUSTOMIZATION;
+}

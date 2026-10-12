@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { DateRange, RichText } from "./primitives";
+import { DateRange, RichText, BulletList } from "./primitives";
 
 /**
  * T8 - Compact Fresher ATS
@@ -68,11 +68,7 @@ export function CompactFresherAts({ data, theme = {} }) {
                 {edu.grade && <span className="italic">{edu.grade}</span>}
               </div>
               {edu.details && edu.details.length > 0 && (
-                <ul className="list-disc pl-4 mt-0.5 space-y-[2px] text-[9pt]">
-                  {edu.details.map((d, dIdx) => (
-                    <li key={dIdx}><RichText text={d} /></li>
-                  ))}
-                </ul>
+                <BulletList bullets={edu.details} className="mt-0.5" />
               )}
             </div>
           ))}
@@ -99,11 +95,7 @@ export function CompactFresherAts({ data, theme = {} }) {
               </div>
 
               {proj.bullets && proj.bullets.length > 0 && (
-                <ul className="list-disc pl-4 mt-0.5 space-y-[2px] text-[9pt] leading-tight">
-                  {proj.bullets.map((b, bIdx) => (
-                    <li key={bIdx}><RichText text={b} /></li>
-                  ))}
-                </ul>
+                <BulletList bullets={proj.bullets} className="mt-0.5" />
               )}
             </div>
           ))}
@@ -127,11 +119,7 @@ export function CompactFresherAts({ data, theme = {} }) {
                 {exp.role}
               </div>
               {exp.bullets && exp.bullets.length > 0 && (
-                <ul className="list-disc pl-4 mt-0.5 space-y-[2px] text-[9pt] leading-tight">
-                  {exp.bullets.map((b, bIdx) => (
-                    <li key={bIdx}><RichText text={b} /></li>
-                  ))}
-                </ul>
+                <BulletList bullets={exp.bullets} className="mt-0.5" />
               )}
             </div>
           ))}

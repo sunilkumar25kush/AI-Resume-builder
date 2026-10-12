@@ -18,7 +18,7 @@ import { TemplatePicker } from "@/components/resumes/TemplatePicker";
 import { VersionDrawer } from "@/components/resumes/VersionDrawer";
 import { CustomizationStudio } from "@/components/resumes/customization/CustomizationStudio";
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
-import { DEFAULT_CUSTOMIZATION } from "@/utils/customization";
+import { DEFAULT_CUSTOMIZATION, getDefaultCustomizationForTemplate } from "@/utils/customization";
 import { exportResumePdf } from "@/utils/exportPdfClient";
 import { exportResumeDocx } from "@/utils/exportDocx";
 import { Button } from "@/components/ui/button";
@@ -98,9 +98,17 @@ export default function ResumeEditorPage() {
       .get(id)
       .then((data) => {
         if (cancelled) return;
+        const chosenTemplate = data.template ?? "classic";
         setResume(data);
-        setTemplate(data.template ?? "classic");
-        setCustomization(data.customization ?? DEFAULT_CUSTOMIZATION);
+        setTemplate(chosenTemplate);
+        if (data.customization && Object.keys(data.customization).length > 0) {
+          setCustomization({
+            ...getDefaultCustomizationForTemplate(chosenTemplate),
+            ...data.customization,
+          });
+        } else {
+          setCustomization(getDefaultCustomizationForTemplate(chosenTemplate));
+        }
         lastSavedRef.current = "";
       })
       .catch((error) => {
@@ -171,16 +179,25 @@ export default function ResumeEditorPage() {
     setHistoryTick((tick) => tick + 1);
   };
 
+  const handleTemplateChange = (next: ResumeTemplate) => {
+    setTemplate(next);
+    setCustomization(getDefaultCustomizationForTemplate(next));
+  };
+
   const handleRestored = (updated: Resume) => {
     const formValues = toFormValues(updated);
+    const chosenTemplate = updated.template ?? "classic";
+    const restoredCustomization = updated.customization && Object.keys(updated.customization).length > 0
+      ? { ...getDefaultCustomizationForTemplate(chosenTemplate), ...updated.customization }
+      : getDefaultCustomizationForTemplate(chosenTemplate);
     form.reset(formValues);
     setResume(updated);
-    setTemplate(updated.template ?? "classic");
-    setCustomization(updated.customization ?? DEFAULT_CUSTOMIZATION);
+    setTemplate(chosenTemplate);
+    setCustomization(restoredCustomization);
     // Align the autosave baseline so no phantom save fires after restore.
     lastSavedRef.current = JSON.stringify({
-      ...toApiPayload(formValues, updated.template ?? "classic"),
-      customization: updated.customization ?? DEFAULT_CUSTOMIZATION,
+      ...toApiPayload(formValues, chosenTemplate),
+      customization: restoredCustomization,
     });
   };
 
@@ -378,7 +395,7 @@ export default function ResumeEditorPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <TemplatePicker value={template} onChange={(next) => setTemplate(next)} />
+            <TemplatePicker value={template} onChange={handleTemplateChange} />
           </CardContent>
         </Card>
 
@@ -425,7 +442,7 @@ export default function ResumeEditorPage() {
               <CustomizationStudio
                 customization={customization}
                 onChange={setCustomization}
-                onReset={() => setCustomization(DEFAULT_CUSTOMIZATION)}
+                onReset={() => setCustomization(getDefaultCustomizationForTemplate(template))}
               />
             )}
           </div>

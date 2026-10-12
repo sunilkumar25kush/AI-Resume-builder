@@ -25,7 +25,7 @@ export function BulletList({
         >
           <span
             className="resume-bullet-icon absolute left-0 top-[0.45em] inline-block h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: bulletColor || "var(--rc-bullet-color, currentColor)" }}
+            style={{ backgroundColor: "var(--rc-bullet-color, " + (bulletColor || "currentColor") + ")" }}
             aria-hidden="true"
           />
           <span
