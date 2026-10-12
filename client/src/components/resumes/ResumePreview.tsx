@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTemplateById } from "@/templates";
-import type { ParsedResumeData, ResumeTemplate } from "@/types";
+import { getCustomizationCssVariables } from "@/utils/customization";
+import type { ParsedResumeData, ResumeCustomization, ResumeTemplate } from "@/types";
 
 interface ResumePreviewProps {
   data: ParsedResumeData | any;
@@ -9,6 +10,7 @@ interface ResumePreviewProps {
     accentColor?: string;
     fontSize?: string;
   };
+  customization?: ResumeCustomization;
   /** Auto-fit density level */
   density?: string;
   onDensityDetected?: (density: string, isShort: boolean) => void;
@@ -32,6 +34,7 @@ export function ResumePreview({
   data,
   template,
   theme,
+  customization,
   density = "density-1",
   onDensityDetected,
   className = "",
@@ -46,13 +49,20 @@ export function ResumePreview({
   const tplDef = getTemplateById(template);
   const TemplateComponent = tplDef.component;
 
-  // Active theme (custom theme or template default)
+  // Active theme (custom theme or template default merged with customization)
   const activeTheme = useMemo(
     () => ({
       ...tplDef.defaultTheme,
+      accentColor: customization?.accentColor || theme?.accentColor || tplDef.defaultTheme.accentColor,
+      fontSize: customization?.fontSize || theme?.fontSize || tplDef.defaultTheme.fontSize,
       ...theme,
     }),
-    [tplDef.defaultTheme, theme]
+    [tplDef.defaultTheme, theme, customization]
+  );
+
+  const customCssVariables = useMemo(
+    () => getCustomizationCssVariables(customization, activeTheme.accentColor),
+    [customization, activeTheme.accentColor]
   );
 
   // Measure container and content to compute pixel-perfect scale
@@ -157,8 +167,12 @@ export function ResumePreview({
           transformOrigin: "top center",
         }}
       >
-        <div ref={contentRef} className={`shadow-lg print:shadow-none ${density}`}>
-          <TemplateComponent data={data} theme={activeTheme} />
+        <div
+          ref={contentRef}
+          className={`shadow-lg print:shadow-none ${density} resume-custom-container`}
+          style={customCssVariables}
+        >
+          <TemplateComponent data={data} theme={activeTheme} customization={customization} />
         </div>
       </div>
     </div>

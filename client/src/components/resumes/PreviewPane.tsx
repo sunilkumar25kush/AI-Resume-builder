@@ -3,16 +3,17 @@ import { Monitor, Smartphone } from "lucide-react";
 
 import { ResumePreview } from "@/components/resumes/ResumePreview";
 import { Button } from "@/components/ui/button";
-import type { ParsedResumeData, ResumeTemplate } from "@/types";
+import type { ParsedResumeData, ResumeCustomization, ResumeTemplate } from "@/types";
 
 interface PreviewPaneProps {
   data: ParsedResumeData;
   template: ResumeTemplate;
   title?: string;
+  customization?: ResumeCustomization;
 }
 
 /** Live preview frame with a desktop / phone-width toggle. */
-export function PreviewPane({ data, template, title }: PreviewPaneProps) {
+export function PreviewPane({ data, template, title, customization }: PreviewPaneProps) {
   const [width, setWidth] = useState<"full" | "mobile">("full");
 
   return (
@@ -58,7 +59,13 @@ export function PreviewPane({ data, template, title }: PreviewPaneProps) {
           className={`mx-auto overflow-hidden rounded-sm shadow-md ring-1 ring-black/5 transition-[max-width] duration-300 ${width === "mobile" ? "max-w-[375px]" : "max-w-[820px]"
             }`}
         >
-          <ResumePreview data={data} template={template} title={title} className="min-h-[520px]" />
+          <ResumePreview
+            data={data}
+            template={template}
+            title={title}
+            customization={customization}
+            className="min-h-[520px]"
+          />
         </div>
       </div>
     </div>

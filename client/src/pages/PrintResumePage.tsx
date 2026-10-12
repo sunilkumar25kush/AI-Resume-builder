@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { apiClient } from "@/api/client";
 import { getTemplateById } from "@/templates";
+import { getCustomizationCssVariables } from "@/utils/customization";
 import type { Resume } from "@/types";
 
 export default function PrintResumePage() {
@@ -88,22 +89,27 @@ export default function PrintResumePage() {
   const TemplateComponent = templateDef.component;
   const mergedTheme = {
     ...templateDef.defaultTheme,
+    accentColor: resume.customization?.accentColor || theme.accentColor || templateDef.defaultTheme.accentColor,
+    fontSize: resume.customization?.fontSize || theme.fontSize || templateDef.defaultTheme.fontSize,
     ...theme,
   };
+
+  const customCssVariables = getCustomizationCssVariables(resume.customization, mergedTheme.accentColor);
 
   return (
     <div
       id="print-root"
-      className={`resume-print-canvas ${densityParam}`}
+      className={`resume-print-canvas ${densityParam} resume-custom-container`}
       style={{
         width: "210mm",
         margin: "0 auto",
         backgroundColor: "#ffffff",
         minHeight: "auto",
         position: "relative",
+        ...customCssVariables,
       }}
     >
-      <TemplateComponent data={resume.parsedData} theme={mergedTheme} />
+      <TemplateComponent data={resume.parsedData} theme={mergedTheme} customization={resume.customization} />
 
       {/* Puppeteer wait marker: rendered when fonts and data are completely loaded */}
       {fontsLoaded && <div id="print-ready" style={{ display: "none" }} data-status="ready" />}

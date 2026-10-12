@@ -1,5 +1,5 @@
 import { AI_REQUEST_TIMEOUT, apiClient } from "./client";
-import type { ApiEnvelope, ParsedResumeData, Resume, ResumeTemplate } from "@/types";
+import type { ApiEnvelope, ParsedResumeData, Resume, ResumeCustomization, ResumeTemplate } from "@/types";
 
 export const resumesApi = {
   async list(): Promise<Resume[]> {
@@ -25,7 +25,7 @@ export const resumesApi = {
     return res.data.data.resume;
   },
 
-  async update(id: string, update: { parsedData?: Partial<ParsedResumeData>; template?: ResumeTemplate; fileName?: string }): Promise<Resume> {
+  async update(id: string, update: { parsedData?: Partial<ParsedResumeData>; template?: ResumeTemplate; fileName?: string; customization?: ResumeCustomization }): Promise<Resume> {
     const res = await apiClient.patch<ApiEnvelope<{ resume: Resume }>>(`/resumes/${id}`, update);
     return res.data.data.resume;
   },

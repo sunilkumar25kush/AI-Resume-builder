@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, CloudUpload, Download, FileDown, FileText, History, Loader2, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudUpload, Download, FileDown, FileText, History, Loader2, Palette, PenLine, Redo2, Sparkles, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -16,13 +16,15 @@ import type { AiSuggestion } from "@/api/ai";
 import { PreviewPane } from "@/components/resumes/PreviewPane";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
 import { VersionDrawer } from "@/components/resumes/VersionDrawer";
+import { CustomizationStudio } from "@/components/resumes/customization/CustomizationStudio";
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
+import { DEFAULT_CUSTOMIZATION } from "@/utils/customization";
 import { exportResumePdf } from "@/utils/exportPdfClient";
 import { exportResumeDocx } from "@/utils/exportDocx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AiChange, Resume, ResumeTemplate } from "@/types";
+import type { AiChange, Resume, ResumeCustomization, ResumeTemplate } from "@/types";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -57,6 +59,8 @@ export default function ResumeEditorPage() {
   const navigate = useNavigate();
   const [resume, setResume] = useState<Resume | null>(null);
   const [template, setTemplate] = useState<ResumeTemplate>("classic");
+  const [customization, setCustomization] = useState<ResumeCustomization>(DEFAULT_CUSTOMIZATION);
+  const [editorMode, setEditorMode] = useState<"content" | "customize">("content");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -96,6 +100,7 @@ export default function ResumeEditorPage() {
         if (cancelled) return;
         setResume(data);
         setTemplate(data.template ?? "classic");
+        setCustomization(data.customization ?? DEFAULT_CUSTOMIZATION);
         lastSavedRef.current = "";
       })
       .catch((error) => {
@@ -109,7 +114,11 @@ export default function ResumeEditorPage() {
 
   const save = async () => {
     if (!resume) return;
-    const serialized = JSON.stringify(toApiPayload(values, template));
+    const payload = {
+      ...toApiPayload(values, template),
+      customization,
+    };
+    const serialized = JSON.stringify(payload);
     if (serialized === lastSavedRef.current) {
       pendingRef.current = false;
       return;
@@ -118,7 +127,7 @@ export default function ResumeEditorPage() {
     pendingRef.current = true;
     setSaveState("saving");
     try {
-      await resumesApi.update(resume._id, toApiPayload(values, template));
+      await resumesApi.update(resume._id, payload);
       lastSavedRef.current = serialized;
       pendingRef.current = false;
       if (version === versionRef.current) setSaveState("saved");
@@ -167,14 +176,21 @@ export default function ResumeEditorPage() {
     form.reset(formValues);
     setResume(updated);
     setTemplate(updated.template ?? "classic");
+    setCustomization(updated.customization ?? DEFAULT_CUSTOMIZATION);
     // Align the autosave baseline so no phantom save fires after restore.
-    lastSavedRef.current = JSON.stringify(toApiPayload(formValues, updated.template ?? "classic"));
+    lastSavedRef.current = JSON.stringify({
+      ...toApiPayload(formValues, updated.template ?? "classic"),
+      customization: updated.customization ?? DEFAULT_CUSTOMIZATION,
+    });
   };
 
-  // Debounced autosave on any form/template change.
+  // Debounced autosave on any form, template, or customization change.
   useEffect(() => {
     if (!resume || !formReady) return;
-    const serialized = JSON.stringify(toApiPayload(values, template));
+    const serialized = JSON.stringify({
+      ...toApiPayload(values, template),
+      customization,
+    });
     if (serialized === lastSavedRef.current) return;
     window.clearTimeout(saveTimerRef.current);
     pendingRef.current = true;
@@ -183,7 +199,7 @@ export default function ResumeEditorPage() {
       void saveRef.current();
     }, 600);
     return () => window.clearTimeout(saveTimerRef.current);
-  }, [values, template, resume, formReady]);
+  }, [values, template, customization, resume, formReady]);
 
   // Flush any pending save on unmount (uses latest closure via ref).
   useEffect(() => {
@@ -201,7 +217,18 @@ export default function ResumeEditorPage() {
     const currentData = toParsedData(values);
     try {
       if (kind === "pdf") {
-        await exportResumePdf(currentData, template, resume.fileName, title, resume._id);
+        await exportResumePdf(
+          currentData,
+          template,
+          resume.fileName,
+          title,
+          resume._id,
+          undefined,
+          {
+            accentColor: customization.accentColor,
+            fontSize: customization.fontSize,
+          }
+        );
       } else {
         await exportResumeDocx(currentData, template, resume.fileName, title);
       }
@@ -288,7 +315,45 @@ export default function ResumeEditorPage() {
           </div>
         </div>
 
-        {resume.aiChanges.length > 0 && !aiBannerDismissed ? (
+        {/* Content vs Customize switcher */}
+        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+          <div className="flex items-center gap-1.5 rounded-xl bg-muted/60 p-1 ring-1 ring-border/40">
+            <button
+              type="button"
+              onClick={() => setEditorMode("content")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                editorMode === "content"
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Content
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditorMode("customize")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                editorMode === "customize"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Palette className="h-3.5 w-3.5" />
+              Customize
+              <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider">
+                7 Tools
+              </span>
+            </button>
+          </div>
+          {editorMode === "customize" && (
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              FlowCV-style customization for Font Size, Spacing, Entries, Headings, Font, Colors, and Header
+            </p>
+          )}
+        </div>
+
+        {resume.aiChanges.length > 0 && !aiBannerDismissed && editorMode === "content" ? (
           <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50/70 p-4">
             <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
             <div className="flex flex-1 flex-col gap-1">
@@ -324,18 +389,20 @@ export default function ResumeEditorPage() {
               role="tab"
               aria-selected={mobileTab === "edit"}
               onClick={() => setMobileTab("edit")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
             >
-              Edit
+              {editorMode === "customize" ? "Customize" : "Edit"}
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={mobileTab === "preview"}
               onClick={() => setMobileTab("preview")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
             >
               Preview
             </button>
@@ -344,16 +411,26 @@ export default function ResumeEditorPage() {
 
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <div className={`flex flex-col gap-6 ${mobileTab === "edit" ? "" : "hidden lg:flex"}`}>
-            <AiSuggestPanel
-              resumeId={resume._id}
-              onApplied={(suggestion: AiSuggestion) =>
-                setAppliedSuggestions((prev) => [...prev, suggestionToChange(suggestion)])
-              }
-            />
-            <EditorFormCards aiChanges={[...(resume.aiChanges ?? []), ...appliedSuggestions]} />
+            {editorMode === "content" ? (
+              <>
+                <AiSuggestPanel
+                  resumeId={resume._id}
+                  onApplied={(suggestion: AiSuggestion) =>
+                    setAppliedSuggestions((prev) => [...prev, suggestionToChange(suggestion)])
+                  }
+                />
+                <EditorFormCards aiChanges={[...(resume.aiChanges ?? []), ...appliedSuggestions]} />
+              </>
+            ) : (
+              <CustomizationStudio
+                customization={customization}
+                onChange={setCustomization}
+                onReset={() => setCustomization(DEFAULT_CUSTOMIZATION)}
+              />
+            )}
           </div>
           <div className={mobileTab === "preview" ? "lg:sticky lg:top-4" : "hidden lg:sticky lg:top-4 lg:block"}>
-            <PreviewPane data={previewData} template={template} title={title} />
+            <PreviewPane data={previewData} template={template} title={title} customization={customization} />
           </div>
         </div>
       </div>

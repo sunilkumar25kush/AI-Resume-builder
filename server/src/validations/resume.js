@@ -82,6 +82,7 @@ export const updateResumeSchema = z.object({
   template: z.string().trim().min(1).max(100).optional(),
   fileName: z.string().trim().min(1).max(255).optional(),
   title: z.string().trim().min(1).max(255).optional(),
+  customization: z.record(z.any()).optional(),
 });
 
 /** POST /api/resumes/blank — scratch builder; template optional, defaults to classic. */

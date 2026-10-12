@@ -9,6 +9,7 @@ export interface TemplateTheme {
 export interface TemplateProps {
   data: any;
   theme?: TemplateTheme;
+  customization?: any;
 }
 
 export interface TemplateDefinition {

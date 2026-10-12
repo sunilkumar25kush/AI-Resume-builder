@@ -381,3 +381,45 @@ nav[aria-label="Bottom navigation"] {
     opacity: 0.85;
   }
 }
+
+/* Customization Studio — Dynamic Styling Hooks */
+.resume-custom-container {
+  font-family: var(--rc-font-family, inherit);
+  font-size: var(--rc-font-size, inherit);
+  line-height: var(--rc-line-height, inherit);
+  color: var(--rc-text-color, inherit);
+  background-color: var(--rc-bg-color, inherit);
+  transition: all 0.15s ease-out;
+}
+
+.resume-custom-container h1,
+.resume-custom-container .candidate-name,
+.resume-custom-container [data-slot="candidate-name"] {
+  font-size: var(--rc-name-size, inherit) !important;
+  font-weight: var(--rc-name-weight, inherit) !important;
+}
+
+.resume-custom-container h2,
+.resume-custom-container .section-title,
+.resume-custom-container [data-slot="section-title"] {
+  text-transform: var(--rc-heading-transform, inherit) !important;
+  font-size: var(--rc-heading-size, inherit) !important;
+  font-weight: var(--rc-heading-weight, inherit) !important;
+  text-align: var(--rc-heading-align, inherit) !important;
+}
+
+.resume-custom-container section {
+  margin-bottom: var(--rc-section-gap, inherit);
+}
+
+.resume-custom-container .resume-entry {
+  margin-bottom: var(--rc-entry-gap, inherit);
+}
+
+.resume-custom-container [data-slot="avatar"],
+.resume-custom-container .resume-photo {
+  display: var(--rc-photo-display, block) !important;
+  border-radius: var(--rc-photo-radius, 9999px) !important;
+  width: var(--rc-photo-size, 80px) !important;
+  height: var(--rc-photo-size, 80px) !important;
+}

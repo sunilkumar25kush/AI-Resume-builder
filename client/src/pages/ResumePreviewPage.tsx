@@ -316,6 +316,7 @@ export default function ResumePreviewPage() {
               <ResumePreview
                 data={resume.parsedData}
                 template={selectedTemplate}
+                customization={resume.customization}
                 theme={theme}
                 density={density}
                 onDensityDetected={handleDensityDetected}

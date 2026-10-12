@@ -8,6 +8,7 @@ function snapshotPayload(resume) {
   return {
     parsedData: resume.parsedData ?? {},
     template: resume.template ?? "classic",
+    customization: resume.customization ?? {},
   };
 }
 
@@ -30,7 +31,8 @@ export async function createSnapshot(userId, resumeId, resume) {
   if (latest) {
     const identical =
       latest.template === payload.template &&
-      JSON.stringify(latest.parsedData ?? {}) === JSON.stringify(payload.parsedData);
+      JSON.stringify(latest.parsedData ?? {}) === JSON.stringify(payload.parsedData) &&
+      JSON.stringify(latest.customization ?? {}) === JSON.stringify(payload.customization);
     if (identical) return null;
   }
   const version = (latest?.version ?? 0) + 1;
@@ -70,6 +72,7 @@ export async function restoreVersion(userId, resumeId, versionId) {
 
   resume.parsedData = version.parsedData;
   resume.template = version.template;
+  if (version.customization) resume.customization = version.customization;
   await resume.save();
   const updated = resume.toObject();
   delete updated.filePath;

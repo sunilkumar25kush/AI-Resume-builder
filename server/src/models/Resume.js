@@ -120,6 +120,10 @@ const resumeSchema = new mongoose.Schema(
       type: String,
       default: "classic-rose-serif",
     },
+    customization: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
   },
   { timestamps: true },
 );

@@ -112,6 +112,46 @@ export interface AiChange {
   reason: string;
 }
 
+export interface ResumeCustomization {
+  // 1. Font Size
+  fontSize?: "12px" | "13px" | "14px" | "15px" | "16px";
+  fontSizeScale?: "compact" | "normal" | "large";
+
+  // 2. Spacing
+  pageMargin?: "compact" | "normal" | "relaxed";
+  sectionSpacing?: "compact" | "normal" | "relaxed";
+  entrySpacing?: "compact" | "normal" | "relaxed";
+  lineHeight?: "1.3" | "1.45" | "1.6";
+
+  // 3. Entries
+  bulletStyle?: "dot" | "dash" | "circle" | "square" | "arrow" | "none";
+  datePlacement?: "right" | "below";
+  entryLayout?: "standard" | "compact";
+
+  // 4. Headings
+  headingStyle?: "uppercase" | "capitalize" | "normal";
+  headingSize?: "14px" | "16px" | "18px" | "20px";
+  headingWeight?: "normal" | "semibold" | "bold" | "extrabold";
+  headingDivider?: "line" | "bar" | "none";
+  headingAlign?: "left" | "center";
+
+  // 5. Font
+  fontFamily?: "Inter" | "Roboto" | "Open Sans" | "Lora" | "Merriweather" | "Playfair Display" | "EB Garamond" | "Montserrat" | "Raleway";
+
+  // 6. Colors
+  accentColor?: string;
+  textColor?: string;
+  backgroundColor?: string;
+
+  // 7. Header
+  headerLayout?: "left" | "center" | "split";
+  headerNameSize?: "24px" | "28px" | "34px" | "40px";
+  headerNameWeight?: "bold" | "extrabold";
+  showPhoto?: boolean;
+  photoShape?: "round" | "rounded" | "square";
+  photoSize?: "small" | "medium" | "large";
+}
+
 export interface Resume {
   _id: string;
   fileName: string;
@@ -120,6 +160,8 @@ export interface Resume {
   parsedData: ParsedResumeData;
   aiChanges: AiChange[];
   template: ResumeTemplate;
+  customization?: ResumeCustomization;
   createdAt: string;
   updatedAt: string;
 }
+

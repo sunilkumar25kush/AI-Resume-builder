@@ -28,6 +28,7 @@ export const updateResumeById = asyncHandler(async (req, res) => {
   const update = {};
   if (req.validatedBody.parsedData) update.parsedData = req.validatedBody.parsedData;
   if (req.validatedBody.template) update.template = req.validatedBody.template;
+  if (req.validatedBody.customization) update.customization = req.validatedBody.customization;
   const fileNameOrTitle = req.validatedBody.fileName ?? req.validatedBody.title;
   if (fileNameOrTitle !== undefined) update.fileName = fileNameOrTitle;
   const resume = await resumeService.updateResume(req.user.id, req.params.id, update);

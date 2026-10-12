@@ -7,6 +7,7 @@ const resumeVersionSchema = new mongoose.Schema(
     version: { type: Number, required: true },
     parsedData: { type: mongoose.Schema.Types.Mixed, default: {} },
     template: { type: String, default: "classic" },
+    customization: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },
 );
