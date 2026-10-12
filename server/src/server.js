@@ -11,6 +11,9 @@ await connectDB().catch((err) => {
 
 const server = app.listen(env.PORT, () => {
   console.log(`[server] API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+  if (env.CLOUDINARY_CLOUD_NAME) {
+    console.log(`[cloudinary] connected to cloud '${env.CLOUDINARY_CLOUD_NAME}'`);
+  }
 });
 
 // Graceful shutdown
