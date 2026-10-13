@@ -7,6 +7,7 @@ import healthRoutes from "./health.routes.js";
 import jdRoutes from "./jd.routes.js";
 import notificationRoutes from "./notification.routes.js";
 import optimizationRoutes from "./optimization.routes.js";
+import portfolioRoutes from "./portfolio.routes.js";
 import resumeRoutes from "./resume.routes.js";
 import userRoutes from "./user.routes.js";
 
@@ -17,6 +18,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/resumes", resumeRoutes);
+router.use("/portfolios", portfolioRoutes);
 
 // Canonical REST resources with backward-compatible aliases
 router.use("/job-descriptions", jdRoutes);

@@ -97,6 +97,15 @@ export interface Portfolio {
 
 export interface CreatePortfolioInput {
   title: string;
+  slug?: string;
   resumeId?: string;
   template?: PortfolioDesignSettings["template"];
+  design?: Partial<PortfolioDesignSettings>;
+  profile?: Partial<PortfolioProfile>;
+  socialLinks?: PortfolioSocialLink[];
+  skills?: PortfolioSkill[];
+  experience?: PortfolioExperience[];
+  education?: PortfolioEducation[];
+  projects?: PortfolioProject[];
+  certifications?: PortfolioCertification[];
 }

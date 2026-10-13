@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { getApiErrorMessage } from "@/api/client";
+import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth";
 import { usePortfoliosStore } from "@/stores/portfolios";
 import { useResumesStore } from "@/stores/resumes";
-import type { Portfolio, PortfolioDesignSettings } from "@/types";
+import type { CreatePortfolioInput, Portfolio, PortfolioDesignSettings } from "@/types";
 
 const TEMPLATE_OPTIONS: Array<{
   id: PortfolioDesignSettings["template"];
@@ -59,7 +61,7 @@ function formatDate(value: string): string {
 
 export default function PortfoliosPage() {
   const user = useAuthStore((state) => state.user);
-  const { items, loading, error, fetch, remove } = usePortfoliosStore();
+  const { items, loading, error, fetch, prepend, remove } = usePortfoliosStore();
   const resumes = useResumesStore((state) => state.items);
   const fetchResumes = useResumesStore((state) => state.fetch);
 
@@ -98,13 +100,17 @@ export default function PortfoliosPage() {
 
     setSubmitting(true);
     try {
-      // In Phase 1, foundation entry point and routes are established.
-      // AI generation pipeline and DB schema persistence are scheduled for Phase 2.
-      toast.info(
-        "Portfolio setup initialized! Backend models & AI extraction will connect in Phase 2.",
-        { duration: 4000 }
-      );
+      const payload: CreatePortfolioInput = {
+        title: portfolioTitle.trim(),
+        resumeId: sourceType === "resume" && selectedResumeId ? selectedResumeId : undefined,
+        design: { template: selectedTemplate },
+      };
+      const created = await portfoliosApi.create(payload);
+      prepend(created);
+      toast.success("Portfolio draft created successfully!");
       setCreateOpen(false);
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
