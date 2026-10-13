@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import {
   AlertCircle,
   ExternalLink,
+  Eye,
   FileText,
   Globe,
   Loader2,
@@ -336,14 +338,15 @@ export default function PortfoliosPage() {
 
                   <div className="flex items-center justify-between border-t pt-3">
                     <Button
-                      variant="outline"
+                      asChild
+                      variant="default"
                       size="sm"
-                      className="gap-1.5 text-xs"
-                      onClick={() => {
-                        toast.info(`Portfolio customization studio will open in the next phase`);
-                      }}
+                      className="gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                      Edit
+                      <Link to={`/portfolios/${portfolio._id}`}>
+                        <Eye className="h-3.5 w-3.5" aria-hidden />
+                        View Website
+                      </Link>
                     </Button>
 
                     <div className="flex items-center gap-1">

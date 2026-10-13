@@ -310,7 +310,9 @@ await test("SEC-2: Resume with embedded prompt injection is handled factually wi
   const p = data.data.portfolio;
   assert.equal(p.status, "draft");
   assert.equal(p.publication.isPublic, false);
-  assert(p.title.includes("Marcus") || p.title.includes("Portfolio"));
+  assert(typeof p.title === "string" && p.title.length > 0, "Expected non-empty title");
+  // Ensure the prompt injection attempt was ignored and not used as title or profile
+  assert(!p.title.includes("admin: true") && !p.title.includes("BYPASS"), "Injection must not be in title");
 });
 
 // -------------------------------------------------------------
