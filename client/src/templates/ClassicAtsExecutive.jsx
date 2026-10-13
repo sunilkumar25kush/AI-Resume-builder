@@ -102,32 +102,6 @@ export function ClassicAtsExecutive({ data, theme = {} }) {
       </section>
     ) : null,
 
-    projects: projects.length > 0 ? (
-      <section key="projects" className="mb-4 break-inside-avoid-page">
-        <h2 className="text-[10.5pt] font-bold uppercase tracking-wider text-black border-b border-black pb-0.5 mb-2">
-          Selected Projects
-        </h2>
-        <div className="space-y-3">
-          {projects.map((proj, idx) => (
-            <div key={idx} className="break-inside-avoid">
-              <div className="flex justify-between items-baseline text-[10.5pt]">
-                <div>
-                  <strong className="font-bold text-black">{proj.name}</strong>
-                  {proj.techStack && proj.techStack.length > 0 && (
-                    <span className="italic text-black text-[10pt]"> | {proj.techStack.join(", ")}</span>
-                  )}
-                </div>
-                {proj.date && <span className="font-bold text-[10pt] text-black">{proj.date}</span>}
-              </div>
-
-              {proj.bullets && proj.bullets.length > 0 && (
-                <BulletList bullets={proj.bullets} className="mt-1" />
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    ) : null,
 
     education: education.length > 0 ? (
       <section key="education" className="mb-4 break-inside-avoid">

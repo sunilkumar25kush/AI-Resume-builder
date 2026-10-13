@@ -72,3 +72,17 @@ export type { AiChange, AiChangeType, ContactInfo, EducationEntry, ExperienceEnt
 export type { ResumeVersion } from "./resumeVersion";
 export type { JobDescription } from "./jobDescription";
 export type { Optimization, OptimizationResult } from "./optimization";
+export type {
+  Portfolio,
+  PortfolioCertification,
+  PortfolioDesignSettings,
+  PortfolioEducation,
+  PortfolioExperience,
+  PortfolioProfile,
+  PortfolioProject,
+  PortfolioPublication,
+  PortfolioSkill,
+  PortfolioSocialLink,
+  PortfolioStatus,
+  CreatePortfolioInput,
+} from "./portfolio";

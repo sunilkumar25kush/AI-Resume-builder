@@ -1,11 +1,11 @@
 import {
   BarChart3,
   Bell,
-  Briefcase,
   FilePlus2,
   FileSignature,
   FileText,
   Gauge,
+  Globe,
   LayoutDashboard,
   MessageSquare,
   PenLine,
@@ -54,7 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Cover Letter", icon: PenLine, soon: true },
       { label: "LinkedIn Summary", icon: FileSignature, soon: true },
       { label: "Interview Questions", icon: MessageSquare, soon: true },
-      { label: "Portfolio", icon: Briefcase, soon: true },
+      { label: "Portfolio Generator", href: "/portfolios", icon: Globe },
     ],
   },
   {
