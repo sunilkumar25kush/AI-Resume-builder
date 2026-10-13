@@ -22,6 +22,7 @@ const LINK_RE = /(?:https?:\/\/|www\.)[^\s]+/g;
 
 export function cleanText(raw) {
   return raw
+    .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "")
     .replace(/\r\n?/g, "\n")
     .replace(/[ \t]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")

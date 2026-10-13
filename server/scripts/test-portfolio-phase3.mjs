@@ -504,7 +504,7 @@ await test("RESILIENCE: Malformed text or AI fallback safely produces schema-com
 await test("RATE-1: Per-user AI rate limiter responds with 429 when quota exceeded", async () => {
   // Rapidly send requests as user3 to trigger their per-user rate limit (max 20)
   let hit429 = false;
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < 25; i++) {
     const res = await fetch(`${BASE}/portfolios/generate/from-resume`, {
       method: "POST",
       headers: { "content-type": "application/json", cookie: user3.cookie },
