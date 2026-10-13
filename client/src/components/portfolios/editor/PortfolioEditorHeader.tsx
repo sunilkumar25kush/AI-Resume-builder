@@ -132,9 +132,13 @@ export function PortfolioEditorHeader({
             size="sm"
             className="text-xs gap-1.5 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100"
           >
-            <Link to={`/portfolios/${portfolioId}`} target="_blank" rel="noopener noreferrer">
+            <Link
+              to={isPublic && portfolioSlug ? `/p/${portfolioSlug}` : `/portfolios/${portfolioId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Globe className="h-3.5 w-3.5" />
-              <span>Preview Site</span>
+              <span>{isPublic ? "View Live Site" : "Preview Site"}</span>
               <ExternalLink className="h-3 w-3 opacity-60" />
             </Link>
           </Button>

@@ -18,7 +18,7 @@ import { PublishModal } from "@/components/portfolios/editor/PublishModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { Portfolio } from "@/types/portfolio";
+import type { Portfolio, PortfolioDesignSettings } from "@/types/portfolio";
 
 const PRESET_COLORS = [
   { name: "Blue", value: "#2563eb" },
@@ -37,7 +37,7 @@ export default function PortfolioPreviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Local live design preview overrides (content data remains untouched)
-  const [previewTemplate, setPreviewTemplate] = useState<"minimal" | "developer">("minimal");
+  const [previewTemplate, setPreviewTemplate] = useState<PortfolioDesignSettings["template"]>("devport");
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
   const [previewColor, setPreviewColor] = useState<string>("#2563eb");
   const [saving, setSaving] = useState(false);
@@ -54,7 +54,7 @@ export default function PortfolioPreviewPage() {
         const data = await portfoliosApi.get(id!);
         if (isMounted) {
           setPortfolio(data);
-          const tpl = data.design?.template === "developer" ? "developer" : "minimal";
+          const tpl = data.design?.template || "devport";
           setPreviewTemplate(tpl);
           setPreviewTheme(data.design?.theme || "system");
           setPreviewColor(data.design?.primaryColor || "#2563eb");
@@ -165,14 +165,25 @@ export default function PortfolioPreviewPage() {
             <div className="inline-flex rounded-lg bg-neutral-800 p-0.5 border border-neutral-700">
               <button
                 type="button"
-                onClick={() => setPreviewTemplate("minimal")}
+                onClick={() => setPreviewTemplate("devport")}
                 className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                  previewTemplate === "minimal"
-                    ? "bg-neutral-700 text-white shadow-xs"
+                  previewTemplate === "devport"
+                    ? "bg-gradient-to-r from-cyan-600 to-pink-600 text-white shadow-xs font-semibold"
                     : "text-neutral-400 hover:text-neutral-200"
                 }`}
               >
-                Minimal
+                DevPort
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewTemplate("creative")}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  previewTemplate === "creative"
+                    ? "bg-purple-600 text-white shadow-xs font-semibold"
+                    : "text-neutral-400 hover:text-neutral-200"
+                }`}
+              >
+                Modern 3D
               </button>
               <button
                 type="button"
@@ -184,6 +195,17 @@ export default function PortfolioPreviewPage() {
                 }`}
               >
                 Developer
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewTemplate("minimal")}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  previewTemplate === "minimal"
+                    ? "bg-neutral-700 text-white shadow-xs"
+                    : "text-neutral-400 hover:text-neutral-200"
+                }`}
+              >
+                Minimal
               </button>
             </div>
 

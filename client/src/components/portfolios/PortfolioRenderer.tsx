@@ -8,7 +8,7 @@ export interface PortfolioRendererProps {
   sectionOrder?: string[];
   hiddenSections?: string[];
   className?: string;
-  overrideTemplate?: "minimal" | "developer";
+  overrideTemplate?: Portfolio["design"]["template"];
 }
 
 /**

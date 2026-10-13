@@ -411,7 +411,7 @@ export default function PortfoliosPage() {
                         size="sm"
                         className="gap-1 text-xs"
                       >
-                        <Link to={`/portfolios/${portfolio._id}`}>
+                        <Link to={portfolio.status === "published" && portfolio.slug ? `/p/${portfolio.slug}` : `/portfolios/${portfolio._id}`} target="_blank" rel="noopener noreferrer">
                           <Eye className="h-3.5 w-3.5" aria-hidden />
                           View
                         </Link>
