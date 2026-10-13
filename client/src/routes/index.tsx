@@ -29,6 +29,7 @@ const ScratchBuildPage = lazy(() => import("@/pages/ScratchBuildPage"));
 const PrintResumePage = lazy(() => import("@/pages/PrintResumePage"));
 const PortfoliosPage = lazy(() => import("@/pages/PortfoliosPage"));
 const PortfolioPreviewPage = lazy(() => import("@/pages/PortfolioPreviewPage"));
+const PortfolioEditorPage = lazy(() => import("@/pages/PortfolioEditorPage"));
 
 export const router = createBrowserRouter([
   {
@@ -171,6 +172,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <PortfolioPreviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/portfolios/:id/edit",
+        element: (
+          <ProtectedRoute>
+            <PortfolioEditorPage />
           </ProtectedRoute>
         ),
       },

@@ -65,6 +65,8 @@ export interface PortfolioDesignSettings {
   primaryColor?: string;
   fontFamily?: string;
   customCss?: string;
+  sectionOrder?: string[];
+  sectionVisibility?: Record<string, boolean>;
 }
 
 export interface PortfolioPublication {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   AlertCircle,
   ExternalLink,
@@ -8,6 +8,7 @@ import {
   Globe,
   Loader2,
   Palette,
+  Pencil,
   Plus,
   RefreshCw,
   Sparkles,
@@ -72,6 +73,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function PortfoliosPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const { items, loading, error, fetch, prepend, remove } = usePortfoliosStore();
   const resumes = useResumesStore((state) => state.items);
@@ -157,6 +159,7 @@ export default function PortfoliosPage() {
       setCreateOpen(false);
       setUploadedFile(null);
       setUploadProgress(null);
+      navigate(`/portfolios/${created._id}/edit`);
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -337,17 +340,31 @@ export default function PortfoliosPage() {
                   </div>
 
                   <div className="flex items-center justify-between border-t pt-3">
-                    <Button
-                      asChild
-                      variant="default"
-                      size="sm"
-                      className="gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                      <Link to={`/portfolios/${portfolio._id}`}>
-                        <Eye className="h-3.5 w-3.5" aria-hidden />
-                        View Website
-                      </Link>
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        asChild
+                        variant="default"
+                        size="sm"
+                        className="gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        <Link to={`/portfolios/${portfolio._id}/edit`}>
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          Edit
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-xs"
+                      >
+                        <Link to={`/portfolios/${portfolio._id}`}>
+                          <Eye className="h-3.5 w-3.5" aria-hidden />
+                          View
+                        </Link>
+                      </Button>
+                    </div>
 
                     <div className="flex items-center gap-1">
                       {portfolio.status === "published" && (

@@ -99,6 +99,11 @@ const designSettingsSchema = new mongoose.Schema(
     primaryColor: { type: String, default: "#2563eb", trim: true, maxlength: 50 },
     fontFamily: { type: String, default: "Inter", trim: true, maxlength: 100 },
     customCss: { type: String, default: "", trim: true, maxlength: 10000 },
+    sectionOrder: {
+      type: [String],
+      default: ["about", "skills", "projects", "experience", "education", "certifications", "contact"],
+    },
+    sectionVisibility: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { _id: false },
 );

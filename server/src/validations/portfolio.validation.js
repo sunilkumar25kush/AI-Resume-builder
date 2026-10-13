@@ -68,6 +68,16 @@ const designSettingsSchema = z.object({
   primaryColor: z.string().trim().max(50).optional().default("#2563eb"),
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
   customCss: z.string().trim().max(10000).optional().default(""),
+  sectionOrder: z.array(z.string().trim().max(50)).max(20).optional().default([
+    "about",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ]),
+  sectionVisibility: z.record(z.string(), z.boolean()).optional().default({}),
 });
 
 const publicationSchema = z.object({
@@ -111,6 +121,8 @@ const designUpdateSchema = z.object({
   primaryColor: z.string().trim().max(50).optional(),
   fontFamily: z.string().trim().max(100).optional(),
   customCss: z.string().trim().max(10000).optional(),
+  sectionOrder: z.array(z.string().trim().max(50)).max(20).optional(),
+  sectionVisibility: z.record(z.string(), z.boolean()).optional(),
 });
 
 const publicationUpdateSchema = z.object({

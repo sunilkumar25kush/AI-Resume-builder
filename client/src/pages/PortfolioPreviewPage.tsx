@@ -5,6 +5,7 @@ import {
   Check,
   Loader2,
   Moon,
+  Pencil,
   Sun,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -235,6 +236,19 @@ export default function PortfolioPreviewPage() {
               className="h-8 bg-blue-600 hover:bg-blue-500 text-white text-xs px-3"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Theme"}
+            </Button>
+
+            {/* Edit Portfolio Content */}
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 border-neutral-700 bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 text-xs px-3 gap-1.5"
+            >
+              <Link to={`/portfolios/${portfolio._id}/edit`}>
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Edit Content</span>
+              </Link>
             </Button>
           </div>
         </div>

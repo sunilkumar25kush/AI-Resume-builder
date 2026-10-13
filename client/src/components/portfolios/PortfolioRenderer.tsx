@@ -27,13 +27,22 @@ export function PortfolioRenderer({
   const activeTemplateId = overrideTemplate || portfolio.design?.template;
   const TemplateComponent = getPortfolioTemplate(activeTemplateId);
 
+  const resolvedSectionOrder = sectionOrder || portfolio.design?.sectionOrder;
+  const resolvedHiddenSections =
+    hiddenSections ||
+    (portfolio.design?.sectionVisibility
+      ? Object.entries(portfolio.design.sectionVisibility)
+          .filter(([, visible]) => visible === false)
+          .map(([key]) => key)
+      : []);
+
   return (
     <ThemeWrapper design={portfolio.design} className={className}>
       <TemplateComponent
         portfolio={portfolio}
         showEmpty={showEmpty}
-        sectionOrder={sectionOrder}
-        hiddenSections={hiddenSections}
+        sectionOrder={resolvedSectionOrder}
+        hiddenSections={resolvedHiddenSections}
       />
     </ThemeWrapper>
   );
