@@ -213,6 +213,21 @@ export async function publishPortfolio(userId, portfolioId, publicationSettings 
     "publication.publishedAt": new Date(),
   };
 
+  if (publicationSettings.slug && publicationSettings.slug !== portfolio.slug) {
+    const cleanSlug = slugify(publicationSettings.slug);
+    if (!cleanSlug) {
+      throw ApiError.badRequest("Invalid slug provided");
+    }
+    const slugInUse = await Portfolio.exists({
+      slug: cleanSlug,
+      _id: { $ne: portfolioId },
+    });
+    if (slugInUse) {
+      throw ApiError.conflict(`Slug '${cleanSlug}' is already in use`);
+    }
+    set.slug = cleanSlug;
+  }
+
   if (publicationSettings.customDomain !== undefined) {
     set["publication.customDomain"] = publicationSettings.customDomain;
   }
@@ -223,15 +238,22 @@ export async function publishPortfolio(userId, portfolioId, publicationSettings 
     set["publication.seoDescription"] = publicationSettings.seoDescription;
   }
 
-  const updated = await Portfolio.findOneAndUpdate(
-    { _id: portfolioId, userId },
-    { $set: set },
-    { returnDocument: "after", runValidators: true },
-  )
-    .select("-__v")
-    .lean();
+  try {
+    const updated = await Portfolio.findOneAndUpdate(
+      { _id: portfolioId, userId },
+      { $set: set },
+      { returnDocument: "after", runValidators: true },
+    )
+      .select("-__v")
+      .lean();
 
-  return updated;
+    return updated;
+  } catch (err) {
+    if (err.code === 11000) {
+      throw ApiError.conflict("Slug is already in use by another portfolio");
+    }
+    throw err;
+  }
 }
 
 /** Unpublish a portfolio (revert to draft) */
@@ -288,6 +310,13 @@ export async function getPublicPortfolio(rawSlug) {
   if (!portfolio) {
     throw ApiError.notFound("Portfolio not found or not published");
   }
+
+  // Safety defense: strictly delete any potential internal or sensitive metadata
+  delete portfolio._id;
+  delete portfolio.userId;
+  delete portfolio.user;
+  delete portfolio.resumeId;
+  delete portfolio.__v;
 
   return portfolio;
 }

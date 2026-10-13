@@ -13,6 +13,7 @@ export interface PortfolioEditorHeaderProps {
   portfolioId: string;
   portfolioSlug?: string;
   isPublic?: boolean;
+  onPublishClick?: () => void;
 }
 
 export function PortfolioEditorHeader({
@@ -24,6 +25,7 @@ export function PortfolioEditorHeader({
   portfolioId,
   portfolioSlug,
   isPublic,
+  onPublishClick,
 }: PortfolioEditorHeaderProps) {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md">
@@ -104,6 +106,24 @@ export function PortfolioEditorHeader({
             )}
             <span>Save Now</span>
           </Button>
+
+          {/* Publish / Publication Settings CTA */}
+          {onPublishClick && (
+            <Button
+              type="button"
+              variant={isPublic ? "outline" : "default"}
+              size="sm"
+              onClick={onPublishClick}
+              className={`text-xs gap-1.5 ${
+                isPublic
+                  ? "border-emerald-300 dark:border-emerald-850 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
+              }`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{isPublic ? "Published" : "Publish"}</span>
+            </Button>
+          )}
 
           {/* View Website CTA */}
           <Button

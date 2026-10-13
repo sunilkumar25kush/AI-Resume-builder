@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
+import { PublishModal } from "@/components/portfolios/editor/PublishModal";
 import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ export default function PortfoliosPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittingStatus, setSubmittingStatus] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [publishPortfolioTarget, setPublishPortfolioTarget] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     void fetch();
@@ -367,14 +369,29 @@ export default function PortfoliosPage() {
                     </div>
 
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        title={portfolio.status === "published" ? "Publish settings & share" : "Publish portfolio"}
+                        onClick={() => setPublishPortfolioTarget(portfolio)}
+                        className={
+                          portfolio.status === "published"
+                            ? "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                            : "text-muted-foreground hover:text-primary"
+                        }
+                      >
+                        <Globe className="h-4 w-4" aria-hidden />
+                      </Button>
                       {portfolio.status === "published" && (
                         <Button
+                          asChild
                           variant="ghost"
                           size="icon-sm"
-                          title="Open public link"
-                          onClick={() => window.open(`/api/portfolios/public/${portfolio.slug}`, "_blank")}
+                          title="Open public website"
                         >
-                          <ExternalLink className="h-4 w-4" aria-hidden />
+                          <a href={`/p/${portfolio.slug}`} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" aria-hidden />
+                          </a>
                         </Button>
                       )}
                       <Button
@@ -603,6 +620,19 @@ export default function PortfoliosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Publish & Sharing Dialog */}
+      {publishPortfolioTarget && (
+        <PublishModal
+          open={Boolean(publishPortfolioTarget)}
+          onOpenChange={(open) => !open && setPublishPortfolioTarget(null)}
+          portfolio={publishPortfolioTarget}
+          onSuccess={() => {
+            setPublishPortfolioTarget(null);
+            void fetch();
+          }}
+        />
+      )}
     </div>
   );
 }

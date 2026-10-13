@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import {
   ArrowLeft,
   Check,
+  Globe,
   Loader2,
   Moon,
   Pencil,
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
+import { PublishModal } from "@/components/portfolios/editor/PublishModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,6 +41,7 @@ export default function PortfolioPreviewPage() {
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
   const [previewColor, setPreviewColor] = useState<string>("#2563eb");
   const [saving, setSaving] = useState(false);
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -238,6 +241,20 @@ export default function PortfolioPreviewPage() {
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Theme"}
             </Button>
 
+            {/* Publish Action */}
+            <Button
+              size="sm"
+              onClick={() => setPublishModalOpen(true)}
+              className={`h-8 text-xs px-3 gap-1.5 ${
+                portfolio.status === "published"
+                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
+              }`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{portfolio.status === "published" ? "Published" : "Publish"}</span>
+            </Button>
+
             {/* Edit Portfolio Content */}
             <Button
               asChild
@@ -256,6 +273,14 @@ export default function PortfolioPreviewPage() {
 
       {/* Rendered Portfolio Website */}
       <PortfolioRenderer portfolio={activePreviewPortfolio} />
+
+      {/* Publish Dialog */}
+      <PublishModal
+        open={publishModalOpen}
+        onOpenChange={setPublishModalOpen}
+        portfolio={portfolio}
+        onSuccess={(updated) => setPortfolio(updated)}
+      />
     </div>
   );
 }

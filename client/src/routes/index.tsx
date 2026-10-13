@@ -30,8 +30,13 @@ const PrintResumePage = lazy(() => import("@/pages/PrintResumePage"));
 const PortfoliosPage = lazy(() => import("@/pages/PortfoliosPage"));
 const PortfolioPreviewPage = lazy(() => import("@/pages/PortfolioPreviewPage"));
 const PortfolioEditorPage = lazy(() => import("@/pages/PortfolioEditorPage"));
+const PublicPortfolioPage = lazy(() => import("@/pages/PublicPortfolioPage"));
 
 export const router = createBrowserRouter([
+  {
+    path: "/p/:slug",
+    element: <PublicPortfolioPage />,
+  },
   {
     path: "/print/:id",
     element: <PrintResumePage />,

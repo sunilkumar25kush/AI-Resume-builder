@@ -149,6 +149,7 @@ export const updatePortfolioSchema = z.object({
 });
 
 export const publishPortfolioSchema = z.object({
+  slug: z.string().trim().toLowerCase().min(1).max(100).regex(SLUG_REGEX, "Slug must be lowercase alphanumeric with hyphens").optional(),
   customDomain: z.string().trim().toLowerCase().max(255).optional(),
   seoTitle: z.string().trim().max(200).optional(),
   seoDescription: z.string().trim().max(500).optional(),

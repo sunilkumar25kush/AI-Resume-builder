@@ -76,7 +76,7 @@ export const portfoliosApi = {
   /** Publish a portfolio */
   async publish(
     id: string,
-    options?: { customDomain?: string; seoTitle?: string; seoDescription?: string },
+    options?: { slug?: string; customDomain?: string; seoTitle?: string; seoDescription?: string },
   ): Promise<Portfolio> {
     const res = await apiClient.post<ApiEnvelope<{ portfolio: Portfolio }>>(
       `/portfolios/${id}/publish`,
