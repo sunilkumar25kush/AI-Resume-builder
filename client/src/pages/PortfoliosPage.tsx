@@ -10,12 +10,15 @@ import {
   RefreshCw,
   Sparkles,
   Trash2,
+  UploadCloud,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
+import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth";
 import { usePortfoliosStore } from "@/stores/portfolios";
@@ -59,6 +63,12 @@ function formatDate(value: string): string {
   }
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function PortfoliosPage() {
   const user = useAuthStore((state) => state.user);
   const { items, loading, error, fetch, prepend, remove } = usePortfoliosStore();
@@ -66,11 +76,14 @@ export default function PortfoliosPage() {
   const fetchResumes = useResumesStore((state) => state.fetch);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [sourceType, setSourceType] = useState<"resume" | "scratch">("resume");
+  const [sourceType, setSourceType] = useState<"upload" | "resume" | "scratch">("upload");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [portfolioTitle, setPortfolioTitle] = useState<string>("");
   const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>("modern");
   const [submitting, setSubmitting] = useState(false);
+  const [submittingStatus, setSubmittingStatus] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,21 +111,56 @@ export default function PortfoliosPage() {
       return;
     }
 
+    if (sourceType === "upload" && !uploadedFile) {
+      toast.error("Please select or drop a resume file (PDF or DOCX)");
+      return;
+    }
+
+    if (sourceType === "resume" && !selectedResumeId) {
+      toast.error("Please select an existing resume to import");
+      return;
+    }
+
     setSubmitting(true);
+    setUploadProgress(0);
+
     try {
-      const payload: CreatePortfolioInput = {
-        title: portfolioTitle.trim(),
-        resumeId: sourceType === "resume" && selectedResumeId ? selectedResumeId : undefined,
-        design: { template: selectedTemplate },
-      };
-      const created = await portfoliosApi.create(payload);
+      let created: Portfolio;
+      if (sourceType === "upload" && uploadedFile) {
+        setSubmittingStatus("Uploading & extracting career data with Gemini AI...");
+        created = await portfoliosApi.uploadAndGenerate(
+          uploadedFile,
+          { template: selectedTemplate, title: portfolioTitle.trim() },
+          (pct) => setUploadProgress(pct),
+        );
+        toast.success("Portfolio generated successfully with Gemini AI!");
+      } else if (sourceType === "resume" && selectedResumeId) {
+        setSubmittingStatus("Compiling portfolio from selected resume with Gemini AI...");
+        created = await portfoliosApi.generateFromResume(selectedResumeId, {
+          template: selectedTemplate,
+          title: portfolioTitle.trim(),
+        });
+        toast.success("Portfolio generated successfully from resume!");
+      } else {
+        setSubmittingStatus("Creating blank portfolio draft...");
+        const payload: CreatePortfolioInput = {
+          title: portfolioTitle.trim(),
+          design: { template: selectedTemplate },
+        };
+        created = await portfoliosApi.create(payload);
+        toast.success("Blank portfolio draft created!");
+      }
+
       prepend(created);
-      toast.success("Portfolio draft created successfully!");
       setCreateOpen(false);
+      setUploadedFile(null);
+      setUploadProgress(null);
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
       setSubmitting(false);
+      setUploadProgress(null);
+      setSubmittingStatus("");
     }
   };
 
@@ -158,11 +206,11 @@ export default function PortfoliosPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Sparkles className="h-4 w-4" aria-hidden />
               </span>
-              <CardTitle className="text-sm font-semibold">1-Click Resume Import</CardTitle>
+              <CardTitle className="text-sm font-semibold">AI Resume Extraction</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Instantly sync your work history, projects, and skills without manual data entry.
+            Upload PDF/DOCX or pick an existing resume — Gemini AI extracts bio, experience, skills, and projects.
           </CardContent>
         </Card>
 
@@ -176,7 +224,7 @@ export default function PortfoliosPage() {
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Select modern themes with responsive layouts tailored for engineering and creative roles.
+            Select modern themes with responsive layouts tailored for engineering, design, and executive roles.
           </CardContent>
         </Card>
 
@@ -245,7 +293,7 @@ export default function PortfoliosPage() {
           <EmptyState
             icon={Globe}
             title="No portfolios yet"
-            description="You haven't generated any portfolio websites yet. Click below to create your first portfolio from an existing resume or start fresh."
+            description="Transform your career history into a live web portfolio. Upload your resume or pick an existing one to generate an AI-powered draft."
             action={
               <Button onClick={() => setCreateOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" aria-hidden />
@@ -292,7 +340,7 @@ export default function PortfoliosPage() {
                       size="sm"
                       className="gap-1.5 text-xs"
                       onClick={() => {
-                        toast.info(`Portfolio editor will be available in Phase 2`);
+                        toast.info(`Portfolio customization studio will open in the next phase`);
                       }}
                     >
                       Edit
@@ -304,7 +352,7 @@ export default function PortfoliosPage() {
                           variant="ghost"
                           size="icon-sm"
                           title="Open public link"
-                          onClick={() => window.open(`/p/${portfolio.slug}`, "_blank")}
+                          onClick={() => window.open(`/api/portfolios/public/${portfolio.slug}`, "_blank")}
                         >
                           <ExternalLink className="h-4 w-4" aria-hidden />
                         </Button>
@@ -334,14 +382,14 @@ export default function PortfoliosPage() {
 
       {/* Create Portfolio Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-primary" aria-hidden />
-              Create Portfolio Website
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden />
+              Generate Portfolio Website
             </DialogTitle>
             <DialogDescription>
-              Set up the initial foundation for your personal portfolio website.
+              Upload a resume or start fresh to create an AI-powered personal portfolio.
             </DialogDescription>
           </DialogHeader>
 
@@ -355,17 +403,36 @@ export default function PortfoliosPage() {
                 onChange={(e) => setPortfolioTitle(e.target.value)}
                 placeholder="e.g. Rahul Sharma — Full Stack Engineer"
                 maxLength={100}
+                disabled={submitting}
               />
             </div>
 
             {/* Source Selection */}
             <div className="space-y-1.5">
-              <Label>Source Content</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <Label>Source Option</Label>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
+                  disabled={submitting}
+                  onClick={() => setSourceType("upload")}
+                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
+                    sourceType === "upload"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                      : "border-border hover:bg-accent/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 font-medium text-xs">
+                    <UploadCloud className="h-3.5 w-3.5 text-primary" aria-hidden />
+                    Upload File
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">PDF or DOCX</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={submitting}
                   onClick={() => setSourceType("resume")}
-                  className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors ${
+                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
                     sourceType === "resume"
                       ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                       : "border-border hover:bg-accent/40"
@@ -373,17 +440,16 @@ export default function PortfoliosPage() {
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
                     <FileText className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    From Existing Resume
+                    Saved Resume
                   </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    Auto-fill experience, projects & skills
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">From account</span>
                 </button>
 
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => setSourceType("scratch")}
-                  className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors ${
+                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
                     sourceType === "scratch"
                       ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                       : "border-border hover:bg-accent/40"
@@ -393,25 +459,60 @@ export default function PortfoliosPage() {
                     <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
                     Start Blank
                   </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    Build sections manually from scratch
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">Empty draft</span>
                 </button>
               </div>
             </div>
 
-            {/* If Resume source, select which resume */}
+            {/* If Upload source, show file dropzone */}
+            {sourceType === "upload" && (
+              <div className="space-y-2">
+                <Label>Upload Resume (PDF or DOCX)</Label>
+                {uploadedFile ? (
+                  <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">
+                    <div className="flex items-center gap-2.5 truncate">
+                      <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden />
+                      <div className="truncate">
+                        <p className="font-medium truncate">{uploadedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatBytes(uploadedFile.size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={submitting}
+                      onClick={() => setUploadedFile(null)}
+                      title="Remove file"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </div>
+                ) : (
+                  <UploadDropzone
+                    uploading={submitting}
+                    progress={uploadProgress}
+                    onFile={(file) => setUploadedFile(file)}
+                    copyTitle="Drop resume file here or click to browse"
+                    copyHint="PDF or DOCX (max 10 MB)"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* If Saved Resume source, select which resume */}
             {sourceType === "resume" && (
               <div className="space-y-1.5">
-                <Label htmlFor="resume-select">Select Resume to Import</Label>
+                <Label htmlFor="resume-select">Select Saved Resume</Label>
                 {resumes.length === 0 ? (
                   <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                    No parsed resumes found. You can still create a portfolio and add details manually, or upload a resume first in the Resume Builder.
+                    No parsed resumes found in your account. You can choose "Upload File" above to parse a new file directly.
                   </p>
                 ) : (
                   <select
                     id="resume-select"
                     value={selectedResumeId}
+                    disabled={submitting}
                     onChange={(e) => setSelectedResumeId(e.target.value)}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
@@ -427,12 +528,13 @@ export default function PortfoliosPage() {
 
             {/* Template Selection */}
             <div className="space-y-1.5">
-              <Label>Initial Template</Label>
+              <Label>Portfolio Theme</Label>
               <div className="grid grid-cols-2 gap-2">
                 {TEMPLATE_OPTIONS.map((tpl) => (
                   <button
                     key={tpl.id}
                     type="button"
+                    disabled={submitting}
                     onClick={() => setSelectedTemplate(tpl.id)}
                     className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
                       selectedTemplate === tpl.id
@@ -450,9 +552,18 @@ export default function PortfoliosPage() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Phase 1 Foundation:</span> Routes, entry points, and landing UI are live. AI portfolio compilation and MongoDB models will connect in Phase 2.
-            </div>
+            {/* Status / Progress Notification when submitting */}
+            {submitting && (
+              <div className="space-y-2 rounded-xl bg-primary/5 border border-primary/20 p-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                  <span>{submittingStatus || "Processing document..."}</span>
+                </div>
+                {uploadProgress !== null && uploadProgress > 0 && uploadProgress < 100 && (
+                  <Progress value={uploadProgress} className="h-1.5" />
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -463,10 +574,10 @@ export default function PortfoliosPage() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Initializing...
+                  Generating...
                 </>
               ) : (
-                "Continue"
+                "Generate Portfolio"
               )}
             </Button>
           </DialogFooter>

@@ -25,10 +25,11 @@ export const authLimiter = rateLimit({
   handler,
 });
 
-/** AI route limiter. */
+/** AI route limiter — per-user if authenticated, otherwise per-IP. */
 export const aiLimiter = rateLimit({
   windowMs: RATE_LIMITS.AI.windowMs,
   limit: RATE_LIMITS.AI.max,
+  keyGenerator: (req) => req.user?.id || req.ip,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },

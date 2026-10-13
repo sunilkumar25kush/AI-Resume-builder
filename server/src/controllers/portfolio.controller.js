@@ -1,4 +1,6 @@
+import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { RESUME_MIME, validateMemoryMagicBytes } from "../middlewares/upload.js";
 import * as portfolioService from "../services/portfolio.service.js";
 
 /** Create a new portfolio draft */
@@ -54,4 +56,47 @@ export const deletePortfolioById = asyncHandler(async (req, res) => {
 export const getPublicPortfolioBySlug = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.getPublicPortfolio(req.params.slug);
   res.json({ success: true, data: { portfolio } });
+});
+
+/** Generate a portfolio draft directly from an uploaded PDF or DOCX file */
+export const generatePortfolioFromUpload = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw ApiError.badRequest("No resume file uploaded");
+  }
+
+  // 1. Verify binary magic bytes in-memory (reject spoofed Content-Type)
+  await validateMemoryMagicBytes(req.file, RESUME_MIME, "Only PDF or DOCX files are allowed");
+
+  // 2. Extract raw text server-side
+  const resumeText = await portfolioService.extractResumeDocumentText(
+    req.file.buffer,
+    req.file.mimetype,
+  );
+
+  // 3. Run Gemini extraction pipeline and persist draft
+  const portfolio = await portfolioService.generatePortfolioFromResumeText(
+    req.user.id,
+    resumeText,
+    {
+      preferredTemplate: req.validatedBody?.template || req.body?.template,
+      customTitle: req.validatedBody?.title || req.body?.title,
+    },
+  );
+
+  res.status(201).json({ success: true, data: { portfolio } });
+});
+
+/** Generate a portfolio draft from an existing saved resume in the user's account */
+export const generatePortfolioFromResume = asyncHandler(async (req, res) => {
+  const { resumeId, template, title } = req.validatedBody;
+  const portfolio = await portfolioService.generatePortfolioFromExistingResume(
+    req.user.id,
+    resumeId,
+    {
+      preferredTemplate: template,
+      customTitle: title,
+    },
+  );
+
+  res.status(201).json({ success: true, data: { portfolio } });
 });

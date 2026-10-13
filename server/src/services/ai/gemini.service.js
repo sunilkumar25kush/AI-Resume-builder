@@ -7,6 +7,7 @@ import {
   buildGenerationPrompt,
   buildJdOnlyPrompt,
   buildOptimizePrompt,
+  buildPortfolioExtractionPrompt,
   buildSuggestPrompt,
 } from "./prompts.js";
 
@@ -201,6 +202,14 @@ class GeminiService {
       return this.generate(prompt, { timeoutMs: 60_000, temperature: 0.6 });
     }
     return this.generateJson(prompt, { timeoutMs: 60_000, temperature: 0.5 });
+  }
+
+  /** Extract structured portfolio draft content from raw resume text. */
+  extractPortfolioFromResume({ resumeText }) {
+    return this.generateJson(buildPortfolioExtractionPrompt({ resumeText }), {
+      timeoutMs: 75_000,
+      temperature: 0.1,
+    });
   }
 }
 

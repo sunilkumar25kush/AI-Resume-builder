@@ -147,3 +147,14 @@ export const portfolioQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
   status: z.enum(["draft", "published", "archived"]).optional(),
 });
+
+export const generateFromResumeSchema = z.object({
+  resumeId: z.string().regex(OBJECT_ID_REGEX, "Invalid resumeId"),
+  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
+  title: z.string().trim().max(200).optional(),
+});
+
+export const generateFromUploadSchema = z.object({
+  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
+  title: z.string().trim().max(200).optional(),
+});

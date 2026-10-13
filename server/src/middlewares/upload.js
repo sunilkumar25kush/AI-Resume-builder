@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { fileTypeFromFile } from "file-type";
+import { fileTypeFromBuffer, fileTypeFromFile } from "file-type";
 
 import multer from "multer";
 
@@ -106,4 +106,37 @@ export async function validateMagicBytes(file, allowedMime, message) {
     fs.unlink(file.path, () => {});
     throw ApiError.badRequest(message);
   }
+}
+
+/** In-memory upload for the portfolio extraction pipeline (zero disk footprint) */
+const memoryStorage = multer.memoryStorage();
+export const uploadPortfolioResume = multer({
+  storage: memoryStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!RESUME_MIME.has(file.mimetype)) {
+      return cb(ApiError.badRequest("Only PDF or DOCX files are allowed"));
+    }
+    cb(null, true);
+  },
+});
+
+/** Validates binary magic bytes directly from an in-memory buffer */
+export async function validateMemoryMagicBytes(file, allowedMime = RESUME_MIME, message = "Only PDF or DOCX files are allowed") {
+  if (!file || !file.buffer) {
+    throw ApiError.badRequest("No file uploaded");
+  }
+
+  let detected;
+  try {
+    detected = await fileTypeFromBuffer(file.buffer);
+  } catch {
+    throw ApiError.badRequest("Could not verify file integrity — please try again");
+  }
+
+  if (!detected || !allowedMime.has(detected.mime)) {
+    throw ApiError.badRequest(message);
+  }
+
+  return detected;
 }

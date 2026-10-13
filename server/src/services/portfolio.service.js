@@ -1,7 +1,12 @@
 import crypto from "node:crypto";
+import mammoth from "mammoth";
+import { PDFParse } from "pdf-parse";
 import { Portfolio } from "../models/Portfolio.js";
 import { Resume } from "../models/Resume.js";
 import { ApiError } from "../utils/ApiError.js";
+import { geminiService } from "./ai/gemini.service.js";
+import { cleanText, normalizeResumeText } from "./resumeParser.js";
+import { createPortfolioSchema } from "../validations/portfolio.validation.js";
 
 /** Convert text into a URL-friendly slug */
 export function slugify(text = "") {
@@ -285,4 +290,434 @@ export async function getPublicPortfolio(rawSlug) {
   }
 
   return portfolio;
+}
+
+/** Extract text safely from uploaded document buffer with bounded limits */
+export async function extractResumeDocumentText(buffer, mimeType) {
+  if (!buffer || buffer.length === 0) {
+    throw ApiError.badRequest("Uploaded file is empty");
+  }
+
+  let text = "";
+  try {
+    if (mimeType === "application/pdf") {
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      const result = await parser.getText();
+      text = result?.text || "";
+    } else if (
+      mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      const result = await mammoth.extractRawText({ buffer });
+      text = result?.value || "";
+    } else {
+      throw ApiError.badRequest("Only PDF and DOCX files are supported");
+    }
+  } catch (err) {
+    const msg = (err?.message || "").toLowerCase();
+    if (msg.includes("password") || msg.includes("encrypted")) {
+      throw ApiError.badRequest(
+        "The PDF document is encrypted or password-protected. Please upload an unencrypted file.",
+      );
+    }
+    if (err instanceof ApiError) throw err;
+    throw ApiError.badRequest(
+      "Could not parse this file — it may be corrupted, malformed, or unreadable.",
+    );
+  }
+
+  const cleaned = cleanText(text);
+  const alphaNumericChars = cleaned.replace(/[^a-zA-Z0-9]/g, "");
+  if (alphaNumericChars.length < 30) {
+    throw ApiError.badRequest(
+      "Could not extract readable text from this document. Please ensure it is not scanned, empty, or an image-only file.",
+    );
+  }
+
+  return cleaned.slice(0, 50000);
+}
+
+/** Convert structured parsedData into coherent plain text for AI extraction */
+export function resumeToText(parsedData = {}) {
+  const parts = [];
+
+  if (parsedData.name) parts.push(parsedData.name);
+  if (parsedData.title) parts.push(parsedData.title);
+
+  const contact = parsedData.contact || {};
+  const contactParts = [
+    contact.email && `Email: ${contact.email}`,
+    contact.phone && `Phone: ${contact.phone}`,
+    contact.location && `Location: ${contact.location}`,
+    contact.linkedin && `LinkedIn: ${contact.linkedin}`,
+    contact.github && `GitHub: ${contact.github}`,
+    contact.website && `Website: ${contact.website}`,
+  ].filter(Boolean);
+  if (contactParts.length) parts.push(`CONTACT:\n${contactParts.join("\n")}`);
+
+  if (parsedData.summary) parts.push(`SUMMARY:\n${parsedData.summary}`);
+
+  if (Array.isArray(parsedData.skills) && parsedData.skills.length) {
+    const skillList = parsedData.skills
+      .map((s) => (typeof s === "string" ? s : s.name))
+      .filter(Boolean)
+      .join(", ");
+    parts.push(`SKILLS:\n${skillList}`);
+  }
+
+  if (Array.isArray(parsedData.experience) && parsedData.experience.length) {
+    const expText = parsedData.experience
+      .map((e) => {
+        const header = `${e.title || "Role"} at ${e.company || "Company"} (${e.startDate || ""} - ${e.endDate || "Present"})`;
+        const body = e.description || e.achievements || "";
+        return `${header}\n${body}`;
+      })
+      .join("\n\n");
+    parts.push(`EXPERIENCE:\n${expText}`);
+  }
+
+  if (Array.isArray(parsedData.projects) && parsedData.projects.length) {
+    const projText = parsedData.projects
+      .map((p) => {
+        const header = `${p.name || p.title || "Project"} ${p.link || p.liveDemo ? `(${p.link || p.liveDemo})` : ""}`;
+        const desc = p.description || "";
+        const tech = p.technologies ? `Technologies: ${p.technologies}` : "";
+        return `${header}\n${desc}\n${tech}`.trim();
+      })
+      .join("\n\n");
+    parts.push(`PROJECTS:\n${projText}`);
+  }
+
+  if (Array.isArray(parsedData.education) && parsedData.education.length) {
+    const eduText = parsedData.education
+      .map((ed) => `${ed.degree || "Degree"} from ${ed.institution || "Institution"} (${ed.startDate || ""} - ${ed.endDate || ""})`)
+      .join("\n");
+    parts.push(`EDUCATION:\n${eduText}`);
+  }
+
+  if (Array.isArray(parsedData.certifications) && parsedData.certifications.length) {
+    const certText = parsedData.certifications
+      .map((c) => (typeof c === "string" ? c : c.name || ""))
+      .filter(Boolean)
+      .join("\n");
+    parts.push(`CERTIFICATIONS:\n${certText}`);
+  }
+
+  return parts.join("\n\n");
+}
+
+/** Fallback transformer from parsed resume data to portfolio draft */
+function transformParsedResumeToPortfolio(parsed = {}) {
+  const fullName = (parsed.name || "").replace(/^(?:name|target title):\s*/i, "").trim();
+  const skills = Array.isArray(parsed.skills)
+    ? parsed.skills.map((s) => ({
+        name: typeof s === "string" ? s : s.name || "",
+        category: "General",
+        level: "intermediate",
+      }))
+    : [];
+
+  const experience = (parsed.experience || []).map((e) => ({
+    title: e.title || "",
+    company: e.company || "",
+    location: e.location || "",
+    startDate: e.startDate || "",
+    endDate: e.endDate || "",
+    current: !e.endDate || e.endDate.toLowerCase().includes("present"),
+    description: e.description || e.achievements || "",
+    highlights: e.technologies ? [e.technologies] : [],
+  }));
+
+  const education = (parsed.education || []).map((ed) => ({
+    institution: ed.institution || "",
+    degree: ed.degree || "",
+    fieldOfStudy: "",
+    startDate: ed.startDate || "",
+    endDate: ed.endDate || "",
+    grade: "",
+  }));
+
+  const projects = (parsed.projects || []).map((p) => ({
+    title: p.name || p.title || "Project",
+    description: p.description || "",
+    tags: p.technologies
+      ? p.technologies.split(/[,•|]+/).map((t) => t.trim()).filter(Boolean)
+      : [],
+    liveUrl: p.liveDemo || p.link || "",
+    repoUrl: p.link?.includes("github") ? p.link : "",
+    featured: false,
+  }));
+
+  const socialLinks = [];
+  if (parsed.contact?.github) {
+    socialLinks.push({ platform: "github", label: "GitHub", url: parsed.contact.github });
+  }
+  if (parsed.contact?.linkedin) {
+    socialLinks.push({ platform: "linkedin", label: "LinkedIn", url: parsed.contact.linkedin });
+  }
+  if (parsed.contact?.website) {
+    socialLinks.push({ platform: "website", label: "Website", url: parsed.contact.website });
+  }
+
+  return {
+    title: fullName ? `${fullName}'s Portfolio` : "My Portfolio",
+    profile: {
+      fullName,
+      headline: parsed.title || "Software Professional",
+      bio: parsed.summary || "",
+      email: parsed.contact?.email || "",
+      phone: parsed.contact?.phone || "",
+      location: parsed.contact?.location || "",
+      avatarUrl: "",
+    },
+    socialLinks,
+    skills,
+    experience,
+    education,
+    projects,
+    certifications: Array.isArray(parsed.certifications)
+      ? parsed.certifications.map((c) => ({
+          name: typeof c === "string" ? c : c.name || "",
+          issuer: "",
+        }))
+      : [],
+    design: {
+      template: "modern",
+      theme: "system",
+      primaryColor: "#2563eb",
+    },
+  };
+}
+
+/** Helper to sanitize and normalize AI/heuristic payload before schema validation */
+function sanitizePortfolioPayload(payload = {}) {
+  const safe = { ...payload };
+
+  if (safe.profile && typeof safe.profile === "object") {
+    safe.profile = { ...safe.profile };
+    if (safe.profile.email && typeof safe.profile.email === "string") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(safe.profile.email.trim())) {
+        safe.profile.email = "";
+      }
+    }
+  } else {
+    safe.profile = {};
+  }
+
+  // Normalize skills into objects: { name, category, level }
+  if (Array.isArray(safe.skills)) {
+    safe.skills = safe.skills
+      .map((s) => {
+        if (typeof s === "string") return { name: s.trim(), category: "General", level: "intermediate" };
+        if (s && typeof s === "object" && s.name) {
+          return {
+            name: String(s.name).trim(),
+            category: s.category || "General",
+            level: ["beginner", "intermediate", "advanced", "expert"].includes(s.level) ? s.level : "intermediate",
+          };
+        }
+        return null;
+      })
+      .filter((s) => s && s.name.length > 0);
+  } else {
+    safe.skills = [];
+  }
+
+  // Normalize socialLinks
+  if (Array.isArray(safe.socialLinks)) {
+    safe.socialLinks = safe.socialLinks
+      .filter((l) => l && typeof l === "object" && (l.url || l.platform))
+      .map((l) => ({
+        platform: String(l.platform || "").trim(),
+        label: String(l.label || l.platform || "Link").trim(),
+        url: String(l.url || "").trim(),
+      }));
+  } else {
+    safe.socialLinks = [];
+  }
+
+  // Normalize experience
+  if (Array.isArray(safe.experience)) {
+    safe.experience = safe.experience
+      .filter((e) => e && typeof e === "object")
+      .map((e) => ({
+        title: String(e.title || "").trim(),
+        company: String(e.company || "").trim(),
+        location: String(e.location || "").trim(),
+        startDate: String(e.startDate || "").trim(),
+        endDate: String(e.endDate || "").trim(),
+        current: Boolean(e.current),
+        description: String(e.description || "").trim(),
+        highlights: Array.isArray(e.highlights)
+          ? e.highlights.map((h) => String(h || "").trim()).filter(Boolean)
+          : [],
+      }));
+  } else {
+    safe.experience = [];
+  }
+
+  // Normalize education
+  if (Array.isArray(safe.education)) {
+    safe.education = safe.education
+      .filter((ed) => ed && typeof ed === "object")
+      .map((ed) => ({
+        institution: String(ed.institution || "").trim(),
+        degree: String(ed.degree || "").trim(),
+        fieldOfStudy: String(ed.fieldOfStudy || "").trim(),
+        startDate: String(ed.startDate || "").trim(),
+        endDate: String(ed.endDate || "").trim(),
+        grade: String(ed.grade || "").trim(),
+      }));
+  } else {
+    safe.education = [];
+  }
+
+  // Normalize projects
+  if (Array.isArray(safe.projects)) {
+    safe.projects = safe.projects
+      .filter((p) => p && typeof p === "object")
+      .map((p) => ({
+        title: String(p.title || "Project").trim(),
+        description: String(p.description || "").trim(),
+        tags: Array.isArray(p.tags) ? p.tags.map((t) => String(t || "").trim()).filter(Boolean) : [],
+        liveUrl: String(p.liveUrl || "").trim(),
+        repoUrl: String(p.repoUrl || "").trim(),
+        imageUrl: String(p.imageUrl || "").trim(),
+        featured: Boolean(p.featured),
+      }));
+  } else {
+    safe.projects = [];
+  }
+
+  // Normalize certifications
+  if (Array.isArray(safe.certifications)) {
+    safe.certifications = safe.certifications
+      .map((c) => {
+        if (typeof c === "string") return { name: c.trim(), issuer: "", issueDate: "", url: "" };
+        if (c && typeof c === "object") {
+          return {
+            name: String(c.name || "").trim(),
+            issuer: String(c.issuer || "").trim(),
+            issueDate: String(c.issueDate || "").trim(),
+            url: String(c.url || "").trim(),
+          };
+        }
+        return null;
+      })
+      .filter((c) => c && c.name.length > 0);
+  } else {
+    safe.certifications = [];
+  }
+
+  // Normalize design
+  const validTemplates = ["modern", "minimal", "developer", "executive", "creative"];
+  const validThemes = ["light", "dark", "system"];
+  safe.design = {
+    template: validTemplates.includes(safe.design?.template) ? safe.design.template : "modern",
+    theme: validThemes.includes(safe.design?.theme) ? safe.design.theme : "system",
+    primaryColor: safe.design?.primaryColor || "#2563eb",
+    fontFamily: safe.design?.fontFamily || "Inter",
+    customCss: safe.design?.customCss || "",
+  };
+
+  return safe;
+}
+
+/** Generate a validated, editable portfolio draft from extracted resume text */
+export async function generatePortfolioFromResumeText(
+  userId,
+  resumeText,
+  { preferredTemplate, customTitle, resumeId } = {},
+) {
+  if (!resumeText || resumeText.length < 20) {
+    throw ApiError.badRequest("Insufficient text to generate portfolio");
+  }
+
+  let extracted;
+  try {
+    extracted = await geminiService.extractPortfolioFromResume({ resumeText });
+  } catch (aiErr) {
+    console.warn(
+      "[portfolio] Gemini extraction issue, using heuristic parser fallback:",
+      aiErr.message,
+    );
+    const parsed = normalizeResumeText(resumeText);
+    extracted = transformParsedResumeToPortfolio(parsed);
+  }
+
+  if (!extracted || typeof extracted !== "object") {
+    const parsed = normalizeResumeText(resumeText);
+    extracted = transformParsedResumeToPortfolio(parsed);
+  }
+
+  // Enforce preferred template or title overrides
+  if (preferredTemplate) {
+    extracted.design = extracted.design || {};
+    extracted.design.template = preferredTemplate;
+  }
+  if (customTitle?.trim()) {
+    extracted.title = customTitle.trim();
+  } else if (!extracted.title?.trim()) {
+    extracted.title = extracted.profile?.fullName
+      ? `${extracted.profile.fullName}'s Portfolio`
+      : "My Portfolio";
+  }
+
+  // Ensure resumeId association
+  if (resumeId) {
+    extracted.resumeId = resumeId;
+  }
+
+  // Validate AI output through Zod portfolio creation schema with recovery fallback
+  let cleanInput;
+  const sanitized = sanitizePortfolioPayload(extracted);
+  const parsedValidation = createPortfolioSchema.safeParse(sanitized);
+
+  if (parsedValidation.success) {
+    cleanInput = parsedValidation.data;
+  } else {
+    console.warn(
+      "[portfolio] AI extraction did not strictly match schema, falling back to parsed resume transformer:",
+      parsedValidation.error.issues,
+    );
+    const parsed = normalizeResumeText(resumeText);
+    const fallbackExtracted = transformParsedResumeToPortfolio(parsed);
+    if (preferredTemplate) {
+      fallbackExtracted.design.template = preferredTemplate;
+    }
+    if (customTitle?.trim()) {
+      fallbackExtracted.title = customTitle.trim();
+    }
+    if (resumeId) {
+      fallbackExtracted.resumeId = resumeId;
+    }
+    const fallbackSanitized = sanitizePortfolioPayload(fallbackExtracted);
+    const fallbackValidation = createPortfolioSchema.safeParse(fallbackSanitized);
+    cleanInput = fallbackValidation.success ? fallbackValidation.data : fallbackSanitized;
+  }
+
+  return createPortfolio(userId, cleanInput);
+}
+
+/** Generate portfolio from an existing saved resume in the user's account */
+export async function generatePortfolioFromExistingResume(
+  userId,
+  resumeId,
+  { preferredTemplate, customTitle } = {},
+) {
+  const resume = await Resume.findOne({ _id: resumeId, user: userId }).lean();
+  if (!resume) {
+    throw ApiError.notFound("Resume not found");
+  }
+
+  const resumeText = resumeToText(resume.parsedData);
+  if (!resumeText || resumeText.length < 20) {
+    throw ApiError.badRequest("Selected resume contains insufficient data to generate a portfolio");
+  }
+
+  return generatePortfolioFromResumeText(userId, resumeText, {
+    preferredTemplate,
+    customTitle,
+    resumeId: resume._id,
+  });
 }
