@@ -88,8 +88,8 @@ const designSettingsSchema = new mongoose.Schema(
   {
     template: {
       type: String,
-      enum: ["modern", "minimal", "developer", "executive", "creative"],
-      default: "modern",
+      enum: ["modern", "minimal", "developer", "executive", "creative", "devport"],
+      default: "devport",
     },
     theme: {
       type: String,

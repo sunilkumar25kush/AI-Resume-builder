@@ -60,7 +60,7 @@ export interface PortfolioCertification {
 }
 
 export interface PortfolioDesignSettings {
-  template: "modern" | "minimal" | "developer" | "executive" | "creative";
+  template: "modern" | "minimal" | "developer" | "executive" | "creative" | "devport";
   theme: "light" | "dark" | "system";
   primaryColor?: string;
   fontFamily?: string;

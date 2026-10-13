@@ -63,7 +63,7 @@ const certificationSchema = z.object({
 });
 
 const designSettingsSchema = z.object({
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional().default("modern"),
+  template: z.enum(["modern", "minimal", "developer", "executive", "creative", "devport"]).optional().default("devport"),
   theme: z.enum(["light", "dark", "system"]).optional().default("system"),
   primaryColor: z.string().trim().max(50).optional().default("#2563eb"),
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
@@ -117,7 +117,7 @@ const profileUpdateSchema = z.object({
 });
 
 const designUpdateSchema = z.object({
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
+  template: z.enum(["modern", "minimal", "developer", "executive", "creative", "devport"]).optional(),
   theme: z.enum(["light", "dark", "system"]).optional(),
   primaryColor: z.string().trim().max(50).optional(),
   fontFamily: z.string().trim().max(100).optional(),

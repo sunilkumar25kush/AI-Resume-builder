@@ -362,10 +362,15 @@ nav[aria-label="Bottom navigation"] {
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Accessibility: Intentional reduced-motion handling */
 @media (prefers-reduced-motion: reduce) {
+  html,
   html:focus-within {
-    scroll-behavior: auto;
+    scroll-behavior: auto !important;
   }
 
   *,

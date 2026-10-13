@@ -27,16 +27,22 @@ const TEMPLATES: Array<{
   badge: string;
 }> = [
   {
-    id: "minimal",
-    name: "Minimal",
-    desc: "Quiet elegance, refined typography, and serene editorial whitespace.",
-    badge: "Editorial",
+    id: "devport",
+    name: "DevPort",
+    desc: "Cosmic dark aesthetic, orbital avatar, glowing typewriter header, and smooth scroll navigation.",
+    badge: "Featured ★",
   },
   {
     id: "developer",
     name: "Developer",
     desc: "Terminal aesthetic, tech-stack cards, active status badge, and code styling.",
     badge: "Engineering",
+  },
+  {
+    id: "minimal",
+    name: "Minimal",
+    desc: "Quiet elegance, refined typography, and serene editorial whitespace.",
+    badge: "Editorial",
   },
 ];
 
@@ -47,7 +53,7 @@ const FONTS = [
 ];
 
 export function DesignControls({ design, onChange }: DesignControlsProps) {
-  const currentTemplate = design.template === "developer" ? "developer" : "minimal";
+  const currentTemplate = design.template || "devport";
   const currentTheme = design.theme || "system";
   const currentColor = design.primaryColor || "#2563eb";
   const currentFont = design.fontFamily || "Inter";

@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PortfolioCreationAnimationModal } from "@/components/portfolios/common/PortfolioCreationAnimationModal";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth";
@@ -50,10 +51,10 @@ const TEMPLATE_OPTIONS: Array<{
   desc: string;
   badge: string;
 }> = [
-  { id: "modern", name: "Modern Clean", desc: "Balanced layout with crisp typography & cards", badge: "Popular" },
+  { id: "devport", name: "DevPort (Featured)", desc: "Cosmic dark theme, orbital avatar, code card & floating stats", badge: "Featured ★" },
   { id: "developer", name: "Tech / Dev", desc: "Terminal accents, GitHub links, and code highlights", badge: "Engineering" },
   { id: "minimal", name: "Minimalist", desc: "Typography-focused elegance with generous whitespace", badge: "Clean" },
-  { id: "executive", name: "Executive", desc: "Structured, formal presentation for leadership roles", badge: "Leadership" },
+  { id: "modern", name: "Modern Clean", desc: "Balanced layout with crisp typography & cards", badge: "Popular" },
 ];
 
 function formatDate(value: string): string {
@@ -87,7 +88,7 @@ export default function PortfoliosPage() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [portfolioTitle, setPortfolioTitle] = useState<string>("");
-  const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>("modern");
+  const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>("devport");
   const [submitting, setSubmitting] = useState(false);
   const [submittingStatus, setSubmittingStatus] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -159,6 +160,10 @@ export default function PortfoliosPage() {
       }
 
       prepend(created);
+      setSubmittingStatus("Finalizing portfolio theme & assets...");
+      // Brief aesthetic pause to showcase the completed AI creation state
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
       setCreateOpen(false);
       setUploadedFile(null);
       setUploadProgress(null);
@@ -648,6 +653,14 @@ export default function PortfoliosPage() {
           }}
         />
       )}
+
+      {/* Animated Multi-Step AI Portfolio Creation Showcase */}
+      <PortfolioCreationAnimationModal
+        isOpen={submitting}
+        statusMessage={submittingStatus}
+        uploadProgress={uploadProgress}
+        templateName={selectedTemplate === "devport" ? "DevPort" : selectedTemplate}
+      />
     </div>
   );
 }
