@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   AlertCircle,
+  Download,
   ExternalLink,
   Eye,
   FileText,
@@ -22,7 +23,9 @@ import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PublishModal } from "@/components/portfolios/editor/PublishModal";
+import { PortfolioExportModal } from "@/components/portfolios/export/PortfolioExportModal";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
+
 import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,6 +126,7 @@ export default function PortfoliosPage() {
   const [submittingStatus, setSubmittingStatus] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [publishPortfolioTarget, setPublishPortfolioTarget] = useState<Portfolio | null>(null);
+  const [exportPortfolioTarget, setExportPortfolioTarget] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     void fetch();
@@ -447,7 +451,17 @@ export default function PortfoliosPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
+                        title="Export portfolio (Source code or static site)"
+                        onClick={() => setExportPortfolioTarget(portfolio)}
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Download className="h-4 w-4" aria-hidden />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         className="text-muted-foreground hover:text-destructive"
+
                         title="Delete portfolio"
                         disabled={deletingId === portfolio._id}
                         onClick={() => void handleDelete(portfolio)}
@@ -708,6 +722,16 @@ export default function PortfoliosPage() {
           }}
         />
       )}
+
+      {/* Export Dialog */}
+      {exportPortfolioTarget && (
+        <PortfolioExportModal
+          open={Boolean(exportPortfolioTarget)}
+          onOpenChange={(open) => !open && setExportPortfolioTarget(null)}
+          portfolio={exportPortfolioTarget}
+        />
+      )}
+
 
       {/* Animated Multi-Step AI Portfolio Creation Showcase */}
       <PortfolioCreationAnimationModal

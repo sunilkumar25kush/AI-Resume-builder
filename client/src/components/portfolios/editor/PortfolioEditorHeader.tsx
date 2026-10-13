@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { AlertCircle, ArrowLeft, CheckCircle2, ExternalLink, Globe, Loader2, Save } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Download, ExternalLink, Globe, Loader2, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,9 @@ export interface PortfolioEditorHeaderProps {
   portfolioSlug?: string;
   isPublic?: boolean;
   onPublishClick?: () => void;
+  onExportClick?: () => void;
 }
+
 
 export function PortfolioEditorHeader({
   title,
@@ -26,6 +28,7 @@ export function PortfolioEditorHeader({
   portfolioSlug,
   isPublic,
   onPublishClick,
+  onExportClick,
 }: PortfolioEditorHeaderProps) {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md">
@@ -125,7 +128,23 @@ export function PortfolioEditorHeader({
             </Button>
           )}
 
+          {/* Export Action */}
+          {onExportClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onExportClick}
+              className="text-xs gap-1.5"
+              title="Export portfolio as React source or static website"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </Button>
+          )}
+
           {/* View Website CTA */}
+
           <Button
             asChild
             variant="default"

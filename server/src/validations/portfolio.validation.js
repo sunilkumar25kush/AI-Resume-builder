@@ -172,3 +172,8 @@ export const generateFromUploadSchema = z.object({
   template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
   title: z.string().trim().max(200).optional(),
 });
+
+export const exportPortfolioQuerySchema = z.object({
+  format: z.enum(["source", "static"]).optional().default("source"),
+});
+

@@ -7,6 +7,7 @@ import { validate } from "../middlewares/validate.js";
 import {
   createPortfolio,
   deletePortfolioById,
+  exportPortfolioById,
   generatePortfolioFromResume,
   generatePortfolioFromUpload,
   getPortfolioById,
@@ -18,6 +19,7 @@ import {
 } from "../controllers/portfolio.controller.js";
 import {
   createPortfolioSchema,
+  exportPortfolioQuerySchema,
   generateFromResumeSchema,
   generateFromUploadSchema,
   publishPortfolioSchema,
@@ -55,6 +57,9 @@ router.post("/", validate({ body: createPortfolioSchema }), createPortfolio);
 router.get("/:id", getPortfolioById);
 router.patch("/:id", validate({ body: updatePortfolioSchema }), updatePortfolioById);
 router.delete("/:id", deletePortfolioById);
+
+// Export endpoints
+router.get("/:id/export", validate({ query: exportPortfolioQuerySchema }), exportPortfolioById);
 
 // Publication state transition endpoints
 router.post("/:id/publish", validate({ body: publishPortfolioSchema.optional() }), publishPortfolioById);

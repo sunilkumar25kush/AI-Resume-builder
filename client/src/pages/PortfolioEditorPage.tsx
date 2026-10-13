@@ -30,6 +30,7 @@ import { PortfolioEditorHeader } from "@/components/portfolios/editor/PortfolioE
 import { ProfileEditor } from "@/components/portfolios/editor/ProfileEditor";
 import { ProjectsEditor } from "@/components/portfolios/editor/ProjectsEditor";
 import { PublishModal } from "@/components/portfolios/editor/PublishModal";
+import { PortfolioExportModal } from "@/components/portfolios/export/PortfolioExportModal";
 import { ReviewBanner } from "@/components/portfolios/editor/ReviewBanner";
 import { SectionOrderControls } from "@/components/portfolios/editor/SectionOrderControls";
 import { SkillsEditor } from "@/components/portfolios/editor/SkillsEditor";
@@ -69,6 +70,7 @@ export default function PortfolioEditorPage() {
   // Autosave State
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error" | "unsaved">("saved");
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   // Refs for race-condition prevention and debounce
   const versionRef = useRef(0);
@@ -296,7 +298,9 @@ export default function PortfolioEditorPage() {
         portfolioSlug={portfolio.slug}
         isPublic={portfolio.publication?.isPublic}
         onPublishClick={() => setPublishModalOpen(true)}
+        onExportClick={() => setExportModalOpen(true)}
       />
+
 
       {/* Mobile Mode Switcher (Visible on small screens only) */}
       <div className="lg:hidden flex items-center justify-center p-2 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
@@ -607,7 +611,17 @@ export default function PortfolioEditorPage() {
           onSuccess={(updated) => setPortfolio(updated)}
         />
       )}
+
+      {/* Export Dialog */}
+      {portfolio && (
+        <PortfolioExportModal
+          open={exportModalOpen}
+          onOpenChange={setExportModalOpen}
+          portfolio={portfolio}
+        />
+      )}
     </div>
+
   );
 }
 

@@ -2,6 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { RESUME_MIME, validateMemoryMagicBytes } from "../middlewares/upload.js";
 import * as portfolioService from "../services/portfolio.service.js";
+import * as portfolioExportService from "../services/portfolioExport.service.js";
 
 /** Create a new portfolio draft */
 export const createPortfolio = asyncHandler(async (req, res) => {
@@ -100,3 +101,16 @@ export const generatePortfolioFromResume = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, data: { portfolio } });
 });
+
+/** Export a portfolio as React Source ZIP or Static Website ZIP */
+export const exportPortfolioById = asyncHandler(async (req, res) => {
+  const format = req.query.format === "static" ? "static" : "source";
+  const portfolio = await portfolioService.getPortfolioById(req.user.id, req.params.id);
+
+  if (format === "static") {
+    await portfolioExportService.exportPortfolioAsStaticZip(portfolio, res);
+  } else {
+    await portfolioExportService.exportPortfolioAsSourceZip(portfolio, res);
+  }
+});
+

@@ -103,4 +103,35 @@ export const portfoliosApi = {
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/portfolios/${id}`);
   },
+
+  /** Download portfolio as React Source ZIP or Static Website ZIP */
+  async downloadExport(
+    id: string,
+    format: "source" | "static",
+    filenameFallback?: string,
+  ): Promise<void> {
+    const res = await apiClient.get(`/portfolios/${id}/export?format=${format}`, {
+      responseType: "blob",
+    });
+
+    let filename = filenameFallback || `portfolio-${format === "static" ? "static-website" : "react-source"}.zip`;
+    const disposition = res.headers?.["content-disposition"] as string | undefined;
+    if (disposition) {
+      const match = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i);
+      if (match && match[1]) {
+        filename = decodeURIComponent(match[1]);
+      }
+    }
+
+    const blob = new Blob([res.data], { type: "application/zip" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
 };
+
