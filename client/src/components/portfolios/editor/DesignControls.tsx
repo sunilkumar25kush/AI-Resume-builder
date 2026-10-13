@@ -33,6 +33,12 @@ const TEMPLATES: Array<{
     badge: "Featured ★",
   },
   {
+    id: "creative",
+    name: "Modern 3D",
+    desc: "Midnight indigo theme, 3D avatar spotlight, electric purple gradient, and floating stats.",
+    badge: "New ★",
+  },
+  {
     id: "developer",
     name: "Developer",
     desc: "Terminal aesthetic, tech-stack cards, active status badge, and code styling.",

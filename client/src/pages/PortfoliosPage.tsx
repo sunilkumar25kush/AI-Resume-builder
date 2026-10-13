@@ -50,11 +50,41 @@ const TEMPLATE_OPTIONS: Array<{
   name: string;
   desc: string;
   badge: string;
+  gradient: string;
+  previewNote: string;
 }> = [
-  { id: "devport", name: "DevPort (Featured)", desc: "Cosmic dark theme, orbital avatar, code card & floating stats", badge: "Featured ★" },
-  { id: "developer", name: "Tech / Dev", desc: "Terminal accents, GitHub links, and code highlights", badge: "Engineering" },
-  { id: "minimal", name: "Minimalist", desc: "Typography-focused elegance with generous whitespace", badge: "Clean" },
-  { id: "modern", name: "Modern Clean", desc: "Balanced layout with crisp typography & cards", badge: "Popular" },
+  {
+    id: "devport",
+    name: "DevPort (Featured)",
+    desc: "Cosmic dark theme, orbital avatar, glowing typewriter & floating code card",
+    badge: "Featured ★",
+    gradient: "from-cyan-500 via-indigo-500 to-pink-500",
+    previewNote: "Cosmic Dark & Orbital Badges",
+  },
+  {
+    id: "creative",
+    name: "Modern 3D",
+    desc: "Midnight indigo theme, 3D avatar halo, electric purple gradient & stats",
+    badge: "New ★",
+    gradient: "from-purple-600 via-indigo-600 to-blue-600",
+    previewNote: "Midnight & 3D Avatar Halo",
+  },
+  {
+    id: "developer",
+    name: "Tech / Dev",
+    desc: "Terminal accents, GitHub repository links, and code highlights",
+    badge: "Engineering",
+    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
+    previewNote: "Terminal & Code Accents",
+  },
+  {
+    id: "minimal",
+    name: "Minimalist",
+    desc: "Typography-focused editorial elegance with generous whitespace",
+    badge: "Editorial",
+    gradient: "from-neutral-700 via-neutral-500 to-neutral-400",
+    previewNote: "Quiet Editorial Whitespace",
+  },
 ];
 
 function formatDate(value: string): string {
@@ -584,28 +614,53 @@ export default function PortfoliosPage() {
             )}
 
             {/* Template Selection */}
-            <div className="space-y-1.5">
-              <Label>Portfolio Theme</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {TEMPLATE_OPTIONS.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => setSelectedTemplate(tpl.id)}
-                    className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
-                      selectedTemplate === tpl.id
-                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                        : "border-border hover:bg-accent/40"
-                    }`}
-                  >
-                    <div className="flex w-full items-center justify-between text-xs font-semibold">
-                      <span>{tpl.name}</span>
-                      <span className="text-[10px] text-muted-foreground font-normal">{tpl.badge}</span>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">{tpl.desc}</span>
-                  </button>
-                ))}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Choose Portfolio Template
+                </Label>
+                <span className="text-[11px] font-mono text-primary font-semibold">
+                  {selectedTemplate === "devport" ? "DevPort Cosmic" : selectedTemplate === "creative" ? "Modern 3D" : selectedTemplate}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {TEMPLATE_OPTIONS.map((tpl) => {
+                  const isSelected = selectedTemplate === tpl.id;
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => setSelectedTemplate(tpl.id)}
+                      className={`group relative flex flex-col items-start rounded-xl border p-3 text-left transition-all overflow-hidden ${
+                        isSelected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs"
+                          : "border-border hover:border-primary/40 hover:bg-accent/40"
+                      }`}
+                    >
+                      {/* Gradient Accent Bar */}
+                      <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${tpl.gradient} mb-2.5 opacity-90 group-hover:opacity-100 transition-opacity`} />
+
+                      <div className="flex w-full items-center justify-between text-xs font-bold">
+                        <span className="truncate">{tpl.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-medium ${
+                          isSelected ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {tpl.badge}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                        {tpl.desc}
+                      </p>
+
+                      <div className="mt-2 text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+                        <span>{tpl.previewNote}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
