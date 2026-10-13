@@ -7,6 +7,7 @@ import { ContactSection } from "@/components/portfolios/sections/ContactSection"
 import { EducationSection } from "@/components/portfolios/sections/EducationSection";
 import { ExperienceSection } from "@/components/portfolios/sections/ExperienceSection";
 import { HeroSection } from "@/components/portfolios/sections/HeroSection";
+import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { ProjectsSection } from "@/components/portfolios/sections/ProjectsSection";
 import { SkillsSection } from "@/components/portfolios/sections/SkillsSection";
 import type { Portfolio } from "@/types/portfolio";
@@ -117,9 +118,19 @@ export function MinimalTemplate({
       {/* Top minimal header */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/70 dark:bg-neutral-950/70 border-b border-neutral-200/50 dark:border-neutral-800/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <span className="text-sm font-medium tracking-tight text-neutral-900 dark:text-neutral-100 truncate max-w-[200px] sm:max-w-xs">
-            {profile?.fullName || portfolio.title || "Portfolio"}
-          </span>
+          <div className="flex items-center gap-2.5 truncate max-w-[200px] sm:max-w-xs">
+            {profile?.avatarUrl && (
+              <img
+                src={normalizeAvatarUrl(profile.avatarUrl)}
+                alt={profile.fullName || "Avatar"}
+                className="h-6 w-6 rounded-full object-cover shrink-0 border border-neutral-200 dark:border-neutral-800"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <span className="text-sm font-medium tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
+              {profile?.fullName || portfolio.title || "Portfolio"}
+            </span>
+          </div>
 
           <nav className="flex items-center gap-4 sm:gap-6 text-xs text-neutral-500 font-light">
             {profile?.bio && (

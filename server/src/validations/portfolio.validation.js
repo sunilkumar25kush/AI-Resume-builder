@@ -10,7 +10,7 @@ const profileSchema = z.object({
   email: z.string().trim().email().max(254).optional().or(z.literal("")).default(""),
   phone: z.string().trim().max(50).optional().default(""),
   location: z.string().trim().max(200).optional().default(""),
-  avatarUrl: z.string().trim().max(1000).optional().default(""),
+  avatarUrl: z.string().trim().max(2000000).optional().default(""),
 });
 
 const socialLinkSchema = z.object({
@@ -69,6 +69,7 @@ const designSettingsSchema = z.object({
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
   customCss: z.string().trim().max(10000).optional().default(""),
   sectionOrder: z.array(z.string().trim().max(50)).max(20).optional().default([
+    "hero",
     "about",
     "skills",
     "projects",
@@ -112,7 +113,7 @@ const profileUpdateSchema = z.object({
   email: z.string().trim().email().max(254).optional().or(z.literal("")),
   phone: z.string().trim().max(50).optional(),
   location: z.string().trim().max(200).optional(),
-  avatarUrl: z.string().trim().max(1000).optional(),
+  avatarUrl: z.string().trim().max(2000000).optional(),
 });
 
 const designUpdateSchema = z.object({

@@ -22,6 +22,7 @@ import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PublishModal } from "@/components/portfolios/editor/PublishModal";
+import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -327,12 +328,26 @@ export default function PortfoliosPage() {
                       Updated {formatDate(portfolio.updatedAt)}
                     </span>
                   </div>
-                  <CardTitle className="pt-2 text-lg font-semibold leading-tight group-hover:text-primary transition-colors">
-                    {portfolio.title}
-                  </CardTitle>
-                  <CardDescription className="line-clamp-2 text-xs">
-                    {portfolio.profile?.headline || portfolio.profile?.bio || `Template: ${portfolio.design.template}`}
-                  </CardDescription>
+                  <div className="pt-2 flex items-start gap-3">
+                    {portfolio.profile?.avatarUrl && (
+                      <div className="h-10 w-10 shrink-0 rounded-xl border border-border/80 overflow-hidden bg-muted">
+                        <img
+                          src={normalizeAvatarUrl(portfolio.profile.avatarUrl)}
+                          alt={portfolio.title}
+                          className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors truncate">
+                        {portfolio.title}
+                      </CardTitle>
+                      <CardDescription className="line-clamp-2 text-xs">
+                        {portfolio.profile?.headline || portfolio.profile?.bio || `Template: ${portfolio.design.template}`}
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
 
                 <CardContent className="p-5 pt-0">

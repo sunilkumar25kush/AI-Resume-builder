@@ -1,3 +1,5 @@
+import { resolveAvatarUrl } from "@/lib/utils";
+
 /**
  * Validates and sanitizes an external URL.
  * Permitted protocols: http:, https:, mailto:, tel:
@@ -33,3 +35,24 @@ export function sanitizeExternalUrl(url?: string | null): string | null {
     return null;
   }
 }
+
+/** Cleans and normalizes avatar image URLs, converting cloud storage view links into direct assets */
+export function normalizeAvatarUrl(rawUrl?: string | null): string {
+  if (!rawUrl) return "";
+  let url = rawUrl.trim().replace(/^["']|["']$/g, "");
+  if (!url) return "";
+
+  // Convert Google Drive share URLs:
+  const gdriveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+  if (gdriveMatch) {
+    return `https://drive.google.com/uc?export=view&id=${gdriveMatch[1]}`;
+  }
+
+  // Convert Dropbox share links to raw direct links
+  if (url.includes("dropbox.com") && url.includes("dl=0")) {
+    url = url.replace("dl=0", "raw=1");
+  }
+
+  return resolveAvatarUrl(url);
+}
+

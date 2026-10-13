@@ -7,6 +7,7 @@ import { ContactSection } from "@/components/portfolios/sections/ContactSection"
 import { EducationSection } from "@/components/portfolios/sections/EducationSection";
 import { ExperienceSection } from "@/components/portfolios/sections/ExperienceSection";
 import { HeroSection } from "@/components/portfolios/sections/HeroSection";
+import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { ProjectsSection } from "@/components/portfolios/sections/ProjectsSection";
 import { SkillsSection } from "@/components/portfolios/sections/SkillsSection";
 import type { PortfolioTemplateProps } from "@/components/portfolios/templates/MinimalTemplate";
@@ -113,7 +114,16 @@ export function DeveloperTemplate({
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/80 dark:bg-neutral-950/80 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-mono text-sm">
-            <Terminal className="h-4 w-4 text-emerald-500" />
+            {profile?.avatarUrl ? (
+              <img
+                src={normalizeAvatarUrl(profile.avatarUrl)}
+                alt={profile.fullName || "Avatar"}
+                className="h-6 w-6 rounded-md object-cover border border-neutral-300 dark:border-neutral-700"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <Terminal className="h-4 w-4 text-emerald-500" />
+            )}
             <span className="text-neutral-500">~/</span>
             <span className="font-bold text-neutral-900 dark:text-neutral-100">{slugName}</span>
           </div>

@@ -27,7 +27,22 @@ export function PortfolioRenderer({
   const activeTemplateId = overrideTemplate || portfolio.design?.template;
   const TemplateComponent = getPortfolioTemplate(activeTemplateId);
 
-  const resolvedSectionOrder = sectionOrder || portfolio.design?.sectionOrder;
+  const baseOrder =
+    sectionOrder ||
+    portfolio.design?.sectionOrder || [
+      "hero",
+      "about",
+      "skills",
+      "projects",
+      "experience",
+      "education",
+      "certifications",
+      "contact",
+    ];
+
+  // Guarantee hero is present (at index 0 if missing) so HeroSection and avatar are never dropped
+  const resolvedSectionOrder = baseOrder.includes("hero") ? baseOrder : ["hero", ...baseOrder];
+
   const resolvedHiddenSections =
     hiddenSections ||
     (portfolio.design?.sectionVisibility

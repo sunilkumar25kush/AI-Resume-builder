@@ -37,7 +37,11 @@ export function usePortfolioSeo(portfolio: Portfolio | null) {
 
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const canonicalUrl = `${origin}/p/${portfolio.slug}`;
-    const avatarUrl = portfolio.profile?.avatarUrl?.trim() || "";
+    const avatarUrl = portfolio.profile?.avatarUrl
+      ? (portfolio.profile.avatarUrl.startsWith("/")
+          ? `${origin}${portfolio.profile.avatarUrl}`
+          : portfolio.profile.avatarUrl.trim())
+      : "";
 
     // 2. Set document title
     document.title = computedTitle;

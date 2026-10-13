@@ -8,7 +8,7 @@ const profileSchema = new mongoose.Schema(
     email: { type: String, default: "", trim: true, maxlength: 254 },
     phone: { type: String, default: "", trim: true, maxlength: 50 },
     location: { type: String, default: "", trim: true, maxlength: 200 },
-    avatarUrl: { type: String, default: "", trim: true, maxlength: 1000 },
+    avatarUrl: { type: String, default: "", trim: true, maxlength: 2000000 },
   },
   { _id: false },
 );
@@ -101,7 +101,7 @@ const designSettingsSchema = new mongoose.Schema(
     customCss: { type: String, default: "", trim: true, maxlength: 10000 },
     sectionOrder: {
       type: [String],
-      default: ["about", "skills", "projects", "experience", "education", "certifications", "contact"],
+      default: ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
     },
     sectionVisibility: { type: mongoose.Schema.Types.Mixed, default: {} },
   },

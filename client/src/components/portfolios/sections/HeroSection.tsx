@@ -4,6 +4,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { BrandIcon } from "@/components/portfolios/common/BrandIcon";
 import { SafeLink } from "@/components/portfolios/common/SafeLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import type { PortfolioProfile, PortfolioSocialLink } from "@/types/portfolio";
 
 export interface HeroSectionProps {
@@ -22,8 +23,9 @@ export function HeroSection({
   showEmpty = false,
 }: HeroSectionProps) {
   const { fullName, headline, location, avatarUrl, email, phone } = profile;
+  const avatarSrc = normalizeAvatarUrl(avatarUrl);
 
-  if (!fullName?.trim() && !headline?.trim() && !showEmpty) {
+  if (!fullName?.trim() && !headline?.trim() && !avatarSrc && !showEmpty) {
     return null;
   }
 
@@ -92,9 +94,14 @@ export function HeroSection({
               </div>
             </div>
 
-            {avatarUrl && (
-              <Avatar className="h-28 w-28 sm:h-36 sm:w-36 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 shadow-md shrink-0">
-                <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
+            {avatarSrc && (
+              <Avatar className="h-28 w-28 sm:h-36 sm:w-36 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 shadow-md shrink-0 overflow-hidden">
+                <AvatarImage
+                  src={avatarSrc}
+                  alt={fullName || "Profile avatar"}
+                  className="object-cover size-full rounded-2xl"
+                  referrerPolicy="no-referrer"
+                />
                 <AvatarFallback className="rounded-2xl text-xl font-bold font-mono">
                   {initials}
                 </AvatarFallback>
@@ -110,9 +117,14 @@ export function HeroSection({
   return (
     <section className="py-16 sm:py-24 border-b border-neutral-200 dark:border-neutral-800">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        {avatarUrl && (
-          <Avatar className="h-24 w-24 mx-auto rounded-full ring-2 ring-neutral-200 dark:ring-neutral-800 shadow-sm">
-            <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
+        {avatarSrc && (
+          <Avatar className="h-24 w-24 mx-auto rounded-full ring-2 ring-neutral-200 dark:ring-neutral-800 shadow-sm overflow-hidden">
+            <AvatarImage
+              src={avatarSrc}
+              alt={fullName || "Profile avatar"}
+              className="object-cover size-full rounded-full"
+              referrerPolicy="no-referrer"
+            />
             <AvatarFallback className="text-lg font-medium">{initials}</AvatarFallback>
           </Avatar>
         )}
