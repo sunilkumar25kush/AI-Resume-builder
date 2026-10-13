@@ -40,19 +40,16 @@ function sanitizeUrl(url) {
 
 /**
  * Normalizes avatar URLs for exported standalone packages.
- * Strips internal server hosts if relative, keeping valid remote or direct links.
  */
 function normalizeExportAvatar(url) {
   if (!url) return "";
   const trimmed = url.trim().replace(/^["']|["']$/g, "");
   if (!trimmed) return "";
 
-  // Convert Google Drive share links to direct uc export links
   const gdrive = trimmed.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
   if (gdrive) {
     return `https://drive.google.com/uc?export=view&id=${gdrive[1]}`;
   }
-  // Convert Dropbox share links to raw direct links
   if (trimmed.includes("dropbox.com") && trimmed.includes("dl=0")) {
     return trimmed.replace("dl=0", "raw=1");
   }
@@ -60,17 +57,18 @@ function normalizeExportAvatar(url) {
 }
 
 /**
- * Sanitizes portfolio data to exclude private DB metadata, user passwords, or internal IDs.
+ * Sanitizes portfolio data to exclude private DB metadata or internal IDs.
  */
 export function sanitizePortfolioData(portfolio) {
-  const template = (portfolio.design?.template || "devport").toLowerCase();
-  const normalizedTemplate = ["devport", "creative", "developer", "minimal"].includes(template)
-    ? template
-    : template === "modern"
-    ? "creative"
-    : template === "executive"
-    ? "minimal"
-    : "devport";
+  const rawTemplate = (portfolio.design?.template || "devport").toLowerCase().trim();
+  const template =
+    rawTemplate === "creative" || rawTemplate === "modern"
+      ? "creative"
+      : rawTemplate === "developer"
+      ? "developer"
+      : rawTemplate === "minimal" || rawTemplate === "executive"
+      ? "minimal"
+      : "devport";
 
   return {
     title: portfolio.title || "Portfolio",
@@ -128,7 +126,7 @@ export function sanitizePortfolioData(portfolio) {
       url: c.url || "",
     })),
     design: {
-      template: normalizedTemplate,
+      template,
       theme: portfolio.design?.theme || "dark",
       primaryColor: portfolio.design?.primaryColor || "#38bdf8",
       fontFamily: portfolio.design?.fontFamily || "Inter",
@@ -169,7 +167,7 @@ export function getExportFilename(portfolio, format) {
 }
 
 /**
- * Initializes an archiver stream directed to the Express response.
+ * Initializes a ZipArchive stream directed to the Express response.
  */
 function createArchive(res, filename) {
   const archive = new ZipArchive({
@@ -197,9 +195,6 @@ function createArchive(res, filename) {
    REACT SOURCE CODE ARCHIVE GENERATOR
    ========================================================================== */
 
-/**
- * Generates and streams a full React + Vite project archive.
- */
 export async function exportPortfolioAsSourceZip(rawPortfolio, res) {
   const data = sanitizePortfolioData(rawPortfolio);
   const filename = getExportFilename(data, "source");
@@ -259,7 +254,7 @@ export default defineConfig({
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-neutral-950 text-neutral-100 antialiased selection:bg-sky-500/30 selection:text-sky-200">
+  <body class="bg-[#090a16] text-neutral-100 antialiased selection:bg-cyan-500/30 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
@@ -331,7 +326,7 @@ export default function App() {
   const SelectedTemplate = TEMPLATE_MAP[templateKey] || DevPortTemplate;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen">
       <SelectedTemplate portfolio={portfolioData} />
     </div>
   );
@@ -339,265 +334,20 @@ export default function App() {
 `;
   archive.append(appJsx, { name: "src/App.jsx" });
 
-  // 8. src/components/common/BrandIcon.jsx
-  const brandIconJsx = `import React from "react";
-import { ExternalLink, Globe, Mail, MapPin, Phone } from "lucide-react";
+  // 8. Common Components
+  archive.append(getBrandIconJsx(), { name: "src/components/common/BrandIcon.jsx" });
+  archive.append(getSafeLinkJsx(), { name: "src/components/common/SafeLink.jsx" });
+  archive.append(getUrlUtilsJs(), { name: "src/components/common/urlUtils.js" });
 
-export function BrandIcon({ name, size = 16, className = "" }) {
-  const norm = (name || "").toLowerCase().trim();
+  // 9. Templates
+  archive.append(getFullDevPortTemplateJsx(), { name: "src/components/templates/DevPortTemplate.jsx" });
+  archive.append(getFullModernCreativeTemplateJsx(), { name: "src/components/templates/ModernCreativeTemplate.jsx" });
+  archive.append(getFullDeveloperTemplateJsx(), { name: "src/components/templates/DeveloperTemplate.jsx" });
+  archive.append(getFullMinimalTemplateJsx(), { name: "src/components/templates/MinimalTemplate.jsx" });
 
-  const svgProps = {
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-    fill: "currentColor",
-    viewBox: "0 0 24 24",
-  };
-
-  if (norm.includes("github")) {
-    return (
-      <svg {...svgProps}>
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"
-        />
-      </svg>
-    );
-  }
-
-  if (norm.includes("linkedin")) {
-    return (
-      <svg {...svgProps}>
-        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76c.97 0 1.75-.79 1.75-1.76s-.78-1.75-1.75-1.75a1.75 1.75 0 0 0-1.75 1.75c0 .97.78 1.76 1.75 1.76m1.4 9.74v-8.37H5.06v8.37h2.8z" />
-      </svg>
-    );
-  }
-
-  if (norm.includes("twitter") || norm === "x") {
-    return (
-      <svg {...svgProps}>
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    );
-  }
-
-  if (norm.includes("website") || norm.includes("portfolio")) {
-    return <Globe className={className} style={{ width: size, height: size }} />;
-  }
-  if (norm.includes("mail")) {
-    return <Mail className={className} style={{ width: size, height: size }} />;
-  }
-  if (norm.includes("phone")) {
-    return <Phone className={className} style={{ width: size, height: size }} />;
-  }
-  if (norm.includes("location")) {
-    return <MapPin className={className} style={{ width: size, height: size }} />;
-  }
-
-  return <ExternalLink className={className} style={{ width: size, height: size }} />;
-}
-`;
-  archive.append(brandIconJsx, { name: "src/components/common/BrandIcon.jsx" });
-
-  // 9. src/components/common/SafeLink.jsx
-  const safeLinkJsx = `import React from "react";
-import { sanitizeExternalUrl } from "./urlUtils.js";
-
-export function SafeLink({ href, className = "", children, onClick, ...rest }) {
-  const safeHref = sanitizeExternalUrl(href);
-
-  if (!safeHref) {
-    return <span className={className}>{children}</span>;
-  }
-
-  return (
-    <a
-      href={safeHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-      onClick={onClick}
-      {...rest}
-    >
-      {children}
-    </a>
-  );
-}
-`;
-  archive.append(safeLinkJsx, { name: "src/components/common/SafeLink.jsx" });
-
-  // 10. src/components/common/urlUtils.js
-  const urlUtilsJs = `export function sanitizeExternalUrl(url) {
-  if (!url || typeof url !== "string") return null;
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  if (trimmed.startsWith("mailto:") || trimmed.startsWith("tel:")) {
-    if (trimmed.includes("\\r") || trimmed.includes("\\n") || trimmed.includes("\\u0000")) return null;
-    return trimmed;
-  }
-
-  let normalized = trimmed;
-  if (!/^https?:\\/\\//i.test(normalized) && !/^[a-z0-9+-.]+:/.test(normalized)) {
-    normalized = \`https://\${normalized}\`;
-  }
-
-  try {
-    const parsed = new URL(normalized);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      return parsed.href;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export function normalizeAvatarUrl(rawUrl) {
-  if (!rawUrl) return "";
-  let url = rawUrl.trim().replace(/^["']|["']$/g, "");
-  if (!url) return "";
-
-  const gdrive = url.match(/drive\\.google\\.com\\/(?:file\\/d\\/|open\\?id=)([a-zA-Z0-9_-]+)/);
-  if (gdrive) {
-    return \`https://drive.google.com/uc?export=view&id=\${gdrive[1]}\`;
-  }
-  if (url.includes("dropbox.com") && url.includes("dl=0")) {
-    url = url.replace("dl=0", "raw=1");
-  }
-  return url;
-}
-`;
-  archive.append(urlUtilsJs, { name: "src/components/common/urlUtils.js" });
-
-  // 11. src/components/templates/DevPortTemplate.jsx
-  const devPortTemplateJsx = getDevPortTemplateJsx();
-  archive.append(devPortTemplateJsx, { name: "src/components/templates/DevPortTemplate.jsx" });
-
-  // 12. src/components/templates/ModernCreativeTemplate.jsx
-  const modernCreativeTemplateJsx = getModernCreativeTemplateJsx();
-  archive.append(modernCreativeTemplateJsx, { name: "src/components/templates/ModernCreativeTemplate.jsx" });
-
-  // 13. src/components/templates/DeveloperTemplate.jsx
-  const developerTemplateJsx = getDeveloperTemplateJsx();
-  archive.append(developerTemplateJsx, { name: "src/components/templates/DeveloperTemplate.jsx" });
-
-  // 14. src/components/templates/MinimalTemplate.jsx
-  const minimalTemplateJsx = getMinimalTemplateJsx();
-  archive.append(minimalTemplateJsx, { name: "src/components/templates/MinimalTemplate.jsx" });
-
-  // 15. src/components/sections/
-  archive.append(getHeroSectionJsx(), { name: "src/components/sections/HeroSection.jsx" });
-  archive.append(getAboutSectionJsx(), { name: "src/components/sections/AboutSection.jsx" });
-  archive.append(getSkillsSectionJsx(), { name: "src/components/sections/SkillsSection.jsx" });
-  archive.append(getProjectsSectionJsx(), { name: "src/components/sections/ProjectsSection.jsx" });
-  archive.append(getExperienceSectionJsx(), { name: "src/components/sections/ExperienceSection.jsx" });
-  archive.append(getEducationSectionJsx(), { name: "src/components/sections/EducationSection.jsx" });
-  archive.append(getCertificationsSectionJsx(), { name: "src/components/sections/CertificationsSection.jsx" });
-  archive.append(getContactSectionJsx(), { name: "src/components/sections/ContactSection.jsx" });
-
-  // 16. README.md
-  const readme = `# ${data.title} - React Source Code
-
-This is a standalone, production-ready portfolio website built with **React 19**, **Vite**, **Tailwind CSS v4**, and **Lucide Icons**.
-
-## 🚀 Quick Start
-
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or later
-- **npm** (or yarn / pnpm)
-
-### 2. Install Dependencies
-\`\`\`bash
-npm install
-\`\`\`
-
-### 3. Local Development
-Run the local dev server with hot module replacement:
-\`\`\`bash
-npm run dev
-\`\`\`
-Open the URL shown in your terminal (usually \`http://localhost:5173\`) in your browser.
-
-### 4. Production Build
-Compile and bundle the project for production:
-\`\`\`bash
-npm run build
-\`\`\`
-The static output will be generated inside the \`dist/\` folder.
-
-You can preview the production build locally:
-\`\`\`bash
-npm run preview
-\`\`\`
-
----
-
-## 🎨 Customization
-
-- **Portfolio Content**: All your career details, projects, skills, and settings are saved in \`src/portfolioData.json\`. Edit this file to update any information.
-- **Templates**: Switch templates in \`src/App.jsx\` or update \`design.template\` in \`portfolioData.json\`:
-  - \`devport\`: Cosmic dark aesthetic with orbital avatar, terminal card, and tech badges.
-  - \`creative\`: Midnight indigo gradient, 3D spotlight avatar, floating stat badge.
-  - \`developer\`: Clean developer terminal style with bash commands and tech stack cards.
-  - \`minimal\`: Refined typography and quiet elegance.
-- **Styling**: Styles are customized using Tailwind CSS v4 in \`src/index.css\`.
-
----
-
-## 🌐 Deployment Instructions
-
-### Deploy to Vercel
-1. Install Vercel CLI: \`npm i -g vercel\`
-2. Run \`vercel\` in this folder and follow the prompts.
-3. Or push this code to GitHub and import it on [vercel.com](https://vercel.com).
-   - Framework Preset: **Vite**
-   - Build Command: \`npm run build\`
-   - Output Directory: \`dist\`
-
-### Deploy to Netlify
-1. Build the static assets: \`npm run build\`
-2. Drag and drop the \`dist/\` folder to [Netlify Drop](https://app.netlify.com/drop).
-3. Or connect your GitHub repository on Netlify.
-
-### Deploy to GitHub Pages
-1. In \`vite.config.js\`, set \`base: '/<repository-name>/'\`.
-2. Build the app: \`npm run build\`
-3. Push the contents of \`dist/\` to the \`gh-pages\` branch or use the GitHub Pages GitHub Action.
-
----
-
-## 📄 License
-This project is licensed under the MIT License.
-`;
-  archive.append(readme, { name: "README.md" });
-
-  // 17. LICENSE
-  const license = `MIT License
-
-Copyright (c) ${new Date().getFullYear()} ${data.profile?.fullName || "Developer"}
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-`;
-  archive.append(license, { name: "LICENSE" });
+  // 10. README.md & LICENSE
+  archive.append(getSourceReadme(data), { name: "README.md" });
+  archive.append(getLicenseText(data), { name: "LICENSE" });
 
   await archive.finalize();
 }
@@ -606,9 +356,6 @@ SOFTWARE.
    STATIC WEBSITE ARCHIVE GENERATOR
    ========================================================================== */
 
-/**
- * Generates and streams a 100% self-contained static website archive.
- */
 export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
   const data = sanitizePortfolioData(rawPortfolio);
   const filename = getExportFilename(data, "static");
@@ -616,84 +363,56 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
 
   const template = data.design.template;
 
-  // 1. Generate Static HTML
-  const staticHtml = generateStaticHtml(data, template);
+  // 1. Generate Template-Specific Static HTML
+  let staticHtml;
+  if (template === "creative") {
+    staticHtml = generateCreativeStaticHtml(data);
+  } else if (template === "developer") {
+    staticHtml = generateDeveloperStaticHtml(data);
+  } else if (template === "minimal") {
+    staticHtml = generateMinimalStaticHtml(data);
+  } else {
+    // Default: DevPort
+    staticHtml = generateDevPortStaticHtml(data);
+  }
   archive.append(staticHtml, { name: "index.html" });
 
-  // 2. Generate Static CSS
-  const staticCss = generateStaticCss(data, template);
+  // 2. Generate Template-Specific Static CSS
+  let staticCss;
+  if (template === "creative") {
+    staticCss = generateCreativeStaticCss(data);
+  } else if (template === "developer") {
+    staticCss = generateDeveloperStaticCss(data);
+  } else if (template === "minimal") {
+    staticCss = generateMinimalStaticCss(data);
+  } else {
+    staticCss = generateDevPortStaticCss(data);
+  }
   archive.append(staticCss, { name: "assets/style.css" });
 
-  // 3. Generate Static Vanilla JS
-  const staticJs = generateStaticJs(data, template);
+  // 3. Generate Template-Specific Static Vanilla JS
+  const staticJs = generateDevPortStaticJs(data, template);
   archive.append(staticJs, { name: "assets/script.js" });
 
   // 4. README.md
-  const readme = `# ${data.title} - Static Website Bundle
-
-This archive contains your self-contained, production-ready portfolio website.
-
-## 🚀 Instant Local Preview
-Simply double-click \`index.html\` to open your website directly in any web browser!
-No Node.js, no build tools, and no server configuration required.
-
-You can also run a quick local HTTP server:
-\`\`\`bash
-# Using Python
-python -m http.server 8000
-
-# Or using npx
-npx serve .
-\`\`\`
-
----
-
-## 🌐 Free Hosting Deployment Options
-
-### 1. Netlify Drop (Easiest - 10 Seconds)
-1. Visit [app.netlify.com/drop](https://app.netlify.com/drop)
-2. Drag and drop the extracted folder containing \`index.html\`, \`assets/\`, and this README.
-3. Your website goes live immediately with a free HTTPS URL and custom domain support!
-
-### 2. GitHub Pages (Free forever)
-1. Create a new GitHub repository named \`<your-username>.github.io\` (or any repository name).
-2. Upload the files in this folder (\`index.html\`, \`assets/\`) to the root of the \`main\` branch.
-3. Go to **Settings** > **Pages** > Select branch **main** > Click **Save**.
-4. Your site will be live at \`https://<your-username>.github.io\`!
-
-### 3. Vercel
-1. Install Vercel CLI: \`npm i -g vercel\`
-2. Run \`vercel deploy --prod .\`
-3. Your site is deployed instantly on Vercel's global CDN.
-
-### 4. Cloudflare Pages
-1. Log in to Cloudflare Dashboard > **Workers & Pages** > **Create application** > **Pages**.
-2. Upload this folder directly using Direct Upload.
-3. Enjoy ultra-fast edge delivery and free SSL.
-
----
-
-## 🔒 Security & Privacy Notice
-- **100% Offline Compatible**: This website runs completely without contacting any backend API.
-- **Zero Secrets**: No API keys, credentials, or private database IDs are contained in this build.
-- **Lightweight & Fast**: Pure vanilla HTML, CSS, and modern JavaScript for blazing 100/100 Lighthouse performance.
-`;
-  archive.append(readme, { name: "README.md" });
+  archive.append(getStaticReadme(data), { name: "README.md" });
 
   await archive.finalize();
 }
 
 /* ==========================================================================
-   STATIC HTML GENERATION HELPER
+   DEVPORT STATIC HTML, CSS & JS GENERATORS
    ========================================================================== */
 
-function generateStaticHtml(data, template) {
-  const { profile, socialLinks, skills, experience, education, projects, certifications, design } = data;
+function generateDevPortStaticHtml(data) {
+  const { profile, socialLinks, skills, experience, education, projects, certifications } = data;
   const fullName = profile.fullName || "Developer";
-  const headline = profile.headline || "Full Stack Developer";
-  const bio = profile.bio || "";
+  const headline = profile.headline || "Full Stack Engineer & Creative Developer";
+  const bio = profile.bio || "Crafting high-performance web experiences and scalable cloud applications with modern architecture.";
   const avatarUrl = profile.avatarUrl;
-  const primaryColor = design.primaryColor || "#38bdf8";
+  const location = profile.location || "";
+  const email = profile.email || "";
+  const phone = profile.phone || "";
 
   const initials = (fullName || "DV")
     .split(" ")
@@ -703,70 +422,114 @@ function generateStaticHtml(data, template) {
     .join("")
     .toUpperCase();
 
+  const firstName = fullName ? fullName.split(" ")[0] : "Dev";
+
+  // Typewriter roles
+  const roles = headline
+    ? headline.split(/[,|•&/]/).map((s) => s.trim()).filter(Boolean)
+    : ["Creative Developer", "Tech Enthusiast", "Full Stack Engineer"];
+  const rolesJson = JSON.stringify(roles.length > 0 ? roles : [headline]);
+
+  // Derived stats
+  const projectCount = projects.length > 0 ? `${projects.length}+` : "10+";
+  const experienceYears = experience.length > 0 ? `${Math.max(1, Math.round(experience.length * 1.5))}+` : "3+";
+
+  // Top skills for hero pills
+  const topSkills = skills.slice(0, 6);
+  const codeSkills = (skills.length > 0 ? skills.slice(0, 3).map((s) => `"${s.name}"`) : ['"React"', '"Node"', '"TypeScript"']).join(", ");
+
+  const TECH_PILL_CLASSES = [
+    "pill-sky",
+    "pill-pink",
+    "pill-amber",
+    "pill-cyan",
+    "pill-emerald",
+    "pill-purple",
+  ];
+
   // Social Links HTML
   const socialIconsHtml = socialLinks
-    .map((s) => {
+    .map((s, idx) => {
       const url = sanitizeUrl(s.url);
       if (!url) return "";
       const label = escapeHtml(s.label || s.platform || "Link");
-      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="${label}">${label}</a>`;
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="${label}"><span class="social-text">${label}</span></a>`;
     })
     .join("\n");
 
-  // Skills grouped or listed
-  const skillsHtml = skills
-    .map((s) => {
-      return `<div class="skill-pill"><span class="skill-name">${escapeHtml(s.name)}</span>${s.level ? `<span class="skill-lvl">${escapeHtml(s.level)}</span>` : ""}</div>`;
+  // Top Skills Pills HTML
+  const topSkillsHtml = topSkills
+    .map((s, idx) => {
+      const pillClass = TECH_PILL_CLASSES[idx % TECH_PILL_CLASSES.length];
+      return `<span class="tech-pill ${pillClass}">${escapeHtml(s.name)}</span>`;
     })
     .join("\n");
 
-  // Projects HTML
-  const projectsHtml = projects
-    .map((p) => {
-      const liveUrl = sanitizeUrl(p.liveUrl);
-      const repoUrl = sanitizeUrl(p.repoUrl);
-      const tagsHtml = (p.tags || [])
-        .map((t) => `<span class="tag-badge">${escapeHtml(t)}</span>`)
-        .join("");
-
+  // Full Skills Cards HTML
+  const allSkillsHtml = skills
+    .map((s, idx) => {
+      const pct = s.level === "expert" ? "95%" : s.level === "advanced" ? "85%" : s.level === "intermediate" ? "70%" : "55%";
       return `
-        <div class="project-card ${p.featured ? "featured-card" : ""}">
-          <div class="project-header">
-            <h3 class="project-title">${escapeHtml(p.title)}</h3>
-            ${p.featured ? `<span class="featured-pill">Featured</span>` : ""}
+        <div class="skill-card">
+          <div class="skill-card-header">
+            <span class="skill-card-name">${escapeHtml(s.name)}</span>
+            <span class="skill-card-cat">${escapeHtml(s.category || "Skill")}</span>
           </div>
-          <p class="project-desc">${escapeHtml(p.description)}</p>
-          ${tagsHtml ? `<div class="project-tags">${tagsHtml}</div>` : ""}
-          <div class="project-actions">
-            ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Live Demo &rarr;</a>` : ""}
-            ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Source Code</a>` : ""}
+          <div class="skill-progress-track">
+            <div class="skill-progress-bar" style="width: ${pct}"></div>
           </div>
         </div>
       `;
     })
     .join("\n");
 
-  // Experience HTML
+  // Projects Cards HTML
+  const projectsHtml = projects
+    .map((p, idx) => {
+      const liveUrl = sanitizeUrl(p.liveUrl);
+      const repoUrl = sanitizeUrl(p.repoUrl);
+      const tagsHtml = (p.tags || [])
+        .map((t) => `<span class="proj-tag">#${escapeHtml(t)}</span>`)
+        .join("");
+
+      return `
+        <div class="devport-project-card">
+          <div class="proj-body">
+            <div class="proj-top">
+              <span class="proj-num">// ${String(idx + 1).padStart(2, "0")}</span>
+              <h4 class="proj-title">${escapeHtml(p.title)}</h4>
+              ${p.featured ? `<span class="featured-badge">Featured</span>` : ""}
+            </div>
+            <p class="proj-desc">${escapeHtml(p.description)}</p>
+            ${tagsHtml ? `<div class="proj-tags">${tagsHtml}</div>` : ""}
+          </div>
+          <div class="proj-footer">
+            ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="btn-live">Live Demo &rarr;</a>` : ""}
+            ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="btn-source">Code Repository</a>` : ""}
+          </div>
+        </div>
+      `;
+    })
+    .join("\n");
+
+  // Experience Cards HTML
   const experienceHtml = experience
-    .map((exp) => {
+    .map((exp, idx) => {
       const highlightsHtml = (exp.highlights || [])
         .map((h) => `<li>${escapeHtml(h)}</li>`)
         .join("");
 
       return `
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-content">
-            <div class="timeline-header">
-              <div>
-                <h4 class="timeline-role">${escapeHtml(exp.title)}</h4>
-                <div class="timeline-company">${escapeHtml(exp.company)} ${exp.location ? `&bull; ${escapeHtml(exp.location)}` : ""}</div>
-              </div>
-              <span class="timeline-date">${escapeHtml(exp.startDate || "")} ${exp.endDate ? `&ndash; ${escapeHtml(exp.endDate)}` : exp.current ? "&ndash; Present" : ""}</span>
+        <div class="exp-card">
+          <div class="exp-header">
+            <div>
+              <h4 class="exp-title">${escapeHtml(exp.title)}</h4>
+              <p class="exp-company">${escapeHtml(exp.company)} ${exp.location ? `• ${escapeHtml(exp.location)}` : ""}</p>
             </div>
-            ${exp.description ? `<p class="timeline-desc">${escapeHtml(exp.description)}</p>` : ""}
-            ${highlightsHtml ? `<ul class="timeline-bullets">${highlightsHtml}</ul>` : ""}
+            <span class="exp-date">${escapeHtml(exp.startDate || "")} &mdash; ${exp.current ? "Present" : escapeHtml(exp.endDate || "Present")}</span>
           </div>
+          ${exp.description ? `<p class="exp-desc">${escapeHtml(exp.description)}</p>` : ""}
+          ${highlightsHtml ? `<ul class="exp-bullets">${highlightsHtml}</ul>` : ""}
         </div>
       `;
     })
@@ -774,15 +537,12 @@ function generateStaticHtml(data, template) {
 
   // Education HTML
   const educationHtml = education
-    .map((ed) => {
+    .map((edu, idx) => {
       return `
-        <div class="edu-card">
-          <div class="edu-header">
-            <h4 class="edu-degree">${escapeHtml(ed.degree)} ${ed.fieldOfStudy ? `in ${escapeHtml(ed.fieldOfStudy)}` : ""}</h4>
-            <span class="edu-date">${escapeHtml(ed.startDate || "")} ${ed.endDate ? `&ndash; ${escapeHtml(ed.endDate)}` : ""}</span>
-          </div>
-          <div class="edu-institution">${escapeHtml(ed.institution)}</div>
-          ${ed.grade ? `<div class="edu-grade">Grade: ${escapeHtml(ed.grade)}</div>` : ""}
+        <div class="edu-box">
+          <h4 class="edu-box-title">${escapeHtml(edu.degree)} ${edu.fieldOfStudy ? `in ${escapeHtml(edu.fieldOfStudy)}` : ""}</h4>
+          <p class="edu-box-inst">${escapeHtml(edu.institution)}</p>
+          <p class="edu-box-date">${escapeHtml(edu.startDate || "")} &mdash; ${escapeHtml(edu.endDate || "Present")}</p>
         </div>
       `;
     })
@@ -790,211 +550,325 @@ function generateStaticHtml(data, template) {
 
   // Certifications HTML
   const certsHtml = certifications
-    .map((c) => {
-      const url = sanitizeUrl(c.url);
+    .map((cert, idx) => {
+      const url = sanitizeUrl(cert.url);
       return `
-        <div class="cert-card">
-          <div class="cert-info">
-            <h4 class="cert-name">${escapeHtml(c.name)}</h4>
-            <div class="cert-issuer">${escapeHtml(c.issuer)} ${c.issueDate ? `&bull; ${escapeHtml(c.issueDate)}` : ""}</div>
-          </div>
-          ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs">Verify</a>` : ""}
+        <div class="cert-box">
+          <h4 class="cert-box-title">${escapeHtml(cert.name)}</h4>
+          <p class="cert-box-issuer">${escapeHtml(cert.issuer)}</p>
+          ${cert.issueDate ? `<p class="cert-box-date">Issued ${escapeHtml(cert.issueDate)}</p>` : ""}
+          ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn-verify">Verify &rarr;</a>` : ""}
         </div>
       `;
     })
     .join("\n");
 
   return `<!DOCTYPE html>
-<html lang="en" data-template="${template}">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(data.publication.seoTitle || data.title)}</title>
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
-  <style>
-    :root {
-      --primary-color: ${primaryColor};
-    }
-  </style>
 </head>
-<body class="theme-${template}">
-  <!-- Top Navigation Header -->
-  <header class="navbar" id="top-navbar">
-    <div class="nav-container">
-      <a href="#hero" class="brand-logo">
-        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="brand-avatar">` : `<span class="brand-initials">${escapeHtml(initials)}</span>`}
-        <span class="brand-name">${escapeHtml(fullName)}</span>
+<body class="devport-theme">
+  <!-- Ambient Cosmic Glow Backdrops -->
+  <div class="ambient-glow-layer" aria-hidden="true">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+    <div class="glow-orb orb-4"></div>
+  </div>
+
+  <!-- Floating Glassmorphic Top Navigation Bar -->
+  <header class="devport-navbar" id="top-navbar">
+    <div class="navbar-container">
+      <a href="#hero" class="brand-group">
+        <div class="brand-gradient-box">
+          <div class="brand-inner-box">
+            <span>${escapeHtml(initials)}</span>
+          </div>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">${escapeHtml(fullName)}</div>
+          <div class="brand-sub">${escapeHtml(headline || "Developer")}</div>
+        </div>
       </a>
-      <nav class="nav-links">
-        <a href="#about" class="nav-link">About</a>
-        ${skills.length ? `<a href="#skills" class="nav-link">Skills</a>` : ""}
-        ${projects.length ? `<a href="#projects" class="nav-link">Projects</a>` : ""}
-        ${experience.length ? `<a href="#experience" class="nav-link">Experience</a>` : ""}
-        ${education.length ? `<a href="#education" class="nav-link">Education</a>` : ""}
-        ${certifications.length ? `<a href="#certifications" class="nav-link">Certifications</a>` : ""}
-        <a href="#contact" class="nav-link nav-link-cta">Contact</a>
+
+      <nav class="devport-nav-pills">
+        <a href="#hero" class="nav-pill active">Home</a>
+        <a href="#about" class="nav-pill">About</a>
+        ${skills.length ? `<a href="#skills" class="nav-pill">Skills</a>` : ""}
+        ${projects.length ? `<a href="#projects" class="nav-pill">Projects</a>` : ""}
+        ${experience.length ? `<a href="#experience" class="nav-pill">Experience</a>` : ""}
+        ${(education.length || certifications.length) ? `<a href="#education" class="nav-pill">Education</a>` : ""}
+        <a href="#contact" class="nav-pill">Contact</a>
       </nav>
+
+      <div class="nav-actions">
+        <a href="#contact" class="btn-hire-me">
+          <span>Hire Me</span>
+          <span class="arrow-icon">&rarr;</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="section hero-section" id="hero">
-    <div class="hero-container">
-      <div class="hero-content">
-        <div class="status-badge">
-          <span class="status-dot"></span> Available for Opportunities
+  <!-- Main Content Container -->
+  <main class="devport-main-container">
+    <!-- 1. HERO SECTION -->
+    <section id="hero" class="devport-hero-section">
+      <div class="hero-grid">
+        <!-- Left Column -->
+        <div class="hero-left">
+          <div class="status-pill">
+            <span class="ping-dot"><span class="ping-ring"></span></span>
+            <span>Available for opportunities &amp; freelance work</span>
+          </div>
+
+          <div class="greeting-block">
+            <p class="sub-greeting">Hey there! I&apos;m</p>
+            <h1 class="hero-full-name">${escapeHtml(fullName)}</h1>
+          </div>
+
+          <div class="typewriter-headline">
+            <span>I&apos;m a</span>
+            <span class="glowing-typewriter-text" id="typewriterText" data-roles='${escapeHtml(rolesJson)}'>${escapeHtml(roles[0] || headline)}</span>
+            <span class="typewriter-cursor"></span>
+          </div>
+
+          <p class="hero-bio-text">${escapeHtml(bio)}</p>
+
+          ${topSkillsHtml ? `
+          <div class="core-tech-container">
+            <p class="core-tech-label">CORE TECHNOLOGIES</p>
+            <div class="core-tech-pills">
+              ${topSkillsHtml}
+            </div>
+          </div>
+          ` : ""}
+
+          <div class="hero-cta-row">
+            <a href="#projects" class="btn-primary-gradient">
+              <span>View My Work</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="#contact" class="btn-secondary-glass">
+              <span>Let&apos;s Talk</span>
+            </a>
+            ${location ? `<div class="location-badge"><span>📍 ${escapeHtml(location)}</span></div>` : ""}
+          </div>
+
+          ${socialIconsHtml ? `
+          <div class="hero-connect-row">
+            <span class="connect-label">CONNECT:</span>
+            <div class="connect-icons">
+              ${socialIconsHtml}
+            </div>
+          </div>
+          ` : ""}
         </div>
-        <h1 class="hero-name">${escapeHtml(fullName)}</h1>
-        <h2 class="hero-headline" id="typewriter-headline" data-headline="${escapeHtml(headline)}">${escapeHtml(headline)}</h2>
-        <p class="hero-bio">${escapeHtml(bio)}</p>
 
-        <div class="hero-actions">
-          ${profile.email ? `<a href="mailto:${escapeHtml(profile.email)}" class="btn btn-primary">Get in Touch &rarr;</a>` : ""}
-          ${projects.length ? `<a href="#projects" class="btn btn-outline">View Projects</a>` : ""}
+        <!-- Right Column: Orbital Avatar Frame + Code Snippet + Stat Badges -->
+        <div class="hero-right">
+          <div class="orbital-stage">
+            <!-- Background Rotating Aura -->
+            <div class="orbital-aura"></div>
+
+            <!-- Central Circular Avatar Frame -->
+            <div class="orbital-avatar-ring">
+              <div class="orbital-avatar-inner">
+                ${avatarUrl ? `
+                  <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="avatar-photo">
+                ` : `
+                  <div class="avatar-fallback">
+                    <span class="fallback-initials">${escapeHtml(initials)}</span>
+                  </div>
+                `}
+              </div>
+
+              <!-- 4 Orbital Floating Badges -->
+              <div class="orbital-badge badge-top" title="Code">&lt;/&gt;</div>
+              <div class="orbital-badge badge-right" title="Design">&#10024;</div>
+              <div class="orbital-badge badge-bottom" title="Verified">&#10003;</div>
+              <div class="orbital-badge badge-left" title="Passion">&#9829;</div>
+            </div>
+
+            <!-- Floating Code Card (developer.js) -->
+            <div class="floating-code-card">
+              <div class="code-card-header">
+                <span class="dot dot-red"></span>
+                <span class="dot dot-amber"></span>
+                <span class="dot dot-green"></span>
+                <span class="code-filename">developer.js</span>
+              </div>
+              <div class="code-card-body">
+                <span class="code-pink">const</span> <span class="code-white">developer</span> = {<br>
+                &nbsp;&nbsp;<span class="code-muted">name:</span> <span class="code-cyan">&quot;${escapeHtml(firstName)}&quot;</span>,<br>
+                &nbsp;&nbsp;<span class="code-muted">skills:</span> <span class="code-amber">[${escapeHtml(codeSkills)}]</span>,<br>
+                &nbsp;&nbsp;<span class="code-muted">hardWorker:</span> <span class="code-emerald">true</span><br>
+                };
+              </div>
+            </div>
+
+            <!-- Floating Stat 1: Projects Done -->
+            <div class="floating-stat-card stat-left">
+              <div class="stat-icon-box cyan-icon">&#128196;</div>
+              <div>
+                <div class="stat-number">${escapeHtml(projectCount)}</div>
+                <div class="stat-label">Projects Done</div>
+              </div>
+            </div>
+
+            <!-- Floating Stat 2: Experience -->
+            <div class="floating-stat-card stat-right">
+              <div class="stat-icon-box pink-icon">&#128188;</div>
+              <div>
+                <div class="stat-number">${escapeHtml(experienceYears)}</div>
+                <div class="stat-label">Experience</div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        ${socialIconsHtml ? `<div class="hero-socials">${socialIconsHtml}</div>` : ""}
       </div>
+    </section>
 
-      <div class="hero-visual">
-        <div class="avatar-orbit-card">
-          <div class="avatar-glow"></div>
-          ${avatarUrl ? `
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="orbit-avatar-img">
-          ` : `
-            <div class="orbit-avatar-placeholder">${escapeHtml(initials)}</div>
-          `}
+    <!-- 2. ABOUT SECTION -->
+    <section id="about" class="devport-section">
+      <div class="glass-section-card">
+        <div class="card-glow-accent"></div>
+        <div class="section-tag-row">
+          <span class="section-tag-num">// 01. About Me</span>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- About Section -->
-  <section class="section" id="about">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">OVERVIEW</span>
-        <h2 class="section-title">About Me</h2>
-      </div>
-      <div class="about-card">
-        <p class="about-text">${escapeHtml(bio || headline)}</p>
-        <div class="about-meta">
-          ${profile.location ? `<div class="meta-item"><span class="meta-label">Location:</span> <span>${escapeHtml(profile.location)}</span></div>` : ""}
-          ${profile.email ? `<div class="meta-item"><span class="meta-label">Email:</span> <a href="mailto:${escapeHtml(profile.email)}">${escapeHtml(profile.email)}</a></div>` : ""}
-          ${profile.phone ? `<div class="meta-item"><span class="meta-label">Phone:</span> <span>${escapeHtml(profile.phone)}</span></div>` : ""}
+        <h2 class="section-main-heading">Passionate about turning vision into high-impact software</h2>
+        <div class="about-bio-body">
+          <p>${escapeHtml(bio || headline)}</p>
         </div>
+        ${(location || email || phone) ? `
+        <div class="about-details-grid">
+          ${location ? `<div class="detail-item"><span class="detail-label">Location:</span> <span>${escapeHtml(location)}</span></div>` : ""}
+          ${email ? `<div class="detail-item"><span class="detail-label">Email:</span> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>` : ""}
+          ${phone ? `<div class="detail-item"><span class="detail-label">Phone:</span> <span>${escapeHtml(phone)}</span></div>` : ""}
+        </div>
+        ` : ""}
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Skills Section -->
-  ${skills.length ? `
-  <section class="section" id="skills">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">CAPABILITIES</span>
-        <h2 class="section-title">Technical Skills & Expertise</h2>
+    <!-- 3. SKILLS SECTION -->
+    ${skills.length ? `
+    <section id="skills" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 02. Skills &amp; Tech Stack</div>
+        <h2 class="section-main-heading">Tools, Frameworks &amp; Core Competencies</h2>
       </div>
-      <div class="skills-grid">
-        ${skillsHtml}
+      <div class="skills-cards-grid">
+        ${allSkillsHtml}
       </div>
-    </div>
-  </section>
-  ` : ""}
+    </section>
+    ` : ""}
 
-  <!-- Projects Section -->
-  ${projects.length ? `
-  <section class="section" id="projects">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">PORTFOLIO</span>
-        <h2 class="section-title">Featured Projects</h2>
+    <!-- 4. PROJECTS SECTION -->
+    ${projects.length ? `
+    <section id="projects" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 03. Featured Engineering Projects</div>
+        <h2 class="section-main-heading">Selected Work &amp; Interactive Case Studies</h2>
       </div>
-      <div class="projects-grid">
+      <div class="projects-cards-grid">
         ${projectsHtml}
       </div>
-    </div>
-  </section>
-  ` : ""}
+    </section>
+    ` : ""}
 
-  <!-- Experience Section -->
-  ${experience.length ? `
-  <section class="section" id="experience">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">CAREER JOURNEY</span>
-        <h2 class="section-title">Work Experience</h2>
+    <!-- 5. EXPERIENCE SECTION -->
+    ${experience.length ? `
+    <section id="experience" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 04. Career Experience</div>
+        <h2 class="section-main-heading">Professional Timeline &amp; Contributions</h2>
       </div>
-      <div class="timeline">
+      <div class="experience-list">
         ${experienceHtml}
       </div>
-    </div>
-  </section>
-  ` : ""}
+    </section>
+    ` : ""}
 
-  <!-- Education & Certifications -->
-  ${(education.length || certifications.length) ? `
-  <section class="section" id="education">
-    <div class="container">
-      <div class="grid-2-col">
+    <!-- 6. EDUCATION & CERTIFICATIONS SECTION -->
+    ${(education.length || certifications.length) ? `
+    <section id="education" class="devport-section">
+      <div class="two-col-grid">
         ${education.length ? `
         <div>
-          <div class="section-header">
-            <span class="section-tag">ACADEMICS</span>
-            <h2 class="section-title">Education</h2>
-          </div>
-          <div class="edu-list">
+          <div class="section-tag-num">// Education</div>
+          <h3 class="col-heading">Academic Foundation</h3>
+          <div class="edu-list-stack">
             ${educationHtml}
           </div>
         </div>
         ` : ""}
-
         ${certifications.length ? `
         <div id="certifications">
-          <div class="section-header">
-            <span class="section-tag">CREDENTIALS</span>
-            <h2 class="section-title">Certifications</h2>
-          </div>
-          <div class="certs-list">
+          <div class="section-tag-num">// Certifications</div>
+          <h3 class="col-heading">Credentials &amp; Awards</h3>
+          <div class="cert-list-stack">
             ${certsHtml}
           </div>
         </div>
         ` : ""}
       </div>
-    </div>
-  </section>
-  ` : ""}
+    </section>
+    ` : ""}
 
-  <!-- Contact Section -->
-  <section class="section contact-section" id="contact">
-    <div class="container">
-      <div class="contact-box">
-        <span class="section-tag">CONNECT</span>
-        <h2 class="contact-title">Let's Build Something Great Together</h2>
-        <p class="contact-desc">Feel free to reach out for collaborations, project opportunities, or a friendly hello.</p>
+    <!-- 7. CONTACT SECTION -->
+    <section id="contact" class="devport-section">
+      <div class="contact-cta-box">
+        <div class="contact-tag">Get In Touch</div>
+        <h2 class="contact-headline">Let&apos;s build something extraordinary together</h2>
+        <p class="contact-subtext">Interested in collaborating, hiring for full-time or freelance roles, or just want to say hi? Reach out anytime!</p>
         
-        <div class="contact-details">
-          ${profile.email ? `
-            <a href="mailto:${escapeHtml(profile.email)}" class="btn btn-primary btn-lg">Email Me: ${escapeHtml(profile.email)}</a>
+        <div class="contact-btns-row">
+          ${email ? `
+            <a href="mailto:${escapeHtml(email)}" class="btn-primary-gradient btn-lg">
+              <span>Send an Email (${escapeHtml(email)})</span>
+            </a>
           ` : ""}
-          ${profile.phone ? `<div class="contact-phone">Phone: ${escapeHtml(profile.phone)}</div>` : ""}
+          ${phone ? `
+            <a href="tel:${escapeHtml(phone)}" class="btn-secondary-glass btn-lg">
+              <span>Call: ${escapeHtml(phone)}</span>
+            </a>
+          ` : ""}
         </div>
 
-        ${socialIconsHtml ? `<div class="contact-socials">${socialIconsHtml}</div>` : ""}
+        ${socialIconsHtml ? `
+        <div class="contact-social-icons">
+          ${socialIconsHtml}
+        </div>
+        ` : ""}
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container footer-content">
-      <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. All rights reserved.</p>
-      <button type="button" class="back-to-top" id="backToTopBtn">&uarr; Top</button>
+  <!-- Floating Bottom-Right Chat Button -->
+  <a href="#contact" class="floating-chat-bubble" title="Contact Me">
+    <span>&#128172;</span>
+  </a>
+
+  <!-- Cosmic Footer -->
+  <footer class="devport-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="spark-icon">&#10024;</span>
+        <span>Built with modern web standards &amp; DevPort</span>
+      </div>
+      <div class="footer-right">
+        <span>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. All rights reserved.</span>
+        <button type="button" class="btn-scroll-top" id="scrollTopBtn">^top</button>
+      </div>
     </div>
   </footer>
 
@@ -1005,21 +879,20 @@ function generateStaticHtml(data, template) {
 }
 
 /* ==========================================================================
-   STATIC CSS GENERATION HELPER
+   DEVPORT STATIC CSS
    ========================================================================== */
 
-function generateStaticCss(data, template) {
-  return `/* Standalone Portfolio Stylesheet */
+function generateDevPortStaticCss(data) {
+  return `/* DevPort Cosmic Theme Stylesheet */
 :root {
-  --bg-color: #090d16;
-  --bg-card: #0f172a;
-  --bg-card-hover: #1e293b;
-  --text-main: #f8fafc;
+  --bg-dark: #090a16;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --text-white: #ffffff;
   --text-muted: #94a3b8;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(56, 189, 248, 0.5);
-  --primary-color: #38bdf8;
-  --primary-glow: rgba(56, 189, 248, 0.25);
+  --cyan-accent: #06b6d4;
+  --pink-accent: #ec4899;
+  --purple-accent: #a855f7;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -1033,31 +906,79 @@ function generateStaticCss(data, template) {
 html {
   scroll-behavior: smooth;
   font-family: var(--font-sans);
-  background-color: var(--bg-color);
-  color: var(--text-main);
+  background-color: var(--bg-dark);
+  color: var(--text-white);
   line-height: 1.6;
 }
 
-body {
+body.devport-theme {
+  position: relative;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
-/* Navigation */
-.navbar {
+/* Ambient Glow Orbs */
+.ambient-glow-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+}
+
+.orb-1 {
+  top: -100px;
+  left: -100px;
+  width: 520px;
+  height: 520px;
+  background: rgba(6, 182, 212, 0.15);
+}
+
+.orb-2 {
+  top: 20%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.orb-3 {
+  top: 60%;
+  left: -10%;
+  width: 550px;
+  height: 550px;
+  background: rgba(236, 72, 153, 0.1);
+}
+
+.orb-4 {
+  bottom: -10%;
+  right: 10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+/* Navbar */
+.devport-navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 50;
   height: 76px;
-  background: rgba(9, 13, 22, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(9, 10, 22, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glass);
   display: flex;
   align-items: center;
 }
 
-.nav-container {
+.navbar-container {
   width: 100%;
   max-width: 1140px;
   margin: 0 auto;
@@ -1067,469 +988,722 @@ body {
   align-items: center;
 }
 
-.brand-logo {
+.brand-group {
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: var(--text-main);
+  color: var(--text-white);
 }
 
-.brand-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--primary-color);
+.brand-gradient-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(135deg, #06b6d4, #6366f1, #ec4899);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
 }
 
-.brand-initials {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color), #818cf8);
-  color: #fff;
+.brand-inner-box {
+  width: 100%;
+  height: 100%;
+  background: #090a16;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 14px;
+  background: linear-gradient(90deg, #22d3ee, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.brand-name {
+.brand-title {
   font-weight: 700;
-  font-size: 18px;
+  font-size: 15px;
   letter-spacing: -0.02em;
 }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.nav-link {
+.brand-sub {
+  font-size: 11px;
   color: var(--text-muted);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  color: var(--primary-color);
-}
-
-.nav-link-cta {
-  padding: 6px 16px;
-  border-radius: 20px;
-  background: var(--primary-glow);
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-}
-
-/* Sections & Layout */
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.section {
-  padding: 96px 0;
-}
-
-.section-tag {
-  display: inline-block;
   font-family: var(--font-mono);
+}
+
+.devport-nav-pills {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  border-radius: 9999px;
+  backdrop-filter: blur(10px);
+}
+
+.nav-pill {
+  padding: 6px 14px;
+  border-radius: 9999px;
   font-size: 12px;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-pill:hover,
+.nav-pill.active {
+  background: linear-gradient(90deg, #06b6d4, #ec4899);
+  color: #ffffff;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--primary-color);
-  margin-bottom: 8px;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
 }
 
-.section-title {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin-bottom: 32px;
+.btn-hire-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6, #ec4899);
+  text-decoration: none;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  transition: all 0.2s ease;
 }
 
-/* Hero */
-.hero-section {
-  padding: 120px 0 80px;
-  background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.08), transparent 60%);
+.btn-hire-me:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
 }
 
-.hero-container {
+/* Main Layout */
+.devport-main-container {
+  position: relative;
+  z-index: 10;
   max-width: 1140px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+.devport-section {
+  padding: 80px 0;
+}
+
+/* Hero Section */
+.devport-hero-section {
+  padding: 60px 0 100px;
+}
+
+.hero-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.25fr 0.95fr;
   gap: 48px;
   align-items: center;
 }
 
-.status-badge {
+.status-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
   border-radius: 9999px;
   font-size: 12px;
-  font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-weight: 500;
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
   margin-bottom: 20px;
 }
 
-.status-dot {
+.ping-dot {
+  position: relative;
+  display: flex;
   width: 8px;
   height: 8px;
+}
+
+.ping-ring {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: #10b981;
-  animation: pulse 2s infinite;
+  background: #22d3ee;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }
 
-.hero-name {
-  font-size: 56px;
+.sub-greeting {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.hero-full-name {
+  font-size: 64px;
   font-weight: 900;
+  line-height: 1.05;
   letter-spacing: -0.04em;
-  line-height: 1.1;
   margin-bottom: 12px;
-  background: linear-gradient(135deg, #ffffff 40%, #94a3b8);
+}
+
+.typewriter-headline {
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.glowing-typewriter-text {
+  background: linear-gradient(90deg, #22d3ee, #7dd3fc, #f472b6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.6));
 }
 
-.hero-headline {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 16px;
-  font-family: var(--font-mono);
+.typewriter-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 28px;
+  background: #22d3ee;
+  animation: blink 0.8s infinite;
 }
 
-.hero-bio {
-  font-size: 16px;
-  color: var(--text-muted);
-  max-width: 580px;
-  margin-bottom: 32px;
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
-.hero-actions {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.hero-socials {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* Avatar Card */
-.avatar-orbit-card {
-  position: relative;
-  width: 320px;
-  height: 320px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-glow {
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
-  filter: blur(24px);
-  z-index: 1;
-}
-
-.orbit-avatar-img {
-  position: relative;
-  z-index: 2;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 4px solid var(--primary-color);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-}
-
-.orbit-avatar-placeholder {
-  position: relative;
-  z-index: 2;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 4px solid var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 72px;
-  font-weight: 800;
-  color: #fff;
-}
-
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: #090d16;
-}
-
-.btn-primary:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.btn-outline {
-  border-color: var(--border-color);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
-}
-
-.btn-outline:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--text-muted);
-}
-
-.btn-sm {
-  padding: 8px 16px;
-  font-size: 13px;
-}
-
-.btn-xs {
-  padding: 4px 10px;
-  font-size: 11px;
-  border-radius: 4px;
-}
-
-.social-btn {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-family: var(--font-mono);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.social-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-/* About Card */
-.about-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 32px;
-}
-
-.about-text {
-  font-size: 16px;
-  color: var(--text-main);
-  line-height: 1.8;
+.hero-bio-text {
+  font-size: 15px;
+  color: #cbd5e1;
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 560px;
   margin-bottom: 24px;
 }
 
-.about-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+/* Core Tech */
+.core-tech-container {
+  margin-bottom: 28px;
 }
 
-.meta-item {
-  font-size: 14px;
-}
-
-.meta-label {
+.core-tech-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-right: 6px;
+  margin-bottom: 8px;
 }
 
-.about-meta a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-/* Skills Grid */
-.skills-grid {
+.core-tech-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
-.skill-pill {
+.tech-pill {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.pill-sky { border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+.pill-pink { border-color: rgba(244, 114, 182, 0.4); background: rgba(244, 114, 182, 0.1); color: #f472b6; }
+.pill-amber { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+.pill-cyan { border-color: rgba(34, 211, 238, 0.4); background: rgba(34, 211, 238, 0.1); color: #22d3ee; }
+.pill-emerald { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1); color: #34d399; }
+.pill-purple { border-color: rgba(192, 132, 252, 0.4); background: rgba(192, 132, 252, 0.1); color: #c084fc; }
+
+.hero-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-primary-gradient {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  padding: 10px 18px;
-  border-radius: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
   font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6, #ec4899);
+  text-decoration: none;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.4);
   transition: all 0.2s ease;
 }
 
-.skill-pill:hover {
-  border-color: var(--primary-color);
-  background: var(--bg-card-hover);
+.btn-primary-gradient:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.btn-secondary-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+.location-badge {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hero-connect-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connect-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.connect-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.social-icon-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: #cbd5e1;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.social-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: #06b6d4;
+  transform: scale(1.05);
+}
+
+/* Orbital Avatar Stage */
+.hero-right {
+  display: flex;
+  justify-content: center;
+}
+
+.orbital-stage {
+  position: relative;
+  width: 360px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orbital-aura {
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(168, 85, 247, 0.3), rgba(236, 72, 153, 0.2));
+  filter: blur(40px);
+  animation: pulse-aura 4s ease-in-out infinite;
+}
+
+@keyframes pulse-aura {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+
+.orbital-avatar-ring {
+  position: relative;
+  z-index: 10;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  padding: 6px;
+  background: linear-gradient(135deg, #06b6d4, #a855f7, #ec4899);
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
+}
+
+.orbital-avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #111425;
+  border: 2px solid #090a16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  font-family: var(--font-mono);
+  font-size: 48px;
+  font-weight: 800;
+  color: #22d3ee;
+}
+
+.orbital-badge {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  border: 2px solid #090a16;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.badge-top { top: -8px; left: 50%; transform: translateX(-50%); background: #9333ea; animation: float-up 3s ease-in-out infinite; }
+.badge-right { top: 35%; right: -8px; background: #06b6d4; }
+.badge-bottom { bottom: -8px; left: 50%; transform: translateX(-50%); background: #10b981; }
+.badge-left { top: 35%; left: -8px; background: #ec4899; }
+
+@keyframes float-up {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -6px); }
+}
+
+/* Floating Code Card */
+.floating-code-card {
+  position: absolute;
+  top: -10px;
+  right: -20px;
+  z-index: 20;
+  width: 220px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.code-card-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-red { background: #ef4444; }
+.dot-amber { background: #f59e0b; }
+.dot-green { background: #10b981; }
+.code-filename { font-size: 9px; color: var(--text-muted); margin-left: 4px; }
+
+.code-pink { color: #f472b6; }
+.code-white { color: #ffffff; }
+.code-cyan { color: #38bdf8; }
+.code-amber { color: #fbbf24; }
+.code-emerald { color: #34d399; }
+.code-muted { color: #94a3b8; }
+
+/* Floating Stats */
+.floating-stat-card {
+  position: absolute;
+  z-index: 20;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-left { bottom: -10px; left: -10px; }
+.stat-right { bottom: -10px; right: -10px; }
+
+.stat-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.cyan-icon { background: rgba(6, 182, 212, 0.2); color: #06b6d4; }
+.pink-icon { background: rgba(236, 72, 153, 0.2); color: #ec4899; }
+
+.stat-number { font-family: var(--font-mono); font-weight: 700; font-size: 16px; line-height: 1; }
+.stat-label { font-size: 10px; color: var(--text-muted); }
+
+/* About Card */
+.glass-section-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
+}
+
+.card-glow-accent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(168, 85, 247, 0.12);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.section-tag-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #22d3ee;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.section-main-heading {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+}
+
+.about-bio-body {
+  font-size: 16px;
+  color: #cbd5e1;
+  line-height: 1.8;
+  margin-bottom: 28px;
+}
+
+.about-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.detail-label { color: var(--text-muted); margin-right: 6px; }
+.detail-item a { color: #22d3ee; text-decoration: none; }
+
+/* Skills Grid */
+.skills-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.skill-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.skill-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  background: rgba(255, 255, 255, 0.06);
   transform: translateY(-2px);
 }
 
-.skill-lvl {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--primary-color);
-  text-transform: uppercase;
+.skill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.skill-card-name { font-weight: 600; font-size: 14px; }
+.skill-card-cat { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+.skill-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.skill-progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #22d3ee, #ec4899);
 }
 
 /* Projects Grid */
-.projects-grid {
+.projects-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
 }
 
-.project-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+.devport-project-card {
+  border-radius: 20px;
   padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   transition: all 0.25s ease;
 }
 
-.project-card:hover {
-  border-color: var(--primary-color);
+.devport-project-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 35px rgba(6, 182, 212, 0.15);
 }
 
-.featured-card {
-  border-color: rgba(56, 189, 248, 0.35);
-  background: linear-gradient(180deg, rgba(56, 189, 248, 0.05) 0%, var(--bg-card) 40%);
-}
-
-.project-header {
+.proj-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.project-title {
-  font-size: 18px;
-  font-weight: 700;
-}
+.proj-num { font-family: var(--font-mono); font-size: 11px; color: #22d3ee; }
+.proj-title { font-size: 18px; font-weight: 700; flex: 1; }
 
-.featured-pill {
-  font-size: 11px;
+.featured-badge {
   font-family: var(--font-mono);
+  font-size: 10px;
   padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--primary-glow);
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  border-radius: 9999px;
+  background: rgba(236, 72, 153, 0.2);
+  border: 1px solid rgba(236, 72, 153, 0.4);
+  color: #f472b6;
 }
 
-.project-desc {
+.proj-desc {
   font-size: 14px;
-  color: var(--text-muted);
+  color: #cbd5e1;
+  font-weight: 300;
   line-height: 1.6;
-  margin-bottom: 20px;
-  flex-grow: 1;
+  margin-bottom: 16px;
 }
 
-.project-tags {
+.proj-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.tag-badge {
-  font-size: 11px;
+.proj-tag {
   font-family: var(--font-mono);
+  font-size: 11px;
   padding: 3px 8px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+  color: #94a3b8;
 }
 
-.project-actions {
+.proj-footer {
   display: flex;
   gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glass);
 }
 
-/* Timeline */
-.timeline {
-  position: relative;
-  padding-left: 24px;
-  border-left: 2px solid var(--border-color);
+.btn-live {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #06b6d4;
+  color: #090a16;
+  text-decoration: none;
 }
 
-.timeline-item {
-  position: relative;
-  margin-bottom: 40px;
+.btn-source {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: #ffffff;
+  text-decoration: none;
 }
 
-.timeline-dot {
-  position: absolute;
-  left: -31px;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  box-shadow: 0 0 10px var(--primary-color);
+/* Experience */
+.experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.timeline-content {
+.exp-card {
+  padding: 28px;
+  border-radius: 20px;
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
 }
 
-.timeline-header {
+.exp-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1538,211 +1712,173 @@ body {
   gap: 8px;
 }
 
-.timeline-role {
-  font-size: 18px;
-  font-weight: 700;
-}
+.exp-title { font-size: 18px; font-weight: 700; }
+.exp-company { font-family: var(--font-mono); font-size: 13px; color: #22d3ee; margin-top: 2px; }
+.exp-date { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 6px; }
 
-.timeline-company {
-  font-size: 14px;
-  color: var(--primary-color);
-}
+.exp-desc { font-size: 14px; color: #cbd5e1; line-height: 1.6; margin-bottom: 12px; }
 
-.timeline-date {
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-}
-
-.timeline-desc {
-  font-size: 14px;
-  color: var(--text-main);
-  margin-bottom: 12px;
-}
-
-.timeline-bullets {
+.exp-bullets {
   padding-left: 20px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.timeline-bullets li {
-  margin-bottom: 6px;
-}
-
-/* Education & Certs */
-.grid-2-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-}
-
-.edu-card, .cert-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
-.edu-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.edu-degree {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.edu-date {
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-}
-
-.edu-institution {
-  font-size: 14px;
-  color: var(--primary-color);
-}
-
-.edu-grade {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.cert-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.cert-name {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.cert-issuer {
   font-size: 13px;
   color: var(--text-muted);
 }
 
-/* Contact */
-.contact-section {
+.exp-bullets li { margin-bottom: 4px; }
+
+/* Education & Certs */
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.col-heading { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+
+.edu-box, .cert-box {
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  margin-bottom: 12px;
+}
+
+.edu-box-title, .cert-box-title { font-size: 15px; font-weight: 600; }
+.edu-box-inst, .cert-box-issuer { font-family: var(--font-mono); font-size: 12px; color: #22d3ee; margin: 4px 0; }
+.edu-box-date, .cert-box-date { font-size: 11px; color: var(--text-muted); }
+.btn-verify { display: inline-block; font-size: 11px; color: #f472b6; text-decoration: none; margin-top: 6px; }
+
+/* Contact CTA */
+.contact-cta-box {
+  padding: 60px 24px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(24px);
   text-align: center;
 }
 
-.contact-box {
-  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.1), var(--bg-card) 60%);
-  border: 1px solid var(--border-color);
-  border-radius: 24px;
-  padding: 64px 24px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.contact-title {
-  font-size: 36px;
-  font-weight: 800;
+.contact-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #22d3ee;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
   margin-bottom: 16px;
 }
 
-.contact-desc {
-  font-size: 16px;
+.contact-headline {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+
+.contact-subtext {
+  font-size: 15px;
   color: var(--text-muted);
-  max-width: 500px;
-  margin: 0 auto 32px;
+  max-width: 540px;
+  margin: 0 auto 28px;
 }
 
-.contact-details {
-  margin-bottom: 32px;
-}
-
-.contact-phone {
-  margin-top: 12px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.contact-socials {
+.contact-btns-row {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
-/* Footer */
-.footer {
-  border-top: 1px solid var(--border-color);
-  padding: 32px 0;
-  color: var(--text-muted);
-  font-size: 14px;
+.contact-social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-glass);
 }
 
-.footer-content {
+/* Floating Chat Bubble */
+.floating-chat-bubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 40;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 20px;
+  text-decoration: none;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+  transition: transform 0.2s ease;
+}
+
+.floating-chat-bubble:hover {
+  transform: scale(1.1);
+}
+
+/* Footer */
+.devport-footer {
+  border-top: 1px solid var(--border-glass);
+  padding: 36px 0;
+  background: rgba(9, 10, 22, 0.9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.footer-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.back-to-top {
+.footer-left { display: flex; align-items: center; gap: 8px; }
+.footer-right { display: flex; align-items: center; gap: 20px; }
+
+.btn-scroll-top {
   background: none;
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  padding: 6px 14px;
+  border: 1px solid var(--border-glass);
+  color: #22d3ee;
+  padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  transition: all 0.2s ease;
 }
 
-.back-to-top:hover {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .hero-name {
-    font-size: 38px;
-  }
-  .hero-bio {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero-actions {
-    justify-content: center;
-  }
-  .hero-socials {
-    justify-content: center;
-  }
-  .grid-2-col {
-    grid-template-columns: 1fr;
-  }
-  .nav-links {
-    display: none;
-  }
+/* Responsive */
+@media (max-width: 860px) {
+  .hero-grid { grid-template-columns: 1fr; text-align: center; }
+  .hero-full-name { font-size: 44px; }
+  .typewriter-headline { justify-content: center; }
+  .hero-bio-text { margin-left: auto; margin-right: auto; }
+  .core-tech-pills { justify-content: center; }
+  .hero-cta-row { justify-content: center; }
+  .hero-connect-row { justify-content: center; }
+  .two-col-grid { grid-template-columns: 1fr; }
+  .devport-nav-pills { display: none; }
 }
 `;
 }
 
 /* ==========================================================================
-   STATIC JAVASCRIPT GENERATION HELPER
+   DEVPORT STATIC JS (Interactive Typewriter & Smooth Navigation)
    ========================================================================== */
 
-function generateStaticJs(data, template) {
-  return `// Self-contained vanilla script for portfolio interactions
-(function() {
+function generateDevPortStaticJs(data, template) {
+  return `(function() {
   'use strict';
 
-  // 1. Smooth scroll with 76px sticky navbar offset
+  // 1. Smooth scroll with header offset
   const navHeight = 76;
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
@@ -1761,52 +1897,564 @@ function generateStaticJs(data, template) {
     });
   });
 
-  // 2. Back to top button
-  const backToTopBtn = document.getElementById('backToTopBtn');
-  if (backToTopBtn) {
-    backToTopBtn.addEventListener('click', () => {
+  // 2. Scroll to top button
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 
-  // 3. Scrollspy active nav links
+  // 3. Scrollspy active nav link
   const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-link');
+  const navPills = document.querySelectorAll('.nav-pill');
 
   function updateActiveNav() {
-    const scrollY = window.pageYOffset;
+    const scrollPos = window.pageYOffset + 120;
     sections.forEach(current => {
-      const sectionHeight = current.offsetHeight;
-      const sectionTop = current.offsetTop - 120;
-      const sectionId = current.getAttribute('id');
-      if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-        navLinks.forEach(link => {
-          link.classList.remove('active');
-          if (link.getAttribute('href') === '#' + sectionId) {
-            link.classList.add('active');
+      const top = current.offsetTop;
+      const height = current.offsetHeight;
+      const id = current.getAttribute('id');
+      if (scrollPos >= top && scrollPos < top + height) {
+        navPills.forEach(pill => {
+          pill.classList.remove('active');
+          if (pill.getAttribute('href') === '#' + id) {
+            pill.classList.add('active');
           }
         });
       }
     });
   }
-
   window.addEventListener('scroll', updateActiveNav, { passive: true });
 
-  // 4. Subtle typewriter headline effect (if available)
-  const typewriter = document.getElementById('typewriter-headline');
-  if (typewriter && typewriter.getAttribute('data-headline')) {
-    const originalText = typewriter.getAttribute('data-headline');
-    // Keep clean rendered text by default
+  // 4. Smooth Typewriter effect
+  const typewriterElem = document.getElementById('typewriterText');
+  if (typewriterElem) {
+    try {
+      const roles = JSON.parse(typewriterElem.getAttribute('data-roles') || '[]');
+      if (roles.length > 0) {
+        let roleIndex = 0;
+        let charIndex = roles[0].length;
+        let isDeleting = true;
+
+        function tick() {
+          const currentRole = roles[roleIndex % roles.length];
+          if (isDeleting) {
+            charIndex--;
+            typewriterElem.textContent = currentRole.substring(0, charIndex);
+            if (charIndex <= 0) {
+              isDeleting = false;
+              roleIndex++;
+              setTimeout(tick, 300);
+              return;
+            }
+          } else {
+            charIndex++;
+            typewriterElem.textContent = currentRole.substring(0, charIndex);
+            if (charIndex >= currentRole.length) {
+              isDeleting = true;
+              setTimeout(tick, 2000);
+              return;
+            }
+          }
+          const speed = isDeleting ? 40 : 80;
+          setTimeout(tick, speed);
+        }
+
+        setTimeout(tick, 2000);
+      }
+    } catch (e) {
+      // keep fallback text
+    }
   }
 })();
 `;
 }
 
 /* ==========================================================================
-   TEMPLATE JSX GENERATOR HELPERS (FOR REACT SOURCE ZIP)
+   MODERN CREATIVE (3D) STATIC GENERATORS
    ========================================================================== */
 
-function getDevPortTemplateJsx() {
+function generateCreativeStaticHtml(data) {
+  const { profile, socialLinks, skills, experience, education, projects, certifications } = data;
+  const fullName = profile.fullName || "Creative Engineer";
+  const firstName = fullName ? fullName.split(" ")[0] : "Creative";
+  const headline = profile.headline || "Data Analyst & Creative Engineer";
+  const bio = profile.bio || "Data Analyst with extensive experience transforming raw data into actionable insights.";
+  const avatarUrl = profile.avatarUrl;
+  const email = profile.email || "";
+
+  const initials = (fullName || "JD")
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const experienceYears = experience.length > 0 ? `${Math.max(1, Math.round(experience.length * 1.5))}+` : "4+";
+
+  const socialIconsHtml = socialLinks
+    .map((s) => {
+      const url = sanitizeUrl(s.url);
+      if (!url) return "";
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="creative-social-btn">${escapeHtml(s.label || s.platform)}</a>`;
+    })
+    .join("\n");
+
+  const skillsHtml = skills
+    .map((s) => `<span class="creative-skill-pill">${escapeHtml(s.name)}</span>`)
+    .join("\n");
+
+  const projectsHtml = projects
+    .map((p) => {
+      const liveUrl = sanitizeUrl(p.liveUrl);
+      return `
+        <div class="creative-card">
+          <h3 class="creative-card-title">${escapeHtml(p.title)}</h3>
+          <p class="creative-card-desc">${escapeHtml(p.description)}</p>
+          ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="btn-creative-link">Explore Project &rarr;</a>` : ""}
+        </div>
+      `;
+    })
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Modern 3D Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="stylesheet" href="assets/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="creative-theme">
+  <div class="creative-ambient-glow"></div>
+  <header class="creative-navbar">
+    <div class="container navbar-flex">
+      <a href="#hero" class="creative-logo">${escapeHtml(firstName)}</a>
+      <nav class="creative-nav">
+        <a href="#hero">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Work</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a href="#contact" class="btn-creative-primary">Hire Me</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="hero" class="creative-hero">
+      <div class="creative-hero-grid">
+        <div class="creative-hero-content">
+          <div class="welcome-pill">&#10024; WELCOME TO MY PORTFOLIO</div>
+          <h1 class="creative-name">Hi, I'm <span class="purple-gradient-text">${escapeHtml(fullName)}</span></h1>
+          <p class="creative-headline">${escapeHtml(headline)}</p>
+          <p class="creative-bio">${escapeHtml(bio)}</p>
+          <div class="hero-btns">
+            <a href="#projects" class="btn-creative-primary">Explore My Work &rarr;</a>
+            <a href="#contact" class="btn-creative-outline">Contact Me</a>
+          </div>
+          ${socialIconsHtml ? `<div class="socials-row">${socialIconsHtml}</div>` : ""}
+        </div>
+
+        <div class="creative-hero-visual">
+          <div class="spotlight-avatar-halo">
+            <div class="halo-inner">
+              ${avatarUrl ? `
+                <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="halo-avatar-img">
+              ` : `
+                <div class="halo-avatar-fallback">${escapeHtml(initials)}</div>
+              `}
+            </div>
+            <div class="floating-exp-badge">
+              <span class="exp-badge-num">${escapeHtml(experienceYears)}</span>
+              <span class="exp-badge-text">Years Experience</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    ${projects.length ? `
+    <section id="projects" class="creative-section">
+      <h2 class="creative-heading">Featured Projects</h2>
+      <div class="creative-grid">
+        ${projectsHtml}
+      </div>
+    </section>
+    ` : ""}
+
+    <!-- Skills -->
+    ${skills.length ? `
+    <section id="skills" class="creative-section">
+      <h2 class="creative-heading">Skills &amp; Expertise</h2>
+      <div class="creative-skills-wrap">
+        ${skillsHtml}
+      </div>
+    </section>
+    ` : ""}
+
+    <!-- Contact -->
+    <section id="contact" class="creative-section text-center">
+      <h2 class="creative-heading">Let's Connect</h2>
+      <p class="creative-bio" style="margin: 0 auto 20px;">Ready to collaborate on new opportunities.</p>
+      ${email ? `<a href="mailto:${escapeHtml(email)}" class="btn-creative-primary btn-lg">Email Me: ${escapeHtml(email)}</a>` : ""}
+    </section>
+  </main>
+
+  <footer class="creative-footer">
+    <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Modern 3D Theme.</p>
+  </footer>
+  <script src="assets/script.js"></script>
+</body>
+</html>`;
+}
+
+function generateCreativeStaticCss(data) {
+  return `
+:root {
+  --bg-dark: #0b0f19;
+  --purple: #9333ea;
+  --indigo: #6366f1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body.creative-theme {
+  background: var(--bg-dark);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  position: relative;
+  overflow-x: hidden;
+}
+.creative-ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.15), transparent 50%),
+              radial-gradient(circle at 20% 70%, rgba(147, 51, 234, 0.12), transparent 50%);
+}
+.container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+.creative-navbar {
+  height: 76px;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.navbar-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.creative-logo { font-weight: 800; font-size: 20px; color: #fff; text-decoration: none; }
+.creative-nav a { color: #94a3b8; text-decoration: none; margin: 0 12px; font-size: 14px; }
+.creative-nav a:hover { color: #fff; }
+.btn-creative-primary {
+  padding: 10px 22px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #9333ea, #6366f1);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.4);
+}
+.btn-creative-outline {
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-decoration: none;
+  display: inline-block;
+  margin-left: 10px;
+}
+.creative-hero { padding: 80px 0 60px; }
+.creative-hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; }
+.welcome-pill {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: rgba(147, 51, 234, 0.15);
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  color: #c084fc;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.creative-name { font-size: 56px; font-weight: 900; line-height: 1.1; margin-bottom: 12px; }
+.purple-gradient-text {
+  background: linear-gradient(90deg, #c084fc, #818cf8, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.creative-headline { font-size: 22px; color: #c084fc; margin-bottom: 16px; font-weight: 600; }
+.creative-bio { color: #cbd5e1; font-size: 15px; max-width: 540px; margin-bottom: 24px; }
+.hero-btns { margin-bottom: 24px; }
+.socials-row { display: flex; gap: 8px; }
+.creative-social-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 12px;
+}
+.spotlight-avatar-halo {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 0 auto;
+  border-radius: 50%;
+  padding: 8px;
+  background: linear-gradient(135deg, #9333ea, #6366f1, #ec4899);
+  box-shadow: 0 0 50px rgba(147, 51, 234, 0.5);
+}
+.halo-inner { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #1e1b4b; display: flex; align-items: center; justify-content: center; }
+.halo-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.halo-avatar-fallback { font-size: 64px; font-weight: 900; color: #fff; }
+.floating-exp-badge {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: #1e1b4b;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.exp-badge-num { display: block; font-weight: 900; font-size: 18px; color: #c084fc; }
+.exp-badge-text { font-size: 10px; color: #94a3b8; }
+.creative-section { padding: 60px 0; }
+.creative-heading { font-size: 32px; font-weight: 800; margin-bottom: 24px; }
+.creative-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.creative-card { padding: 24px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); }
+.creative-card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.creative-card-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 16px; }
+.btn-creative-link { font-size: 13px; color: #c084fc; text-decoration: none; font-weight: 600; }
+.creative-skills-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+.creative-skill-pill { padding: 8px 16px; border-radius: 9999px; background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: #c084fc; font-size: 13px; font-weight: 600; }
+.text-center { text-align: center; }
+.creative-footer { text-align: center; padding: 40px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 13px; }
+@media (max-width: 768px) {
+  .creative-hero-grid { grid-template-columns: 1fr; text-align: center; }
+  .creative-name { font-size: 40px; }
+}
+`;
+}
+
+/* ==========================================================================
+   DEVELOPER TERMINAL & MINIMAL STATIC GENERATORS
+   ========================================================================== */
+
+function generateDeveloperStaticHtml(data) {
+  const { profile, skills, projects } = data;
+  const fullName = profile.fullName || "Developer";
+  const slug = (fullName).toLowerCase().replace(/\s+/g, "");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Terminal Portfolio")}</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="terminal-theme">
+  <div class="terminal-container">
+    <header class="terminal-bar">
+      <span>~/dev/${escapeHtml(slug)}</span>
+    </header>
+    <main>
+      <div class="prompt-line"><span class="prompt">$</span> whoami</div>
+      <h1 class="term-name">${escapeHtml(fullName)}</h1>
+      <p class="term-role">${escapeHtml(profile.headline)}</p>
+      <p class="term-bio">${escapeHtml(profile.bio)}</p>
+
+      <div class="prompt-line"><span class="prompt">$</span> ls -la ./skills</div>
+      <div class="term-skills">
+        ${skills.map(s => `<span class="term-skill-tag">${escapeHtml(s.name)}</span>`).join(" ")}
+      </div>
+
+      <div class="prompt-line"><span class="prompt">$</span> cat ./projects.json</div>
+      <div class="term-projects">
+        ${projects.map(p => `
+          <div class="term-proj-box">
+            <div class="term-proj-title">&gt; ${escapeHtml(p.title)}</div>
+            <div class="term-proj-desc">${escapeHtml(p.description)}</div>
+            ${p.liveUrl ? `<a href="${escapeHtml(sanitizeUrl(p.liveUrl))}" target="_blank" class="term-link">[Live Demo]</a>` : ""}
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="prompt-line"><span class="prompt">$</span> echo "Contact: ${escapeHtml(profile.email || '')}"</div>
+    </main>
+  </div>
+  <script src="assets/script.js"></script>
+</body>
+</html>`;
+}
+
+function generateDeveloperStaticCss() {
+  return `
+body.terminal-theme { background: #0d1117; color: #c9d1d9; font-family: 'JetBrains Mono', monospace; padding: 24px; line-height: 1.6; }
+.terminal-container { max-width: 800px; margin: 40px auto; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+.terminal-bar { border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 20px; color: #58a6ff; font-weight: 700; }
+.prompt-line { color: #7ee787; font-size: 13px; margin: 20px 0 8px; }
+.term-name { font-size: 32px; color: #fff; margin-bottom: 6px; }
+.term-role { color: #58a6ff; font-size: 15px; margin-bottom: 10px; }
+.term-bio { color: #8b949e; font-size: 13px; }
+.term-skills { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+.term-skill-tag { background: #21262d; border: 1px solid #30363d; padding: 3px 8px; border-radius: 4px; font-size: 12px; color: #7ee787; }
+.term-proj-box { background: #0d1117; border: 1px solid #30363d; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+.term-proj-title { color: #58a6ff; font-weight: 600; }
+.term-proj-desc { color: #8b949e; font-size: 12px; margin: 4px 0 8px; }
+.term-link { color: #7ee787; text-decoration: none; font-size: 12px; }
+`;
+}
+
+function generateMinimalStaticHtml(data) {
+  const { profile, skills, projects, experience, education, certifications, socialLinks } = data;
+  const fullName = profile.fullName || "Portfolio";
+  const avatarUrl = profile.avatarUrl;
+
+  const socialLinksHtml = socialLinks
+    .map((s) => {
+      const url = sanitizeUrl(s.url);
+      if (!url) return "";
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="min-social-link">${escapeHtml(s.label || s.platform)}</a>`;
+    })
+    .join(" ");
+
+  const skillsHtml = skills
+    .map((s) => `<span class="min-skill-tag">${escapeHtml(s.name)}</span>`)
+    .join(" ");
+
+  const projectsHtml = projects
+    .map((p) => {
+      const liveUrl = sanitizeUrl(p.liveUrl);
+      const repoUrl = sanitizeUrl(p.githubUrl);
+      return `
+        <div class="min-item">
+          <div class="min-item-header">
+            <h3 class="min-item-title">${escapeHtml(p.title)}</h3>
+            <div class="min-item-links">
+              ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="min-link">Live Demo &rarr;</a>` : ""}
+              ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="min-link">Source &rarr;</a>` : ""}
+            </div>
+          </div>
+          <p class="min-item-desc">${escapeHtml(p.description)}</p>
+          ${p.tags && p.tags.length ? `<div class="min-tags">${p.tags.map(t => `<span class="min-tag">${escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
+        </div>
+      `;
+    })
+    .join("\n");
+
+  const experienceHtml = experience
+    .map((e) => `
+      <div class="min-item">
+        <div class="min-item-header">
+          <h3 class="min-item-title">${escapeHtml(e.title)} <span class="min-company">@ ${escapeHtml(e.company)}</span></h3>
+          <span class="min-date">${escapeHtml(e.startDate || "")} &mdash; ${e.current ? "Present" : escapeHtml(e.endDate || "Present")}</span>
+        </div>
+        ${e.description ? `<p class="min-item-desc">${escapeHtml(e.description)}</p>` : ""}
+      </div>
+    `)
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="stylesheet" href="assets/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="minimal-theme">
+  <div class="minimal-wrap">
+    <header class="min-header">
+      <div class="min-avatar-row">
+        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="min-avatar" />` : ""}
+        <div>
+          <h1 class="min-name">${escapeHtml(fullName)}</h1>
+          <p class="min-role">${escapeHtml(profile.headline)}</p>
+        </div>
+      </div>
+      <p class="min-bio">${escapeHtml(profile.bio)}</p>
+      ${socialLinksHtml ? `<div class="min-socials">${socialLinksHtml}</div>` : ""}
+    </header>
+    <main>
+      ${skills.length ? `
+      <section class="min-section">
+        <h2 class="min-heading">Skills &amp; Technologies</h2>
+        <div class="min-skills-list">
+          ${skillsHtml}
+        </div>
+      </section>
+      ` : ""}
+      ${projects.length ? `
+      <section class="min-section">
+        <h2 class="min-heading">Selected Projects</h2>
+        ${projectsHtml}
+      </section>
+      ` : ""}
+      ${experience.length ? `
+      <section class="min-section">
+        <h2 class="min-heading">Experience</h2>
+        ${experienceHtml}
+      </section>
+      ` : ""}
+    </main>
+    <footer class="min-footer">
+      <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Minimal Editorial Theme.</p>
+    </footer>
+  </div>
+  <script src="assets/script.js"></script>
+</body>
+</html>`;
+}
+
+function generateMinimalStaticCss() {
+  return `
+body.minimal-theme { background: #fafafa; color: #171717; font-family: 'Inter', sans-serif; padding: 48px 24px; line-height: 1.7; }
+.minimal-wrap { max-width: 680px; margin: 0 auto; }
+.min-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.min-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e5e5; }
+.min-name { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.min-role { color: #525252; font-size: 15px; }
+.min-bio { color: #404040; font-size: 14px; margin: 16px 0; }
+.min-socials { display: flex; gap: 12px; margin-bottom: 32px; }
+.min-social-link { font-size: 13px; color: #171717; text-decoration: underline; }
+.min-section { margin-top: 40px; }
+.min-heading { font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.15em; color: #a3a3a3; margin-bottom: 20px; }
+.min-skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.min-skill-tag { background: #f0f0f0; border: 1px solid #e0e0e0; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: #333; }
+.min-item { border-bottom: 1px solid #e5e5e5; padding-bottom: 16px; margin-bottom: 20px; }
+.min-item-header { display: flex; justify-content: space-between; align-items: baseline; }
+.min-item-title { font-size: 16px; font-weight: 600; }
+.min-company { font-weight: 400; color: #737373; font-size: 14px; }
+.min-date { font-size: 12px; color: #888; }
+.min-item-links { display: flex; gap: 10px; }
+.min-item-desc { font-size: 13px; color: #525252; margin: 6px 0 8px; }
+.min-tags { display: flex; gap: 6px; margin-top: 6px; }
+.min-tag { font-size: 11px; color: #888; background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+.min-link { color: #171717; font-size: 12px; text-decoration: underline; }
+.min-footer { margin-top: 60px; font-size: 12px; color: #a3a3a3; text-align: center; }
+`;
+}
+
+/* ==========================================================================
+   REACT SOURCE CODE TEMPLATE JSX BUILDERS
+   ========================================================================== */
+
+function getFullDevPortTemplateJsx() {
+  // Transpiled version of DevPortTemplate.tsx
   return `import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -1816,6 +2464,7 @@ import {
   Check,
   Code2,
   ExternalLink,
+  FileCode,
   GraduationCap,
   Heart,
   Mail,
@@ -1836,165 +2485,333 @@ const TECH_PILL_COLORS = [
   "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20",
   "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
   "border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20",
+  "border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20",
+  "border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
 ];
 
-export function DevPortTemplate({ portfolio }) {
-  const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = portfolio || {};
+export function DevPortTemplate({ portfolio = {} }) {
+  const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = portfolio;
   const [activeSection, setActiveSection] = useState("hero");
 
   const fullName = profile.fullName || "Developer";
   const headline = profile.headline || "Full Stack Engineer & Creative Developer";
-  const bio = profile.bio || "Crafting high-performance web experiences and scalable cloud applications.";
+  const bio = profile.bio || "Crafting high-performance web experiences and scalable cloud applications with modern architecture.";
   const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
   const initials = (fullName || "DV").split(" ").map(n => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
+  const roles = useMemo(() => {
+    if (!headline) return ["Creative Developer", "Tech Enthusiast", "Full Stack Engineer"];
+    const parts = headline.split(/[,|•&/]/).map(s => s.trim()).filter(Boolean);
+    return parts.length > 0 ? parts : [headline];
+  }, [headline]);
+
+  const [currentRoleIndex, setCurrentRoleIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentFullRole = roles[currentRoleIndex % roles.length];
+    const typingSpeed = isDeleting ? 40 : 80;
+    const timer = setTimeout(() => {
+      if (!isDeleting) {
+        setDisplayText(currentFullRole.slice(0, displayText.length + 1));
+        if (displayText.length + 1 >= currentFullRole.length) {
+          setTimeout(() => setIsDeleting(true), 1800);
+        }
+      } else {
+        setDisplayText(currentFullRole.slice(0, displayText.length - 1));
+        if (displayText.length <= 0) {
+          setIsDeleting(false);
+          setCurrentRoleIndex(prev => (prev + 1) % roles.length);
+        }
+      }
+    }, typingSpeed);
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, currentRoleIndex, roles]);
+
   const scrollTo = (id) => {
     const el = document.getElementById(id);
-    if (el) {
-      const top = el.getBoundingClientRect().top + window.pageYOffset - 76;
-      window.scrollTo({ top, behavior: "smooth" });
-    }
+    if (!el) return;
+    const offset = 76;
+    const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: pos, behavior: "smooth" });
+    setActiveSection(id);
   };
 
+  const projectCount = projects.length > 0 ? \`\${projects.length}+\` : "20+";
+  const experienceYears = useMemo(() => {
+    if (experience.length === 0) return "4+";
+    const yrs = Math.max(1, experience.length * 1.5);
+    return \`\${Math.round(yrs)}+\`;
+  }, [experience]);
+
+  const topSkills = skills.slice(0, 6);
+  const codeSnippetSkills = (skills.length > 0 ? skills.slice(0, 3).map(s => \`"\${s.name}"\`) : ['"React"', '"Node"', '"TypeScript"']).join(", ");
+
   return (
-    <div className="w-full min-h-screen bg-[#070b14] text-neutral-100 font-sans antialiased selection:bg-sky-500/30 selection:text-sky-200">
-      {/* Sticky cosmic header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070b14]/85 border-b border-sky-500/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-[76px] flex items-center justify-between">
-          <button onClick={() => scrollTo("hero")} className="flex items-center gap-3 text-left">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName} className="h-9 w-9 rounded-full object-cover ring-2 ring-sky-400/50" />
-            ) : (
-              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center font-bold text-white text-xs">
+    <div className="relative min-h-screen bg-[#090a16] text-neutral-100 selection:bg-cyan-500/30 selection:text-white font-sans antialiased overflow-x-hidden scroll-smooth">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-cyan-500/15 blur-[130px]" />
+        <div className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-600/15 blur-[160px]" />
+        <div className="absolute top-[60%] left-[-10%] h-[550px] w-[550px] rounded-full bg-pink-500/10 blur-[140px]" />
+        <div className="absolute bottom-[-10%] right-[10%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+      </div>
+
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#090a16]/80 border-b border-white/10 transition-all duration-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
+          <button type="button" onClick={() => scrollTo("hero")} className="flex items-center gap-3 group text-left">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-pink-500 p-0.5 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+              <div className="h-full w-full rounded-[10px] bg-[#090a16] flex items-center justify-center font-bold text-sm tracking-wider font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400">
                 {initials}
               </div>
-            )}
-            <span className="font-bold text-base tracking-tight text-white">{fullName}</span>
+            </div>
+            <div>
+              <div className="font-bold text-sm tracking-tight text-white group-hover:text-cyan-400 transition-colors">{fullName}</div>
+              <p className="text-[11px] text-neutral-400 font-mono truncate max-w-[200px]">{headline}</p>
+            </div>
           </button>
-          <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-neutral-400">
-            <button onClick={() => scrollTo("about")} className="hover:text-sky-400 transition-colors">About</button>
-            {skills.length > 0 && <button onClick={() => scrollTo("skills")} className="hover:text-sky-400 transition-colors">Skills</button>}
-            {projects.length > 0 && <button onClick={() => scrollTo("projects")} className="hover:text-sky-400 transition-colors">Projects</button>}
-            {experience.length > 0 && <button onClick={() => scrollTo("experience")} className="hover:text-sky-400 transition-colors">Experience</button>}
-            <button onClick={() => scrollTo("contact")} className="px-3.5 py-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all">
-              Contact
-            </button>
+
+          <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-medium text-neutral-300">
+            {["hero", "about", "skills", "projects", "experience", "education", "contact"].map(id => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => scrollTo(id)}
+                className={\`px-3.5 py-1.5 rounded-full capitalize transition-all duration-200 \${activeSection === id ? "bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold" : "hover:text-white hover:bg-white/5"}\`}
+              >
+                {id}
+              </button>
+            ))}
           </nav>
+
+          <button
+            type="button"
+            onClick={() => scrollTo("contact")}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] transition-all"
+          >
+            <span>Hire Me</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section id="hero" className="relative pt-20 pb-28 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Available for opportunities</span>
-            </div>
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-              Hi, I'm <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">{fullName}</span>
-            </h1>
-            <p className="text-lg font-mono text-sky-400">{headline}</p>
-            <p className="text-neutral-400 text-sm sm:text-base leading-relaxed max-w-xl">{bio}</p>
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button onClick={() => scrollTo("contact")} className="px-6 py-3 rounded-lg text-sm font-semibold bg-sky-500 hover:bg-sky-400 text-neutral-950 transition-all flex items-center gap-2">
-                <span>Let's Connect</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              {projects.length > 0 && (
-                <button onClick={() => scrollTo("projects")} className="px-6 py-3 rounded-lg text-sm font-semibold border border-white/10 hover:border-sky-400/40 text-neutral-300 hover:text-white transition-all">
-                  View Projects
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 space-y-24 py-8 sm:py-16">
+        <section id="hero" className="pt-8 sm:pt-14 pb-12 sm:pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span>Available for opportunities & freelance work</span>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm sm:text-base font-mono text-neutral-400 uppercase tracking-widest">Hey there! I'm</p>
+                <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">{fullName}</h1>
+              </div>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center flex-wrap gap-2 text-white">
+                <span>I'm a</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-pink-400 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]">{displayText}</span>
+                <span className="inline-block w-0.5 h-6 sm:h-8 bg-cyan-400 animate-pulse" />
+              </div>
+              {bio && <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-xl font-light">{bio}</p>}
+              {topSkills.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs font-mono text-neutral-400 mb-2.5 uppercase tracking-wider">Core Technologies</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {topSkills.map((s, idx) => (
+                      <span key={s.name} className={\`px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md \${TECH_PILL_COLORS[idx % TECH_PILL_COLORS.length]}\`}>{s.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="pt-4 flex flex-wrap items-center gap-3.5">
+                <button type="button" onClick={() => scrollTo("projects")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:scale-105 transition-all">
+                  <span>View My Work</span>
+                  <ArrowRight className="h-4 w-4" />
                 </button>
-              )}
-            </div>
-            {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-2.5 pt-4">
-                {socialLinks.map((s, idx) => (
-                  <SafeLink key={idx} href={s.url} className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:border-sky-400/40 text-neutral-400 hover:text-sky-400 text-xs font-mono transition-all">
-                    {s.label || s.platform}
-                  </SafeLink>
-                ))}
+                <button type="button" onClick={() => scrollTo("contact")} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-white transition-all">
+                  <MessageSquare className="h-4 w-4 text-cyan-400" />
+                  <span>Let's Talk</span>
+                </button>
+                {profile.location && (
+                  <div className="inline-flex items-center gap-1.5 text-xs text-neutral-400 pl-2">
+                    <MapPin className="h-3.5 w-3.5 text-pink-400" />
+                    <span>{profile.location}</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-sky-500/20 to-purple-500/20 blur-2xl animate-pulse" />
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={fullName} className="relative z-10 w-56 h-56 sm:w-72 sm:h-72 rounded-full object-cover ring-4 ring-sky-400/40 shadow-2xl shadow-sky-500/20" />
-              ) : (
-                <div className="relative z-10 w-56 h-56 sm:w-72 sm:h-72 rounded-full bg-gradient-to-tr from-sky-900 to-indigo-900 ring-4 ring-sky-400/40 flex items-center justify-center text-6xl font-bold text-white">
-                  {initials}
+              {socialLinks.length > 0 && (
+                <div className="pt-3 flex items-center gap-3">
+                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-500">Connect:</span>
+                  <div className="flex items-center gap-2">
+                    {socialLinks.map((l, idx) => (
+                      <SafeLink key={idx} href={l.url} className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center transition-all hover:scale-110">
+                        <BrandIcon name={l.platform} size={15} />
+                      </SafeLink>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Skills */}
-      {skills.length > 0 && (
-        <section id="skills" className="py-20 border-t border-sky-500/10 px-4 sm:px-6 max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 text-white flex items-center gap-3">
-            <Code2 className="text-sky-400" />
-            <span>Tech Stack & Skills</span>
-          </h2>
-          <div className="flex flex-wrap gap-2.5">
-            {skills.map((s, i) => (
-              <div key={i} className={\`px-3.5 py-1.5 rounded-lg border text-xs font-mono transition-all \${TECH_PILL_COLORS[i % TECH_PILL_COLORS.length]}\`}>
-                {s.name}
+            <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
+              <div className="relative w-[300px] sm:w-[360px] h-[340px] sm:h-[400px] flex items-center justify-center">
+                <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 opacity-25 blur-2xl animate-pulse" />
+                <div className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090a16] flex items-center justify-center">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-cyan-400 font-mono font-bold text-4xl">{initials}</div>
+                    )}
+                  </div>
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16] animate-bounce">
+                    <Code2 className="h-4 w-4" />
+                  </div>
+                  <div className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                    <Check className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                    <Heart className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+
+                <div className="absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border border-white/15 bg-neutral-900/90 backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed">
+                  <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/10">
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                    <div className="h-2 w-2 rounded-full bg-amber-500" />
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-[9px] text-neutral-400 ml-1">developer.js</span>
+                  </div>
+                  <div className="text-neutral-300 space-y-0.5">
+                    <p className="text-pink-400">const <span className="text-white">developer</span> = &#123;</p>
+                    <p className="pl-2">name: <span className="text-cyan-300">&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,</p>
+                    <p className="pl-2 truncate">skills: <span className="text-amber-300">[{codeSnippetSkills}]</span>,</p>
+                    <p className="pl-2">hardWorker: <span className="text-emerald-400">true</span></p>
+                    <p className="text-pink-400">&#125;;</p>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-4 -left-2 sm:-left-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                    <FileCode className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-base font-bold font-mono text-white leading-none">{projectCount}</div>
+                    <div className="text-[10px] text-neutral-400">Projects Done</div>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-4 -right-2 sm:-right-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-base font-bold font-mono text-white leading-none">{experienceYears}</div>
+                    <div className="text-[10px] text-neutral-400">Experience</div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </section>
-      )}
 
-      {/* Projects */}
-      {projects.length > 0 && (
-        <section id="projects" className="py-20 border-t border-sky-500/10 px-4 sm:px-6 max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 text-white flex items-center gap-3">
-            <Sparkles className="text-sky-400" />
-            <span>Featured Work</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projects.map((p, i) => (
-              <div key={i} className="p-6 rounded-2xl border border-sky-500/10 bg-white/[0.02] hover:border-sky-400/40 transition-all flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-2">{p.title}</h3>
-                  <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed mb-4">{p.description}</p>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-6">
-                      {p.tags.map((t, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded text-[11px] font-mono bg-sky-500/10 text-sky-400">{t}</span>
-                      ))}
-                    </div>
-                  )}
+        {bio && (
+          <section id="about" className="scroll-mt-20">
+            <div className="p-6 sm:p-10 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-xl relative overflow-hidden">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                  <User className="h-4 w-4" />
                 </div>
-                <div className="flex items-center gap-3 pt-2">
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs font-semibold px-3 py-1.5 rounded bg-sky-500 text-black hover:bg-sky-400">Live Demo &rarr;</SafeLink>}
-                  {p.repoUrl && <SafeLink href={p.repoUrl} className="text-xs font-semibold px-3 py-1.5 rounded border border-white/10 text-neutral-300 hover:text-white">Source</SafeLink>}
-                </div>
+                <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">// 01. About Me</h2>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Contact */}
-      <section id="contact" className="py-24 border-t border-sky-500/10 px-4 sm:px-6 max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl font-extrabold text-white mb-4">Let's Build Something Together</h2>
-        <p className="text-neutral-400 text-sm mb-8">Have a project in mind, want to collaborate, or just want to say hi?</p>
-        {profile.email && (
-          <a href={\`mailto:\${profile.email}\`} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-sky-500 text-neutral-950 font-semibold hover:bg-sky-400 transition-all">
-            <Mail className="h-4 w-4" />
-            <span>{profile.email}</span>
-          </a>
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-6">Passionate about turning vision into high-impact software</h3>
+              <p className="text-neutral-300 text-base leading-relaxed">{bio}</p>
+            </div>
+          </section>
         )}
-      </section>
 
-      {/* Footer */}
-      <footer className="py-8 border-t border-white/5 text-center text-xs font-mono text-neutral-500">
-        &copy; {new Date().getFullYear()} {fullName}. Built with modern standards.
+        {skills.length > 0 && (
+          <section id="skills" className="scroll-mt-20 space-y-6">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="h-7 w-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+                <Code2 className="h-4 w-4" />
+              </div>
+              <h2 className="text-xs font-mono uppercase tracking-widest text-pink-400">// 02. Skills & Tech Stack</h2>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Tools, Frameworks & Core Competencies</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+              {skills.map((s, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-cyan-500/40 backdrop-blur-md transition-all">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-semibold text-sm text-white truncate">{s.name}</span>
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase">{s.category}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-pink-500" style={{ width: s.level === "expert" ? "95%" : s.level === "advanced" ? "85%" : "70%" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {projects.length > 0 && (
+          <section id="projects" className="scroll-mt-20 space-y-6">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="h-7 w-7 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                <FileCode className="h-4 w-4" />
+              </div>
+              <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">// 03. Featured Engineering Projects</h2>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Selected Work & Case Studies</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {projects.map((p, idx) => (
+                <div key={idx} className="rounded-2xl border border-white/10 bg-white/[0.03] hover:border-cyan-500/40 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="text-xl font-bold text-white">{p.title}</h4>
+                      {p.featured && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">Featured</span>}
+                    </div>
+                    <p className="text-sm text-neutral-300 font-light">{p.description}</p>
+                    {p.tags && p.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {p.tags.map(t => <span key={t} className="px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-white/5 border border-white/10 text-neutral-300">#{t}</span>)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-6 mt-4 border-t border-white/10 flex items-center gap-3">
+                    {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs font-semibold text-cyan-400 hover:text-cyan-300">Live Demo &rarr;</SafeLink>}
+                    {p.repoUrl && <SafeLink href={p.repoUrl} className="text-xs font-medium text-neutral-400 hover:text-white">Code Repository</SafeLink>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section id="contact" className="scroll-mt-20">
+          <div className="p-8 sm:p-12 rounded-3xl border border-white/15 bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl shadow-2xl text-center space-y-6">
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">Let's build something extraordinary together</h2>
+            <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto font-light">Interested in collaborating or hiring? Reach out anytime!</p>
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
+              {profile.email && (
+                <SafeLink href={\`mailto:\${profile.email}\`} className="px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+                  <span>Send an Email</span>
+                </SafeLink>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-white/10 py-10 bg-[#090a16]/90 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs font-mono text-neutral-400">
+          <span>&copy; {new Date().getFullYear()} {fullName}. Built with modern standards & DevPort.</span>
+          <button type="button" onClick={() => scrollTo("hero")} className="text-cyan-400 hover:text-white">^top</button>
+        </div>
       </footer>
     </div>
   );
@@ -2002,46 +2819,77 @@ export function DevPortTemplate({ portfolio }) {
 `;
 }
 
-function getModernCreativeTemplateJsx() {
+function getFullModernCreativeTemplateJsx() {
   return `import React from "react";
 import { ArrowRight, Code2, Mail, Sparkles, User } from "lucide-react";
 import { BrandIcon } from "../common/BrandIcon.jsx";
 import { SafeLink } from "../common/SafeLink.jsx";
 import { normalizeAvatarUrl } from "../common/urlUtils.js";
 
-export function ModernCreativeTemplate({ portfolio }) {
-  const { profile = {}, socialLinks = [], skills = [], projects = [], experience = [] } = portfolio || {};
+export function ModernCreativeTemplate({ portfolio = {} }) {
+  const { profile = {}, socialLinks = [], skills = [], projects = [] } = portfolio;
   const fullName = profile.fullName || "Creative Engineer";
-  const headline = profile.headline || "Data Analyst & Creative Developer";
-  const bio = profile.bio || "Transforming ideas into polished interactive software experiences.";
+  const firstName = fullName ? fullName.split(" ")[0] : "Creative";
+  const headline = profile.headline || "Data Analyst & Creative Engineer";
+  const bio = profile.bio || "Data Analyst with extensive experience transforming raw data into actionable insights.";
   const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
 
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const offset = 76;
+    const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: pos, behavior: "smooth" });
+  };
+
   return (
-    <div className="w-full min-h-screen bg-[#08071a] text-neutral-100 font-sans antialiased">
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#08071a]/80 border-b border-purple-500/20 px-6 h-16 flex items-center justify-between">
-        <span className="font-bold text-lg bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">{fullName}</span>
-        <nav className="flex gap-4 text-xs font-mono text-purple-300">
-          <a href="#about" className="hover:text-white">About</a>
-          <a href="#projects" className="hover:text-white">Work</a>
-          <a href="#contact" className="hover:text-white">Contact</a>
-        </nav>
+    <div className="relative min-h-screen bg-[#0b0f19] text-neutral-100 font-sans antialiased overflow-x-hidden">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f19]/85 border-b border-white/5 h-18 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
+          <span className="font-bold text-lg text-white">{firstName}</span>
+          <nav className="flex gap-6 text-sm text-neutral-400">
+            <button onClick={() => scrollTo("hero")} className="hover:text-white">Home</button>
+            <button onClick={() => scrollTo("projects")} className="hover:text-white">Projects</button>
+            <button onClick={() => scrollTo("contact")} className="hover:text-white">Contact</button>
+          </nav>
+          <button onClick={() => scrollTo("contact")} className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_20px_rgba(147,51,234,0.35)]">Hire Me</button>
+        </div>
       </header>
-      <main className="max-w-5xl mx-auto px-6 py-16 space-y-20">
-        <section className="text-center space-y-6 pt-10">
-          {avatarUrl && <img src={avatarUrl} alt={fullName} className="w-36 h-36 mx-auto rounded-full object-cover ring-4 ring-purple-500 shadow-2xl shadow-purple-500/30" />}
-          <h1 className="text-5xl font-extrabold tracking-tight text-white">{fullName}</h1>
-          <p className="text-xl text-purple-400 font-medium">{headline}</p>
-          <p className="max-w-xl mx-auto text-neutral-300 text-sm leading-relaxed">{bio}</p>
+
+      <main className="max-w-6xl mx-auto px-6 py-16 space-y-20">
+        <section id="hero" className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase border border-purple-500/25 bg-purple-500/10 text-purple-300">
+              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+              <span>Welcome to my portfolio</span>
+            </div>
+            <h1 className="text-5xl sm:text-6xl font-extrabold text-white">Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">{fullName}</span></h1>
+            <p className="text-xl text-purple-400 font-semibold">{headline}</p>
+            <p className="text-neutral-300 text-base max-w-xl">{bio}</p>
+            <div className="flex gap-4">
+              <button onClick={() => scrollTo("projects")} className="px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_20px_rgba(147,51,234,0.4)]">Explore My Work &rarr;</button>
+              <button onClick={() => scrollTo("contact")} className="px-6 py-3 rounded-xl text-sm font-medium border border-white/15 text-white">Contact Me</button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="relative w-64 h-64 rounded-full p-2 bg-gradient-to-tr from-purple-600 via-indigo-500 to-pink-500 shadow-[0_0_50px_rgba(147,51,234,0.5)]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-indigo-950 flex items-center justify-center">
+                {avatarUrl ? <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" /> : <span className="text-5xl font-black text-white">{fullName[0]}</span>}
+              </div>
+            </div>
+          </div>
         </section>
+
         {projects.length > 0 && (
-          <section id="projects" className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Projects</h2>
+          <section id="projects" className="space-y-8">
+            <h2 className="text-3xl font-bold text-white">Featured Projects</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map((p, i) => (
-                <div key={i} className="p-6 rounded-2xl bg-purple-950/20 border border-purple-500/20 space-y-4">
+              {projects.map((p, idx) => (
+                <div key={idx} className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
                   <h3 className="font-bold text-lg text-white">{p.title}</h3>
-                  <p className="text-xs text-neutral-400">{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="inline-block text-xs font-semibold text-purple-400 hover:text-purple-300">Visit Project &rarr;</SafeLink>}
+                  <p className="text-sm text-neutral-300">{p.description}</p>
+                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-sm font-semibold text-purple-400 hover:text-purple-300">Explore Project &rarr;</SafeLink>}
                 </div>
               ))}
             </div>
@@ -2054,71 +2902,80 @@ export function ModernCreativeTemplate({ portfolio }) {
 `;
 }
 
-function getDeveloperTemplateJsx() {
+function getFullDeveloperTemplateJsx() {
   return `import React from "react";
-import { Terminal, Code2 } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { SafeLink } from "../common/SafeLink.jsx";
 
-export function DeveloperTemplate({ portfolio }) {
-  const { profile = {}, skills = [], projects = [] } = portfolio || {};
+export function DeveloperTemplate({ portfolio = {} }) {
+  const { profile = {}, skills = [], projects = [] } = portfolio;
   const fullName = profile.fullName || "Developer";
 
   return (
-    <div className="w-full min-h-screen bg-neutral-950 text-neutral-100 font-mono p-6">
-      <header className="border-b border-neutral-800 pb-4 mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Terminal className="text-emerald-400 h-5 w-5" />
-          <span className="font-bold text-sm">~/dev/{profile.fullName?.toLowerCase().replace(/\\s+/g, "") || "portfolio"}</span>
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-mono p-6 sm:p-12">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="border-b border-[#30363d] pb-4 text-[#58a6ff] font-bold flex items-center gap-2">
+          <Terminal className="h-5 w-5" />
+          <span>~/dev/{fullName.toLowerCase().replace(/\\s+/g, "")}</span>
         </div>
-      </header>
-      <main className="max-w-4xl mx-auto space-y-12">
-        <section className="space-y-2">
-          <p className="text-emerald-400 text-xs">$ whoami</p>
-          <h1 className="text-3xl font-bold">{fullName}</h1>
-          <p className="text-neutral-400 text-sm">{profile.headline}</p>
-          <p className="text-neutral-500 text-xs mt-2">{profile.bio}</p>
-        </section>
+        <div className="space-y-2">
+          <p className="text-[#7ee787] text-xs">$ whoami</p>
+          <h1 className="text-4xl font-bold text-white">{fullName}</h1>
+          <p className="text-[#58a6ff]">{profile.headline}</p>
+          <p className="text-[#8b949e] text-sm pt-2">{profile.bio}</p>
+        </div>
+        {skills.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-[#7ee787] text-xs">$ ls -la ./skills</p>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s, i) => (
+                <span key={i} className="px-2 py-1 rounded bg-[#21262d] border border-[#30363d] text-xs text-[#7ee787]">{s.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
         {projects.length > 0 && (
-          <section className="space-y-4">
-            <p className="text-emerald-400 text-xs">$ ls -la ./projects</p>
+          <div className="space-y-4">
+            <p className="text-[#7ee787] text-xs">$ cat ./projects.json</p>
             <div className="grid grid-cols-1 gap-4">
               {projects.map((p, i) => (
-                <div key={i} className="p-4 rounded border border-neutral-800 bg-neutral-900/50">
-                  <h3 className="font-bold text-sm text-neutral-200">{p.title}</h3>
-                  <p className="text-xs text-neutral-400 my-2">{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs text-blue-400 underline">View Live</SafeLink>}
+                <div key={i} className="p-4 rounded border border-[#30363d] bg-[#161b22] space-y-2">
+                  <h4 className="text-white font-bold">&gt; {p.title}</h4>
+                  <p className="text-xs text-[#8b949e]">{p.description}</p>
+                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs text-[#7ee787] underline">[Live Demo]</SafeLink>}
                 </div>
               ))}
             </div>
-          </section>
+          </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
 `;
 }
 
-function getMinimalTemplateJsx() {
+function getFullMinimalTemplateJsx() {
   return `import React from "react";
 import { SafeLink } from "../common/SafeLink.jsx";
 
-export function MinimalTemplate({ portfolio }) {
-  const { profile = {}, projects = [] } = portfolio || {};
+export function MinimalTemplate({ portfolio = {} }) {
+  const { profile = {}, projects = [] } = portfolio;
+  const fullName = profile.fullName || "Portfolio";
   return (
-    <div className="w-full min-h-screen bg-white text-neutral-900 font-sans p-8 sm:p-16">
+    <div className="min-h-screen bg-[#fafafa] text-[#171717] font-sans p-8 sm:p-20">
       <div className="max-w-2xl mx-auto space-y-12">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-light tracking-tight">{profile.fullName || "Portfolio"}</h1>
+        <header className="space-y-3">
+          <h1 className="text-4xl font-light tracking-tight">{fullName}</h1>
           <p className="text-sm text-neutral-500">{profile.headline}</p>
           <p className="text-sm text-neutral-700 leading-relaxed pt-2">{profile.bio}</p>
         </header>
         {projects.length > 0 && (
           <section className="space-y-6">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Selected Works</h2>
+            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Selected Projects</h2>
             <div className="space-y-6">
               {projects.map((p, i) => (
-                <div key={i} className="border-b border-neutral-100 pb-4">
+                <div key={i} className="border-b border-neutral-200 pb-4">
                   <h3 className="font-medium text-base">{p.title}</h3>
                   <p className="text-xs text-neutral-600 mt-1">{p.description}</p>
                   {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs text-neutral-900 underline mt-2 inline-block">Visit &rarr;</SafeLink>}
@@ -2134,117 +2991,138 @@ export function MinimalTemplate({ portfolio }) {
 `;
 }
 
-function getHeroSectionJsx() {
+function getBrandIconJsx() {
   return `import React from "react";
-export function HeroSection({ profile = {} }) {
+import { ExternalLink, Globe, Mail, MapPin, Phone } from "lucide-react";
+
+export function BrandIcon({ name, size = 16, className = "" }) {
+  const norm = (name || "").toLowerCase().trim();
+  const svgProps = { width: size, height: size, className, "aria-hidden": "true", fill: "currentColor", viewBox: "0 0 24 24" };
+
+  if (norm.includes("github")) {
+    return (
+      <svg {...svgProps}>
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+      </svg>
+    );
+  }
+  if (norm.includes("linkedin")) {
+    return (
+      <svg {...svgProps}>
+        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76c.97 0 1.75-.79 1.75-1.76s-.78-1.75-1.75-1.75a1.75 1.75 0 0 0-1.75 1.75c0 .97.78 1.76 1.75 1.76m1.4 9.74v-8.37H5.06v8.37h2.8z" />
+      </svg>
+    );
+  }
+  if (norm.includes("twitter") || norm === "x") {
+    return (
+      <svg {...svgProps}>
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    );
+  }
+  if (norm.includes("website") || norm.includes("portfolio")) return <Globe className={className} style={{ width: size, height: size }} />;
+  if (norm.includes("mail")) return <Mail className={className} style={{ width: size, height: size }} />;
+  if (norm.includes("phone")) return <Phone className={className} style={{ width: size, height: size }} />;
+  if (norm.includes("location")) return <MapPin className={className} style={{ width: size, height: size }} />;
+  return <ExternalLink className={className} style={{ width: size, height: size }} />;
+}
+`;
+}
+
+function getSafeLinkJsx() {
+  return `import React from "react";
+import { sanitizeExternalUrl } from "./urlUtils.js";
+
+export function SafeLink({ href, className = "", children, onClick, ...rest }) {
+  const safeHref = sanitizeExternalUrl(href);
+  if (!safeHref) return <span className={className}>{children}</span>;
   return (
-    <div className="py-12">
-      <h1 className="text-4xl font-bold">{profile.fullName}</h1>
-      <p className="text-neutral-400 mt-2">{profile.headline}</p>
-    </div>
+    <a href={safeHref} target="_blank" rel="noopener noreferrer" className={className} onClick={onClick} {...rest}>
+      {children}
+    </a>
   );
 }
 `;
 }
 
-function getAboutSectionJsx() {
-  return `import React from "react";
-export function AboutSection({ bio }) {
-  return <div className="py-8"><p className="text-neutral-300">{bio}</p></div>;
+function getUrlUtilsJs() {
+  return `export function sanitizeExternalUrl(url) {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("mailto:") || trimmed.startsWith("tel:")) {
+    if (trimmed.includes("\\r") || trimmed.includes("\\n") || trimmed.includes("\\u0000")) return null;
+    return trimmed;
+  }
+  let normalized = trimmed;
+  if (!/^https?:\\/\\//i.test(normalized) && !/^[a-z0-9+-.]+:/.test(normalized)) {
+    normalized = \`https://\${normalized}\`;
+  }
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {}
+  return null;
+}
+
+export function normalizeAvatarUrl(rawUrl) {
+  if (!rawUrl) return "";
+  let url = rawUrl.trim().replace(/^["']|["']$/g, "");
+  if (!url) return "";
+  const gdrive = url.match(/drive\\.google\\.com\\/(?:file\\/d\\/|open\\?id=)([a-zA-Z0-9_-]+)/);
+  if (gdrive) {
+    return \`https://drive.google.com/uc?export=view&id=\${gdrive[1]}\`;
+  }
+  if (url.includes("dropbox.com") && url.includes("dl=0")) {
+    url = url.replace("dl=0", "raw=1");
+  }
+  return url;
 }
 `;
 }
 
-function getSkillsSectionJsx() {
-  return `import React from "react";
-export function SkillsSection({ skills = [] }) {
-  return (
-    <div className="flex flex-wrap gap-2 py-6">
-      {skills.map((s, i) => (
-        <span key={i} className="px-2 py-1 bg-neutral-800 rounded text-xs">{s.name}</span>
-      ))}
-    </div>
-  );
-}
+function getSourceReadme(data) {
+  return `# ${data.title} - React Source Code
+
+This is a standalone, production-ready portfolio website built with **React 19**, **Vite**, **Tailwind CSS v4**, and **Lucide Icons**.
+
+## 🚀 Quick Start
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+
+## 📦 Production Build
+\`\`\`bash
+npm run build
+\`\`\`
+The output will be in \`dist/\`.
+
+## 🌐 Deploy to Vercel / Netlify
+1. Connect this repository on Vercel or Netlify.
+2. Build command: \`npm run build\`
+3. Output directory: \`dist\`
 `;
 }
 
-function getProjectsSectionJsx() {
-  return `import React from "react";
-export function ProjectsSection({ projects = [] }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6">
-      {projects.map((p, i) => (
-        <div key={i} className="p-4 border border-neutral-800 rounded">
-          <h4 className="font-bold text-sm">{p.title}</h4>
-          <p className="text-xs text-neutral-400 mt-1">{p.description}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
+function getStaticReadme(data) {
+  return `# ${data.title} - Static Website Bundle
+
+This archive contains your self-contained, production-ready portfolio website.
+
+## 🚀 Instant Local Preview
+Simply double-click \`index.html\` to open your website directly in any web browser!
+
+## 🌐 Free Hosting Deployment
+- **Netlify Drop**: Drag and drop this folder onto [app.netlify.com/drop](https://app.netlify.com/drop).
+- **GitHub Pages**: Upload this folder to your repository and enable Pages in Settings.
 `;
 }
 
-function getExperienceSectionJsx() {
-  return `import React from "react";
-export function ExperienceSection({ experience = [] }) {
-  return (
-    <div className="space-y-4 py-6">
-      {experience.map((e, i) => (
-        <div key={i} className="border-l-2 border-neutral-700 pl-4">
-          <h4 className="font-bold text-sm">{e.title} &mdash; {e.company}</h4>
-          <p className="text-xs text-neutral-400">{e.startDate} - {e.endDate || "Present"}</p>
-          <p className="text-xs text-neutral-300 mt-1">{e.description}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-`;
-}
-
-function getEducationSectionJsx() {
-  return `import React from "react";
-export function EducationSection({ education = [] }) {
-  return (
-    <div className="space-y-3 py-6">
-      {education.map((ed, i) => (
-        <div key={i} className="text-xs">
-          <div className="font-bold">{ed.degree}</div>
-          <div className="text-neutral-400">{ed.institution}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-`;
-}
-
-function getCertificationsSectionJsx() {
-  return `import React from "react";
-export function CertificationsSection({ certifications = [] }) {
-  return (
-    <div className="space-y-2 py-6">
-      {certifications.map((c, i) => (
-        <div key={i} className="text-xs">
-          <span className="font-bold">{c.name}</span> &mdash; <span className="text-neutral-400">{c.issuer}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-`;
-}
-
-function getContactSectionJsx() {
-  return `import React from "react";
-export function ContactSection({ profile = {} }) {
-  return (
-    <div className="py-8 text-center">
-      {profile.email && <a href={\`mailto:\${profile.email}\`} className="text-sky-400 text-sm underline">{profile.email}</a>}
-    </div>
-  );
-}
+function getLicenseText(data) {
+  return `MIT License
+Copyright (c) ${new Date().getFullYear()} ${data.profile?.fullName || "Developer"}
 `;
 }
