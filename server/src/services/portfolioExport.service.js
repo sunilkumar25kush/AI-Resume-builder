@@ -57,6 +57,26 @@ function normalizeExportAvatar(url) {
 }
 
 /**
+ * Resolves standard fallback CSS font family string for a given font family token.
+ */
+function getFontFamilyCss(fontFamilyKey) {
+  const map = {
+    Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    Roboto: "'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    Merriweather: "'Merriweather', Georgia, serif",
+    Playfair: "'Playfair Display', Georgia, serif",
+    JetBrains: "'JetBrains Mono', 'Fira Code', monospace",
+    Fira: "'Fira Code', 'JetBrains Mono', monospace",
+    Geist: "'Geist Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  };
+  return map[fontFamilyKey] || map.Inter;
+}
+
+const GOOGLE_FONTS_LINK_TAG = `<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
+
+/**
  * Sanitizes portfolio data to exclude private DB metadata or internal IDs.
  */
 export function sanitizePortfolioData(portfolio) {
@@ -69,6 +89,12 @@ export function sanitizePortfolioData(portfolio) {
       : rawTemplate === "minimal" || rawTemplate === "executive"
       ? "minimal"
       : "devport";
+
+  const theme = portfolio.design?.theme || "system";
+  const primaryColor =
+    portfolio.design?.primaryColor ||
+    (template === "creative" ? "#9333ea" : template === "devport" ? "#06b6d4" : "#2563eb");
+  const fontFamily = portfolio.design?.fontFamily || "Inter";
 
   return {
     title: portfolio.title || "Portfolio",
@@ -127,9 +153,9 @@ export function sanitizePortfolioData(portfolio) {
     })),
     design: {
       template,
-      theme: portfolio.design?.theme || "dark",
-      primaryColor: portfolio.design?.primaryColor || "#38bdf8",
-      fontFamily: portfolio.design?.fontFamily || "Inter",
+      theme,
+      primaryColor,
+      fontFamily,
       sectionOrder: portfolio.design?.sectionOrder || [
         "hero",
         "about",
@@ -241,6 +267,8 @@ export default defineConfig({
   archive.append(viteConfig, { name: "vite.config.js" });
 
   // 3. index.html
+  const isLight = data.design.theme === "light";
+  const fontFamilyCss = getFontFamilyCss(data.design.fontFamily);
   const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -249,12 +277,9 @@ export default defineConfig({
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${escapeHtml(data.publication.seoTitle || data.title)}</title>
     <meta name="description" content="${escapeHtml(data.publication.seoDescription)}" />
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    ${GOOGLE_FONTS_LINK_TAG}
   </head>
-  <body class="bg-[#090a16] text-neutral-100 antialiased selection:bg-cyan-500/30 selection:text-white">
+  <body class="${isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100"} antialiased selection:bg-cyan-500/30 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
@@ -268,7 +293,7 @@ export default defineConfig({
 @layer base {
   html {
     scroll-behavior: smooth;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: ${fontFamilyCss};
   }
 }
 
@@ -563,6 +588,8 @@ function generateDevPortStaticHtml(data) {
     })
     .join("\n");
 
+  const isLight = data.design?.theme === "light";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -571,12 +598,10 @@ function generateDevPortStaticHtml(data) {
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
 </head>
-<body class="devport-theme">
+<body class="devport-theme${isLight ? " devport-light" : ""}">
   <!-- Ambient Cosmic Glow Backdrops -->
   <div class="ambient-glow-layer" aria-hidden="true">
     <div class="glow-orb orb-1"></div>
@@ -883,6 +908,9 @@ function generateDevPortStaticHtml(data) {
    ========================================================================== */
 
 function generateDevPortStaticCss(data) {
+  const primaryColor = data.design?.primaryColor || "#06b6d4";
+  const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
+
   return `/* DevPort Cosmic Theme Stylesheet */
 :root {
   --bg-dark: #090a16;
@@ -890,11 +918,79 @@ function generateDevPortStaticCss(data) {
   --border-glass: rgba(255, 255, 255, 0.1);
   --text-white: #ffffff;
   --text-muted: #94a3b8;
-  --cyan-accent: #06b6d4;
+  --cyan-accent: ${primaryColor};
   --pink-accent: #ec4899;
   --purple-accent: #a855f7;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: ${fontFamilyCss};
   --font-mono: 'JetBrains Mono', monospace;
+}
+
+body.devport-theme.devport-light {
+  --bg-dark: #f8fafc;
+  --bg-card: #ffffff;
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --text-white: #0f172a;
+  --text-muted: #64748b;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+body.devport-theme.devport-light .ambient-glow-layer {
+  opacity: 0.2;
+}
+
+body.devport-theme.devport-light .devport-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.devport-theme.devport-light .brand-title {
+  color: #0f172a;
+}
+
+body.devport-theme.devport-light .nav-link-item {
+  color: #64748b;
+}
+
+body.devport-theme.devport-light .nav-link-item:hover {
+  color: #0f172a;
+}
+
+body.devport-theme.devport-light .glass-stat-card,
+body.devport-theme.devport-light .about-card,
+body.devport-theme.devport-light .project-card,
+body.devport-theme.devport-light .experience-card,
+body.devport-theme.devport-light .edu-box,
+body.devport-theme.devport-light .cert-box,
+body.devport-theme.devport-light .contact-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+body.devport-theme.devport-light .stat-value,
+body.devport-theme.devport-light .card-title,
+body.devport-theme.devport-light .timeline-title,
+body.devport-theme.devport-light .edu-box-degree,
+body.devport-theme.devport-light .cert-box-title {
+  color: #0f172a;
+}
+
+body.devport-theme.devport-light .social-icon-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+body.devport-theme.devport-light .social-icon-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+body.devport-theme.devport-light .cosmic-footer {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #64748b;
 }
 
 * {
@@ -2019,6 +2115,8 @@ function generateCreativeStaticHtml(data) {
     })
     .join("\n");
 
+  const isLight = data.design?.theme === "light";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2026,10 +2124,11 @@ function generateCreativeStaticHtml(data) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Modern 3D Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="creative-theme">
+<body class="creative-theme${isLight ? " creative-light" : ""}">
   <div class="creative-ambient-glow"></div>
   <header class="creative-navbar">
     <div class="container navbar-flex">
@@ -2114,20 +2213,66 @@ function generateCreativeStaticHtml(data) {
 }
 
 function generateCreativeStaticCss(data) {
+  const primaryColor = data.design?.primaryColor || "#9333ea";
+  const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
+  const isLight = data.design?.theme === "light";
+
   return `
 :root {
-  --bg-dark: #0b0f19;
-  --purple: #9333ea;
+  --bg-dark: ${isLight ? "#f8fafc" : "#0b0f19"};
+  --purple: ${primaryColor};
   --indigo: #6366f1;
+  --font-family: ${fontFamilyCss};
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body.creative-theme {
   background: var(--bg-dark);
-  color: #ffffff;
-  font-family: 'Inter', sans-serif;
+  color: ${isLight ? "#0f172a" : "#ffffff"};
+  font-family: var(--font-family);
   line-height: 1.6;
   position: relative;
   overflow-x: hidden;
+}
+body.creative-theme.creative-light .creative-ambient-glow {
+  opacity: 0.15;
+}
+body.creative-theme.creative-light .creative-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+body.creative-theme.creative-light .creative-logo {
+  color: #0f172a;
+}
+body.creative-theme.creative-light .creative-nav a {
+  color: #64748b;
+}
+body.creative-theme.creative-light .creative-nav a:hover {
+  color: #0f172a;
+}
+body.creative-theme.creative-light .creative-name {
+  color: #0f172a;
+}
+body.creative-theme.creative-light .creative-bio {
+  color: #64748b;
+}
+body.creative-theme.creative-light .creative-card,
+body.creative-theme.creative-light .creative-exp-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+body.creative-theme.creative-light .creative-card-title,
+body.creative-theme.creative-light .creative-exp-title {
+  color: #0f172a;
+}
+body.creative-theme.creative-light .creative-card-desc,
+body.creative-theme.creative-light .creative-exp-desc {
+  color: #64748b;
+}
+body.creative-theme.creative-light .creative-footer {
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #64748b;
 }
 .creative-ambient-glow {
   position: fixed;
@@ -2255,16 +2400,18 @@ function generateDeveloperStaticHtml(data) {
   const { profile, skills, projects } = data;
   const fullName = profile.fullName || "Developer";
   const slug = (fullName).toLowerCase().replace(/\s+/g, "");
+  const isLight = data.design?.theme === "light";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Terminal Portfolio")}</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="terminal-theme">
+<body class="terminal-theme${isLight ? " terminal-light" : ""}">
   <div class="terminal-container">
     <header class="terminal-bar">
       <span>~/dev/${escapeHtml(slug)}</span>
@@ -2299,21 +2446,32 @@ function generateDeveloperStaticHtml(data) {
 </html>`;
 }
 
-function generateDeveloperStaticCss() {
+function generateDeveloperStaticCss(data) {
+  const primaryColor = data?.design?.primaryColor || "#2563eb";
+  const fontFamilyCss = getFontFamilyCss(data?.design?.fontFamily || "JetBrains");
+  const isLight = data?.design?.theme === "light";
   return `
-body.terminal-theme { background: #0d1117; color: #c9d1d9; font-family: 'JetBrains Mono', monospace; padding: 24px; line-height: 1.6; }
-.terminal-container { max-width: 800px; margin: 40px auto; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-.terminal-bar { border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 20px; color: #58a6ff; font-weight: 700; }
-.prompt-line { color: #7ee787; font-size: 13px; margin: 20px 0 8px; }
-.term-name { font-size: 32px; color: #fff; margin-bottom: 6px; }
-.term-role { color: #58a6ff; font-size: 15px; margin-bottom: 10px; }
-.term-bio { color: #8b949e; font-size: 13px; }
+:root {
+  --bg-term: ${isLight ? "#f8fafc" : "#0d1117"};
+  --box-bg: ${isLight ? "#ffffff" : "#161b22"};
+  --border-color: ${isLight ? "#e2e8f0" : "#30363d"};
+  --accent: ${primaryColor};
+  --text-main: ${isLight ? "#0f172a" : "#c9d1d9"};
+  --text-sub: ${isLight ? "#64748b" : "#8b949e"};
+}
+body.terminal-theme { background: var(--bg-term); color: var(--text-main); font-family: ${fontFamilyCss}; padding: 24px; line-height: 1.6; }
+.terminal-container { max-width: 800px; margin: 40px auto; background: var(--box-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.terminal-bar { border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; color: var(--accent); font-weight: 700; }
+.prompt-line { color: var(--accent); font-size: 13px; margin: 20px 0 8px; }
+.term-name { font-size: 32px; color: var(--text-main); margin-bottom: 6px; }
+.term-role { color: var(--accent); font-size: 15px; margin-bottom: 10px; }
+.term-bio { color: var(--text-sub); font-size: 13px; }
 .term-skills { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
-.term-skill-tag { background: #21262d; border: 1px solid #30363d; padding: 3px 8px; border-radius: 4px; font-size: 12px; color: #7ee787; }
-.term-proj-box { background: #0d1117; border: 1px solid #30363d; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-.term-proj-title { color: #58a6ff; font-weight: 600; }
-.term-proj-desc { color: #8b949e; font-size: 12px; margin: 4px 0 8px; }
-.term-link { color: #7ee787; text-decoration: none; font-size: 12px; }
+.term-skill-tag { background: ${isLight ? "#f1f5f9" : "#21262d"}; border: 1px solid var(--border-color); padding: 3px 8px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+.term-proj-box { background: var(--bg-term); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+.term-proj-title { color: var(--accent); font-weight: 600; }
+.term-proj-desc { color: var(--text-sub); font-size: 12px; margin: 4px 0 8px; }
+.term-link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; }
 `;
 }
 
@@ -2366,6 +2524,8 @@ function generateMinimalStaticHtml(data) {
     `)
     .join("\n");
 
+  const isDark = data.design?.theme === "dark";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2373,10 +2533,11 @@ function generateMinimalStaticHtml(data) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="minimal-theme">
+<body class="minimal-theme${isDark ? " minimal-dark" : " minimal-light"}">
   <div class="minimal-wrap">
     <header class="min-header">
       <div class="min-avatar-row">
@@ -2420,32 +2581,42 @@ function generateMinimalStaticHtml(data) {
 </html>`;
 }
 
-function generateMinimalStaticCss() {
+function generateMinimalStaticCss(data) {
+  const primaryColor = data?.design?.primaryColor || "#2563eb";
+  const fontFamilyCss = getFontFamilyCss(data?.design?.fontFamily);
+  const isDark = data?.design?.theme === "dark";
   return `
-body.minimal-theme { background: #fafafa; color: #171717; font-family: 'Inter', sans-serif; padding: 48px 24px; line-height: 1.7; }
+:root {
+  --min-bg: ${isDark ? "#0f172a" : "#fafafa"};
+  --min-text: ${isDark ? "#f8fafc" : "#171717"};
+  --min-sub: ${isDark ? "#94a3b8" : "#525252"};
+  --min-border: ${isDark ? "#334155" : "#e5e5e5"};
+  --min-accent: ${primaryColor};
+}
+body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-family: ${fontFamilyCss}; padding: 48px 24px; line-height: 1.7; }
 .minimal-wrap { max-width: 680px; margin: 0 auto; }
 .min-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-.min-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e5e5; }
-.min-name { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
-.min-role { color: #525252; font-size: 15px; }
-.min-bio { color: #404040; font-size: 14px; margin: 16px 0; }
+.min-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid var(--min-border); }
+.min-name { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; color: var(--min-text); }
+.min-role { color: var(--min-sub); font-size: 15px; }
+.min-bio { color: var(--min-sub); font-size: 14px; margin: 16px 0; }
 .min-socials { display: flex; gap: 12px; margin-bottom: 32px; }
-.min-social-link { font-size: 13px; color: #171717; text-decoration: underline; }
+.min-social-link { font-size: 13px; color: var(--min-accent); text-decoration: underline; font-weight: 500; }
 .min-section { margin-top: 40px; }
-.min-heading { font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.15em; color: #a3a3a3; margin-bottom: 20px; }
+.min-heading { font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.15em; color: var(--min-accent); margin-bottom: 20px; font-weight: 700; }
 .min-skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.min-skill-tag { background: #f0f0f0; border: 1px solid #e0e0e0; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: #333; }
-.min-item { border-bottom: 1px solid #e5e5e5; padding-bottom: 16px; margin-bottom: 20px; }
+.min-skill-tag { background: ${isDark ? "#1e293b" : "#f0f0f0"}; border: 1px solid var(--min-border); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--min-text); }
+.min-item { border-bottom: 1px solid var(--min-border); padding-bottom: 16px; margin-bottom: 20px; }
 .min-item-header { display: flex; justify-content: space-between; align-items: baseline; }
-.min-item-title { font-size: 16px; font-weight: 600; }
-.min-company { font-weight: 400; color: #737373; font-size: 14px; }
-.min-date { font-size: 12px; color: #888; }
+.min-item-title { font-size: 16px; font-weight: 600; color: var(--min-text); }
+.min-company { font-weight: 400; color: var(--min-sub); font-size: 14px; }
+.min-date { font-size: 12px; color: var(--min-sub); }
 .min-item-links { display: flex; gap: 10px; }
-.min-item-desc { font-size: 13px; color: #525252; margin: 6px 0 8px; }
+.min-item-desc { font-size: 13px; color: var(--min-sub); margin: 6px 0 8px; }
 .min-tags { display: flex; gap: 6px; margin-top: 6px; }
-.min-tag { font-size: 11px; color: #888; background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
-.min-link { color: #171717; font-size: 12px; text-decoration: underline; }
-.min-footer { margin-top: 60px; font-size: 12px; color: #a3a3a3; text-align: center; }
+.min-tag { font-size: 11px; color: var(--min-sub); background: ${isDark ? "#1e293b" : "#f4f4f4"}; padding: 2px 6px; border-radius: 4px; }
+.min-link { color: var(--min-accent); font-size: 12px; text-decoration: underline; font-weight: 500; }
+.min-footer { margin-top: 60px; font-size: 12px; color: var(--min-sub); text-align: center; }
 `;
 }
 
@@ -2491,17 +2662,38 @@ const TECH_PILL_COLORS = [
 
 export function DevPortTemplate({ portfolio = {} }) {
   const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = portfolio;
+
+  const primaryColor = portfolio?.design?.primaryColor || "#06b6d4";
+  const theme = portfolio?.design?.theme || "system";
+  const isLight =
+    theme === "light" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: light)").matches &&
+      !window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+
   const [activeSection, setActiveSection] = useState("hero");
 
   const fullName = profile.fullName || "Developer";
   const headline = profile.headline || "Full Stack Engineer & Creative Developer";
   const bio = profile.bio || "Crafting high-performance web experiences and scalable cloud applications with modern architecture.";
   const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
-  const initials = (fullName || "DV").split(" ").map(n => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  const initials = (fullName || "DV")
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const accentGradient = \`linear-gradient(135deg, \${primaryColor}, #a855f7, #ec4899)\`;
+  const primaryButtonBg = \`linear-gradient(90deg, \${primaryColor}, #a855f7)\`;
+  const primaryGlowShadow = \`0 0 25px \${primaryColor}55\`;
+  const primaryTextShadow = \`0 0 24px \${primaryColor}66\`;
 
   const roles = useMemo(() => {
     if (!headline) return ["Creative Developer", "Tech Enthusiast", "Full Stack Engineer"];
-    const parts = headline.split(/[,|•&/]/).map(s => s.trim()).filter(Boolean);
+    const parts = headline.split(/[,|•&/]/).map((s) => s.trim()).filter(Boolean);
     return parts.length > 0 ? parts : [headline];
   }, [headline]);
 
@@ -2512,6 +2704,7 @@ export function DevPortTemplate({ portfolio = {} }) {
   useEffect(() => {
     const currentFullRole = roles[currentRoleIndex % roles.length];
     const typingSpeed = isDeleting ? 40 : 80;
+
     const timer = setTimeout(() => {
       if (!isDeleting) {
         setDisplayText(currentFullRole.slice(0, displayText.length + 1));
@@ -2522,21 +2715,48 @@ export function DevPortTemplate({ portfolio = {} }) {
         setDisplayText(currentFullRole.slice(0, displayText.length - 1));
         if (displayText.length <= 0) {
           setIsDeleting(false);
-          setCurrentRoleIndex(prev => (prev + 1) % roles.length);
+          setCurrentRoleIndex((prev) => (prev + 1) % roles.length);
         }
       }
     }, typingSpeed);
+
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, currentRoleIndex, roles]);
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const offset = 76;
-    const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: pos, behavior: "smooth" });
+    const headerOffset = 76;
+    const elementPosition = el.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth",
+    });
     setActiveSection(id);
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 120;
+      const sections = ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"];
+      for (const s of sections) {
+        const el = document.getElementById(s);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveSection(s);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const projectCount = projects.length > 0 ? \`\${projects.length}+\` : "20+";
   const experienceYears = useMemo(() => {
@@ -2546,52 +2766,129 @@ export function DevPortTemplate({ portfolio = {} }) {
   }, [experience]);
 
   const topSkills = skills.slice(0, 6);
-  const codeSnippetSkills = (skills.length > 0 ? skills.slice(0, 3).map(s => \`"\${s.name}"\`) : ['"React"', '"Node"', '"TypeScript"']).join(", ");
+  const codeSnippetSkills = (skills.length > 0 ? skills.slice(0, 3).map((s) => \`"\${s.name}"\`) : ['"React"', '"Node"', '"TypeScript"']).join(", ");
 
   return (
-    <div className="relative min-h-screen bg-[#090a16] text-neutral-100 selection:bg-cyan-500/30 selection:text-white font-sans antialiased overflow-x-hidden scroll-smooth">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-cyan-500/15 blur-[130px]" />
+    <div
+      className={\`relative min-h-screen transition-colors duration-300 selection:bg-cyan-500/30 selection:text-white antialiased overflow-x-hidden scroll-smooth \${
+        isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100"
+      }\`}
+    >
+      <div className={\`pointer-events-none fixed inset-0 overflow-hidden z-0 transition-opacity duration-300 \${isLight ? "opacity-20" : "opacity-100"}\`}>
+        <div
+          className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-[130px]"
+          style={{ backgroundColor: \`\${primaryColor}22\` }}
+        />
         <div className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-600/15 blur-[160px]" />
         <div className="absolute top-[60%] left-[-10%] h-[550px] w-[550px] rounded-full bg-pink-500/10 blur-[140px]" />
         <div className="absolute bottom-[-10%] right-[10%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
       </div>
 
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#090a16]/80 border-b border-white/10 transition-all duration-200">
+      <header
+        className={\`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-200 \${
+          isLight
+            ? "bg-white/85 border-neutral-200/80 shadow-xs text-neutral-800"
+            : "bg-[#090a16]/85 border-white/10 text-neutral-100"
+        }\`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
-          <button type="button" onClick={() => scrollTo("hero")} className="flex items-center gap-3 group text-left">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-pink-500 p-0.5 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-              <div className="h-full w-full rounded-[10px] bg-[#090a16] flex items-center justify-center font-bold text-sm tracking-wider font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400">
-                {initials}
+          <button
+            type="button"
+            onClick={() => scrollTo("hero")}
+            className="flex items-center gap-3 group text-left transition-transform hover:scale-[1.02]"
+          >
+            <div
+              className="h-10 w-10 rounded-xl p-0.5 shadow-md transition-shadow"
+              style={{ background: accentGradient, boxShadow: \`0 0 15px \${primaryColor}40\` }}
+            >
+              <div
+                className={\`h-full w-full rounded-[10px] flex items-center justify-center font-bold text-sm tracking-wider font-mono \${
+                  isLight ? "bg-white text-neutral-900" : "bg-[#090a16] text-white"
+                }\`}
+              >
+                <span
+                  style={{
+                    backgroundImage: accentGradient,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {initials}
+                </span>
               </div>
             </div>
             <div>
-              <div className="font-bold text-sm tracking-tight text-white group-hover:text-cyan-400 transition-colors">{fullName}</div>
-              <p className="text-[11px] text-neutral-400 font-mono truncate max-w-[200px]">{headline}</p>
+              <div
+                className={\`font-bold text-sm tracking-tight transition-colors flex items-center gap-1.5 \${
+                  isLight ? "text-neutral-900 group-hover:text-blue-600" : "text-white group-hover:text-cyan-400"
+                }\`}
+              >
+                <span>{fullName || "DevPort"}</span>
+              </div>
+              <p className={\`text-[11px] font-mono truncate max-w-[160px] sm:max-w-[200px] \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                {headline || "Developer & Designer"}
+              </p>
             </div>
           </button>
 
-          <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-medium text-neutral-300">
-            {["hero", "about", "skills", "projects", "experience", "education", "contact"].map(id => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => scrollTo(id)}
-                className={\`px-3.5 py-1.5 rounded-full capitalize transition-all duration-200 \${activeSection === id ? "bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold" : "hover:text-white hover:bg-white/5"}\`}
-              >
-                {id}
-              </button>
-            ))}
+          <nav
+            className={\`hidden md:flex items-center gap-1.5 p-1 rounded-full border backdrop-blur-md text-xs font-medium \${
+              isLight
+                ? "bg-neutral-100/80 border-neutral-200 text-neutral-600"
+                : "bg-white/5 border-white/10 text-neutral-300"
+            }\`}
+          >
+            {[
+              { id: "hero", label: "Home" },
+              { id: "about", label: "About", condition: !!bio },
+              { id: "skills", label: "Skills", condition: skills.length > 0 },
+              { id: "projects", label: "Projects", condition: projects.length > 0 },
+              { id: "experience", label: "Experience", condition: experience.length > 0 },
+              { id: "education", label: "Education", condition: education.length > 0 || certifications.length > 0 },
+              { id: "contact", label: "Contact", condition: true },
+            ]
+              .filter((item) => item.condition !== false)
+              .map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => scrollTo(item.id)}
+                  style={
+                    activeSection === item.id
+                      ? {
+                          background: primaryButtonBg,
+                          color: "#ffffff",
+                          boxShadow: \`0 0 15px \${primaryColor}40\`,
+                        }
+                      : {}
+                  }
+                  className={\`px-3.5 py-1.5 rounded-full transition-all duration-200 \${
+                    activeSection === item.id
+                      ? "font-semibold text-white shadow-xs"
+                      : isLight
+                        ? "hover:text-neutral-900 hover:bg-neutral-200/60"
+                        : "hover:text-white hover:bg-white/5"
+                  }\`}
+                >
+                  {item.label}
+                </button>
+              ))}
           </nav>
 
-          <button
-            type="button"
-            onClick={() => scrollTo("contact")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] transition-all"
-          >
-            <span>Hire Me</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => scrollTo("contact")}
+              style={{
+                background: primaryButtonBg,
+                boxShadow: \`0 0 20px \${primaryColor}45\`,
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>Hire Me</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -2599,53 +2896,144 @@ export function DevPortTemplate({ portfolio = {} }) {
         <section id="hero" className="pt-8 sm:pt-14 pb-12 sm:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              <div
+                className={\`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border backdrop-blur-md shadow-xs \${
+                  isLight
+                    ? "border-neutral-300 bg-white text-neutral-700"
+                    : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                }\`}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span
+                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                  <span
+                    className="relative inline-flex rounded-full h-2 w-2"
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                </span>
                 <span>Available for opportunities & freelance work</span>
               </div>
+
               <div className="space-y-2">
-                <p className="text-sm sm:text-base font-mono text-neutral-400 uppercase tracking-widest">Hey there! I'm</p>
-                <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">{fullName}</h1>
+                <p className={\`text-sm sm:text-base font-mono uppercase tracking-widest \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                  Hey there! I'm
+                </p>
+                <h1
+                  className={\`text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.08] \${
+                    isLight ? "text-neutral-900" : "text-white"
+                  }\`}
+                >
+                  {fullName || "Andrew Ryan"}
+                </h1>
               </div>
-              <div className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center flex-wrap gap-2 text-white">
+
+              <div
+                className={\`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center flex-wrap gap-2 \${
+                  isLight ? "text-neutral-800" : "text-white"
+                }\`}
+              >
                 <span>I'm a</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-pink-400 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]">{displayText}</span>
-                <span className="inline-block w-0.5 h-6 sm:h-8 bg-cyan-400 animate-pulse" />
+                <span
+                  style={{
+                    color: primaryColor,
+                    textShadow: primaryTextShadow,
+                  }}
+                  className="font-extrabold transition-colors duration-200"
+                >
+                  {displayText}
+                </span>
+                <span
+                  className="inline-block w-0.5 h-6 sm:h-8 animate-pulse"
+                  style={{ backgroundColor: primaryColor }}
+                />
               </div>
-              {bio && <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-xl font-light">{bio}</p>}
+
+              {bio && (
+                <p
+                  className={\`text-sm sm:text-base leading-relaxed max-w-xl font-light \${
+                    isLight ? "text-neutral-600" : "text-neutral-300/90"
+                  }\`}
+                >
+                  {bio}
+                </p>
+              )}
+
               {topSkills.length > 0 && (
                 <div className="pt-2">
-                  <p className="text-xs font-mono text-neutral-400 mb-2.5 uppercase tracking-wider">Core Technologies</p>
+                  <p className={\`text-xs font-mono mb-2.5 uppercase tracking-wider \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                    Core Technologies
+                  </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    {topSkills.map((s, idx) => (
-                      <span key={s.name} className={\`px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md \${TECH_PILL_COLORS[idx % TECH_PILL_COLORS.length]}\`}>{s.name}</span>
-                    ))}
+                    {topSkills.map((skill, idx) => {
+                      const colorClass = TECH_PILL_COLORS[idx % TECH_PILL_COLORS.length];
+                      return (
+                        <span
+                          key={skill.name}
+                          className={\`px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md transition-all \${colorClass}\`}
+                        >
+                          {skill.name}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
+
               <div className="pt-4 flex flex-wrap items-center gap-3.5">
-                <button type="button" onClick={() => scrollTo("projects")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:scale-105 transition-all">
+                <button
+                  type="button"
+                  onClick={() => scrollTo("projects")}
+                  style={{
+                    background: primaryButtonBg,
+                    boxShadow: primaryGlowShadow,
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
                   <span>View My Work</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={() => scrollTo("contact")} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-white transition-all">
-                  <MessageSquare className="h-4 w-4 text-cyan-400" />
+
+                <button
+                  type="button"
+                  onClick={() => scrollTo("contact")}
+                  className={\`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border backdrop-blur-md transition-all hover:scale-[1.02] \${
+                    isLight
+                      ? "border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 shadow-xs"
+                      : "border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                  }\`}
+                >
+                  <MessageSquare className="h-4 w-4" style={{ color: primaryColor }} />
                   <span>Let's Talk</span>
                 </button>
-                {profile.location && (
-                  <div className="inline-flex items-center gap-1.5 text-xs text-neutral-400 pl-2">
-                    <MapPin className="h-3.5 w-3.5 text-pink-400" />
+
+                {profile?.location && (
+                  <div className={\`hidden sm:inline-flex items-center gap-1.5 text-xs pl-2 \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                    <MapPin className="h-3.5 w-3.5 text-pink-500" />
                     <span>{profile.location}</span>
                   </div>
                 )}
               </div>
+
               {socialLinks.length > 0 && (
                 <div className="pt-3 flex items-center gap-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-500">Connect:</span>
+                  <span className={\`text-xs font-mono uppercase tracking-widest \${isLight ? "text-neutral-400" : "text-neutral-500"}\`}>
+                    Connect:
+                  </span>
                   <div className="flex items-center gap-2">
-                    {socialLinks.map((l, idx) => (
-                      <SafeLink key={idx} href={l.url} className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center transition-all hover:scale-110">
-                        <BrandIcon name={l.platform} size={15} />
+                    {socialLinks.map((link, idx) => (
+                      <SafeLink
+                        key={\`\${link.platform}-\${idx}\`}
+                        href={link.url}
+                        className={\`h-8 w-8 rounded-lg border flex items-center justify-center transition-all hover:scale-110 \${
+                          isLight
+                            ? "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 shadow-xs"
+                            : "border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white"
+                        }\`}
+                        title={link.label || link.platform}
+                      >
+                        <BrandIcon name={link.platform} size={15} />
                       </SafeLink>
                     ))}
                   </div>
@@ -2655,62 +3043,134 @@ export function DevPortTemplate({ portfolio = {} }) {
 
             <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
               <div className="relative w-[300px] sm:w-[360px] h-[340px] sm:h-[400px] flex items-center justify-center">
-                <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 opacity-25 blur-2xl animate-pulse" />
-                <div className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090a16] flex items-center justify-center">
+                <div
+                  className="absolute inset-4 rounded-full opacity-25 blur-2xl animate-pulse"
+                  style={{ background: accentGradient }}
+                />
+
+                <div
+                  className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 transition-shadow"
+                  style={{
+                    background: accentGradient,
+                    boxShadow: \`0 0 40px \${primaryColor}66\`,
+                  }}
+                >
+                  <div
+                    className={\`w-full h-full rounded-full overflow-hidden border-2 flex items-center justify-center \${
+                      isLight ? "bg-white border-neutral-100" : "bg-neutral-900 border-[#090a16]"
+                    }\`}
+                  >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                      <img
+                        src={avatarUrl}
+                        alt={fullName || "Portfolio Avatar"}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-cyan-400 font-mono font-bold text-4xl">{initials}</div>
+                      <div
+                        className={\`w-full h-full flex flex-col items-center justify-center font-mono font-bold text-4xl \${
+                          isLight ? "bg-neutral-100 text-neutral-700" : "bg-neutral-800 text-white"
+                        }\`}
+                      >
+                        <span style={{ color: primaryColor }}>{initials}</span>
+                        <span className="text-[10px] text-neutral-400 font-sans mt-1">Photo</span>
+                      </div>
                     )}
                   </div>
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16] animate-bounce">
+
+                  <div
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full text-white flex items-center justify-center shadow-lg border-2 animate-bounce"
+                    style={{
+                      backgroundColor: primaryColor,
+                      borderColor: isLight ? "#ffffff" : "#090a16",
+                    }}
+                  >
                     <Code2 className="h-4 w-4" />
                   </div>
-                  <div className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Check className="h-3.5 w-3.5" />
                   </div>
-                  <div className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Heart className="h-3.5 w-3.5" />
                   </div>
                 </div>
 
-                <div className="absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border border-white/15 bg-neutral-900/90 backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed">
+                <div
+                  className={\`absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed hidden xs:block \${
+                    isLight
+                      ? "bg-neutral-900/95 border-neutral-700 text-neutral-200"
+                      : "bg-neutral-900/90 border-white/15 text-neutral-300"
+                  }\`}
+                >
                   <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/10">
                     <div className="h-2 w-2 rounded-full bg-red-500" />
                     <div className="h-2 w-2 rounded-full bg-amber-500" />
                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
                     <span className="text-[9px] text-neutral-400 ml-1">developer.js</span>
                   </div>
-                  <div className="text-neutral-300 space-y-0.5">
+                  <div className="space-y-0.5">
                     <p className="text-pink-400">const <span className="text-white">developer</span> = &#123;</p>
-                    <p className="pl-2">name: <span className="text-cyan-300">&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,</p>
+                    <p className="pl-2">
+                      name: <span style={{ color: primaryColor }}>&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,
+                    </p>
                     <p className="pl-2 truncate">skills: <span className="text-amber-300">[{codeSnippetSkills}]</span>,</p>
                     <p className="pl-2">hardWorker: <span className="text-emerald-400">true</span></p>
                     <p className="text-pink-400">&#125;;</p>
                   </div>
                 </div>
 
-                <div className="absolute -bottom-4 -left-2 sm:-left-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                <div
+                  className={\`absolute -bottom-4 -left-2 sm:-left-4 z-20 px-3.5 py-2.5 rounded-xl border backdrop-blur-xl shadow-xl flex items-center gap-2.5 \${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-md text-neutral-900"
+                      : "bg-neutral-900/85 border-white/15 text-white"
+                  }\`}
+                >
+                  <div
+                    className="h-9 w-9 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: \`\${primaryColor}20\`, color: primaryColor }}
+                  >
                     <FileCode className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-base font-bold font-mono text-white leading-none">{projectCount}</div>
-                    <div className="text-[10px] text-neutral-400">Projects Done</div>
+                    <div className="text-base font-bold font-mono leading-none">
+                      {projectCount}
+                    </div>
+                    <div className={\`text-[10px] \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                      Projects Done
+                    </div>
                   </div>
                 </div>
 
-                <div className="absolute -bottom-4 -right-2 sm:-right-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
+                <div
+                  className={\`absolute -bottom-4 -right-2 sm:-right-4 z-20 px-3.5 py-2.5 rounded-xl border backdrop-blur-xl shadow-xl flex items-center gap-2.5 \${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-md text-neutral-900"
+                      : "bg-neutral-900/85 border-white/15 text-white"
+                  }\`}
+                >
                   <div className="h-9 w-9 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-base font-bold font-mono text-white leading-none">{experienceYears}</div>
-                    <div className="text-[10px] text-neutral-400">Experience</div>
+                    <div className="text-base font-bold font-mono leading-none">
+                      {experienceYears}
+                    </div>
+                    <div className={\`text-[10px] \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                      Experience
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2720,37 +3180,97 @@ export function DevPortTemplate({ portfolio = {} }) {
 
         {bio && (
           <section id="about" className="scroll-mt-20">
-            <div className="p-6 sm:p-10 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-xl relative overflow-hidden">
+            <div
+              className={\`p-6 sm:p-10 rounded-2xl border backdrop-blur-xl shadow-xl relative overflow-hidden \${
+                isLight ? "bg-white border-neutral-200/90 text-neutral-900" : "bg-white/[0.03] border-white/10 text-neutral-100"
+              }\`}
+            >
+              <div
+                className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl pointer-events-none"
+                style={{ backgroundColor: \`\${primaryColor}15\` }}
+              />
+
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                <div
+                  className="h-8 w-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: \`\${primaryColor}20\`, color: primaryColor }}
+                >
                   <User className="h-4 w-4" />
                 </div>
-                <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">// 01. About Me</h2>
+                <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
+                  // 01. About Me
+                </h2>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-6">Passionate about turning vision into high-impact software</h3>
-              <p className="text-neutral-300 text-base leading-relaxed">{bio}</p>
+
+              <h3 className={\`text-2xl sm:text-3xl font-bold tracking-tight mb-6 \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                Passionate about turning vision into high-impact software
+              </h3>
+
+              <div className={\`max-w-none text-base leading-relaxed space-y-4 font-light \${isLight ? "text-neutral-700" : "text-neutral-300/90"}\`}>
+                <p className="whitespace-pre-line">{bio}</p>
+              </div>
             </div>
           </section>
         )}
 
         {skills.length > 0 && (
           <section id="skills" className="scroll-mt-20 space-y-6">
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="h-7 w-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
-                <Code2 className="h-4 w-4" />
-              </div>
-              <h2 className="text-xs font-mono uppercase tracking-widest text-pink-400">// 02. Skills & Tech Stack</h2>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Tools, Frameworks & Core Competencies</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
-              {skills.map((s, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-cyan-500/40 backdrop-blur-md transition-all">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-semibold text-sm text-white truncate">{s.name}</span>
-                    <span className="text-[10px] font-mono text-neutral-400 uppercase">{s.category}</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: \`\${primaryColor}20\`, color: primaryColor }}
+                  >
+                    <Code2 className="h-4 w-4" />
                   </div>
-                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-pink-500" style={{ width: s.level === "expert" ? "95%" : s.level === "advanced" ? "85%" : "70%" }} />
+                  <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
+                    // 02. Skills & Tech Stack
+                  </h2>
+                </div>
+                <h3 className={\`text-2xl sm:text-3xl font-bold tracking-tight \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                  Tools, Frameworks & Core Competencies
+                </h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+              {skills.map((skill, idx) => (
+                <div
+                  key={\`\${skill.name}-\${idx}\`}
+                  className={\`p-3.5 rounded-xl border backdrop-blur-md transition-all duration-200 group \${
+                    isLight
+                      ? "bg-white border-neutral-200 hover:border-neutral-400 hover:shadow-xs"
+                      : "bg-white/[0.03] border-white/10 hover:bg-white/[0.07] hover:border-white/20"
+                  }\`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span
+                      className={\`font-semibold text-sm truncate transition-colors \${
+                        isLight ? "text-neutral-800" : "text-white group-hover:text-cyan-300"
+                      }\`}
+                    >
+                      {skill.name}
+                    </span>
+                    <span className={\`text-[10px] font-mono uppercase \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                      {skill.category || "Skill"}
+                    </span>
+                  </div>
+                  <div className={\`h-1.5 w-full rounded-full overflow-hidden \${isLight ? "bg-neutral-200" : "bg-white/10"}\`}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        background: primaryButtonBg,
+                        width:
+                          skill.level === "expert"
+                            ? "95%"
+                            : skill.level === "advanced"
+                              ? "85%"
+                              : skill.level === "intermediate"
+                                ? "70%"
+                                : "55%",
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -2760,31 +3280,98 @@ export function DevPortTemplate({ portfolio = {} }) {
 
         {projects.length > 0 && (
           <section id="projects" className="scroll-mt-20 space-y-6">
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="h-7 w-7 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-                <FileCode className="h-4 w-4" />
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: \`\${primaryColor}20\`, color: primaryColor }}
+                  >
+                    <FileCode className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
+                    // 03. Featured Engineering Projects
+                  </h2>
+                </div>
+                <h3 className={\`text-2xl sm:text-3xl font-bold tracking-tight \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                  Selected Work & Interactive Case Studies
+                </h3>
               </div>
-              <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">// 03. Featured Engineering Projects</h2>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Selected Work & Case Studies</h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map((p, idx) => (
-                <div key={idx} className="rounded-2xl border border-white/10 bg-white/[0.03] hover:border-cyan-500/40 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all">
+              {projects.map((proj, idx) => (
+                <div
+                  key={\`\${proj.title}-\${idx}\`}
+                  className={\`rounded-2xl border p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 \${
+                    isLight
+                      ? "bg-white border-neutral-200 hover:border-neutral-400 shadow-sm hover:shadow-md"
+                      : "bg-white/[0.03] border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]"
+                  }\`}
+                >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
-                      <h4 className="text-xl font-bold text-white">{p.title}</h4>
-                      {p.featured && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">Featured</span>}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono" style={{ color: primaryColor }}>
+                          // {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <h4 className={\`text-xl font-bold transition-colors \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                          {proj.title}
+                        </h4>
+                      </div>
+                      {proj.featured && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">
+                          Featured
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-neutral-300 font-light">{p.description}</p>
-                    {p.tags && p.tags.length > 0 && (
+
+                    <p className={\`text-sm leading-relaxed font-light \${isLight ? "text-neutral-600" : "text-neutral-300/90"}\`}>
+                      {proj.description}
+                    </p>
+
+                    {proj.tags && proj.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {p.tags.map(t => <span key={t} className="px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-white/5 border border-white/10 text-neutral-300">#{t}</span>)}
+                        {proj.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className={\`px-2.5 py-0.5 rounded-md text-[11px] font-mono border \${
+                              isLight
+                                ? "bg-neutral-100 border-neutral-200 text-neutral-700"
+                                : "bg-white/5 border-white/10 text-neutral-300"
+                            }\`}
+                          >
+                            #{tag}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <div className="pt-6 mt-4 border-t border-white/10 flex items-center gap-3">
-                    {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs font-semibold text-cyan-400 hover:text-cyan-300">Live Demo &rarr;</SafeLink>}
-                    {p.repoUrl && <SafeLink href={p.repoUrl} className="text-xs font-medium text-neutral-400 hover:text-white">Code Repository</SafeLink>}
+
+                  <div className={\`pt-6 mt-4 border-t flex items-center justify-between \${isLight ? "border-neutral-200" : "border-white/10"}\`}>
+                    <div className="flex items-center gap-3">
+                      {proj.liveUrl && (
+                        <SafeLink
+                          href={proj.liveUrl}
+                          style={{ color: primaryColor }}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline transition-colors"
+                        >
+                          <span>Live Demo</span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </SafeLink>
+                      )}
+                      {proj.repoUrl && (
+                        <SafeLink
+                          href={proj.repoUrl}
+                          className={\`inline-flex items-center gap-1.5 text-xs font-medium transition-colors \${
+                            isLight ? "text-neutral-600 hover:text-neutral-900" : "text-neutral-400 hover:text-white"
+                          }\`}
+                        >
+                          <BrandIcon name="github" size={14} />
+                          <span>Code Repository</span>
+                        </SafeLink>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2792,25 +3379,236 @@ export function DevPortTemplate({ portfolio = {} }) {
           </section>
         )}
 
+        {experience.length > 0 && (
+          <section id="experience" className="scroll-mt-20 space-y-6">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div
+                className="h-7 w-7 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: \`\${primaryColor}20\`, color: primaryColor }}
+              >
+                <Briefcase className="h-4 w-4" />
+              </div>
+              <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
+                // 04. Career Experience
+              </h2>
+            </div>
+            <h3 className={\`text-2xl sm:text-3xl font-bold tracking-tight \${isLight ? "text-neutral-900" : "text-white"}\`}>
+              Professional Timeline & Contributions
+            </h3>
+
+            <div className="space-y-4">
+              {experience.map((exp, idx) => (
+                <div
+                  key={\`\${exp.title}-\${exp.company}-\${idx}\`}
+                  className={\`p-6 rounded-2xl border backdrop-blur-xl relative overflow-hidden transition-all \${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-sm text-neutral-900"
+                      : "bg-white/[0.03] border-white/10 text-neutral-100"
+                  }\`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                      <h4 className={\`text-lg font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                        {exp.title}
+                      </h4>
+                      <p className="text-sm font-mono" style={{ color: primaryColor }}>
+                        {exp.company} {exp.location ? \`• \${exp.location}\` : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={\`text-xs font-mono px-2.5 py-1 rounded-md border self-start sm:self-auto \${
+                        isLight ? "bg-neutral-100 border-neutral-200 text-neutral-600" : "bg-white/5 border-white/10 text-neutral-400"
+                      }\`}
+                    >
+                      {exp.startDate} — {exp.current ? "Present" : exp.endDate || "Present"}
+                    </span>
+                  </div>
+
+                  {exp.description && (
+                    <p className={\`text-sm leading-relaxed font-light mb-3 \${isLight ? "text-neutral-700" : "text-neutral-300/90"}\`}>
+                      {exp.description}
+                    </p>
+                  )}
+
+                  {exp.highlights && exp.highlights.length > 0 && (
+                    <ul className={\`space-y-1.5 text-xs pl-4 list-disc font-light \${isLight ? "text-neutral-600 marker:text-blue-600" : "text-neutral-400 marker:text-cyan-400"}\`}>
+                      {exp.highlights.map((h, hIdx) => (
+                        <li key={hIdx}>{h}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {(education.length > 0 || certifications.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {education.length > 0 && (
+              <section id="education" className="scroll-mt-20 space-y-4">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" style={{ color: primaryColor }} />
+                  <h3 className={\`text-xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>Education</h3>
+                </div>
+                <div className="space-y-3">
+                  {education.map((edu, idx) => (
+                    <div
+                      key={\`\${edu.institution}-\${idx}\`}
+                      className={\`p-4 rounded-xl border backdrop-blur-md \${
+                        isLight ? "bg-white border-neutral-200 text-neutral-900 shadow-xs" : "bg-white/[0.03] border-white/10 text-neutral-100"
+                      }\`}
+                    >
+                      <h4 className={\`font-semibold text-sm \${isLight ? "text-neutral-900" : "text-white"}\`}>
+                        {edu.degree} {edu.fieldOfStudy ? \`in \${edu.fieldOfStudy}\` : ""}
+                      </h4>
+                      <p className="text-xs font-mono mt-0.5" style={{ color: primaryColor }}>{edu.institution}</p>
+                      <p className={\`text-[11px] mt-1 \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>
+                        {edu.startDate} — {edu.endDate || "Present"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {certifications.length > 0 && (
+              <section id="certifications" className="scroll-mt-20 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-pink-500" />
+                  <h3 className={\`text-xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>Certifications</h3>
+                </div>
+                <div className="space-y-3">
+                  {certifications.map((cert, idx) => (
+                    <div
+                      key={\`\${cert.name}-\${idx}\`}
+                      className={\`p-4 rounded-xl border backdrop-blur-md \${
+                        isLight ? "bg-white border-neutral-200 text-neutral-900 shadow-xs" : "bg-white/[0.03] border-white/10 text-neutral-100"
+                      }\`}
+                    >
+                      <h4 className={\`font-semibold text-sm \${isLight ? "text-neutral-900" : "text-white"}\`}>{cert.name}</h4>
+                      <p className="text-xs text-pink-500 font-mono mt-0.5">{cert.issuer}</p>
+                      {cert.issueDate && (
+                        <p className={\`text-[11px] mt-1 \${isLight ? "text-neutral-500" : "text-neutral-400"}\`}>Issued {cert.issueDate}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
         <section id="contact" className="scroll-mt-20">
-          <div className="p-8 sm:p-12 rounded-3xl border border-white/15 bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl shadow-2xl text-center space-y-6">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">Let's build something extraordinary together</h2>
-            <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto font-light">Interested in collaborating or hiring? Reach out anytime!</p>
+          <div
+            className={\`p-8 sm:p-12 rounded-3xl border backdrop-blur-2xl shadow-2xl relative overflow-hidden text-center space-y-6 \${
+              isLight
+                ? "bg-white border-neutral-200 text-neutral-900"
+                : "border-white/15 bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent text-white"
+            }\`}
+          >
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-medium"
+              style={{ backgroundColor: \`\${primaryColor}18\`, color: primaryColor }}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              <span>Get In Touch</span>
+            </div>
+
+            <h2 className={\`text-3xl sm:text-5xl font-extrabold tracking-tight max-w-2xl mx-auto \${isLight ? "text-neutral-900" : "text-white"}\`}>
+              Let's build something extraordinary together
+            </h2>
+
+            <p className={\`text-sm sm:text-base max-w-xl mx-auto font-light \${isLight ? "text-neutral-600" : "text-neutral-300/80"}\`}>
+              Interested in collaborating, hiring for full-time or freelance roles, or just want to say hi? Reach out anytime!
+            </p>
+
             <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
-              {profile.email && (
-                <SafeLink href={\`mailto:\${profile.email}\`} className="px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+              {profile?.email && (
+                <SafeLink
+                  href={\`mailto:\${profile.email}\`}
+                  style={{
+                    background: primaryButtonBg,
+                    boxShadow: primaryGlowShadow,
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Mail className="h-4 w-4" />
                   <span>Send an Email</span>
                 </SafeLink>
               )}
+
+              {profile?.phone && (
+                <SafeLink
+                  href={\`tel:\${profile.phone}\`}
+                  className={\`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border backdrop-blur-md transition-all \${
+                    isLight ? "border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800" : "border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                  }\`}
+                >
+                  <Phone className="h-4 w-4 text-emerald-500" />
+                  <span>{profile.phone}</span>
+                </SafeLink>
+              )}
             </div>
+
+            {socialLinks.length > 0 && (
+              <div className={\`pt-6 border-t flex items-center justify-center gap-3 \${isLight ? "border-neutral-200" : "border-white/10"}\`}>
+                {socialLinks.map((link, idx) => (
+                  <SafeLink
+                    key={\`\${link.platform}-\${idx}\`}
+                    href={link.url}
+                    className={\`h-10 w-10 rounded-xl border flex items-center justify-center transition-all hover:scale-110 \${
+                      isLight
+                        ? "border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                        : "border-white/10 bg-white/5 hover:bg-white/20 text-neutral-300 hover:text-white"
+                    }\`}
+                    title={link.label || link.platform}
+                  >
+                    <BrandIcon name={link.platform} size={18} />
+                  </SafeLink>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-white/10 py-10 bg-[#090a16]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs font-mono text-neutral-400">
-          <span>&copy; {new Date().getFullYear()} {fullName}. Built with modern standards & DevPort.</span>
-          <button type="button" onClick={() => scrollTo("hero")} className="text-cyan-400 hover:text-white">^top</button>
+      <button
+        type="button"
+        onClick={() => scrollTo("contact")}
+        style={{
+          background: primaryButtonBg,
+          boxShadow: primaryGlowShadow,
+        }}
+        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+        title="Contact Me"
+      >
+        <MessageSquare className="h-5 w-5" />
+      </button>
+
+      <footer
+        className={\`border-t py-10 relative z-10 backdrop-blur-md \${
+          isLight ? "bg-white/90 border-neutral-200 text-neutral-600" : "bg-[#090a16]/90 border-white/10 text-neutral-400"
+        }\`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
+            <span>Built with modern web standards & DevPort</span>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <span>© {new Date().getFullYear()} {fullName || "Developer"}. All rights reserved.</span>
+            <button
+              type="button"
+              onClick={() => scrollTo("hero")}
+              style={{ color: primaryColor }}
+              className="inline-flex items-center gap-1.5 hover:underline transition-colors"
+            >
+              <span>^top</span>
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </footer>
     </div>
@@ -2827,12 +3625,24 @@ import { SafeLink } from "../common/SafeLink.jsx";
 import { normalizeAvatarUrl } from "../common/urlUtils.js";
 
 export function ModernCreativeTemplate({ portfolio = {} }) {
-  const { profile = {}, socialLinks = [], skills = [], projects = [] } = portfolio;
+  const { profile = {}, socialLinks = [], skills = [], projects = [], experience = [] } = portfolio;
+  const primaryColor = portfolio?.design?.primaryColor || "#9333ea";
+  const theme = portfolio?.design?.theme || "system";
+  const isLight =
+    theme === "light" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: light)").matches &&
+      !window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+
   const fullName = profile.fullName || "Creative Engineer";
   const firstName = fullName ? fullName.split(" ")[0] : "Creative";
   const headline = profile.headline || "Data Analyst & Creative Engineer";
   const bio = profile.bio || "Data Analyst with extensive experience transforming raw data into actionable insights.";
   const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
+
+  const primaryGradient = \`linear-gradient(90deg, \${primaryColor}, #6366f1)\`;
+  const haloGradient = \`linear-gradient(135deg, \${primaryColor}, #6366f1, #ec4899)\`;
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
@@ -2843,39 +3653,64 @@ export function ModernCreativeTemplate({ portfolio = {} }) {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0b0f19] text-neutral-100 font-sans antialiased overflow-x-hidden">
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f19]/85 border-b border-white/5 h-18 flex items-center">
+    <div className={\`relative min-h-screen transition-colors duration-300 font-sans antialiased overflow-x-hidden \${isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#0b0f19] text-neutral-100"}\`}>
+      <header className={\`sticky top-0 z-40 backdrop-blur-xl border-b h-18 flex items-center transition-colors \${isLight ? "bg-white/85 border-neutral-200" : "bg-[#0b0f19]/85 border-white/5"}\`}>
         <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
-          <span className="font-bold text-lg text-white">{firstName}</span>
-          <nav className="flex gap-6 text-sm text-neutral-400">
-            <button onClick={() => scrollTo("hero")} className="hover:text-white">Home</button>
-            <button onClick={() => scrollTo("projects")} className="hover:text-white">Projects</button>
-            <button onClick={() => scrollTo("contact")} className="hover:text-white">Contact</button>
+          <span className={\`font-bold text-lg \${isLight ? "text-neutral-900" : "text-white"}\`}>{firstName}</span>
+          <nav className={\`flex gap-6 text-sm \${isLight ? "text-neutral-600" : "text-neutral-400"}\`}>
+            <button onClick={() => scrollTo("hero")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Home</button>
+            <button onClick={() => scrollTo("projects")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Projects</button>
+            <button onClick={() => scrollTo("contact")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Contact</button>
           </nav>
-          <button onClick={() => scrollTo("contact")} className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_20px_rgba(147,51,234,0.35)]">Hire Me</button>
+          <button
+            onClick={() => scrollTo("contact")}
+            style={{ background: primaryGradient, boxShadow: \`0 0 20px \${primaryColor}55\` }}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-white"
+          >
+            Hire Me
+          </button>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-16 space-y-20">
         <section id="hero" className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase border border-purple-500/25 bg-purple-500/10 text-purple-300">
-              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase border"
+              style={{ backgroundColor: \`\${primaryColor}15\`, borderColor: \`\${primaryColor}30\`, color: primaryColor }}
+            >
+              <Sparkles className="h-3.5 w-3.5" style={{ color: primaryColor }} />
               <span>Welcome to my portfolio</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl font-extrabold text-white">Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">{fullName}</span></h1>
-            <p className="text-xl text-purple-400 font-semibold">{headline}</p>
-            <p className="text-neutral-300 text-base max-w-xl">{bio}</p>
+            <h1 className={\`text-5xl sm:text-6xl font-extrabold \${isLight ? "text-neutral-900" : "text-white"}\`}>
+              Hi, I'm <span className="text-transparent bg-clip-text" style={{ backgroundImage: haloGradient }}>{fullName}</span>
+            </h1>
+            <p className="text-xl font-semibold font-mono" style={{ color: primaryColor }}>{headline}</p>
+            <p className={\`text-base max-w-xl \${isLight ? "text-neutral-600" : "text-neutral-300"}\`}>{bio}</p>
             <div className="flex gap-4">
-              <button onClick={() => scrollTo("projects")} className="px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_20px_rgba(147,51,234,0.4)]">Explore My Work &rarr;</button>
-              <button onClick={() => scrollTo("contact")} className="px-6 py-3 rounded-xl text-sm font-medium border border-white/15 text-white">Contact Me</button>
+              <button
+                onClick={() => scrollTo("projects")}
+                style={{ background: primaryGradient, boxShadow: \`0 0 20px \${primaryColor}66\` }}
+                className="px-6 py-3 rounded-xl text-sm font-semibold text-white"
+              >
+                Explore My Work &rarr;
+              </button>
+              <button
+                onClick={() => scrollTo("contact")}
+                className={\`px-6 py-3 rounded-xl text-sm font-medium border transition-colors \${isLight ? "border-neutral-300 text-neutral-800 hover:bg-neutral-100" : "border-white/15 text-white hover:bg-white/10"}\`}
+              >
+                Contact Me
+              </button>
             </div>
           </div>
 
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-64 h-64 rounded-full p-2 bg-gradient-to-tr from-purple-600 via-indigo-500 to-pink-500 shadow-[0_0_50px_rgba(147,51,234,0.5)]">
-              <div className="w-full h-full rounded-full overflow-hidden bg-indigo-950 flex items-center justify-center">
-                {avatarUrl ? <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" /> : <span className="text-5xl font-black text-white">{fullName[0]}</span>}
+            <div
+              className="relative w-64 h-64 rounded-full p-2"
+              style={{ background: haloGradient, boxShadow: \`0 0 50px \${primaryColor}50\` }}
+            >
+              <div className={\`w-full h-full rounded-full overflow-hidden flex items-center justify-center \${isLight ? "bg-white" : "bg-indigo-950"}\`}>
+                {avatarUrl ? <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" /> : <span className="text-5xl font-black" style={{ color: primaryColor }}>{fullName[0]}</span>}
               </div>
             </div>
           </div>
@@ -2883,13 +3718,13 @@ export function ModernCreativeTemplate({ portfolio = {} }) {
 
         {projects.length > 0 && (
           <section id="projects" className="space-y-8">
-            <h2 className="text-3xl font-bold text-white">Featured Projects</h2>
+            <h2 className={\`text-3xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>Featured Projects</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.map((p, idx) => (
-                <div key={idx} className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
-                  <h3 className="font-bold text-lg text-white">{p.title}</h3>
-                  <p className="text-sm text-neutral-300">{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-sm font-semibold text-purple-400 hover:text-purple-300">Explore Project &rarr;</SafeLink>}
+                <div key={idx} className={\`p-6 rounded-2xl border space-y-4 \${isLight ? "bg-white border-neutral-200 shadow-sm" : "bg-white/[0.03] border-white/10"}\`}>
+                  <h3 className={\`font-bold text-lg \${isLight ? "text-neutral-900" : "text-white"}\`}>{p.title}</h3>
+                  <p className={\`text-sm \${isLight ? "text-neutral-600" : "text-neutral-300"}\`}>{p.description}</p>
+                  {p.liveUrl && <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-sm font-semibold hover:underline">Explore Project &rarr;</SafeLink>}
                 </div>
               ))}
             </div>
@@ -2904,50 +3739,114 @@ export function ModernCreativeTemplate({ portfolio = {} }) {
 
 function getFullDeveloperTemplateJsx() {
   return `import React from "react";
-import { Terminal } from "lucide-react";
+import { Terminal, ArrowUp } from "lucide-react";
+import { BrandIcon } from "../common/BrandIcon.jsx";
 import { SafeLink } from "../common/SafeLink.jsx";
 
 export function DeveloperTemplate({ portfolio = {} }) {
-  const { profile = {}, skills = [], projects = [] } = portfolio;
+  const { profile = {}, skills = [], projects = [], experience = [], socialLinks = [] } = portfolio;
   const fullName = profile.fullName || "Developer";
+  const primaryColor = portfolio?.design?.primaryColor || "#38bdf8";
+  const theme = portfolio?.design?.theme || "dark";
+  const isLight = theme === "light";
+
+  const scrollToTop = () => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-mono p-6 sm:p-12">
+    <div className={\`min-h-screen font-mono p-6 sm:p-12 transition-colors \${isLight ? "bg-[#f6f8fa] text-[#24292f]" : "bg-[#0d1117] text-[#c9d1d9]"}\`}>
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="border-b border-[#30363d] pb-4 text-[#58a6ff] font-bold flex items-center gap-2">
-          <Terminal className="h-5 w-5" />
-          <span>~/dev/{fullName.toLowerCase().replace(/\\s+/g, "")}</span>
+        <div className={\`border-b pb-4 font-bold flex items-center justify-between gap-2 \${isLight ? "border-[#d0d7de]" : "border-[#30363d]"}\`}>
+          <div className="flex items-center gap-2" style={{ color: primaryColor }}>
+            <Terminal className="h-5 w-5" />
+            <span>~/dev/{fullName.toLowerCase().replace(/\\s+/g, "")}</span>
+          </div>
+          {socialLinks.length > 0 && (
+            <div className="flex items-center gap-2">
+              {socialLinks.map((l, i) => (
+                <SafeLink key={i} href={l.url} className={\`p-1 rounded \${isLight ? "hover:bg-neutral-200 text-neutral-600" : "hover:bg-neutral-800 text-neutral-400 hover:text-white"}\`}>
+                  <BrandIcon name={l.platform} size={15} />
+                </SafeLink>
+              ))}
+            </div>
+          )}
         </div>
+
         <div className="space-y-2">
-          <p className="text-[#7ee787] text-xs">$ whoami</p>
-          <h1 className="text-4xl font-bold text-white">{fullName}</h1>
-          <p className="text-[#58a6ff]">{profile.headline}</p>
-          <p className="text-[#8b949e] text-sm pt-2">{profile.bio}</p>
+          <p className="text-xs" style={{ color: primaryColor }}>$ whoami</p>
+          <h1 className={\`text-4xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>{fullName}</h1>
+          <p className="text-sm font-semibold" style={{ color: primaryColor }}>{profile.headline}</p>
+          {profile.bio && <p className={\`text-sm pt-2 \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{profile.bio}</p>}
         </div>
+
         {skills.length > 0 && (
           <div className="space-y-3">
-            <p className="text-[#7ee787] text-xs">$ ls -la ./skills</p>
+            <p className="text-xs" style={{ color: primaryColor }}>$ ls -la ./skills</p>
             <div className="flex flex-wrap gap-2">
               {skills.map((s, i) => (
-                <span key={i} className="px-2 py-1 rounded bg-[#21262d] border border-[#30363d] text-xs text-[#7ee787]">{s.name}</span>
+                <span key={i} className={\`px-2.5 py-1 rounded border text-xs \${isLight ? "bg-white border-[#d0d7de] text-neutral-800" : "bg-[#21262d] border-[#30363d] text-[#7ee787]"}\`}>
+                  {s.name}
+                </span>
               ))}
             </div>
           </div>
         )}
+
         {projects.length > 0 && (
           <div className="space-y-4">
-            <p className="text-[#7ee787] text-xs">$ cat ./projects.json</p>
+            <p className="text-xs" style={{ color: primaryColor }}>$ cat ./projects.json</p>
             <div className="grid grid-cols-1 gap-4">
               {projects.map((p, i) => (
-                <div key={i} className="p-4 rounded border border-[#30363d] bg-[#161b22] space-y-2">
-                  <h4 className="text-white font-bold">&gt; {p.title}</h4>
-                  <p className="text-xs text-[#8b949e]">{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs text-[#7ee787] underline">[Live Demo]</SafeLink>}
+                <div key={i} className={\`p-4 rounded border space-y-2 \${isLight ? "bg-white border-[#d0d7de]" : "bg-[#161b22] border-[#30363d]"}\`}>
+                  <div className="flex items-center justify-between">
+                    <h4 className={\`font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>&gt; {p.title}</h4>
+                    {p.liveUrl && (
+                      <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-xs underline flex items-center gap-1">
+                        [Live Demo]
+                      </SafeLink>
+                    )}
+                  </div>
+                  <p className={\`text-xs \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{p.description}</p>
+                  {p.tags && p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {p.tags.map(t => (
+                        <span key={t} className="text-[10px] text-neutral-500 font-mono">#{t}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {experience.length > 0 && (
+          <div className="space-y-4">
+            <p className="text-xs" style={{ color: primaryColor }}>$ git log --oneline ./experience</p>
+            <div className="space-y-3">
+              {experience.map((e, i) => (
+                <div key={i} className={\`p-4 rounded border \${isLight ? "bg-white border-[#d0d7de]" : "bg-[#161b22] border-[#30363d]"}\`}>
+                  <div className="flex justify-between items-start text-xs">
+                    <span className={\`font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>{e.title} @ {e.company}</span>
+                    <span className="text-neutral-500">{e.startDate} - {e.current ? "Present" : e.endDate}</span>
+                  </div>
+                  {e.description && <p className={\`text-xs mt-2 \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{e.description}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <footer className={\`border-t pt-6 flex justify-between text-xs text-neutral-500 \${isLight ? "border-[#d0d7de]" : "border-[#30363d]"}\`}>
+          <span>exit 0</span>
+          <button onClick={scrollToTop} className="hover:underline flex items-center gap-1" style={{ color: primaryColor }}>
+            <span>^top</span>
+            <ArrowUp className="h-3 w-3" />
+          </button>
+        </footer>
       </div>
     </div>
   );
@@ -2957,33 +3856,109 @@ export function DeveloperTemplate({ portfolio = {} }) {
 
 function getFullMinimalTemplateJsx() {
   return `import React from "react";
+import { ArrowUp } from "lucide-react";
+import { BrandIcon } from "../common/BrandIcon.jsx";
 import { SafeLink } from "../common/SafeLink.jsx";
 
 export function MinimalTemplate({ portfolio = {} }) {
-  const { profile = {}, projects = [] } = portfolio;
+  const { profile = {}, projects = [], skills = [], experience = [], socialLinks = [] } = portfolio;
   const fullName = profile.fullName || "Portfolio";
+  const primaryColor = portfolio?.design?.primaryColor || "#171717";
+  const theme = portfolio?.design?.theme || "light";
+  const isDark = theme === "dark";
+
+  const scrollToTop = () => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#171717] font-sans p-8 sm:p-20">
+    <div className={\`min-h-screen font-sans p-8 sm:p-20 transition-colors \${isDark ? "bg-[#0a0a0a] text-neutral-100" : "bg-[#fafafa] text-[#171717]"}\`}>
       <div className="max-w-2xl mx-auto space-y-12">
-        <header className="space-y-3">
-          <h1 className="text-4xl font-light tracking-tight">{fullName}</h1>
-          <p className="text-sm text-neutral-500">{profile.headline}</p>
-          <p className="text-sm text-neutral-700 leading-relaxed pt-2">{profile.bio}</p>
+        <header className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-4xl font-light tracking-tight">{fullName}</h1>
+            {socialLinks.length > 0 && (
+              <div className="flex items-center gap-3">
+                {socialLinks.map((l, i) => (
+                  <SafeLink key={i} href={l.url} className={\`p-1 rounded \${isDark ? "text-neutral-400 hover:text-white" : "text-neutral-600 hover:text-black"}\`}>
+                    <BrandIcon name={l.platform} size={16} />
+                  </SafeLink>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-sm font-medium" style={{ color: primaryColor }}>{profile.headline}</p>
+          {profile.bio && <p className={\`text-sm leading-relaxed \${isDark ? "text-neutral-300" : "text-neutral-600"}\`}>{profile.bio}</p>}
         </header>
+
+        {skills.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s, i) => (
+                <span key={i} className={\`px-2.5 py-1 text-xs rounded border \${isDark ? "border-neutral-800 bg-neutral-900 text-neutral-300" : "border-neutral-200 bg-white text-neutral-700"}\`}>
+                  {s.name}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
         {projects.length > 0 && (
           <section className="space-y-6">
             <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Selected Projects</h2>
             <div className="space-y-6">
               {projects.map((p, i) => (
-                <div key={i} className="border-b border-neutral-200 pb-4">
-                  <h3 className="font-medium text-base">{p.title}</h3>
-                  <p className="text-xs text-neutral-600 mt-1">{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} className="text-xs text-neutral-900 underline mt-2 inline-block">Visit &rarr;</SafeLink>}
+                <div key={i} className={\`border-b pb-4 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="font-medium text-base">{p.title}</h3>
+                    {p.liveUrl && (
+                      <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-xs underline inline-block">
+                        Visit &rarr;
+                      </SafeLink>
+                    )}
+                  </div>
+                  <p className={\`text-xs mt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{p.description}</p>
+                  {p.tags && p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                      {p.tags.map(t => (
+                        <span key={t} className="text-[10px] text-neutral-400 font-mono">#{t}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </section>
         )}
+
+        {experience.length > 0 && (
+          <section className="space-y-6">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Experience</h2>
+            <div className="space-y-4">
+              {experience.map((e, i) => (
+                <div key={i} className={\`border-b pb-4 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
+                  <div className="flex justify-between items-baseline text-sm">
+                    <span className="font-medium">{e.title}</span>
+                    <span className="text-xs text-neutral-400">{e.startDate} - {e.current ? "Present" : e.endDate}</span>
+                  </div>
+                  <p className="text-xs font-mono mt-0.5" style={{ color: primaryColor }}>{e.company}</p>
+                  {e.description && <p className={\`text-xs mt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{e.description}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <footer className={\`border-t pt-8 flex justify-between items-center text-xs text-neutral-400 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
+          <span>© {new Date().getFullYear()} {fullName}</span>
+          <button onClick={scrollToTop} className="hover:underline flex items-center gap-1" style={{ color: primaryColor }}>
+            <span>Top</span>
+            <ArrowUp className="h-3 w-3" />
+          </button>
+        </footer>
       </div>
     </div>
   );

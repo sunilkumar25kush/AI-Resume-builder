@@ -34,7 +34,7 @@ export function AboutSection({
           </h2>
 
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 sm:p-8 shadow-sm">
-            <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line font-sans">
+            <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
               {content}
             </p>
           </div>

@@ -109,7 +109,7 @@ export function DeveloperTemplate({
   const slugName = (profile?.fullName || "dev").toLowerCase().replace(/\s+/g, "");
 
   return (
-    <div className="w-full font-sans antialiased">
+    <div className="w-full antialiased">
       {/* Sticky developer navigation */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/80 dark:bg-neutral-950/80 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">

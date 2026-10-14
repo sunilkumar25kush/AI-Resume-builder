@@ -10,13 +10,13 @@ export interface DesignControlsProps {
 }
 
 const COLOR_PRESETS = [
+  { name: "Cyan Glow", hex: "#06b6d4" },
   { name: "Cobalt Blue", hex: "#2563eb" },
   { name: "Emerald Green", hex: "#059669" },
-  { name: "Royal Purple", hex: "#7c3aed" },
+  { name: "Royal Purple", hex: "#9333ea" },
   { name: "Electric Indigo", hex: "#4f46e5" },
   { name: "Amber Gold", hex: "#d97706" },
   { name: "Rose Crimson", hex: "#e11d48" },
-  { name: "Sky Cyan", hex: "#0284c7" },
   { name: "Slate Neutral", hex: "#334155" },
 ];
 
@@ -54,7 +54,9 @@ const TEMPLATES: Array<{
 
 const FONTS = [
   { id: "Inter", label: "Modern Sans (Inter)", preview: "Sans" },
+  { id: "Roboto", label: "Clean Sans (Roboto)", preview: "Sans" },
   { id: "Merriweather", label: "Editorial Serif (Merriweather)", preview: "Serif" },
+  { id: "Playfair", label: "Display Serif (Playfair)", preview: "Serif" },
   { id: "JetBrains", label: "Technical Mono (JetBrains)", preview: "Mono" },
 ];
 

@@ -57,7 +57,7 @@ export function HeroSection({
               </h1>
 
               {headline && (
-                <p className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 font-sans leading-relaxed max-w-2xl">
+                <p className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-2xl">
                   {headline}
                 </p>
               )}

@@ -49,7 +49,7 @@ export function CertificationsSection({
                     {cert.name}
                   </h3>
                   {cert.issuer && (
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400 font-sans mt-1">
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                       {cert.issuer}
                     </p>
                   )}

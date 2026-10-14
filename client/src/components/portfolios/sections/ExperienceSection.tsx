@@ -71,7 +71,7 @@ export function ExperienceSection({
                     </div>
 
                     {exp.description && (
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
                         {exp.description}
                       </p>
                     )}

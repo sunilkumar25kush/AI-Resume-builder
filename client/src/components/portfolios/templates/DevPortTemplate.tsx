@@ -51,6 +51,15 @@ export function DevPortTemplate({
   const { profile, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } =
     portfolio;
 
+  const primaryColor = portfolio?.design?.primaryColor || "#06b6d4";
+  const theme = portfolio?.design?.theme || "system";
+  const isLight =
+    theme === "light" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: light)").matches &&
+      !window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+
   const [activeSection, setActiveSection] = useState("hero");
 
   const fullName = profile?.fullName || (showEmpty ? "Alex Morgan" : "");
@@ -64,6 +73,12 @@ export function DevPortTemplate({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  // Dynamic styling tokens derived from user's chosen accent color
+  const accentGradient = `linear-gradient(135deg, ${primaryColor}, #a855f7, #ec4899)`;
+  const primaryButtonBg = `linear-gradient(90deg, ${primaryColor}, #a855f7)`;
+  const primaryGlowShadow = `0 0 25px ${primaryColor}55`;
+  const primaryTextShadow = `0 0 24px ${primaryColor}66`;
 
   // Roles for animated glowing typewriter effect
   const roles = useMemo(() => {
@@ -151,17 +166,30 @@ export function DevPortTemplate({
   const codeSnippetSkills = (skills.length > 0 ? skills.slice(0, 3).map((s) => `"${s.name}"`) : ['"React"', '"Node"', '"TypeScript"']).join(", ");
 
   return (
-    <div className="relative min-h-screen bg-[#090a16] text-neutral-100 selection:bg-cyan-500/30 selection:text-white font-sans antialiased overflow-x-hidden scroll-smooth">
+    <div
+      className={`relative min-h-screen transition-colors duration-300 selection:bg-cyan-500/30 selection:text-white antialiased overflow-x-hidden scroll-smooth ${
+        isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100"
+      }`}
+    >
       {/* Ambient Cosmic Glow Backdrops */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-cyan-500/15 blur-[130px]" />
+      <div className={`pointer-events-none fixed inset-0 overflow-hidden z-0 transition-opacity duration-300 ${isLight ? "opacity-20" : "opacity-100"}`}>
+        <div
+          className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-[130px]"
+          style={{ backgroundColor: `${primaryColor}22` }}
+        />
         <div className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-600/15 blur-[160px]" />
         <div className="absolute top-[60%] left-[-10%] h-[550px] w-[550px] rounded-full bg-pink-500/10 blur-[140px]" />
         <div className="absolute bottom-[-10%] right-[10%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
       </div>
 
       {/* Floating Glassmorphic Top Navigation Bar */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#090a16]/80 border-b border-white/10 transition-all duration-200">
+      <header
+        className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-200 ${
+          isLight
+            ? "bg-white/85 border-neutral-200/80 shadow-xs text-neutral-800"
+            : "bg-[#090a16]/85 border-white/10 text-neutral-100"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
           {/* Logo & Brand Identity */}
           <button
@@ -169,23 +197,48 @@ export function DevPortTemplate({
             onClick={() => scrollTo("hero")}
             className="flex items-center gap-3 group text-left transition-transform hover:scale-[1.02]"
           >
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-pink-500 p-0.5 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-              <div className="h-full w-full rounded-[10px] bg-[#090a16] flex items-center justify-center font-bold text-sm tracking-wider font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400">
-                {initials}
+            <div
+              className="h-10 w-10 rounded-xl p-0.5 shadow-md transition-shadow"
+              style={{ background: accentGradient, boxShadow: `0 0 15px ${primaryColor}40` }}
+            >
+              <div
+                className={`h-full w-full rounded-[10px] flex items-center justify-center font-bold text-sm tracking-wider font-mono ${
+                  isLight ? "bg-white text-neutral-900" : "bg-[#090a16] text-white"
+                }`}
+              >
+                <span
+                  style={{
+                    backgroundImage: accentGradient,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {initials}
+                </span>
               </div>
             </div>
             <div>
-              <div className="font-bold text-sm tracking-tight text-white group-hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+              <div
+                className={`font-bold text-sm tracking-tight transition-colors flex items-center gap-1.5 ${
+                  isLight ? "text-neutral-900 group-hover:text-blue-600" : "text-white group-hover:text-cyan-400"
+                }`}
+              >
                 <span>{fullName || "DevPort"}</span>
               </div>
-              <p className="text-[11px] text-neutral-400 font-mono truncate max-w-[160px] sm:max-w-[200px]">
+              <p className={`text-[11px] font-mono truncate max-w-[160px] sm:max-w-[200px] ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
                 {headline || "Developer & Designer"}
               </p>
             </div>
           </button>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-medium text-neutral-300">
+          <nav
+            className={`hidden md:flex items-center gap-1.5 p-1 rounded-full border backdrop-blur-md text-xs font-medium ${
+              isLight
+                ? "bg-neutral-100/80 border-neutral-200 text-neutral-600"
+                : "bg-white/5 border-white/10 text-neutral-300"
+            }`}
+          >
             {[
               { id: "hero", label: "Home" },
               { id: "about", label: "About", condition: !!bio || showEmpty },
@@ -201,10 +254,21 @@ export function DevPortTemplate({
                   key={item.id}
                   type="button"
                   onClick={() => scrollTo(item.id)}
+                  style={
+                    activeSection === item.id
+                      ? {
+                          background: primaryButtonBg,
+                          color: "#ffffff",
+                          boxShadow: `0 0 15px ${primaryColor}40`,
+                        }
+                      : {}
+                  }
                   className={`px-3.5 py-1.5 rounded-full transition-all duration-200 ${
                     activeSection === item.id
-                      ? "bg-gradient-to-r from-cyan-500 to-pink-500 text-white shadow-xs font-semibold"
-                      : "hover:text-white hover:bg-white/5"
+                      ? "font-semibold text-white shadow-xs"
+                      : isLight
+                        ? "hover:text-neutral-900 hover:bg-neutral-200/60"
+                        : "hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {item.label}
@@ -217,7 +281,11 @@ export function DevPortTemplate({
             <button
               type="button"
               onClick={() => scrollTo("contact")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 hover:opacity-95 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] active:scale-[0.98]"
+              style={{
+                background: primaryButtonBg,
+                boxShadow: `0 0 20px ${primaryColor}45`,
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Hire Me</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -236,36 +304,69 @@ export function DevPortTemplate({
             {/* Left Column: Headline, Bio & Tech Pills */}
             <div className="lg:col-span-7 space-y-6 text-left">
               {/* Status Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] backdrop-blur-md">
+              <div
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border backdrop-blur-md shadow-xs ${
+                  isLight
+                    ? "border-neutral-300 bg-white text-neutral-700"
+                    : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                }`}
+              >
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+                  <span
+                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                  <span
+                    className="relative inline-flex rounded-full h-2 w-2"
+                    style={{ backgroundColor: primaryColor }}
+                  />
                 </span>
                 <span>Available for opportunities & freelance work</span>
               </div>
 
               {/* Hey there greeting & Big Name */}
               <div className="space-y-2">
-                <p className="text-sm sm:text-base font-mono text-neutral-400 uppercase tracking-widest">
+                <p className={`text-sm sm:text-base font-mono uppercase tracking-widest ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
                   Hey there! I&apos;m
                 </p>
-                <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08]">
+                <h1
+                  className={`text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.08] ${
+                    isLight ? "text-neutral-900" : "text-white"
+                  }`}
+                >
                   {fullName || "Andrew Ryan"}
                 </h1>
               </div>
 
               {/* Glowing Typewriter Role */}
-              <div className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center flex-wrap gap-2 text-white">
+              <div
+                className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center flex-wrap gap-2 ${
+                  isLight ? "text-neutral-800" : "text-white"
+                }`}
+              >
                 <span>I&apos;m a</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-pink-400 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+                <span
+                  style={{
+                    color: primaryColor,
+                    textShadow: primaryTextShadow,
+                  }}
+                  className="font-extrabold transition-colors duration-200"
+                >
                   {displayText}
                 </span>
-                <span className="inline-block w-0.5 h-6 sm:h-8 bg-cyan-400 animate-pulse" />
+                <span
+                  className="inline-block w-0.5 h-6 sm:h-8 animate-pulse"
+                  style={{ backgroundColor: primaryColor }}
+                />
               </div>
 
               {/* Bio Summary */}
               {bio && (
-                <p className="text-sm sm:text-base text-neutral-300/90 leading-relaxed max-w-xl font-light">
+                <p
+                  className={`text-sm sm:text-base leading-relaxed max-w-xl font-light ${
+                    isLight ? "text-neutral-600" : "text-neutral-300/90"
+                  }`}
+                >
                   {bio}
                 </p>
               )}
@@ -273,7 +374,7 @@ export function DevPortTemplate({
               {/* Colorful Technology Pills */}
               {topSkills.length > 0 && (
                 <div className="pt-2">
-                  <p className="text-xs font-mono text-neutral-400 mb-2.5 uppercase tracking-wider">
+                  <p className={`text-xs font-mono mb-2.5 uppercase tracking-wider ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
                     Core Technologies
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
@@ -297,7 +398,11 @@ export function DevPortTemplate({
                 <button
                   type="button"
                   onClick={() => scrollTo("projects")}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 hover:opacity-95 shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: primaryButtonBg,
+                    boxShadow: primaryGlowShadow,
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>View My Work</span>
                   <ArrowRight className="h-4 w-4" />
@@ -306,15 +411,19 @@ export function DevPortTemplate({
                 <button
                   type="button"
                   onClick={() => scrollTo("contact")}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md transition-all hover:scale-[1.02]"
+                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border backdrop-blur-md transition-all hover:scale-[1.02] ${
+                    isLight
+                      ? "border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 shadow-xs"
+                      : "border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                  }`}
                 >
-                  <MessageSquare className="h-4 w-4 text-cyan-400" />
+                  <MessageSquare className="h-4 w-4" style={{ color: primaryColor }} />
                   <span>Let&apos;s Talk</span>
                 </button>
 
                 {profile?.location && (
-                  <div className="hidden sm:inline-flex items-center gap-1.5 text-xs text-neutral-400 pl-2">
-                    <MapPin className="h-3.5 w-3.5 text-pink-400" />
+                  <div className={`hidden sm:inline-flex items-center gap-1.5 text-xs pl-2 ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
+                    <MapPin className="h-3.5 w-3.5 text-pink-500" />
                     <span>{profile.location}</span>
                   </div>
                 )}
@@ -323,13 +432,19 @@ export function DevPortTemplate({
               {/* Social Connections Row */}
               {socialLinks.length > 0 && (
                 <div className="pt-3 flex items-center gap-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-500">Connect:</span>
+                  <span className={`text-xs font-mono uppercase tracking-widest ${isLight ? "text-neutral-400" : "text-neutral-500"}`}>
+                    Connect:
+                  </span>
                   <div className="flex items-center gap-2">
                     {socialLinks.map((link: PortfolioSocialLink, idx: number) => (
                       <SafeLink
                         key={`${link.platform}-${idx}`}
                         href={link.url}
-                        className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center transition-all hover:scale-110"
+                        className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-all hover:scale-110 ${
+                          isLight
+                            ? "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 shadow-xs"
+                            : "border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white"
+                        }`}
                         title={link.label || link.platform}
                       >
                         <BrandIcon name={link.platform} size={15} />
@@ -344,11 +459,24 @@ export function DevPortTemplate({
             <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
               <div className="relative w-[300px] sm:w-[360px] h-[340px] sm:h-[400px] flex items-center justify-center">
                 {/* Background Rotating Aura Glow */}
-                <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 opacity-25 blur-2xl animate-pulse" />
+                <div
+                  className="absolute inset-4 rounded-full opacity-25 blur-2xl animate-pulse"
+                  style={{ background: accentGradient }}
+                />
 
                 {/* Central Circular Avatar Frame */}
-                <div className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090a16] flex items-center justify-center">
+                <div
+                  className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 transition-shadow"
+                  style={{
+                    background: accentGradient,
+                    boxShadow: `0 0 40px ${primaryColor}66`,
+                  }}
+                >
+                  <div
+                    className={`w-full h-full rounded-full overflow-hidden border-2 flex items-center justify-center ${
+                      isLight ? "bg-white border-neutral-100" : "bg-neutral-900 border-[#090a16]"
+                    }`}
+                  >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -357,39 +485,66 @@ export function DevPortTemplate({
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-cyan-400 font-mono font-bold text-4xl">
-                        <span>{initials}</span>
+                      <div
+                        className={`w-full h-full flex flex-col items-center justify-center font-mono font-bold text-4xl ${
+                          isLight ? "bg-neutral-100 text-neutral-700" : "bg-neutral-800 text-white"
+                        }`}
+                      >
+                        <span style={{ color: primaryColor }}>{initials}</span>
                         <span className="text-[10px] text-neutral-400 font-sans mt-1">Photo</span>
                       </div>
                     )}
                   </div>
 
                   {/* Orbital Floating Badges */}
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16] animate-bounce">
+                  <div
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full text-white flex items-center justify-center shadow-lg border-2 animate-bounce"
+                    style={{
+                      backgroundColor: primaryColor,
+                      borderColor: isLight ? "#ffffff" : "#090a16",
+                    }}
+                  >
                     <Code2 className="h-4 w-4" />
                   </div>
-                  <div className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Check className="h-3.5 w-3.5" />
                   </div>
-                  <div className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2 border-[#090a16]">
+                  <div
+                    className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2"
+                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                  >
                     <Heart className="h-3.5 w-3.5" />
                   </div>
                 </div>
 
                 {/* Floating Glassmorphic Code Card (Top Right) */}
-                <div className="absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border border-white/15 bg-neutral-900/90 backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed hidden xs:block">
+                <div
+                  className={`absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed hidden xs:block ${
+                    isLight
+                      ? "bg-neutral-900/95 border-neutral-700 text-neutral-200"
+                      : "bg-neutral-900/90 border-white/15 text-neutral-300"
+                  }`}
+                >
                   <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/10">
                     <div className="h-2 w-2 rounded-full bg-red-500" />
                     <div className="h-2 w-2 rounded-full bg-amber-500" />
                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
                     <span className="text-[9px] text-neutral-400 ml-1">developer.js</span>
                   </div>
-                  <div className="text-neutral-300 space-y-0.5">
+                  <div className="space-y-0.5">
                     <p className="text-pink-400">const <span className="text-white">developer</span> = &#123;</p>
-                    <p className="pl-2">name: <span className="text-cyan-300">&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,</p>
+                    <p className="pl-2">
+                      name: <span style={{ color: primaryColor }}>&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,
+                    </p>
                     <p className="pl-2 truncate">skills: <span className="text-amber-300">[{codeSnippetSkills}]</span>,</p>
                     <p className="pl-2">hardWorker: <span className="text-emerald-400">true</span></p>
                     <p className="text-pink-400">&#125;;</p>
@@ -397,28 +552,47 @@ export function DevPortTemplate({
                 </div>
 
                 {/* Floating Stat Card 1: Projects Count (Bottom Left) */}
-                <div className="absolute -bottom-4 -left-2 sm:-left-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                <div
+                  className={`absolute -bottom-4 -left-2 sm:-left-4 z-20 px-3.5 py-2.5 rounded-xl border backdrop-blur-xl shadow-xl flex items-center gap-2.5 ${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-md text-neutral-900"
+                      : "bg-neutral-900/85 border-white/15 text-white"
+                  }`}
+                >
+                  <div
+                    className="h-9 w-9 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  >
                     <FileCode className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-base font-bold font-mono text-white leading-none">
+                    <div className="text-base font-bold font-mono leading-none">
                       {projectCount}
                     </div>
-                    <div className="text-[10px] text-neutral-400">Projects Done</div>
+                    <div className={`text-[10px] ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
+                      Projects Done
+                    </div>
                   </div>
                 </div>
 
                 {/* Floating Stat Card 2: Experience Years (Bottom Right) */}
-                <div className="absolute -bottom-4 -right-2 sm:-right-4 z-20 px-3.5 py-2.5 rounded-xl border border-white/15 bg-neutral-900/85 backdrop-blur-xl shadow-xl flex items-center gap-2.5">
+                <div
+                  className={`absolute -bottom-4 -right-2 sm:-right-4 z-20 px-3.5 py-2.5 rounded-xl border backdrop-blur-xl shadow-xl flex items-center gap-2.5 ${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-md text-neutral-900"
+                      : "bg-neutral-900/85 border-white/15 text-white"
+                  }`}
+                >
                   <div className="h-9 w-9 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-base font-bold font-mono text-white leading-none">
+                    <div className="text-base font-bold font-mono leading-none">
                       {experienceYears}
                     </div>
-                    <div className="text-[10px] text-neutral-400">Experience</div>
+                    <div className={`text-[10px] ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
+                      Experience
+                    </div>
                   </div>
                 </div>
               </div>
@@ -431,23 +605,33 @@ export function DevPortTemplate({
         {/* ============================================================== */}
         {!isHidden("about") && (bio || showEmpty) && (
           <section id="about" className="scroll-mt-20">
-            <div className="p-6 sm:p-10 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 h-40 w-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div
+              className={`p-6 sm:p-10 rounded-2xl border backdrop-blur-xl shadow-xl relative overflow-hidden ${
+                isLight ? "bg-white border-neutral-200/90 text-neutral-900" : "bg-white/[0.03] border-white/10 text-neutral-100"
+              }`}
+            >
+              <div
+                className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl pointer-events-none"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              />
 
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                <div
+                  className="h-8 w-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                >
                   <User className="h-4 w-4" />
                 </div>
-                <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">
+                <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
                   // 01. About Me
                 </h2>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-6">
+              <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight mb-6 ${isLight ? "text-neutral-900" : "text-white"}`}>
                 Passionate about turning vision into high-impact software
               </h3>
 
-              <div className="prose prose-invert max-w-none text-neutral-300/90 text-base leading-relaxed space-y-4">
+              <div className={`max-w-none text-base leading-relaxed space-y-4 font-light ${isLight ? "text-neutral-700" : "text-neutral-300/90"}`}>
                 <p className="whitespace-pre-line">{bio}</p>
               </div>
             </div>
@@ -462,14 +646,17 @@ export function DevPortTemplate({
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
-                  <div className="h-7 w-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  >
                     <Code2 className="h-4 w-4" />
                   </div>
-                  <h2 className="text-xs font-mono uppercase tracking-widest text-pink-400">
+                  <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
                     // 02. Skills & Tech Stack
                   </h2>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? "text-neutral-900" : "text-white"}`}>
                   Tools, Frameworks & Core Competencies
                 </h3>
               </div>
@@ -479,20 +666,29 @@ export function DevPortTemplate({
               {skills.map((skill, idx) => (
                 <div
                   key={`${skill.name}-${idx}`}
-                  className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-cyan-500/40 backdrop-blur-md transition-all duration-200 group"
+                  className={`p-3.5 rounded-xl border backdrop-blur-md transition-all duration-200 group ${
+                    isLight
+                      ? "bg-white border-neutral-200 hover:border-neutral-400 hover:shadow-xs"
+                      : "bg-white/[0.03] border-white/10 hover:bg-white/[0.07] hover:border-white/20"
+                  }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-semibold text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
+                    <span
+                      className={`font-semibold text-sm truncate transition-colors ${
+                        isLight ? "text-neutral-800" : "text-white group-hover:text-cyan-300"
+                      }`}
+                    >
                       {skill.name}
                     </span>
-                    <span className="text-[10px] font-mono text-neutral-400 uppercase">
+                    <span className={`text-[10px] font-mono uppercase ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
                       {skill.category || "Skill"}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div className={`h-1.5 w-full rounded-full overflow-hidden ${isLight ? "bg-neutral-200" : "bg-white/10"}`}>
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-pink-500"
+                      className="h-full rounded-full transition-all"
                       style={{
+                        background: primaryButtonBg,
                         width:
                           skill.level === "expert"
                             ? "95%"
@@ -518,14 +714,17 @@ export function DevPortTemplate({
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
-                  <div className="h-7 w-7 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  >
                     <FileCode className="h-4 w-4" />
                   </div>
-                  <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400">
+                  <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
                     // 03. Featured Engineering Projects
                   </h2>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? "text-neutral-900" : "text-white"}`}>
                   Selected Work & Interactive Case Studies
                 </h3>
               </div>
@@ -535,24 +734,30 @@ export function DevPortTemplate({
               {projects.map((proj, idx) => (
                 <div
                   key={`${proj.title}-${idx}`}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] hover:border-cyan-500/40 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]"
+                  className={`rounded-2xl border p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 ${
+                    isLight
+                      ? "bg-white border-neutral-200 hover:border-neutral-400 shadow-sm hover:shadow-md"
+                      : "bg-white/[0.03] border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]"
+                  }`}
                 >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-cyan-400">// {String(idx + 1).padStart(2, "0")}</span>
-                        <h4 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        <span className="text-xs font-mono" style={{ color: primaryColor }}>
+                          // {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <h4 className={`text-xl font-bold transition-colors ${isLight ? "text-neutral-900" : "text-white"}`}>
                           {proj.title}
                         </h4>
                       </div>
                       {proj.featured && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">
                           Featured
                         </span>
                       )}
                     </div>
 
-                    <p className="text-sm text-neutral-300/90 leading-relaxed font-light">
+                    <p className={`text-sm leading-relaxed font-light ${isLight ? "text-neutral-600" : "text-neutral-300/90"}`}>
                       {proj.description}
                     </p>
 
@@ -562,7 +767,11 @@ export function DevPortTemplate({
                         {proj.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-white/5 border border-white/10 text-neutral-300"
+                            className={`px-2.5 py-0.5 rounded-md text-[11px] font-mono border ${
+                              isLight
+                                ? "bg-neutral-100 border-neutral-200 text-neutral-700"
+                                : "bg-white/5 border-white/10 text-neutral-300"
+                            }`}
                           >
                             #{tag}
                           </span>
@@ -572,12 +781,13 @@ export function DevPortTemplate({
                   </div>
 
                   {/* Links */}
-                  <div className="pt-6 mt-4 border-t border-white/10 flex items-center justify-between">
+                  <div className={`pt-6 mt-4 border-t flex items-center justify-between ${isLight ? "border-neutral-200" : "border-white/10"}`}>
                     <div className="flex items-center gap-3">
                       {proj.liveUrl && (
                         <SafeLink
                           href={proj.liveUrl}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                          style={{ color: primaryColor }}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline transition-colors"
                         >
                           <span>Live Demo</span>
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -586,7 +796,9 @@ export function DevPortTemplate({
                       {proj.repoUrl && (
                         <SafeLink
                           href={proj.repoUrl}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+                          className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                            isLight ? "text-neutral-600 hover:text-neutral-900" : "text-neutral-400 hover:text-white"
+                          }`}
                         >
                           <BrandIcon name="github" size={14} />
                           <span>Code Repository</span>
@@ -606,14 +818,17 @@ export function DevPortTemplate({
         {!isHidden("experience") && (experience.length > 0 || showEmpty) && (
           <section id="experience" className="scroll-mt-20 space-y-6">
             <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="h-7 w-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <div
+                className="h-7 w-7 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+              >
                 <Briefcase className="h-4 w-4" />
               </div>
-              <h2 className="text-xs font-mono uppercase tracking-widest text-purple-400">
+              <h2 className="text-xs font-mono uppercase tracking-widest font-semibold" style={{ color: primaryColor }}>
                 // 04. Career Experience
               </h2>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? "text-neutral-900" : "text-white"}`}>
               Professional Timeline & Contributions
             </h3>
 
@@ -621,30 +836,38 @@ export function DevPortTemplate({
               {experience.map((exp, idx) => (
                 <div
                   key={`${exp.title}-${exp.company}-${idx}`}
-                  className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl relative overflow-hidden hover:border-purple-500/40 transition-all"
+                  className={`p-6 rounded-2xl border backdrop-blur-xl relative overflow-hidden transition-all ${
+                    isLight
+                      ? "bg-white border-neutral-200 shadow-sm text-neutral-900"
+                      : "bg-white/[0.03] border-white/10 text-neutral-100"
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                     <div>
-                      <h4 className="text-lg font-bold text-white">
+                      <h4 className={`text-lg font-bold ${isLight ? "text-neutral-900" : "text-white"}`}>
                         {exp.title}
                       </h4>
-                      <p className="text-sm text-cyan-400 font-mono">
+                      <p className="text-sm font-mono" style={{ color: primaryColor }}>
                         {exp.company} {exp.location ? `• ${exp.location}` : ""}
                       </p>
                     </div>
-                    <span className="text-xs font-mono text-neutral-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/10 self-start sm:self-auto">
+                    <span
+                      className={`text-xs font-mono px-2.5 py-1 rounded-md border self-start sm:self-auto ${
+                        isLight ? "bg-neutral-100 border-neutral-200 text-neutral-600" : "bg-white/5 border-white/10 text-neutral-400"
+                      }`}
+                    >
                       {exp.startDate} — {exp.current ? "Present" : exp.endDate || "Present"}
                     </span>
                   </div>
 
                   {exp.description && (
-                    <p className="text-sm text-neutral-300/90 leading-relaxed font-light mb-3">
+                    <p className={`text-sm leading-relaxed font-light mb-3 ${isLight ? "text-neutral-700" : "text-neutral-300/90"}`}>
                       {exp.description}
                     </p>
                   )}
 
                   {exp.highlights && exp.highlights.length > 0 && (
-                    <ul className="space-y-1.5 text-xs text-neutral-400 pl-4 list-disc marker:text-cyan-400 font-light">
+                    <ul className={`space-y-1.5 text-xs pl-4 list-disc font-light ${isLight ? "text-neutral-600 marker:text-blue-600" : "text-neutral-400 marker:text-cyan-400"}`}>
                       {exp.highlights.map((h, hIdx) => (
                         <li key={hIdx}>{h}</li>
                       ))}
@@ -666,20 +889,22 @@ export function DevPortTemplate({
               {!isHidden("education") && (education.length > 0 || showEmpty) && (
                 <section id="education" className="scroll-mt-20 space-y-4">
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-cyan-400" />
-                    <h3 className="text-xl font-bold text-white">Education</h3>
+                    <GraduationCap className="h-5 w-5" style={{ color: primaryColor }} />
+                    <h3 className={`text-xl font-bold ${isLight ? "text-neutral-900" : "text-white"}`}>Education</h3>
                   </div>
                   <div className="space-y-3">
                     {education.map((edu, idx) => (
                       <div
                         key={`${edu.institution}-${idx}`}
-                        className="p-4 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
+                        className={`p-4 rounded-xl border backdrop-blur-md ${
+                          isLight ? "bg-white border-neutral-200 text-neutral-900 shadow-xs" : "bg-white/[0.03] border-white/10 text-neutral-100"
+                        }`}
                       >
-                        <h4 className="font-semibold text-white text-sm">
+                        <h4 className={`font-semibold text-sm ${isLight ? "text-neutral-900" : "text-white"}`}>
                           {edu.degree} {edu.fieldOfStudy ? `in ${edu.fieldOfStudy}` : ""}
                         </h4>
-                        <p className="text-xs text-cyan-400 font-mono mt-0.5">{edu.institution}</p>
-                        <p className="text-[11px] text-neutral-400 mt-1">
+                        <p className="text-xs font-mono mt-0.5" style={{ color: primaryColor }}>{edu.institution}</p>
+                        <p className={`text-[11px] mt-1 ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>
                           {edu.startDate} — {edu.endDate || "Present"}
                         </p>
                       </div>
@@ -692,19 +917,21 @@ export function DevPortTemplate({
               {!isHidden("certifications") && (certifications.length > 0 || showEmpty) && (
                 <section id="certifications" className="scroll-mt-20 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-pink-400" />
-                    <h3 className="text-xl font-bold text-white">Certifications</h3>
+                    <Award className="h-5 w-5 text-pink-500" />
+                    <h3 className={`text-xl font-bold ${isLight ? "text-neutral-900" : "text-white"}`}>Certifications</h3>
                   </div>
                   <div className="space-y-3">
                     {certifications.map((cert, idx) => (
                       <div
                         key={`${cert.name}-${idx}`}
-                        className="p-4 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
+                        className={`p-4 rounded-xl border backdrop-blur-md ${
+                          isLight ? "bg-white border-neutral-200 text-neutral-900 shadow-xs" : "bg-white/[0.03] border-white/10 text-neutral-100"
+                        }`}
                       >
-                        <h4 className="font-semibold text-white text-sm">{cert.name}</h4>
-                        <p className="text-xs text-pink-400 font-mono mt-0.5">{cert.issuer}</p>
+                        <h4 className={`font-semibold text-sm ${isLight ? "text-neutral-900" : "text-white"}`}>{cert.name}</h4>
+                        <p className="text-xs text-pink-500 font-mono mt-0.5">{cert.issuer}</p>
                         {cert.issueDate && (
-                          <p className="text-[11px] text-neutral-400 mt-1">Issued {cert.issueDate}</p>
+                          <p className={`text-[11px] mt-1 ${isLight ? "text-neutral-500" : "text-neutral-400"}`}>Issued {cert.issueDate}</p>
                         )}
                       </div>
                     ))}
@@ -718,17 +945,26 @@ export function DevPortTemplate({
         {/* 7. CONTACT SECTION                                             */}
         {/* ============================================================== */}
         <section id="contact" className="scroll-mt-20">
-          <div className="p-8 sm:p-12 rounded-3xl border border-white/15 bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl shadow-2xl relative overflow-hidden text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-cyan-400 border border-cyan-500/30 bg-cyan-500/10">
+          <div
+            className={`p-8 sm:p-12 rounded-3xl border backdrop-blur-2xl shadow-2xl relative overflow-hidden text-center space-y-6 ${
+              isLight
+                ? "bg-white border-neutral-200 text-neutral-900"
+                : "border-white/15 bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent text-white"
+            }`}
+          >
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-medium"
+              style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
+            >
               <Mail className="h-3.5 w-3.5" />
               <span>Get In Touch</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white max-w-2xl mx-auto">
+            <h2 className={`text-3xl sm:text-5xl font-extrabold tracking-tight max-w-2xl mx-auto ${isLight ? "text-neutral-900" : "text-white"}`}>
               Let&apos;s build something extraordinary together
             </h2>
 
-            <p className="text-sm sm:text-base text-neutral-300/80 max-w-xl mx-auto font-light">
+            <p className={`text-sm sm:text-base max-w-xl mx-auto font-light ${isLight ? "text-neutral-600" : "text-neutral-300/80"}`}>
               Interested in collaborating, hiring for full-time or freelance roles, or just want to say hi? Reach out anytime!
             </p>
 
@@ -736,7 +972,11 @@ export function DevPortTemplate({
               {profile?.email && (
                 <SafeLink
                   href={`mailto:${profile.email}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 hover:opacity-95 shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: primaryButtonBg,
+                    boxShadow: primaryGlowShadow,
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-105 active:scale-95"
                 >
                   <Mail className="h-4 w-4" />
                   <span>Send an Email</span>
@@ -746,9 +986,11 @@ export function DevPortTemplate({
               {profile?.phone && (
                 <SafeLink
                   href={`tel:${profile.phone}`}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md transition-all"
+                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border backdrop-blur-md transition-all ${
+                    isLight ? "border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800" : "border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                  }`}
                 >
-                  <Phone className="h-4 w-4 text-emerald-400" />
+                  <Phone className="h-4 w-4 text-emerald-500" />
                   <span>{profile.phone}</span>
                 </SafeLink>
               )}
@@ -756,12 +998,16 @@ export function DevPortTemplate({
 
             {/* Social Icons inside Contact */}
             {socialLinks.length > 0 && (
-              <div className="pt-6 border-t border-white/10 flex items-center justify-center gap-3">
+              <div className={`pt-6 border-t flex items-center justify-center gap-3 ${isLight ? "border-neutral-200" : "border-white/10"}`}>
                 {socialLinks.map((link, idx) => (
                   <SafeLink
                     key={`${link.platform}-${idx}`}
                     href={link.url}
-                    className="h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all hover:scale-110"
+                    className={`h-10 w-10 rounded-xl border flex items-center justify-center transition-all hover:scale-110 ${
+                      isLight
+                        ? "border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                        : "border-white/10 bg-white/5 hover:bg-white/20 text-neutral-300 hover:text-white"
+                    }`}
                     title={link.label || link.platform}
                   >
                     <BrandIcon name={link.platform} size={18} />
@@ -777,17 +1023,25 @@ export function DevPortTemplate({
       <button
         type="button"
         onClick={() => scrollTo("contact")}
-        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full bg-gradient-to-tr from-cyan-500 to-pink-500 text-white flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:scale-110 active:scale-95 transition-all"
+        style={{
+          background: primaryButtonBg,
+          boxShadow: primaryGlowShadow,
+        }}
+        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
         title="Contact Me"
       >
         <MessageSquare className="h-5 w-5" />
       </button>
 
       {/* Cosmic Footer */}
-      <footer className="border-t border-white/10 py-10 relative z-10 bg-[#090a16]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-neutral-400">
+      <footer
+        className={`border-t py-10 relative z-10 backdrop-blur-md ${
+          isLight ? "bg-white/90 border-neutral-200 text-neutral-600" : "bg-[#090a16]/90 border-white/10 text-neutral-400"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-cyan-400" />
+            <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
             <span>Built with modern web standards & DevPort</span>
           </div>
 
@@ -796,7 +1050,8 @@ export function DevPortTemplate({
             <button
               type="button"
               onClick={() => scrollTo("hero")}
-              className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-white transition-colors"
+              style={{ color: primaryColor }}
+              className="inline-flex items-center gap-1.5 hover:underline transition-colors"
             >
               <span>^top</span>
               <ArrowUp className="h-3.5 w-3.5" />

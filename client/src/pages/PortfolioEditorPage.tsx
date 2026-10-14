@@ -298,7 +298,13 @@ export default function PortfolioEditorPage() {
         portfolioSlug={portfolio.slug}
         isPublic={portfolio.publication?.isPublic}
         onPublishClick={() => setPublishModalOpen(true)}
-        onExportClick={() => setExportModalOpen(true)}
+        onExportClick={() => {
+          if (pendingPayloadRef.current) {
+            window.clearTimeout(debounceTimerRef.current);
+            void performSave(pendingPayloadRef.current);
+          }
+          setExportModalOpen(true);
+        }}
       />
 
 

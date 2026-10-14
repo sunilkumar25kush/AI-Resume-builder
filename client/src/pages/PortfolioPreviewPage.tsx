@@ -21,12 +21,21 @@ import { Card } from "@/components/ui/card";
 import type { Portfolio, PortfolioDesignSettings } from "@/types/portfolio";
 
 const PRESET_COLORS = [
+  { name: "Cyan", value: "#06b6d4" },
   { name: "Blue", value: "#2563eb" },
+  { name: "Purple", value: "#9333ea" },
   { name: "Emerald", value: "#059669" },
-  { name: "Violet", value: "#7c3aed" },
   { name: "Amber", value: "#d97706" },
   { name: "Rose", value: "#e11d48" },
   { name: "Slate", value: "#475569" },
+];
+
+const PRESET_FONTS = [
+  { id: "Inter", label: "Inter" },
+  { id: "Roboto", label: "Roboto" },
+  { id: "Merriweather", label: "Merriweather" },
+  { id: "Playfair", label: "Playfair" },
+  { id: "JetBrains", label: "JetBrains" },
 ];
 
 export default function PortfolioPreviewPage() {
@@ -39,7 +48,8 @@ export default function PortfolioPreviewPage() {
   // Local live design preview overrides (content data remains untouched)
   const [previewTemplate, setPreviewTemplate] = useState<PortfolioDesignSettings["template"]>("devport");
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
-  const [previewColor, setPreviewColor] = useState<string>("#2563eb");
+  const [previewColor, setPreviewColor] = useState<string>("#06b6d4");
+  const [previewFont, setPreviewFont] = useState<string>("Inter");
   const [saving, setSaving] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
 
@@ -57,7 +67,8 @@ export default function PortfolioPreviewPage() {
           const tpl = data.design?.template || "devport";
           setPreviewTemplate(tpl);
           setPreviewTheme(data.design?.theme || "system");
-          setPreviewColor(data.design?.primaryColor || "#2563eb");
+          setPreviewColor(data.design?.primaryColor || "#06b6d4");
+          setPreviewFont(data.design?.fontFamily || "Inter");
         }
       } catch (err) {
         if (isMounted) {
@@ -84,6 +95,7 @@ export default function PortfolioPreviewPage() {
           template: previewTemplate,
           theme: previewTheme,
           primaryColor: previewColor,
+          fontFamily: previewFont,
         },
       });
       setPortfolio(updated);
@@ -135,6 +147,7 @@ export default function PortfolioPreviewPage() {
       template: previewTemplate,
       theme: previewTheme,
       primaryColor: previewColor,
+      fontFamily: previewFont,
     },
   };
 
@@ -249,6 +262,25 @@ export default function PortfolioPreviewPage() {
                   style={{ backgroundColor: col.value }}
                 >
                   {previewColor === col.value && <Check className="h-2.5 w-2.5 text-white" />}
+                </button>
+              ))}
+            </div>
+
+            {/* Typography Picker */}
+            <div className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-800 border border-neutral-700">
+              <span className="text-[10px] text-neutral-400 font-medium">Font:</span>
+              {PRESET_FONTS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setPreviewFont(f.id)}
+                  className={`px-1.5 py-0.5 rounded text-[11px] transition-colors ${
+                    previewFont === f.id
+                      ? "bg-neutral-700 text-white font-semibold"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  {f.label}
                 </button>
               ))}
             </div>

@@ -50,7 +50,7 @@ export function ContactSection({
               <h2 className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-neutral-900 dark:text-neutral-100">
                 Let's Build Something Together
               </h2>
-              <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 font-sans leading-relaxed">
+              <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
                 Whether you have an interesting project, an engineering opening, or just want to discuss tech, feel free to reach out.
               </p>
             </div>

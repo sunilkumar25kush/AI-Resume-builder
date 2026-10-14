@@ -60,7 +60,7 @@ export function ProjectsSection({
                   </div>
 
                   {project.description && (
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
                       {project.description}
                     </p>
                   )}
