@@ -37,7 +37,7 @@ export function Topbar() {
           </Button>
           <span className="truncate text-sm font-medium text-muted-foreground">{title}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex h-9 items-center gap-1 shrink-0">
           <NotificationsBell />
           <ThemeToggle />
           <UserMenu />

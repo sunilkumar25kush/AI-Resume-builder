@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { Suspense, lazy, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import {
   DndContext,
@@ -71,8 +71,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn, resolveAvatarUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
-import { ImageCropModal } from "@/components/ui/ImageCropModal";
 import type { CroppedImageResult } from "@/lib/cropImage";
+const ImageCropModal = lazy(() =>
+  import("@/components/ui/ImageCropModal").then((m) => ({ default: m.ImageCropModal })),
+);
 import type { AiChange } from "@/types";
 
 interface ContactFieldConfig {
@@ -885,27 +887,35 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
               </div>
             </div>
 
-            <ImageCropModal
-              open={cropModalOpen}
-              imageSrc={selectedImageSrc}
-              title="Crop Resume Photo"
-              description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your resume."
-              cropShape="round"
-              aspect={1}
-              onClose={() => {
-                setCropModalOpen(false);
-                setSelectedImageSrc(null);
-                if (photoInputRef.current) photoInputRef.current.value = "";
-              }}
-              onCropSave={handleCropSave}
-            />
+            {cropModalOpen && selectedImageSrc ? (
+              <Suspense fallback={null}>
+                <ImageCropModal
+                  open={cropModalOpen}
+                  imageSrc={selectedImageSrc}
+                  title="Crop Resume Photo"
+                  description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your resume."
+                  cropShape="round"
+                  aspect={1}
+                  onClose={() => {
+                    setCropModalOpen(false);
+                    setSelectedImageSrc(null);
+                    if (photoInputRef.current) photoInputRef.current.value = "";
+                  }}
+                  onCropSave={handleCropSave}
+                />
+              </Suspense>
+            ) : null}
 
             <div className="flex items-center gap-4">
               {watchedPhotoUrl ? (
                 <div className="relative shrink-0">
                   <img
-                    src={watchedPhotoUrl}
+                    src={resolveAvatarUrl(watchedPhotoUrl, 64)}
                     alt="Resume photo preview"
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                    decoding="async"
                     className="h-16 w-16 rounded-full object-cover border border-neutral-200 shadow-sm ring-2 ring-primary/20"
                   />
                 </div>

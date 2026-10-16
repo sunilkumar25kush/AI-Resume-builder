@@ -39,7 +39,19 @@ export function MobileDrawer() {
         <div className="flex items-center justify-between gap-2 border-t p-3">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-9 w-9">
-              {user?.avatar ? <img src={resolveAvatarUrl(user.avatar)} alt={user.name} /> : <AvatarFallback>{getInitials(user?.name ?? "?")}</AvatarFallback>}
+              {user?.avatar ? (
+                <img
+                  src={resolveAvatarUrl(user.avatar, 36)}
+                  alt={user.name}
+                  width={36}
+                  height={36}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover rounded-full"
+                />
+              ) : (
+                <AvatarFallback>{getInitials(user?.name ?? "?")}</AvatarFallback>
+              )}
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{user?.name}</p>

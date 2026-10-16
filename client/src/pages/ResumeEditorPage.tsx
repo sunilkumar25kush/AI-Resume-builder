@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,20 +8,24 @@ import { z } from "zod";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";
-import { RenameDialog } from "@/components/common/RenameDialog";
 import { EditorFormCards } from "@/components/resumes/EditorFormCards";
 import { AiSuggestPanel } from "@/components/resumes/AiSuggestPanel";
 import { suggestionToChange } from "@/components/resumes/editorForm";
 import type { AiSuggestion } from "@/api/ai";
 import { PreviewPane } from "@/components/resumes/PreviewPane";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
-import { VersionDrawer } from "@/components/resumes/VersionDrawer";
 import { CustomizationStudio } from "@/components/resumes/customization/CustomizationStudio";
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
 import { DEFAULT_CUSTOMIZATION, getDefaultCustomizationForTemplate } from "@/utils/customization";
 import { exportResumePdf } from "@/utils/exportPdfClient";
-import { exportResumeDocx } from "@/utils/exportDocx";
 import { Button } from "@/components/ui/button";
+
+const VersionDrawer = lazy(() =>
+  import("@/components/resumes/VersionDrawer").then((m) => ({ default: m.VersionDrawer })),
+);
+const RenameDialog = lazy(() =>
+  import("@/components/common/RenameDialog").then((m) => ({ default: m.RenameDialog })),
+);
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AiChange, Resume, ResumeCustomization, ResumeTemplate } from "@/types";
@@ -247,6 +251,7 @@ export default function ResumeEditorPage() {
           }
         );
       } else {
+        const { exportResumeDocx } = await import("@/utils/exportDocx");
         await exportResumeDocx(currentData, template, resume.fileName, title);
       }
       toast.success(`${kind.toUpperCase()} downloaded`);
@@ -452,30 +457,38 @@ export default function ResumeEditorPage() {
         </div>
       </div>
 
-      <VersionDrawer resume={resume} open={historyOpen} onOpenChange={setHistoryOpen} onRestored={handleRestored} />
+      {historyOpen && (
+        <Suspense fallback={null}>
+          <VersionDrawer resume={resume} open={historyOpen} onOpenChange={setHistoryOpen} onRestored={handleRestored} />
+        </Suspense>
+      )}
 
-      <RenameDialog
-        open={renameOpen}
-        onOpenChange={setRenameOpen}
-        title="Rename resume"
-        description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
-        value={title}
-        saving={renaming}
-        onSave={async (name) => {
-          setRenaming(true);
-          try {
-            const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
-            const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
-            setResume(updated);
-            toast.success("Resume renamed");
-            setRenameOpen(false);
-          } catch (error) {
-            toast.error(getApiErrorMessage(error));
-          } finally {
-            setRenaming(false);
-          }
-        }}
-      />
+      {renameOpen && (
+        <Suspense fallback={null}>
+          <RenameDialog
+            open={renameOpen}
+            onOpenChange={setRenameOpen}
+            title="Rename resume"
+            description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
+            value={title}
+            saving={renaming}
+            onSave={async (name) => {
+              setRenaming(true);
+              try {
+                const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
+                const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
+                setResume(updated);
+                toast.success("Resume renamed");
+                setRenameOpen(false);
+              } catch (error) {
+                toast.error(getApiErrorMessage(error));
+              } finally {
+                setRenaming(false);
+              }
+            }}
+          />
+        </Suspense>
+      )}
     </FormProvider>
   );
 }

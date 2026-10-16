@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 import { authApi } from "@/api/auth";
 import { setUnauthorizedHandler } from "@/api/client";
@@ -19,9 +20,11 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
-  user: null,
-  status: "loading",
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      status: "loading",
 
   setUser: (user) => set({ user, status: user ? "authenticated" : "guest" }),
 
@@ -70,7 +73,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
       set({ user: null, status: "guest" });
     }
   },
-}));
+}),
+    {
+      name: "arb-auth",
+      partialize: (state) => ({ user: state.user, status: state.status }),
+    },
+  ),
+);
 
 // Expired/invalid session anywhere → drop user state (routes redirect to /login).
 setUnauthorizedHandler(() => useAuthStore.getState().setUser(null));

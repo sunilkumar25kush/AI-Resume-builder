@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Download, FileText, Loader2, PenLine, Pencil, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";
-import { RenameDialog } from "@/components/common/RenameDialog";
 import { ResumeSections } from "@/components/resumes/ResumeSections";
 import { ResumePreview } from "@/components/resumes/ResumePreview";
 import { TemplatePicker } from "@/components/resumes/TemplatePicker";
@@ -18,10 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { exportResumeDocx } from "@/utils/exportDocx";
 import { exportResumeJson } from "@/utils/exportJson";
 import { exportResumePdf } from "@/utils/exportPdfClient";
 import type { Resume, ResumeTemplate } from "@/types";
+
+const RenameDialog = lazy(() =>
+  import("@/components/common/RenameDialog").then((m) => ({ default: m.RenameDialog })),
+);
 
 export default function ResumePreviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -130,6 +132,7 @@ export default function ResumePreviewPage() {
           theme
         );
       } else {
+        const { exportResumeDocx } = await import("@/utils/exportDocx");
         await exportResumeDocx(resume.parsedData, selectedTemplate, resume.fileName, title);
       }
       toast.success(`${kind.toUpperCase()} downloaded`);
@@ -335,28 +338,32 @@ export default function ResumePreviewPage() {
         </Card>
       )}
 
-      <RenameDialog
-        open={renameOpen}
-        onOpenChange={setRenameOpen}
-        title="Rename resume"
-        description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
-        value={resume.fileName.replace(/\.[^.]+$/, "")}
-        saving={renaming}
-        onSave={async (name) => {
-          setRenaming(true);
-          try {
-            const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
-            const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
-            setResume(updated);
-            toast.success("Resume renamed");
-            setRenameOpen(false);
-          } catch (error) {
-            toast.error(getApiErrorMessage(error));
-          } finally {
-            setRenaming(false);
-          }
-        }}
-      />
+      {renameOpen && (
+        <Suspense fallback={null}>
+          <RenameDialog
+            open={renameOpen}
+            onOpenChange={setRenameOpen}
+            title="Rename resume"
+            description="Pick a clear file name — exports use it (e.g. “Sunil Kumar Java Trainer.pdf”)."
+            value={resume.fileName.replace(/\.[^.]+$/, "")}
+            saving={renaming}
+            onSave={async (name) => {
+              setRenaming(true);
+              try {
+                const ext = resume.fileName.match(/\.[^.]+$/)?.[0] ?? "";
+                const updated = await resumesApi.update(resume._id, { fileName: ext ? `${name}${ext}` : name });
+                setResume(updated);
+                toast.success("Resume renamed");
+                setRenameOpen(false);
+              } catch (error) {
+                toast.error(getApiErrorMessage(error));
+              } finally {
+                setRenaming(false);
+              }
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

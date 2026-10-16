@@ -212,8 +212,12 @@ export function ProfileEditor({ profile, onChange }: ProfileEditorProps) {
               <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border-2 border-neutral-300 dark:border-neutral-700 bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex items-center justify-center shadow-xs">
                 {profile.avatarUrl ? (
                   <img
-                    src={normalizeAvatarUrl(profile.avatarUrl)}
+                    src={normalizeAvatarUrl(profile.avatarUrl, 80)}
                     alt={profile.fullName || "Avatar preview"}
+                    width={80}
+                    height={80}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
                     onError={(e) => {

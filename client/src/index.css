@@ -130,6 +130,7 @@
 
   html {
     @apply font-sans;
+    scrollbar-gutter: stable;
   }
 
   #root {
@@ -137,12 +138,14 @@
   }
 }
 
-/* Guarantee bottom nav is always viewport-pinned */
+/* Guarantee bottom nav is always viewport-pinned and rigidly dimensioned */
 nav[aria-label="Bottom navigation"] {
   position: fixed !important;
   inset-inline: 0;
   bottom: 0;
   z-index: 30;
+  height: 3.5rem;
+  contain: layout size;
 }
 
 /* ------------------------------------------------------------------ */

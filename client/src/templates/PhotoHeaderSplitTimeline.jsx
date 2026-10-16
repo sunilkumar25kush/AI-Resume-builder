@@ -1,6 +1,6 @@
 import React from "react";
 import { normalizeResume } from "./normalizeResume";
-import { BulletList, DateRange, RichText, Icon, HeaderContactRow } from "./primitives";
+import { BulletList, DateRange, RichText, HeaderContactRow } from "./primitives";
 
 /**
  * T4 - Photo Header, Split Timeline (Reference C)
@@ -37,6 +37,10 @@ export function PhotoHeaderSplitTimeline({ data, theme = {} }) {
             <img
               src={personal.photoUrl}
               alt={personal.fullName}
+              width={140}
+              height={140}
+              loading="lazy"
+              decoding="async"
               className="w-[140px] h-[140px] rounded-full object-cover shadow-sm border border-neutral-200"
             />
           </div>

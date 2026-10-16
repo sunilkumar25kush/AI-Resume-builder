@@ -105,9 +105,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Bottom navigation"
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 h-14 border-t bg-background/95 backdrop-blur lg:hidden"
+      style={{ contain: "layout size style" }}
     >
-      <div className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="grid h-full grid-cols-4 pb-[env(safe-area-inset-bottom,0px)]">
         {BOTTOM_NAV.map((item) => (
           <NavLink
             key={item.label}
@@ -115,13 +116,13 @@ export function BottomNav() {
             end={item.href === "/"}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
-                isActive && "text-primary",
+                "flex h-full flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium leading-none text-muted-foreground transition-colors hover:text-foreground select-none",
+                isActive && "text-primary font-semibold",
               )
             }
           >
-            <item.icon className="h-5 w-5" aria-hidden />
-            {item.label}
+            <item.icon className="h-5 w-5 shrink-0" aria-hidden />
+            <span className="truncate max-w-full leading-none">{item.label}</span>
           </NavLink>
         ))}
       </div>

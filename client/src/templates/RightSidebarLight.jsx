@@ -166,6 +166,10 @@ export function RightSidebarLight({ data, theme = {} }) {
             <img
               src={personal.photoUrl}
               alt={personal.fullName}
+              width={120}
+              height={120}
+              loading="lazy"
+              decoding="async"
               className="w-[120px] h-[120px] rounded-full object-cover border-3 border-white shadow-sm"
             />
           </div>

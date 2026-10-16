@@ -37,6 +37,10 @@ export function NavySidebarTimeline({ data, theme = {} }) {
             <img
               src={personal.photoUrl}
               alt={personal.fullName}
+              width={140}
+              height={140}
+              loading="lazy"
+              decoding="async"
               className="w-[140px] h-[140px] rounded-full object-cover border-4 border-white/20 shadow-md"
             />
           </div>

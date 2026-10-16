@@ -65,7 +65,7 @@ export function DevPortTemplate({
   const fullName = profile?.fullName || (showEmpty ? "Alex Morgan" : "");
   const headline = profile?.headline || (showEmpty ? "Full Stack Engineer & Creative Developer" : "");
   const bio = profile?.bio || (showEmpty ? "Crafting high-performance web experiences and scalable cloud applications with modern architecture." : "");
-  const avatarUrl = normalizeAvatarUrl(profile?.avatarUrl);
+  const avatarUrl = normalizeAvatarUrl(profile?.avatarUrl, 224);
   const initials = (fullName || "DV")
     .split(" ")
     .map((n) => n[0])
@@ -481,6 +481,10 @@ export function DevPortTemplate({
                       <img
                         src={avatarUrl}
                         alt={fullName || "Portfolio Avatar"}
+                        width={224}
+                        height={224}
+                        loading="eager"
+                        decoding="async"
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />

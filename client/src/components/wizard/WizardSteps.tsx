@@ -258,7 +258,7 @@ export function StepJd({
         </div>
       ) : null}
 
-      <Tabs value={tab} onValueChange={(val) => { setError(null); setTab(val); }}>
+      <Tabs value={tab} onValueChange={(val: string) => { setError(null); setTab(val); }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="paste">
             <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />

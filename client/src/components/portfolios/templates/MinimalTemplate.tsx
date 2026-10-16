@@ -121,8 +121,12 @@ export function MinimalTemplate({
           <div className="flex items-center gap-2.5 truncate max-w-[200px] sm:max-w-xs">
             {profile?.avatarUrl && (
               <img
-                src={normalizeAvatarUrl(profile.avatarUrl)}
+                src={normalizeAvatarUrl(profile.avatarUrl, 24)}
                 alt={profile.fullName || "Avatar"}
+                width={24}
+                height={24}
+                loading="eager"
+                decoding="async"
                 className="h-6 w-6 rounded-full object-cover shrink-0 border border-neutral-200 dark:border-neutral-800"
                 referrerPolicy="no-referrer"
               />

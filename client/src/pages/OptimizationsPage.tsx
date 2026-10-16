@@ -93,7 +93,7 @@ export default function OptimizationsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="resume-select">Resume</Label>
-              <Select value={resumeId} onValueChange={(val) => { setError(null); setResumeId(val); }}>
+              <Select value={resumeId} onValueChange={(val: string) => { setError(null); setResumeId(val); }}>
                 <SelectTrigger id="resume-select" aria-label="Select resume">
                   <SelectValue placeholder="Choose a resume…" />
                 </SelectTrigger>
@@ -108,7 +108,7 @@ export default function OptimizationsPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="jd-select">Job description</Label>
-              <Select value={jdId} onValueChange={(val) => { setError(null); setJdId(val); }}>
+              <Select value={jdId} onValueChange={(val: string) => { setError(null); setJdId(val); }}>
                 <SelectTrigger id="jd-select" aria-label="Select job description">
                   <SelectValue placeholder="Choose a JD…" />
                 </SelectTrigger>

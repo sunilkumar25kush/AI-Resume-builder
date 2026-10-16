@@ -116,8 +116,12 @@ export function DeveloperTemplate({
           <div className="flex items-center gap-2 font-mono text-sm">
             {profile?.avatarUrl ? (
               <img
-                src={normalizeAvatarUrl(profile.avatarUrl)}
+                src={normalizeAvatarUrl(profile.avatarUrl, 24)}
                 alt={profile.fullName || "Avatar"}
+                width={24}
+                height={24}
+                loading="eager"
+                decoding="async"
                 className="h-6 w-6 rounded-md object-cover border border-neutral-300 dark:border-neutral-700"
                 referrerPolicy="no-referrer"
               />

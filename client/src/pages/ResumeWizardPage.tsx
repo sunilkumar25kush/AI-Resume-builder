@@ -15,7 +15,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { exportResumePdf } from "@/utils/exportPdfClient";
-import { exportResumeDocx } from "@/utils/exportDocx";
 import { exportResumeJson } from "@/utils/exportJson";
 import type { JobDescription, Optimization, Resume } from "@/types";
 
@@ -91,6 +90,7 @@ export default function ResumeWizardPage() {
     setDownloadingDocx(true);
     try {
       const title = targetResume.fileName.replace(/\.[^.]+$/, "");
+      const { exportResumeDocx } = await import("@/utils/exportDocx");
       await exportResumeDocx(
         targetResume.parsedData,
         targetResume.template,

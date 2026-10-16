@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
   AlertCircle,
@@ -29,13 +29,20 @@ import { ExperienceEditor } from "@/components/portfolios/editor/ExperienceEdito
 import { PortfolioEditorHeader } from "@/components/portfolios/editor/PortfolioEditorHeader";
 import { ProfileEditor } from "@/components/portfolios/editor/ProfileEditor";
 import { ProjectsEditor } from "@/components/portfolios/editor/ProjectsEditor";
-import { PublishModal } from "@/components/portfolios/editor/PublishModal";
-import { PortfolioExportModal } from "@/components/portfolios/export/PortfolioExportModal";
 import { ReviewBanner } from "@/components/portfolios/editor/ReviewBanner";
 import { SectionOrderControls } from "@/components/portfolios/editor/SectionOrderControls";
 import { SkillsEditor } from "@/components/portfolios/editor/SkillsEditor";
 import { SocialLinksEditor } from "@/components/portfolios/editor/SocialLinksEditor";
 import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
+
+const PublishModal = lazy(() =>
+  import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
+);
+const PortfolioExportModal = lazy(() =>
+  import("@/components/portfolios/export/PortfolioExportModal").then((m) => ({
+    default: m.PortfolioExportModal,
+  })),
+);
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type {
@@ -609,22 +616,26 @@ export default function PortfolioEditorPage() {
       </div>
 
       {/* Publish Dialog */}
-      {portfolio && (
-        <PublishModal
-          open={publishModalOpen}
-          onOpenChange={setPublishModalOpen}
-          portfolio={portfolio}
-          onSuccess={(updated) => setPortfolio(updated)}
-        />
+      {publishModalOpen && portfolio && (
+        <Suspense fallback={null}>
+          <PublishModal
+            open={publishModalOpen}
+            onOpenChange={setPublishModalOpen}
+            portfolio={portfolio}
+            onSuccess={(updated) => setPortfolio(updated)}
+          />
+        </Suspense>
       )}
 
       {/* Export Dialog */}
-      {portfolio && (
-        <PortfolioExportModal
-          open={exportModalOpen}
-          onOpenChange={setExportModalOpen}
-          portfolio={portfolio}
-        />
+      {exportModalOpen && portfolio && (
+        <Suspense fallback={null}>
+          <PortfolioExportModal
+            open={exportModalOpen}
+            onOpenChange={setExportModalOpen}
+            portfolio={portfolio}
+          />
+        </Suspense>
       )}
     </div>
 

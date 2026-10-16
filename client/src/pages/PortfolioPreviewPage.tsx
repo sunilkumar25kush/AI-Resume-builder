@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -14,7 +14,10 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
-import { PublishModal } from "@/components/portfolios/editor/PublishModal";
+
+const PublishModal = lazy(() =>
+  import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
+);
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -329,12 +332,16 @@ export default function PortfolioPreviewPage() {
       <PortfolioRenderer portfolio={activePreviewPortfolio} />
 
       {/* Publish Dialog */}
-      <PublishModal
-        open={publishModalOpen}
-        onOpenChange={setPublishModalOpen}
-        portfolio={portfolio}
-        onSuccess={(updated) => setPortfolio(updated)}
-      />
+      {publishModalOpen && portfolio && (
+        <Suspense fallback={null}>
+          <PublishModal
+            open={publishModalOpen}
+            onOpenChange={setPublishModalOpen}
+            portfolio={portfolio}
+            onSuccess={(updated) => setPortfolio(updated)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -50,7 +50,7 @@ export function ModernCreativeTemplate({
     (showEmpty
       ? "Data Analyst with 4+ years of experience transforming raw data into actionable insights. Skilled in SQL, Python, and data visualization."
       : "");
-  const avatarUrl = normalizeAvatarUrl(profile?.avatarUrl);
+  const avatarUrl = normalizeAvatarUrl(profile?.avatarUrl, 288);
 
   const firstName = fullName ? fullName.split(" ")[0] : "John";
   const initials = (fullName || "JD")
@@ -356,6 +356,10 @@ export function ModernCreativeTemplate({
                       <img
                         src={avatarUrl}
                         alt={fullName || "Portfolio Avatar"}
+                        width={288}
+                        height={288}
+                        loading="eager"
+                        decoding="async"
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />

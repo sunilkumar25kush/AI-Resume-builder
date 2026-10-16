@@ -26,12 +26,20 @@ function getInitials(name: string): string {
 
 /** Avatar dropdown with account links + logout. */
 export function UserMenu() {
-  const { user, logout } = useAuthStore();
+  const { user, status, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  if (status === "loading" && !user) {
+    return (
+      <div className="flex size-8 items-center justify-center shrink-0">
+        <div className="size-8 rounded-full bg-muted/60 animate-pulse" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
-      <Button asChild size="sm">
+      <Button asChild size="sm" className="h-8 shrink-0">
         <Link to="/login">Sign in</Link>
       </Button>
     );
@@ -40,9 +48,21 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
-          <Avatar className="h-8 w-8">
-            {user.avatar ? <img src={resolveAvatarUrl(user.avatar)} alt={user.name} /> : <AvatarFallback>{getInitials(user.name)}</AvatarFallback>}
+        <Button variant="ghost" size="icon" className="size-8 rounded-full p-0 shrink-0" aria-label="Account menu">
+          <Avatar className="size-8 shrink-0 bg-muted">
+            {user.avatar ? (
+              <img
+                src={resolveAvatarUrl(user.avatar, 32)}
+                alt={user.name}
+                width={32}
+                height={32}
+                loading="eager"
+                decoding="async"
+                className="size-full object-cover rounded-full"
+              />
+            ) : (
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            )}
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

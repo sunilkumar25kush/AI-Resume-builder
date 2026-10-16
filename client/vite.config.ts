@@ -27,9 +27,38 @@ export default defineConfig({
       },
     },
   },
-  // @react-pdf/renderer lives in its own lazy chunk (loaded only when a user
-  // exports a PDF) — it is legitimately >500 kB, so raise the advisory limit.
   build: {
-    chunkSizeWarningLimit: 1600,
+    target: "esnext",
+    cssMinify: true,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("/react/") || id.includes("react-router")) {
+              return "vendor-react";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("radix-ui") || id.includes("@radix-ui")) {
+              return "vendor-radix";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            if (id.includes("react-easy-crop")) {
+              return "vendor-crop";
+            }
+            if (id.includes("react-hook-form") || id.includes("@hookform") || id.includes("zod")) {
+              return "vendor-forms";
+            }
+            if (id.includes("axios") || id.includes("zustand") || id.includes("sonner")) {
+              return "vendor-utils";
+            }
+          }
+        },
+      },
+    },
   },
 });

@@ -21,12 +21,10 @@ export const usePortfoliosStore = create<PortfoliosState>((set) => ({
     set({ loading: true, error: null });
     try {
       const items = await portfoliosApi.list();
-      set({ items, error: null });
+      set({ items, error: null, loading: false });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load portfolios";
-      set({ error: message });
-    } finally {
-      set({ loading: false });
+      set({ error: message, loading: false });
     }
   },
 

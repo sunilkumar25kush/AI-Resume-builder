@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -21,9 +21,12 @@ import { z } from "zod";
 import { getApiErrorMessage } from "@/api/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ImageCropModal } from "@/components/ui/ImageCropModal";
 import type { CroppedImageResult } from "@/lib/cropImage";
 import { resolveAvatarUrl } from "@/lib/utils";
+
+const ImageCropModal = lazy(() =>
+  import("@/components/ui/ImageCropModal").then((m) => ({ default: m.ImageCropModal })),
+);
 import {
   Card,
   CardContent,
@@ -169,20 +172,24 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      <ImageCropModal
-        open={cropModalOpen}
-        imageSrc={selectedImageSrc}
-        title="Crop Profile Picture"
-        description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your profile."
-        cropShape="round"
-        aspect={1}
-        onClose={() => {
-          setCropModalOpen(false);
-          setSelectedImageSrc(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
-        onCropSave={onCropSave}
-      />
+      {cropModalOpen && selectedImageSrc ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={cropModalOpen}
+            imageSrc={selectedImageSrc}
+            title="Crop Profile Picture"
+            description="Choose which part to show and zoom into. The circle preview shows exactly how it will appear on your profile."
+            cropShape="round"
+            aspect={1}
+            onClose={() => {
+              setCropModalOpen(false);
+              setSelectedImageSrc(null);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            onCropSave={onCropSave}
+          />
+        </Suspense>
+      ) : null}
 
       <form onSubmit={onSaveProfile} className="flex flex-col gap-6">
         {/* Profile Picture Card */}
@@ -194,7 +201,15 @@ export default function ProfilePage() {
           <CardContent className="flex items-center gap-5">
             <Avatar className="h-20 w-20 ring-2 ring-primary/20 shadow-xs overflow-hidden rounded-full shrink-0">
               {user?.avatar ? (
-                <img src={resolveAvatarUrl(user.avatar)} alt={user.name} className="h-full w-full object-cover rounded-full" />
+                <img
+                  src={resolveAvatarUrl(user.avatar, 80)}
+                  alt={user.name}
+                  width={80}
+                  height={80}
+                  loading="eager"
+                  decoding="async"
+                  className="h-full w-full object-cover rounded-full"
+                />
               ) : (
                 <AvatarFallback className="text-xl font-medium">
                   {getInitials(user?.name ?? "?")}
@@ -553,7 +568,7 @@ export default function ProfilePage() {
               <Switch
                 id="autoPopulateResume"
                 checked={watchedValues.autoPopulateResume}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setValue("autoPopulateResume", checked, { shouldDirty: true })
                 }
               />

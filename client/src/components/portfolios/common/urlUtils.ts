@@ -36,9 +36,16 @@ export function sanitizeExternalUrl(url?: string | null): string | null {
   }
 }
 
+const normalizedAvatarCache = new Map<string, string>();
+const MAX_NORMALIZED_CACHE = 500;
+
 /** Cleans and normalizes avatar image URLs, converting cloud storage view links into direct assets */
-export function normalizeAvatarUrl(rawUrl?: string | null): string {
+export function normalizeAvatarUrl(rawUrl?: string | null, targetSize?: number): string {
   if (!rawUrl) return "";
+  const cacheKey = `${rawUrl}_${targetSize ?? 0}`;
+  const cached = normalizedAvatarCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   let url = rawUrl.trim().replace(/^["']|["']$/g, "");
   if (!url) return "";
 
@@ -53,6 +60,11 @@ export function normalizeAvatarUrl(rawUrl?: string | null): string {
     url = url.replace("dl=0", "raw=1");
   }
 
-  return resolveAvatarUrl(url);
+  const result = resolveAvatarUrl(url, targetSize);
+  if (normalizedAvatarCache.size >= MAX_NORMALIZED_CACHE) {
+    normalizedAvatarCache.clear();
+  }
+  normalizedAvatarCache.set(cacheKey, result);
+  return result;
 }
 

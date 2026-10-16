@@ -1,215 +1,72 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { Link } from "react-router";
 import {
   AlertCircle,
   Download,
   ExternalLink,
   Eye,
-  FileText,
   Globe,
   Loader2,
-  Palette,
   Pencil,
   Plus,
   RefreshCw,
-  Sparkles,
   Trash2,
-  UploadCloud,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getApiErrorMessage } from "@/api/client";
-import { portfoliosApi } from "@/api/portfolios";
 import { EmptyState } from "@/components/common/EmptyState";
-import { PublishModal } from "@/components/portfolios/editor/PublishModal";
-import { PortfolioExportModal } from "@/components/portfolios/export/PortfolioExportModal";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
-
-import { UploadDropzone } from "@/components/resumes/UploadDropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PortfolioCreationAnimationModal } from "@/components/portfolios/common/PortfolioCreationAnimationModal";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuthStore } from "@/stores/auth";
 import { usePortfoliosStore } from "@/stores/portfolios";
-import { useResumesStore } from "@/stores/resumes";
-import type { CreatePortfolioInput, Portfolio, PortfolioDesignSettings } from "@/types";
+import type { Portfolio } from "@/types";
 
-const TEMPLATE_OPTIONS: Array<{
-  id: PortfolioDesignSettings["template"];
-  name: string;
-  desc: string;
-  badge: string;
-  gradient: string;
-  previewNote: string;
-}> = [
-  {
-    id: "devport",
-    name: "DevPort (Featured)",
-    desc: "Cosmic dark theme, orbital avatar, glowing typewriter & floating code card",
-    badge: "Featured ★",
-    gradient: "from-cyan-500 via-indigo-500 to-pink-500",
-    previewNote: "Cosmic Dark & Orbital Badges",
-  },
-  {
-    id: "creative",
-    name: "Modern 3D",
-    desc: "Midnight indigo theme, 3D avatar halo, electric purple gradient & stats",
-    badge: "New ★",
-    gradient: "from-purple-600 via-indigo-600 to-blue-600",
-    previewNote: "Midnight & 3D Avatar Halo",
-  },
-  {
-    id: "developer",
-    name: "Tech / Dev",
-    desc: "Terminal accents, GitHub repository links, and code highlights",
-    badge: "Engineering",
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
-    previewNote: "Terminal & Code Accents",
-  },
-  {
-    id: "minimal",
-    name: "Minimalist",
-    desc: "Typography-focused editorial elegance with generous whitespace",
-    badge: "Editorial",
-    gradient: "from-neutral-700 via-neutral-500 to-neutral-400",
-    previewNote: "Quiet Editorial Whitespace",
-  },
-];
+const CreatePortfolioDialog = lazy(
+  () => import("@/components/portfolios/common/CreatePortfolioDialog"),
+);
+const PublishModal = lazy(() =>
+  import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
+);
+const PortfolioExportModal = lazy(() =>
+  import("@/components/portfolios/export/PortfolioExportModal").then((m) => ({
+    default: m.PortfolioExportModal,
+  })),
+);
 
+const dateFormatCache = new Map<string, string>();
 function formatDate(value: string): string {
+  const cached = dateFormatCache.get(value);
+  if (cached) return cached;
   try {
-    return new Date(value).toLocaleDateString(undefined, {
+    const formatted = new Date(value).toLocaleDateString(undefined, {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
+    dateFormatCache.set(value, formatted);
+    return formatted;
   } catch {
     return value;
   }
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export default function PortfoliosPage() {
-  const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
-  const { items, loading, error, fetch, prepend, remove } = usePortfoliosStore();
-  const resumes = useResumesStore((state) => state.items);
-  const fetchResumes = useResumesStore((state) => state.fetch);
+  const items = usePortfoliosStore((state) => state.items);
+  const loading = usePortfoliosStore((state) => state.loading);
+  const error = usePortfoliosStore((state) => state.error);
+  const fetch = usePortfoliosStore((state) => state.fetch);
+  const remove = usePortfoliosStore((state) => state.remove);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [sourceType, setSourceType] = useState<"upload" | "resume" | "scratch">("upload");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
-  const [portfolioTitle, setPortfolioTitle] = useState<string>("");
-  const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>("devport");
-  const [submitting, setSubmitting] = useState(false);
-  const [submittingStatus, setSubmittingStatus] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [publishPortfolioTarget, setPublishPortfolioTarget] = useState<Portfolio | null>(null);
   const [exportPortfolioTarget, setExportPortfolioTarget] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     void fetch();
-    void fetchResumes();
-  }, [fetch, fetchResumes]);
-
-  // Set default title based on authenticated user name
-  useEffect(() => {
-    if (user?.name && !portfolioTitle) {
-      setPortfolioTitle(`${user.name.split(" ")[0]}'s Portfolio`);
-    }
-  }, [user, portfolioTitle]);
-
-  // Select first resume by default if available
-  useEffect(() => {
-    if (resumes.length > 0 && !selectedResumeId) {
-      setSelectedResumeId(resumes[0]._id);
-    }
-  }, [resumes, selectedResumeId]);
-
-  const handleCreateSubmit = async () => {
-    if (!portfolioTitle.trim()) {
-      toast.error("Please enter a title for your portfolio");
-      return;
-    }
-
-    if (sourceType === "upload" && !uploadedFile) {
-      toast.error("Please select or drop a resume file (PDF or DOCX)");
-      return;
-    }
-
-    if (sourceType === "resume" && !selectedResumeId) {
-      toast.error("Please select an existing resume to import");
-      return;
-    }
-
-    setSubmitting(true);
-    setUploadProgress(0);
-
-    try {
-      let created: Portfolio;
-      if (sourceType === "upload" && uploadedFile) {
-        setSubmittingStatus("Uploading & extracting career data with Gemini AI...");
-        created = await portfoliosApi.uploadAndGenerate(
-          uploadedFile,
-          { template: selectedTemplate, title: portfolioTitle.trim() },
-          (pct) => setUploadProgress(pct),
-        );
-        toast.success("Portfolio generated successfully with Gemini AI!");
-      } else if (sourceType === "resume" && selectedResumeId) {
-        setSubmittingStatus("Compiling portfolio from selected resume with Gemini AI...");
-        created = await portfoliosApi.generateFromResume(selectedResumeId, {
-          template: selectedTemplate,
-          title: portfolioTitle.trim(),
-        });
-        toast.success("Portfolio generated successfully from resume!");
-      } else {
-        setSubmittingStatus("Creating blank portfolio draft...");
-        const payload: CreatePortfolioInput = {
-          title: portfolioTitle.trim(),
-          design: { template: selectedTemplate },
-        };
-        created = await portfoliosApi.create(payload);
-        toast.success("Blank portfolio draft created!");
-      }
-
-      prepend(created);
-      setSubmittingStatus("Finalizing portfolio theme & assets...");
-      // Brief aesthetic pause to showcase the completed AI creation state
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      setCreateOpen(false);
-      setUploadedFile(null);
-      setUploadProgress(null);
-      navigate(`/portfolios/${created._id}/edit`);
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-      setUploadProgress(null);
-      setSubmittingStatus("");
-    }
-  };
+  }, [fetch]);
 
   const handleDelete = async (portfolio: Portfolio) => {
     if (!confirm(`Are you sure you want to delete "${portfolio.title}"?`)) return;
@@ -225,138 +82,98 @@ export default function PortfoliosPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Globe className="h-6 w-6" aria-hidden />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Portfolio Websites</h1>
+            <Badge variant="outline" className="border-primary/30 text-primary text-xs">
+              AI Powered
+            </Badge>
           </div>
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Portfolio Generator</h1>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              Transform your resume into a personalized, responsive portfolio website
-            </p>
-          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Generate stunning, responsive developer portfolio websites from your resume in seconds.
+          </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2 sm:self-start">
-          <Plus className="h-4 w-4" aria-hidden />
-          Create Portfolio
-        </Button>
-      </div>
 
-      {/* Feature Value-Proposition Cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                <Sparkles className="h-4 w-4" aria-hidden />
-              </span>
-              <CardTitle className="text-sm font-semibold">AI Resume Extraction</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Upload PDF/DOCX or pick an existing resume — Gemini AI extracts bio, experience, skills, and projects.
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                <Palette className="h-4 w-4" aria-hidden />
-              </span>
-              <CardTitle className="text-sm font-semibold">Designer Templates</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Select modern themes with responsive layouts tailored for engineering, design, and executive roles.
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Globe className="h-4 w-4" aria-hidden />
-              </span>
-              <CardTitle className="text-sm font-semibold">Custom Slug & Live URL</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Publish your portfolio to a clean public URL shareable on LinkedIn, GitHub, and job applications.
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Error State Banner */}
-      {error && (
-        <div className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
-            <span>{error}</span>
-          </div>
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => void fetch()}
-            className="gap-1.5 border-destructive/30 hover:bg-destructive/20"
+            disabled={loading}
+            className="gap-1.5"
           >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} aria-hidden />
+            Refresh
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            className="gap-1.5 shadow-sm"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Generate Portfolio
+          </Button>
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{error}</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void fetch()}>
             Retry
           </Button>
         </div>
       )}
 
-      {/* Main Portfolios List Section */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Your Portfolios ({items.length})
-          </h2>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <Card key={i} className="flex flex-col justify-between p-5">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+      {/* Grid of existing portfolios */}
+      <section>
+        {loading && items.length === 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <CardHeader className="space-y-2 p-5">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-5 w-20" />
                     <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-12 rounded-full" />
                   </div>
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-                <div className="mt-6 flex items-center justify-between border-t pt-4">
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-8 rounded-md" />
-                </div>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                </CardHeader>
+                <CardContent className="p-5 pt-0">
+                  <Skeleton className="h-9 w-full" />
+                </CardContent>
               </Card>
             ))}
           </div>
         ) : items.length === 0 ? (
           <EmptyState
             icon={Globe}
-            title="No portfolios yet"
-            description="Transform your career history into a live web portfolio. Upload your resume or pick an existing one to generate an AI-powered draft."
+            title="No portfolio websites yet"
+            description="Create your first developer portfolio from an uploaded resume or build one from scratch with our templates."
             action={
-              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
                 <Plus className="h-4 w-4" aria-hidden />
-                Create Portfolio
+                Generate Portfolio
               </Button>
             }
           />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((portfolio) => (
               <Card
                 key={portfolio._id}
-                className="group flex flex-col justify-between border-border/80 transition-all hover:border-primary/50 hover:shadow-sm"
+                className="group relative flex flex-col justify-between overflow-hidden border border-border/70 hover:border-primary/50 transition-all hover:shadow-md bg-card"
               >
-                <CardHeader className="p-5 pb-3">
-                  <div className="flex items-start justify-between gap-2">
+                <CardHeader className="p-5 pb-3 space-y-2">
+                  <div className="flex items-center justify-between">
                     <Badge
                       variant={portfolio.status === "published" ? "default" : "secondary"}
                       className="text-[10px] uppercase font-semibold tracking-wide"
@@ -371,8 +188,12 @@ export default function PortfoliosPage() {
                     {portfolio.profile?.avatarUrl && (
                       <div className="h-10 w-10 shrink-0 rounded-xl border border-border/80 overflow-hidden bg-muted">
                         <img
-                          src={normalizeAvatarUrl(portfolio.profile.avatarUrl)}
+                          src={normalizeAvatarUrl(portfolio.profile.avatarUrl, 40)}
                           alt={portfolio.title}
+                          width={40}
+                          height={40}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover"
                           referrerPolicy="no-referrer"
                         />
@@ -415,7 +236,11 @@ export default function PortfoliosPage() {
                         size="sm"
                         className="gap-1 text-xs"
                       >
-                        <Link to={portfolio.status === "published" && portfolio.slug ? `/p/${portfolio.slug}` : `/portfolios/${portfolio._id}`} target="_blank" rel="noopener noreferrer">
+                        <Link
+                          to={portfolio.status === "published" && portfolio.slug ? `/p/${portfolio.slug}` : `/portfolios/${portfolio._id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <Eye className="h-3.5 w-3.5" aria-hidden />
                           View
                         </Link>
@@ -461,7 +286,6 @@ export default function PortfoliosPage() {
                         variant="ghost"
                         size="icon-sm"
                         className="text-muted-foreground hover:text-destructive"
-
                         title="Delete portfolio"
                         disabled={deletingId === portfolio._id}
                         onClick={() => void handleDelete(portfolio)}
@@ -481,265 +305,41 @@ export default function PortfoliosPage() {
         )}
       </section>
 
-      {/* Create Portfolio Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" aria-hidden />
-              Generate Portfolio Website
-            </DialogTitle>
-            <DialogDescription>
-              Upload a resume or start fresh to create an AI-powered personal portfolio.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Lazy-loaded Create Portfolio Modal */}
+      {createOpen && (
+        <Suspense fallback={null}>
+          <CreatePortfolioDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+          />
+        </Suspense>
+      )}
 
-          <div className="flex flex-col gap-4 py-2">
-            {/* Title Input */}
-            <div className="space-y-1.5">
-              <Label htmlFor="portfolio-title">Portfolio Title</Label>
-              <Input
-                id="portfolio-title"
-                value={portfolioTitle}
-                onChange={(e) => setPortfolioTitle(e.target.value)}
-                placeholder="e.g. Rahul Sharma — Full Stack Engineer"
-                maxLength={100}
-                disabled={submitting}
-              />
-            </div>
-
-            {/* Source Selection */}
-            <div className="space-y-1.5">
-              <Label>Source Option</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setSourceType("upload")}
-                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
-                    sourceType === "upload"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <UploadCloud className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Upload File
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">PDF or DOCX</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setSourceType("resume")}
-                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
-                    sourceType === "resume"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <FileText className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Saved Resume
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">From account</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setSourceType("scratch")}
-                  className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${
-                    sourceType === "scratch"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Start Blank
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">Empty draft</span>
-                </button>
-              </div>
-            </div>
-
-            {/* If Upload source, show file dropzone */}
-            {sourceType === "upload" && (
-              <div className="space-y-2">
-                <Label>Upload Resume (PDF or DOCX)</Label>
-                {uploadedFile ? (
-                  <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">
-                    <div className="flex items-center gap-2.5 truncate">
-                      <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden />
-                      <div className="truncate">
-                        <p className="font-medium truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatBytes(uploadedFile.size)}</p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={submitting}
-                      onClick={() => setUploadedFile(null)}
-                      title="Remove file"
-                    >
-                      <X className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </div>
-                ) : (
-                  <UploadDropzone
-                    uploading={submitting}
-                    progress={uploadProgress}
-                    onFile={(file) => setUploadedFile(file)}
-                    copyTitle="Drop resume file here or click to browse"
-                    copyHint="PDF or DOCX (max 10 MB)"
-                  />
-                )}
-              </div>
-            )}
-
-            {/* If Saved Resume source, select which resume */}
-            {sourceType === "resume" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="resume-select">Select Saved Resume</Label>
-                {resumes.length === 0 ? (
-                  <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                    No parsed resumes found in your account. You can choose "Upload File" above to parse a new file directly.
-                  </p>
-                ) : (
-                  <select
-                    id="resume-select"
-                    value={selectedResumeId}
-                    disabled={submitting}
-                    onChange={(e) => setSelectedResumeId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {resumes.map((r) => (
-                      <option key={r._id} value={r._id}>
-                        {r.parsedData?.name || r.fileName || "Untitled Resume"} ({r.template || "Standard"})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            )}
-
-            {/* Template Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Choose Portfolio Template
-                </Label>
-                <span className="text-[11px] font-mono text-primary font-semibold">
-                  {selectedTemplate === "devport" ? "DevPort Cosmic" : selectedTemplate === "creative" ? "Modern 3D" : selectedTemplate}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {TEMPLATE_OPTIONS.map((tpl) => {
-                  const isSelected = selectedTemplate === tpl.id;
-                  return (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => setSelectedTemplate(tpl.id)}
-                      className={`group relative flex flex-col items-start rounded-xl border p-3 text-left transition-all overflow-hidden ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs"
-                          : "border-border hover:border-primary/40 hover:bg-accent/40"
-                      }`}
-                    >
-                      {/* Gradient Accent Bar */}
-                      <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${tpl.gradient} mb-2.5 opacity-90 group-hover:opacity-100 transition-opacity`} />
-
-                      <div className="flex w-full items-center justify-between text-xs font-bold">
-                        <span className="truncate">{tpl.name}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-medium ${
-                          isSelected ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
-                        }`}>
-                          {tpl.badge}
-                        </span>
-                      </div>
-
-                      <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-                        {tpl.desc}
-                      </p>
-
-                      <div className="mt-2 text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
-                        <span>{tpl.previewNote}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Status / Progress Notification when submitting */}
-            {submitting && (
-              <div className="space-y-2 rounded-xl bg-primary/5 border border-primary/20 p-3">
-                <div className="flex items-center gap-2 text-xs font-medium text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                  <span>{submittingStatus || "Processing document..."}</span>
-                </div>
-                {uploadProgress !== null && uploadProgress > 0 && uploadProgress < 100 && (
-                  <Progress value={uploadProgress} className="h-1.5" />
-                )}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateSubmit} disabled={submitting}>
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Generating...
-                </>
-              ) : (
-                "Generate Portfolio"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Publish & Sharing Dialog */}
+      {/* Lazy-loaded Publish & Sharing Dialog */}
       {publishPortfolioTarget && (
-        <PublishModal
-          open={Boolean(publishPortfolioTarget)}
-          onOpenChange={(open) => !open && setPublishPortfolioTarget(null)}
-          portfolio={publishPortfolioTarget}
-          onSuccess={() => {
-            setPublishPortfolioTarget(null);
-            void fetch();
-          }}
-        />
+        <Suspense fallback={null}>
+          <PublishModal
+            open={Boolean(publishPortfolioTarget)}
+            onOpenChange={(open) => !open && setPublishPortfolioTarget(null)}
+            portfolio={publishPortfolioTarget}
+            onSuccess={() => {
+              setPublishPortfolioTarget(null);
+              void fetch();
+            }}
+          />
+        </Suspense>
       )}
 
-      {/* Export Dialog */}
+      {/* Lazy-loaded Export Dialog */}
       {exportPortfolioTarget && (
-        <PortfolioExportModal
-          open={Boolean(exportPortfolioTarget)}
-          onOpenChange={(open) => !open && setExportPortfolioTarget(null)}
-          portfolio={exportPortfolioTarget}
-        />
+        <Suspense fallback={null}>
+          <PortfolioExportModal
+            open={Boolean(exportPortfolioTarget)}
+            onOpenChange={(open) => !open && setExportPortfolioTarget(null)}
+            portfolio={exportPortfolioTarget}
+          />
+        </Suspense>
       )}
-
-
-      {/* Animated Multi-Step AI Portfolio Creation Showcase */}
-      <PortfolioCreationAnimationModal
-        isOpen={submitting}
-        statusMessage={submittingStatus}
-        uploadProgress={uploadProgress}
-        templateName={selectedTemplate === "devport" ? "DevPort" : selectedTemplate}
-      />
     </div>
   );
 }
