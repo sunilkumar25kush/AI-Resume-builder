@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 import { RATE_LIMITS } from "../constants/index.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -29,7 +29,7 @@ export const authLimiter = rateLimit({
 export const aiLimiter = rateLimit({
   windowMs: RATE_LIMITS.AI.windowMs,
   limit: RATE_LIMITS.AI.max,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
   standardHeaders: "draft-7",
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
