@@ -4,13 +4,21 @@ import { RESUME_MIME, validateMemoryMagicBytes } from "../middlewares/upload.js"
 import * as portfolioService from "../services/portfolio.service.js";
 import * as portfolioExportService from "../services/portfolioExport.service.js";
 
-/** Create a new portfolio draft */
+/**
+ * Creates a blank or initialized portfolio draft for the authenticated candidate.
+ * @route POST /api/portfolios
+ * @access Private
+ */
 export const createPortfolio = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.createPortfolio(req.user.id, req.validatedBody);
   res.status(201).json({ success: true, data: { portfolio } });
 });
 
-/** List the current user's portfolios with pagination */
+/**
+ * Retrieves a paginated list of candidate portfolios.
+ * @route GET /api/portfolios
+ * @access Private
+ */
 export const getUserPortfolios = asyncHandler(async (req, res) => {
   const page = Number.parseInt(req.query.page ?? "1", 10) || 1;
   const limit = Number.parseInt(req.query.limit ?? "20", 10) || 20;
@@ -19,13 +27,21 @@ export const getUserPortfolios = asyncHandler(async (req, res) => {
   res.json({ success: true, data: result });
 });
 
-/** Fetch a specific portfolio by ID */
+/**
+ * Retrieves a single portfolio document by ID, scoped to user ownership.
+ * @route GET /api/portfolios/:id
+ * @access Private
+ */
 export const getPortfolioById = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.getPortfolioById(req.user.id, req.params.id);
   res.json({ success: true, data: { portfolio } });
 });
 
-/** Update permitted content/design fields */
+/**
+ * Updates design and career content on an existing portfolio document.
+ * @route PATCH /api/portfolios/:id
+ * @access Private
+ */
 export const updatePortfolioById = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.updatePortfolio(req.user.id, req.params.id, req.validatedBody);
   res.json({ success: true, data: { portfolio } });
