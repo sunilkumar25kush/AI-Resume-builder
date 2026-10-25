@@ -72,6 +72,22 @@ function getFontFamilyCss(fontFamilyKey) {
   return map[fontFamilyKey] || map.Inter;
 }
 
+
+/**
+ * Adjusts brightness of a hex color by a given percentage.
+ */
+function adjustBrightness(hex, percent) {
+  if (!hex || typeof hex !== "string") return "#e3141f";
+  const cleanHex = hex.replace("#", "");
+  const num = parseInt(cleanHex.length === 3 ? cleanHex.split("").map((c) => c + c).join("") : cleanHex, 16);
+  if (isNaN(num)) return hex;
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
+  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
+  return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
+}
+
 const GOOGLE_FONTS_LINK_TAG = `<link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
@@ -145,7 +161,7 @@ export function sanitizePortfolioData(portfolio) {
       description: p.description || "",
       tags: Array.isArray(p.tags) ? p.tags : [],
       liveUrl: p.liveUrl || "",
-      repoUrl: p.repoUrl || "",
+      repoUrl: p.repoUrl || p.githubUrl || "",
       imageUrl: p.imageUrl || "",
       featured: Boolean(p.featured),
     })),
@@ -160,6 +176,7 @@ export function sanitizePortfolioData(portfolio) {
       theme,
       primaryColor,
       fontFamily,
+      backgroundEffect: portfolio.design?.backgroundEffect || "default",
       sectionOrder: portfolio.design?.sectionOrder || [
         "hero",
         "about",
@@ -171,6 +188,9 @@ export function sanitizePortfolioData(portfolio) {
         "contact",
       ],
       sectionVisibility: portfolio.design?.sectionVisibility || {},
+      layoutOptions: portfolio.design?.layoutOptions || {},
+      templateSettings: portfolio.design?.templateSettings || {},
+      customCss: portfolio.design?.customCss || "",
     },
     publication: {
       seoTitle: portfolio.publication?.seoTitle || portfolio.title || "Portfolio",
@@ -338,12 +358,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   // 7. src/App.jsx
   const appJsx = `import React from "react";
 import portfolioData from "./portfolioData.json";
+import { SpotlightTemplate } from "./components/templates/SpotlightTemplate.jsx";
+import { PosterTemplate } from "./components/templates/PosterTemplate.jsx";
 import { DevPortTemplate } from "./components/templates/DevPortTemplate.jsx";
 import { ModernCreativeTemplate } from "./components/templates/ModernCreativeTemplate.jsx";
 import { DeveloperTemplate } from "./components/templates/DeveloperTemplate.jsx";
 import { MinimalTemplate } from "./components/templates/MinimalTemplate.jsx";
 
 const TEMPLATE_MAP = {
+  spotlight: SpotlightTemplate,
+  poster: PosterTemplate,
   devport: DevPortTemplate,
   creative: ModernCreativeTemplate,
   developer: DeveloperTemplate,
@@ -352,7 +376,7 @@ const TEMPLATE_MAP = {
 
 export default function App() {
   const templateKey = (portfolioData?.design?.template || "${selectedTemplate}").toLowerCase();
-  const SelectedTemplate = TEMPLATE_MAP[templateKey] || DevPortTemplate;
+  const SelectedTemplate = TEMPLATE_MAP[templateKey] || SpotlightTemplate;
 
   return (
     <div className="min-h-screen">
@@ -369,6 +393,8 @@ export default function App() {
   archive.append(getUrlUtilsJs(), { name: "src/components/common/urlUtils.js" });
 
   // 9. Templates
+  archive.append(getFullSpotlightTemplateJsx(), { name: "src/components/templates/SpotlightTemplate.jsx" });
+  archive.append(getFullPosterTemplateJsx(), { name: "src/components/templates/PosterTemplate.jsx" });
   archive.append(getFullDevPortTemplateJsx(), { name: "src/components/templates/DevPortTemplate.jsx" });
   archive.append(getFullModernCreativeTemplateJsx(), { name: "src/components/templates/ModernCreativeTemplate.jsx" });
   archive.append(getFullDeveloperTemplateJsx(), { name: "src/components/templates/DeveloperTemplate.jsx" });
@@ -394,7 +420,11 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
 
   // 1. Generate Template-Specific Static HTML
   let staticHtml;
-  if (template === "creative") {
+  if (template === "spotlight") {
+    staticHtml = generateSpotlightStaticHtml(data);
+  } else if (template === "poster") {
+    staticHtml = generatePosterStaticHtml(data);
+  } else if (template === "creative") {
     staticHtml = generateCreativeStaticHtml(data);
   } else if (template === "developer") {
     staticHtml = generateDeveloperStaticHtml(data);
@@ -408,7 +438,11 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
 
   // 2. Generate Template-Specific Static CSS
   let staticCss;
-  if (template === "creative") {
+  if (template === "spotlight") {
+    staticCss = generateSpotlightStaticCss(data);
+  } else if (template === "poster") {
+    staticCss = generatePosterStaticCss(data);
+  } else if (template === "creative") {
     staticCss = generateCreativeStaticCss(data);
   } else if (template === "developer") {
     staticCss = generateDeveloperStaticCss(data);
@@ -420,7 +454,14 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
   archive.append(staticCss, { name: "assets/style.css" });
 
   // 3. Generate Template-Specific Static Vanilla JS
-  const staticJs = generateDevPortStaticJs(data, template);
+  let staticJs;
+  if (template === "spotlight") {
+    staticJs = generateSpotlightStaticJs(data);
+  } else if (template === "poster") {
+    staticJs = generatePosterStaticJs(data);
+  } else {
+    staticJs = generateDevPortStaticJs(data, template);
+  }
   archive.append(staticJs, { name: "assets/script.js" });
 
   // 4. README.md
@@ -2625,8 +2666,2179 @@ body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-fam
 }
 
 /* ==========================================================================
+   SPOTLIGHT STATIC HTML, CSS & JS GENERATORS
+   ========================================================================== */
+
+function generateSpotlightStaticHtml(data) {
+  const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = data;
+  const fullName = profile.fullName || "Sunil Kumar";
+  const firstName = fullName.split(/\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;
+  const headline = profile.headline || "Full Stack Developer";
+  const bio = profile.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`;
+  const location = profile.location || "";
+  const primaryColor = data.design?.primaryColor || "#e3141f";
+  const isLight = data.design?.theme === "light";
+  const isDarkMode = data.design?.theme === "dark" || data.design?.theme === "system" || !isLight;
+
+  // Semantic color tokens matching SpotlightTemplate.tsx
+  const colors = isDarkMode
+    ? {
+        paper: "#0c0c0e",
+        sectionWhite: "#141418",
+        cardBg: "#1c1c22",
+        cardBorder: "rgba(255, 255, 255, 0.08)",
+        ink: "#f4f4f6",
+        inkMuted: "#a1a1aa",
+        border: "rgba(255, 255, 255, 0.08)",
+        navBg: "rgba(18, 18, 22, 0.92)",
+        navInk: "#ffffff",
+        waveFill: "#0c0c0e",
+        pillBg: "#27272f",
+      }
+    : {
+        paper: "#ffffff",
+        sectionWhite: "#ffffff",
+        cardBg: "#ffffff",
+        cardBorder: "rgba(0, 0, 0, 0.08)",
+        ink: "#121212",
+        inkMuted: "#555555",
+        border: "rgba(0, 0, 0, 0.08)",
+        navBg: "rgba(255, 255, 255, 0.92)",
+        navInk: "#121212",
+        waveFill: "#ffffff",
+        pillBg: "#f1f1f3",
+      };
+
+  const accentDeep = adjustBrightness(primaryColor, -30);
+  const accentDark = adjustBrightness(primaryColor, -20);
+
+  // GitHub handle & Avatar
+  const githubLink = socialLinks.find(
+    (l) => l.platform?.toLowerCase().includes("github") || l.url?.toLowerCase().includes("github.com")
+  );
+  const githubHandle = githubLink?.url
+    ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
+    : "sunilkumar25kush";
+
+  const avatarUrl = profile.avatarUrl || `https://avatars.githubusercontent.com/${githubHandle}`;
+
+  // Headline lines split
+  const headlineWords = headline.trim().split(/\s+/);
+  let headlineLine1 = "";
+  let headlineLine2 = "";
+  if (headlineWords.length <= 1) {
+    headlineLine1 = headlineWords[0] || "developer";
+  } else if (headlineWords.length === 2) {
+    headlineLine1 = headlineWords[0];
+    headlineLine2 = headlineWords[1];
+  } else {
+    headlineLine2 = headlineWords[headlineWords.length - 1];
+    headlineLine1 = headlineWords.slice(0, headlineWords.length - 1).join(" ");
+  }
+
+  // Skills
+  const skillNames = skills.map((s) => (typeof s === "string" ? s : s.name)).filter(Boolean);
+  const safeSkills = skillNames.length ? skillNames : ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"];
+
+  const LANG_COLORS = {
+    JavaScript: "#f1e05a",
+    TypeScript: "#3178c6",
+    Python: "#3572A5",
+    Go: "#00ADD8",
+    Rust: "#dea584",
+    Ruby: "#701516",
+    Java: "#b07219",
+    "C++": "#f34b7d",
+    C: "#555555",
+    "C#": "#178600",
+    PHP: "#4F5D95",
+    Swift: "#F05138",
+    Kotlin: "#A97BFF",
+    Dart: "#00B4AB",
+    HTML: "#e34c26",
+    CSS: "#663399",
+    Shell: "#89e051",
+    Vue: "#41b883",
+    Svelte: "#ff3e00",
+    React: "#61dafb",
+    "Node.js": "#339933",
+    Dockerfile: "#384d54",
+    Tailwind: "#38bdf8",
+    TailwindCSS: "#38bdf8",
+  };
+
+  // Projects
+  const displayProjects = projects.length ? projects : [
+    {
+      title: "NOTE-PROJECT",
+      description: "Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.",
+      tags: ["HTML", "JavaScript"],
+      repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,
+    },
+    {
+      title: "AI-Interviewer",
+      description: "Intelligent conversational interview platform simulating technical candidate evaluations.",
+      tags: ["JavaScript", "React"],
+      repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,
+    },
+    {
+      title: "AI-Resume-builder",
+      description: "Next-gen intelligent career document and portfolio generator with ATS optimization.",
+      tags: ["TypeScript", "React"],
+      repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,
+    },
+    {
+      title: "AI-CONTENT-GENERATOR",
+      description: "Multi-modal AI content synthesizer for automated technical articles, docs, and assets.",
+      tags: ["CSS", "JavaScript"],
+      repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,
+    },
+  ];
+
+  // Expertise nodes
+  const topSkills = safeSkills.slice(0, 4);
+  const defaults = ["HTML", "JavaScript", "TypeScript", "CSS"];
+  const merged = topSkills.length >= 4 ? topSkills : [...topSkills, ...defaults.slice(topSkills.length)];
+  const expertiseNodes = merged.slice(0, 4).map((skillName, idx) => {
+    const match = displayProjects.find(
+      (p) =>
+        p.tags?.some((t) => t.toLowerCase() === skillName.toLowerCase()) ||
+        p.description?.toLowerCase().includes(skillName.toLowerCase())
+    );
+    const projectName = match?.title || displayProjects[idx % displayProjects.length]?.title || "Featured-Project";
+    const count = idx === 1 ? 2 : 1;
+    return {
+      num: `0${idx + 1}`,
+      skill: skillName,
+      desc: `${count} featured project${count > 1 ? "s" : ""}, including ${projectName}.`,
+      isHot: idx === 1,
+    };
+  });
+
+  // Tech stack groups
+  const allSkills = safeSkills;
+  const focus = allSkills.slice(0, 6);
+  const frontendKeywords = ["html", "css", "javascript", "typescript", "react", "vue", "svelte", "tailwind", "next"];
+  const backendKeywords = ["node", "python", "go", "java", "c#", "express", "sql", "mongo", "api", "ai"];
+  const toolingKeywords = ["docker", "dockerfile", "git", "github", "linux", "vite", "webpack", "aws", "ci/cd"];
+
+  const frontend = allSkills.filter((s) => frontendKeywords.some((k) => s.toLowerCase().includes(k)));
+  const backend = allSkills.filter((s) => backendKeywords.some((k) => s.toLowerCase().includes(k)));
+  const tooling = allSkills.filter((s) => toolingKeywords.some((k) => s.toLowerCase().includes(k)));
+
+  const techGroups = [
+    {
+      title: "What I focus on",
+      items: focus.length > 0 ? focus : ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"],
+    },
+    {
+      title: "Frontend",
+      items: frontend.length > 0 ? frontend : ["HTML", "JavaScript", "TypeScript", "CSS"],
+    },
+    {
+      title: "Data & AI",
+      items: backend.length > 0 ? backend : ["Python"],
+    },
+    {
+      title: "Tooling & infra",
+      items: tooling.length > 0 ? tooling : ["Dockerfile"],
+    },
+  ];
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Spotlight Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="spotlight-body">
+  <!-- Fixed Top Navigation -->
+  <nav id="spotlightNav" aria-label="Primary portfolio navigation" class="spotlight-nav spotlight-nav-transparent">
+    <div class="spotlight-nav-inner">
+      <a href="#top" class="spotlight-logo">
+        <span>${escapeHtml(firstName.toLowerCase())}</span><span class="spotlight-dot">.</span>
+      </a>
+      <div class="spotlight-nav-center">
+        <a href="#about" class="spotlight-nav-link">About</a>
+        <a href="#expertise" class="spotlight-nav-link">Expertise</a>
+        <a href="#work" class="spotlight-nav-link">Work</a>
+        <a href="#contact" class="spotlight-nav-link">Contact</a>
+      </div>
+      <div class="spotlight-nav-spacer"></div>
+      <a href="#contact" class="spotlight-nav-btn">Hire me</a>
+    </div>
+  </nav>
+
+  <main class="w-full">
+    <!-- HERO SECTION -->
+    <section id="top" class="spotlight-hero">
+      <div class="spotlight-hero-container">
+        <!-- Left Hero Copy -->
+        <div class="spotlight-hero-text">
+          <h1>
+            <span class="spotlight-hero-hi">Hi, I'm ${escapeHtml(firstName.toLowerCase())}</span>
+            ${headlineLine1 ? `<span class="spotlight-hero-line1">${escapeHtml(headlineLine1)}</span>` : ""}
+            ${headlineLine2 ? `<span class="spotlight-hero-line2">${escapeHtml(headlineLine2)}</span>` : ""}
+          </h1>
+          <p class="spotlight-hero-bio">${escapeHtml(bio)}</p>
+          <div class="spotlight-hero-actions">
+            <a href="#work" class="spotlight-btn-work">View my work</a>
+            <a href="#contact" class="spotlight-btn-contact">Contact me</a>
+          </div>
+        </div>
+
+        <!-- Right Hero Portrait Frame -->
+        <div class="spotlight-hero-portrait-col">
+          <div class="spotlight-portrait-frame">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" onerror="this.style.display='none'" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom SVG Wave -->
+      <svg class="spotlight-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z" />
+      </svg>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="spotlight-section-about">
+      <div class="spotlight-about-container">
+        <!-- Left: Hanging Swaying Tablet -->
+        <div class="hanging-container">
+          <div class="spotlight-cord"></div>
+          <div class="spotlight-nail"></div>
+          <div class="hanging-tablet">
+            <div class="hanging-tablet-inner">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Bio & Tech Pills -->
+        <div class="spotlight-about-content">
+          <span class="spotlight-pill-tag">HELLO!</span>
+          <h2 class="spotlight-section-title">
+            <span>A little </span><span class="spotlight-accent-text">about me</span>
+          </h2>
+          <p class="spotlight-about-desc">${escapeHtml(bio)}</p>
+
+          <div class="spotlight-about-skills">
+            ${safeSkills.slice(0, 8).map((skillName) => {
+              const dotColor = LANG_COLORS[skillName] || primaryColor;
+              return `
+                <span class="spotlight-about-pill">
+                  <span class="spotlight-pill-dot" style="background-color: ${dotColor};"></span>
+                  <span>${escapeHtml(skillName)}</span>
+                </span>
+              `;
+            }).join("")}
+          </div>
+
+          <div class="spotlight-about-stats">
+            <span>2 followers</span>
+            <span class="spotlight-stat-item">
+              <svg class="spotlight-stat-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>1 stars</span>
+            </span>
+            ${location ? `
+              <span class="spotlight-stat-item spotlight-stat-loc">
+                <svg class="spotlight-stat-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>${escapeHtml(location)}</span>
+              </span>
+            ` : ""}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPERTISE SECTION (4 Connected Nodes + Dashed Line) -->
+    <section id="expertise" class="spotlight-section-expertise">
+      <div class="spotlight-expertise-container">
+        <!-- Left: Title -->
+        <div class="spotlight-expertise-header">
+          <span class="spotlight-pill-tag">MY EXPERTISE</span>
+          <h2 class="spotlight-section-title">
+            <span>Building modern digital solutions with </span><span class="spotlight-accent-text">code</span>
+          </h2>
+          <p class="spotlight-expertise-sub">
+            What ${escapeHtml(firstName.toLowerCase())} spends their time on, from ${safeSkills.length || 24} public repositories.
+          </p>
+        </div>
+
+        <!-- Right: 4 Connected Nodes Grid with Dashed SVG Line -->
+        <div class="spotlight-expertise-grid-wrap">
+          <svg class="spotlight-dashed-svg" aria-hidden="true">
+            <path d="M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370" fill="none" stroke="${primaryColor}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="6 8" class="animate-dash" />
+          </svg>
+
+          <div class="spotlight-expertise-grid">
+            ${expertiseNodes.map((node) => {
+              if (node.isHot) {
+                return `
+                  <div class="spotlight-exp-card spotlight-exp-card-hot">
+                    <span class="spotlight-exp-num">${escapeHtml(node.num)}</span>
+                    <h3 class="spotlight-exp-skill">${escapeHtml(node.skill)}</h3>
+                    <p class="spotlight-exp-desc">${escapeHtml(node.desc)}</p>
+                  </div>
+                `;
+              }
+              return `
+                <div class="spotlight-exp-card">
+                  <span class="spotlight-exp-num">${escapeHtml(node.num)}</span>
+                  <h3 class="spotlight-exp-skill">${escapeHtml(node.skill)}</h3>
+                  <p class="spotlight-exp-desc">${escapeHtml(node.desc)}</p>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECHNICAL STACK SECTION -->
+    <section id="skills" class="spotlight-section-skills">
+      <div class="spotlight-skills-container">
+        <div class="spotlight-skills-header">
+          <span class="spotlight-pill-tag">TECHNICAL STACK</span>
+          <h2 class="spotlight-section-title">
+            <span>Technologies I </span><span class="spotlight-accent-text">work with</span>
+          </h2>
+        </div>
+
+        <div class="spotlight-tech-grid">
+          ${techGroups.map((group) => `
+            <div class="spotlight-tech-card">
+              <h3 class="spotlight-tech-title">${escapeHtml(group.title)}</h3>
+              <div class="spotlight-tech-pills">
+                ${group.items.map((item) => `
+                  <span class="spotlight-tech-pill">${escapeHtml(item)}</span>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="spotlight-skills-footer">
+          <span class="spotlight-pill-tag">FEATURED WORK</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED WORK / PROJECTS SECTION -->
+    <section id="work" class="spotlight-section-projects">
+      <div class="spotlight-projects-container">
+        <div class="spotlight-projects-header">
+          <div>
+            <h2 class="spotlight-section-title">
+              <span>Featured </span><span class="spotlight-accent-text">Projects</span>
+            </h2>
+            <p class="spotlight-projects-sub">Production-grade applications, developer tooling, and open-source repositories.</p>
+          </div>
+          <a href="https://github.com/${escapeHtml(githubHandle)}?tab=repositories" target="_blank" rel="noopener noreferrer" class="spotlight-repo-link">
+            <span>View all GitHub repos</span>
+            <svg class="spotlight-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
+        <div class="spotlight-projects-grid">
+          ${displayProjects.map((project, idx) => {
+            const primaryTag = project.tags?.[0] || "Code";
+            const tagColor = LANG_COLORS[primaryTag] || primaryColor;
+            return `
+              <div class="spotlight-project-card">
+                ${project.imageUrl ? `
+                  <div class="spotlight-proj-thumb">
+                    <img src="${escapeHtml(project.imageUrl)}" alt="${escapeHtml(project.title)}" onerror="this.style.display='none'" />
+                  </div>
+                ` : ""}
+                <div class="spotlight-proj-content">
+                  <div class="spotlight-proj-top">
+                    <span class="spotlight-proj-index">0${idx + 1} / 0${displayProjects.length}</span>
+                    <div class="spotlight-proj-icon-links">
+                      ${project.repoUrl ? `
+                        <a href="${escapeHtml(project.repoUrl)}" target="_blank" rel="noopener noreferrer" class="spotlight-icon-btn" title="GitHub Repository">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><circle cx="12" cy="13" r="2"/><path d="M14 13h3"/><path d="M7 13h3"/></svg>
+                        </a>
+                      ` : ""}
+                      ${project.liveUrl ? `
+                        <a href="${escapeHtml(project.liveUrl)}" target="_blank" rel="noopener noreferrer" class="spotlight-icon-btn spotlight-icon-btn-live" title="Live Demo">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                        </a>
+                      ` : ""}
+                    </div>
+                  </div>
+
+                  <h3 class="spotlight-proj-title">${escapeHtml(project.title)}</h3>
+                  <p class="spotlight-proj-desc">${escapeHtml(project.description)}</p>
+                </div>
+
+                <div class="spotlight-proj-footer">
+                  <div class="spotlight-proj-tag">
+                    <span class="spotlight-pill-dot" style="background-color: ${tagColor};"></span>
+                    <span>${escapeHtml(primaryTag)}</span>
+                  </div>
+                  <span class="spotlight-proj-star">★ 3</span>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </section>
+
+    <!-- WORK EXPERIENCE SECTION -->
+    ${experience.length ? `
+      <section id="experience" class="spotlight-section-experience">
+        <div class="spotlight-exp-container">
+          <div class="spotlight-exp-heading-wrap">
+            <span class="spotlight-pill-tag">CAREER JOURNEY</span>
+            <h2 class="spotlight-section-title">
+              <span>Work </span><span class="spotlight-accent-text">Experience</span>
+            </h2>
+          </div>
+
+          <div class="spotlight-timeline">
+            ${experience.map((exp) => `
+              <div class="spotlight-timeline-item">
+                <span class="spotlight-timeline-dot"></span>
+                <div class="spotlight-timeline-card">
+                  <div class="spotlight-timeline-top">
+                    <h3 class="spotlight-timeline-title">${escapeHtml(exp.title)}</h3>
+                    <span class="spotlight-timeline-date">${escapeHtml(exp.startDate || "")} &mdash; ${exp.current ? "Present" : escapeHtml(exp.endDate || "Present")}</span>
+                  </div>
+                  <p class="spotlight-timeline-company">${escapeHtml(exp.company)}${exp.location ? ` · ${escapeHtml(exp.location)}` : ""}</p>
+                  ${exp.description ? `<p class="spotlight-timeline-desc">${escapeHtml(exp.description)}</p>` : ""}
+                  ${exp.highlights?.length ? `
+                    <ul class="spotlight-timeline-highlights">
+                      ${exp.highlights.map((h) => `<li><span>▸</span><span>${escapeHtml(h)}</span></li>`).join("")}
+                    </ul>
+                  ` : ""}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+    ` : ""}
+
+    <!-- EDUCATION & CERTIFICATIONS -->
+    ${education.length ? `
+      <section id="education" class="spotlight-section-edu">
+        <div class="spotlight-edu-container">
+          <h2 class="spotlight-section-title">
+            <span>Education &amp; </span><span class="spotlight-accent-text">Background</span>
+          </h2>
+          <div class="spotlight-edu-grid">
+            ${education.map((edu) => `
+              <div class="spotlight-edu-card">
+                <span class="spotlight-edu-date">${escapeHtml(edu.startDate || "")} &mdash; ${escapeHtml(edu.endDate || "Present")}</span>
+                <h3 class="spotlight-edu-degree">${escapeHtml(edu.degree)}</h3>
+                <p class="spotlight-edu-inst">${escapeHtml(edu.institution)}${edu.fieldOfStudy ? ` · ${escapeHtml(edu.fieldOfStudy)}` : ""}</p>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+    ` : ""}
+
+    ${certifications.length ? `
+      <section id="certifications" class="spotlight-section-cert">
+        <div class="spotlight-edu-container">
+          <h2 class="spotlight-section-title">
+            <span>Certifications &amp; </span><span class="spotlight-accent-text">Honors</span>
+          </h2>
+          <div class="spotlight-cert-grid">
+            ${certifications.map((c) => `
+              <div class="spotlight-cert-card">
+                <svg class="spotlight-cert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                <div>
+                  <h3 class="spotlight-cert-title">${escapeHtml(c.name)}</h3>
+                  <p class="spotlight-cert-issuer">${escapeHtml(c.issuer)}${c.issueDate ? ` · ${escapeHtml(c.issueDate)}` : ""}</p>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+    ` : ""}
+
+    <!-- CONTACT SECTION (Giant Watermark + Center Floating Red Card) -->
+    <section id="contact" class="spotlight-contact-section">
+      <div class="spotlight-watermark-wrap">
+        <span class="spotlight-watermark font-anton">CONTACT</span>
+        <span class="spotlight-watermark font-anton">${escapeHtml(firstName.toLowerCase())}</span>
+      </div>
+
+      <div class="spotlight-contact-card">
+        <h2 class="spotlight-contact-title">Discuss an opportunity</h2>
+        <p class="spotlight-contact-sub">Open to new roles, collaborations and interesting problems.</p>
+        <div class="spotlight-contact-actions">
+          <a href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" class="spotlight-linkedin-btn" aria-label="Connect on LinkedIn">
+            <div class="spotlight-linkedin-left">
+              <svg class="spotlight-linkedin-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+              <span>LinkedIn</span>
+            </div>
+            <span class="spotlight-linkedin-arrow">&rarr;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Back to Top Floating Button -->
+  <button type="button" id="scrollTopBtn" aria-label="Back to top" class="spotlight-scroll-top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+  </button>
+
+  <script src="assets/script.js"></script>
+</body>
+</html>`;
+}
+
+function generateSpotlightStaticCss(data) {
+  const primaryColor = data.design?.primaryColor || "#e3141f";
+  const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
+  const isLight = data.design?.theme === "light";
+  const isDarkMode = data.design?.theme === "dark" || data.design?.theme === "system" || !isLight;
+
+  const colors = isDarkMode
+    ? {
+        paper: "#0c0c0e",
+        sectionWhite: "#141418",
+        cardBg: "#1c1c22",
+        cardBorder: "rgba(255, 255, 255, 0.08)",
+        ink: "#f4f4f6",
+        inkMuted: "#a1a1aa",
+        border: "rgba(255, 255, 255, 0.08)",
+        navBg: "rgba(18, 18, 22, 0.92)",
+        navInk: "#ffffff",
+        waveFill: "#0c0c0e",
+        pillBg: "#27272f",
+      }
+    : {
+        paper: "#ffffff",
+        sectionWhite: "#ffffff",
+        cardBg: "#ffffff",
+        cardBorder: "rgba(0, 0, 0, 0.08)",
+        ink: "#121212",
+        inkMuted: "#555555",
+        border: "rgba(0, 0, 0, 0.08)",
+        navBg: "rgba(255, 255, 255, 0.92)",
+        navInk: "#121212",
+        waveFill: "#ffffff",
+        pillBg: "#f1f1f3",
+      };
+
+  const accentDeep = adjustBrightness(primaryColor, -30);
+  const accentDark = adjustBrightness(primaryColor, -20);
+
+  return `/* Spotlight Signature GitSkins Template Stylesheet */
+:root {
+  --spotlight-accent: ${primaryColor};
+  --spotlight-accent-deep: ${accentDeep};
+  --spotlight-accent-dark: ${accentDark};
+  --spotlight-font: ${fontFamilyCss};
+  --spotlight-paper: ${colors.paper};
+  --spotlight-section-white: ${colors.sectionWhite};
+  --spotlight-card: ${colors.cardBg};
+  --spotlight-card-border: ${colors.cardBorder};
+  --spotlight-text: ${colors.ink};
+  --spotlight-muted: ${colors.inkMuted};
+  --spotlight-border: ${colors.border};
+  --spotlight-nav-bg: ${colors.navBg};
+  --spotlight-nav-text: ${colors.navInk};
+  --spotlight-wave-fill: ${colors.waveFill};
+  --spotlight-pill: ${colors.pillBg};
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-family: var(--spotlight-font); }
+body.spotlight-body {
+  background-color: var(--spotlight-paper);
+  color: var(--spotlight-text);
+  font-family: var(--spotlight-font);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes dash {
+  to { stroke-dashoffset: -1000; }
+}
+.animate-dash {
+  animation: dash 18s linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+/* Fixed Navigation */
+.spotlight-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+.spotlight-nav.spotlight-nav-transparent {
+  background-color: transparent;
+  padding: 22px 0;
+  border-bottom: none;
+}
+.spotlight-nav.spotlight-nav-solid {
+  background-color: var(--spotlight-nav-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--spotlight-border);
+  padding: 12px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.spotlight-nav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+.spotlight-logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s;
+}
+.spotlight-nav-transparent .spotlight-logo { color: #ffffff; }
+.spotlight-nav-solid .spotlight-logo { color: var(--spotlight-nav-text); }
+.spotlight-dot { color: var(--spotlight-accent); }
+.spotlight-nav-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.spotlight-nav-link {
+  text-decoration: none;
+  transition: opacity 0.2s, color 0.3s;
+  opacity: 0.9;
+}
+.spotlight-nav-transparent .spotlight-nav-link { color: rgba(255, 255, 255, 0.85); }
+.spotlight-nav-solid .spotlight-nav-link { color: var(--spotlight-muted); }
+.spotlight-nav-link:hover { opacity: 1; color: var(--spotlight-accent); }
+.spotlight-nav-btn {
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  transition: transform 0.2s, background-color 0.3s, color 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+.spotlight-nav-btn:hover { transform: scale(1.05); }
+.spotlight-nav-transparent .spotlight-nav-btn { background-color: #ffffff; color: #111111; }
+.spotlight-nav-solid .spotlight-nav-btn {
+  background-color: ${isDarkMode ? "#ffffff" : "#111111"};
+  color: ${isDarkMode ? "#111111" : "#ffffff"};
+}
+
+/* HERO SECTION */
+.spotlight-hero {
+  position: relative;
+  color: #ffffff;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--spotlight-accent) 0%, var(--spotlight-accent-deep) 100%);
+  min-height: 100vh;
+}
+.spotlight-hero-container {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 100px 24px 90px;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+.spotlight-hero-text h1 {
+  font-weight: 800;
+  font-size: clamp(36px, 6.5vw, 84px);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+.spotlight-hero-text h1 span { display: block; color: #ffffff; }
+.spotlight-hero-text h1 .spotlight-hero-line1 { margin-top: 4px; }
+.spotlight-hero-bio {
+  max-width: 460px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 1.65;
+  margin: 20px 0 28px;
+}
+.spotlight-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.spotlight-btn-work {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 28px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: var(--spotlight-accent);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+.spotlight-btn-work:hover { transform: scale(1.05); }
+.spotlight-btn-contact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 28px;
+  border-radius: 9999px;
+  border: 1.5px solid #ffffff;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.spotlight-btn-contact:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+.spotlight-hero-portrait-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.spotlight-portrait-frame {
+  position: relative;
+  border-radius: 32px;
+  border: 10px solid #ffffff;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  width: min(300px, 44vw);
+  aspect-ratio: 4/5;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.45), 0 0 50px rgba(227, 20, 31, 0.25);
+}
+@media (min-width: 1024px) {
+  .spotlight-portrait-frame {
+    margin-top: -330px;
+    right: 80px;
+  }
+}
+.spotlight-portrait-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.spotlight-wave {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 75px;
+  display: block;
+  pointer-events: none;
+  z-index: 4;
+}
+.spotlight-wave path { fill: var(--spotlight-wave-fill); }
+
+/* Common Pill Badge & Typography */
+.spotlight-pill-tag {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background-color: rgba(227, 20, 31, 0.12);
+  color: var(--spotlight-accent);
+  margin-bottom: 16px;
+}
+.spotlight-section-title {
+  font-size: clamp(34px, 4.5vw, 56px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--spotlight-text);
+  margin-bottom: 16px;
+}
+.spotlight-accent-text { color: var(--spotlight-accent); }
+
+/* ABOUT SECTION & SWAY TABLET */
+.spotlight-section-about {
+  position: relative;
+  padding: 96px 24px;
+  background-color: var(--spotlight-paper);
+  color: var(--spotlight-text);
+}
+.spotlight-about-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 64px;
+  align-items: center;
+}
+.hanging-container {
+  position: relative;
+  justify-self: center;
+  padding-top: 60px;
+  user-select: none;
+}
+.spotlight-cord {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 68px;
+  transform: translateX(-50%);
+  background: ${isDarkMode ? "linear-gradient(to bottom, #888, #444)" : "linear-gradient(to bottom, #bbb, #777)"};
+}
+.spotlight-nail {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background-color: ${isDarkMode ? "#666" : "#444"};
+}
+.hanging-tablet {
+  width: min(330px, 78vw);
+  aspect-ratio: 4/5;
+  padding: 12px;
+  border-radius: 32px;
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.5);
+  background-color: ${isDarkMode ? "#18181b" : "#111111"};
+  transform-origin: 50% 0;
+  animation: sway 6s ease-in-out infinite;
+  transform: rotate(-4deg);
+}
+.hanging-tablet-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hanging-tablet-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.spotlight-about-desc {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--spotlight-muted);
+  margin-bottom: 24px;
+}
+.spotlight-about-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.spotlight-about-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  color: var(--spotlight-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.spotlight-pill-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.spotlight-about-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--spotlight-muted);
+}
+.spotlight-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spotlight-stat-star, .spotlight-stat-map {
+  width: 16px;
+  height: 16px;
+  color: var(--spotlight-accent);
+}
+.spotlight-stat-loc { margin-left: auto; }
+
+/* EXPERTISE SECTION */
+.spotlight-section-expertise {
+  position: relative;
+  padding: 96px 24px;
+  background-color: var(--spotlight-section-white);
+  color: var(--spotlight-text);
+  overflow: hidden;
+}
+.spotlight-expertise-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 64px;
+  align-items: center;
+}
+.spotlight-expertise-sub {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--spotlight-muted);
+}
+.spotlight-expertise-grid-wrap {
+  position: relative;
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.spotlight-dashed-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+@media (max-width: 1023px) {
+  .spotlight-dashed-svg { display: none; }
+}
+.spotlight-expertise-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 540px;
+}
+.spotlight-exp-card {
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  color: var(--spotlight-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.spotlight-exp-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); }
+.spotlight-exp-card-hot {
+  background-color: var(--spotlight-accent);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 20px 40px -15px rgba(227, 20, 31, 0.45);
+}
+.spotlight-exp-card-hot .spotlight-exp-skill,
+.spotlight-exp-card-hot .spotlight-exp-desc,
+.spotlight-exp-card-hot .spotlight-exp-num {
+  color: #ffffff !important;
+}
+.spotlight-exp-num {
+  display: block;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--spotlight-muted);
+  margin-bottom: 8px;
+}
+.spotlight-exp-skill {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.spotlight-exp-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--spotlight-muted);
+}
+
+/* TECHNICAL STACK SECTION */
+.spotlight-section-skills {
+  padding: 96px 24px;
+  background-color: var(--spotlight-paper);
+}
+.spotlight-skills-container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.spotlight-skills-header { margin-bottom: 48px; }
+.spotlight-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.spotlight-tech-card {
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.spotlight-tech-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--spotlight-text);
+}
+.spotlight-tech-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.spotlight-tech-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--spotlight-pill);
+  color: var(--spotlight-text);
+}
+.spotlight-skills-footer { margin-top: 36px; }
+
+/* FEATURED PROJECTS SECTION */
+.spotlight-section-projects {
+  padding: 80px 24px 112px;
+  background-color: var(--spotlight-section-white);
+}
+.spotlight-projects-container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.spotlight-projects-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+.spotlight-projects-sub {
+  font-size: 16px;
+  color: var(--spotlight-muted);
+  margin-top: 8px;
+}
+.spotlight-repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--spotlight-accent);
+  text-decoration: none;
+}
+.spotlight-repo-link:hover { text-decoration: underline; }
+.spotlight-chevron { width: 16px; height: 16px; }
+.spotlight-projects-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.spotlight-project-card {
+  padding: 28px;
+  border-radius: 28px;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.spotlight-project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+.spotlight-proj-thumb {
+  width: 100%;
+  height: 180px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid var(--spotlight-border);
+}
+.spotlight-proj-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.spotlight-proj-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.spotlight-proj-index {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--spotlight-muted);
+}
+.spotlight-proj-icon-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spotlight-icon-btn {
+  padding: 6px;
+  border-radius: 50%;
+  color: var(--spotlight-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+.spotlight-icon-btn:hover { background-color: rgba(0,0,0,0.06); }
+.spotlight-icon-btn svg { width: 16px; height: 16px; }
+.spotlight-icon-btn-live { color: var(--spotlight-accent); }
+.spotlight-proj-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  color: var(--spotlight-text);
+}
+.spotlight-proj-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--spotlight-muted);
+  margin-bottom: 16px;
+}
+.spotlight-proj-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--spotlight-border);
+}
+.spotlight-proj-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--spotlight-text);
+}
+.spotlight-proj-star {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--spotlight-accent);
+}
+
+/* WORK EXPERIENCE TIMELINE */
+.spotlight-section-experience {
+  padding: 80px 24px 112px;
+  background-color: var(--spotlight-paper);
+}
+.spotlight-exp-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.spotlight-exp-heading-wrap { margin-bottom: 48px; }
+.spotlight-timeline {
+  position: relative;
+  padding-left: 28px;
+  border-left: 2px solid rgba(227, 20, 31, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+.spotlight-timeline-item { position: relative; }
+.spotlight-timeline-dot {
+  position: absolute;
+  left: -35px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--spotlight-accent);
+  border: 2px solid var(--spotlight-paper);
+}
+.spotlight-timeline-card {
+  padding: 24px;
+  border-radius: 22px;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.spotlight-timeline-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.spotlight-timeline-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--spotlight-text);
+}
+.spotlight-timeline-date {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--spotlight-accent);
+}
+.spotlight-timeline-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--spotlight-muted);
+  margin-bottom: 12px;
+}
+.spotlight-timeline-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--spotlight-muted);
+  margin-bottom: 12px;
+}
+.spotlight-timeline-highlights {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.spotlight-timeline-highlights li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--spotlight-muted);
+}
+.spotlight-timeline-highlights li span:first-child { color: var(--spotlight-accent); }
+
+/* EDUCATION & CERTIFICATIONS */
+.spotlight-section-edu, .spotlight-section-cert {
+  padding: 72px 24px;
+  background-color: var(--spotlight-section-white);
+}
+.spotlight-edu-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.spotlight-edu-grid, .spotlight-cert-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+.spotlight-edu-card, .spotlight-cert-card {
+  padding: 24px;
+  border-radius: 22px;
+  background: var(--spotlight-card);
+  border: 1px solid var(--spotlight-card-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.spotlight-edu-date {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--spotlight-accent);
+}
+.spotlight-edu-degree, .spotlight-cert-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--spotlight-text);
+}
+.spotlight-edu-inst, .spotlight-cert-issuer {
+  font-size: 14px;
+  color: var(--spotlight-muted);
+  margin-top: 4px;
+}
+.spotlight-cert-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.spotlight-cert-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--spotlight-accent);
+  flex-shrink: 0;
+}
+
+/* CONTACT SECTION (GIANT WATERMARK & FLOATING CARD) */
+.spotlight-contact-section {
+  position: relative;
+  min-height: 85vh;
+  padding: 100px 24px;
+  background-color: #09090b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  user-select: none;
+  text-align: center;
+}
+.spotlight-watermark-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  padding: 32px 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.spotlight-watermark {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(44px, 14vw, 220px);
+  color: #ffffff;
+  opacity: 0.95;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-align: center;
+  padding: 0 8px;
+}
+.spotlight-contact-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 620px;
+  padding: 48px;
+  border-radius: 36px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--spotlight-accent) 0%, var(--spotlight-accent-dark) 100%);
+  box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.8);
+}
+.spotlight-contact-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.spotlight-contact-sub {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.spotlight-linkedin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+.spotlight-linkedin-btn:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: scale(1.01);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.spotlight-linkedin-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.spotlight-linkedin-icon { width: 20px; height: 20px; }
+.spotlight-linkedin-arrow { font-size: 20px; font-weight: 700; }
+
+/* Floating Back To Top Button */
+.spotlight-scroll-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 40;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: var(--spotlight-accent);
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+.spotlight-scroll-top:hover { transform: scale(1.1); }
+.spotlight-scroll-top svg { width: 20px; height: 20px; }
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .spotlight-hero-container {
+    grid-template-columns: 1fr;
+    padding-top: 100px;
+    padding-bottom: 60px;
+    text-align: left;
+    gap: 32px;
+  }
+  .spotlight-hero-portrait-col {
+    justify-content: center;
+  }
+  .spotlight-portrait-frame {
+    margin-top: 0;
+    right: 0;
+    width: min(280px, 70vw);
+  }
+  .spotlight-about-container,
+  .spotlight-expertise-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .spotlight-tech-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .spotlight-projects-grid {
+    grid-template-columns: 1fr;
+  }
+  .spotlight-edu-grid,
+  .spotlight-cert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .spotlight-nav-center { display: none; }
+  .spotlight-tech-grid { grid-template-columns: 1fr; }
+  .spotlight-expertise-grid { grid-template-columns: 1fr; }
+  .spotlight-contact-card { padding: 32px 20px; }
+}
+`;
+}
+
+function generateSpotlightStaticJs(data) {
+  return `(function() {
+  'use strict';
+  const nav = document.getElementById('spotlightNav');
+  const hero = document.getElementById('top');
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  const navHeight = 70;
+
+  function updateNav() {
+    if (hero && nav) {
+      const rect = hero.getBoundingClientRect();
+      const isOverlapping = rect.top < navHeight && rect.bottom > 0;
+      if (isOverlapping) {
+        nav.classList.remove('spotlight-nav-solid');
+        nav.classList.add('spotlight-nav-transparent');
+      } else {
+        nav.classList.remove('spotlight-nav-transparent');
+        nav.classList.add('spotlight-nav-solid');
+      }
+    }
+    if (scrollTopBtn) {
+      if (window.scrollY > 400) {
+        scrollTopBtn.style.display = 'flex';
+      } else {
+        scrollTopBtn.style.display = 'none';
+      }
+    }
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        e.preventDefault();
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - (targetId === '#top' ? 0 : navHeight);
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    });
+  });
+
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+})();`;
+}
+
+function generatePosterStaticHtml(data) {
+  const { profile, socialLinks, skills, experience, projects } = data;
+  const fullName = profile.fullName || "Developer";
+  const headline = profile.headline || "Creative Software Developer";
+  const bio = profile.bio || "Crafting bold and memorable digital experiences.";
+  const avatarUrl = profile.avatarUrl;
+  const email = profile.email || "";
+  const phone = profile.phone || "";
+  const isDark = data.design?.theme === "dark";
+
+  const templateSettings = data.design?.templateSettings || {};
+  const marqueeText =
+    typeof templateSettings.marqueeText === "string" && templateSettings.marqueeText.trim()
+      ? templateSettings.marqueeText.trim()
+      : "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
+
+  const skillNames = skills.map((s) => s.name).filter(Boolean);
+  const skillsJson = JSON.stringify(skillNames.length ? skillNames : ["JavaScript", "React", "TypeScript", "Node.js"]);
+
+  const socialLinksHtml = socialLinks
+    .map((s) => {
+      const url = sanitizeUrl(s.url);
+      if (!url) return "";
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="poster-social-link">${escapeHtml(s.label || s.platform)}</a>`;
+    })
+    .join(" &bull; ");
+
+  const projectsHtml = projects
+    .map((p, idx) => {
+      const liveUrl = sanitizeUrl(p.liveUrl);
+      const repoUrl = sanitizeUrl(p.repoUrl);
+      const tagsHtml = (p.tags || [])
+        .map((t) => `<span class="poster-tag">#${escapeHtml(t)}</span>`)
+        .join(" ");
+
+      return `
+        <article class="poster-project-card">
+          <div class="poster-proj-num">// 0${idx + 1}</div>
+          <h3 class="poster-proj-title">${escapeHtml(p.title)}</h3>
+          <p class="poster-proj-desc">${escapeHtml(p.description)}</p>
+          ${tagsHtml ? `<div class="poster-proj-tags">${tagsHtml}</div>` : ""}
+          <div class="poster-proj-actions">
+            ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="poster-action-link">Live Project &rarr;</a>` : ""}
+            ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="poster-action-link">GitHub Source &rarr;</a>` : ""}
+          </div>
+        </article>
+      `;
+    })
+    .join("\n");
+
+  const experienceHtml = experience
+    .map((e) => `
+      <div class="poster-exp-row">
+        <div class="poster-exp-period">${escapeHtml(e.startDate || "")} &mdash; ${e.current ? "PRESENT" : escapeHtml(e.endDate || "")}</div>
+        <div class="poster-exp-info">
+          <h4 class="poster-exp-role">${escapeHtml(e.title)}</h4>
+          <p class="poster-exp-company">${escapeHtml(e.company)} ${e.location ? `(${escapeHtml(e.location)})` : ""}</p>
+          ${e.description ? `<p class="poster-exp-desc">${escapeHtml(e.description)}</p>` : ""}
+        </div>
+      </div>
+    `)
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Poster Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="poster-theme${isDark ? " poster-dark" : " poster-light"}">
+  <!-- Top Marquee Ticker -->
+  <div class="poster-ticker" aria-hidden="true">
+    <div class="poster-ticker-track">
+      <span>${escapeHtml(marqueeText)} &nbsp;&bull;&nbsp; ${escapeHtml(marqueeText)} &nbsp;&bull;&nbsp; ${escapeHtml(marqueeText)}</span>
+    </div>
+  </div>
+
+  <div class="poster-wrapper">
+    <header class="poster-header">
+      <div class="poster-top-bar">
+        <span class="poster-brand">${escapeHtml(fullName)}</span>
+        <div class="poster-socials-top">${socialLinksHtml}</div>
+      </div>
+      <h1 class="poster-hero-name">${escapeHtml(fullName.toUpperCase())}</h1>
+      <div class="poster-meta-banner">
+        <div class="poster-headline-badge">${escapeHtml(headline.toUpperCase())}</div>
+        <div class="poster-typewriter-box">
+          <span class="poster-typewriter-prefix">SKILLS:</span>
+          <span class="poster-typewriter-text" id="posterTypewriter" data-skills='${escapeHtml(skillsJson)}'></span>
+          <span class="poster-cursor">_</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="poster-main">
+      <!-- Bio / Statement Section -->
+      <section class="poster-statement-section">
+        <div class="poster-col-label">01 / STATEMENT</div>
+        <div class="poster-statement-content">
+          <p class="poster-statement-text">${escapeHtml(bio)}</p>
+          ${avatarUrl ? `
+            <div class="poster-portrait-wrap">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-portrait-img" />
+            </div>
+          ` : ""}
+        </div>
+      </section>
+
+      <!-- Featured Projects Section -->
+      ${projects.length ? `
+      <section class="poster-projects-section" id="projects">
+        <div class="poster-col-label">02 / SELECTED WORK</div>
+        <div class="poster-projects-grid">
+          ${projectsHtml}
+        </div>
+      </section>
+      ` : ""}
+
+      <!-- Experience Section -->
+      ${experience.length ? `
+      <section class="poster-exp-section" id="experience">
+        <div class="poster-col-label">03 / TRACK RECORD</div>
+        <div class="poster-exp-list">
+          ${experienceHtml}
+        </div>
+      </section>
+      ` : ""}
+
+      <!-- Contact Section -->
+      <section class="poster-contact-section" id="contact">
+        <div class="poster-col-label">04 / INQUIRIES</div>
+        <div class="poster-contact-content">
+          <h2 class="poster-contact-giant">LET'S CONNECT</h2>
+          <div class="poster-contact-actions">
+            ${email ? `<a href="mailto:${escapeHtml(email)}" class="poster-btn-massive">EMAIL: ${escapeHtml(email)} &rarr;</a>` : ""}
+            ${phone ? `<a href="tel:${escapeHtml(phone)}" class="poster-btn-massive">TEL: ${escapeHtml(phone)} &rarr;</a>` : ""}
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="poster-footer">
+      <span>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. POSTER EDITORIAL ARCHIVE.</span>
+      <button type="button" class="poster-btn-top" id="scrollTopBtn">TOP &uarr;</button>
+    </footer>
+  </div>
+
+  <script src="assets/script.js"></script>
+</body>
+</html>`;
+}
+
+function generatePosterStaticCss(data) {
+  const primaryColor = data.design?.primaryColor || "#e11d2a";
+  const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
+  const isDark = data.design?.theme === "dark";
+
+  return `/* Poster Bold Editorial Stylesheet */
+:root {
+  --poster-accent: ${primaryColor};
+  --poster-font: ${fontFamilyCss};
+  --poster-bg: ${isDark ? "#09090b" : "#fdfbf7"};
+  --poster-text: ${isDark ? "#f4f4f5" : "#18181b"};
+  --poster-border: ${isDark ? "#27272a" : "#18181b"};
+  --poster-muted: ${isDark ? "#a1a1aa" : "#52525b"};
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body.poster-theme {
+  background: var(--poster-bg);
+  color: var(--poster-text);
+  font-family: var(--poster-font);
+  line-height: 1.5;
+}
+
+/* Ticker Marquee */
+.poster-ticker {
+  background: var(--poster-accent);
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 8px 0;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+.poster-ticker-track {
+  display: inline-block;
+  animation: posterMarquee 25s linear infinite;
+}
+@keyframes posterMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.poster-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* Header */
+.poster-header {
+  border-bottom: 3px solid var(--poster-border);
+  padding-bottom: 40px;
+}
+.poster-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.poster-brand {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 16px;
+}
+.poster-social-link {
+  color: var(--poster-accent);
+  text-decoration: underline;
+  font-size: 13px;
+  font-weight: 600;
+}
+.poster-hero-name {
+  font-size: clamp(48px, 10vw, 110px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+}
+.poster-meta-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+}
+.poster-headline-badge {
+  background: var(--poster-border);
+  color: var(--poster-bg);
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.poster-typewriter-box {
+  font-family: monospace;
+  font-size: 14px;
+}
+.poster-typewriter-prefix {
+  color: var(--poster-muted);
+  margin-right: 8px;
+}
+.poster-typewriter-text {
+  color: var(--poster-accent);
+  font-weight: 700;
+}
+.poster-cursor {
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Sections */
+.poster-statement-section, .poster-projects-section, .poster-exp-section, .poster-contact-section {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 40px;
+  padding: 48px 0;
+  border-bottom: 2px solid var(--poster-border);
+}
+.poster-col-label {
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--poster-accent);
+}
+.poster-statement-text {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+.poster-portrait-wrap {
+  width: 140px;
+  height: 140px;
+  border: 3px solid var(--poster-border);
+  overflow: hidden;
+}
+.poster-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Projects */
+.poster-projects-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+.poster-project-card {
+  border: 2px solid var(--poster-border);
+  padding: 32px;
+  background: ${isDark ? "#121215" : "#ffffff"};
+}
+.poster-proj-num {
+  font-family: monospace;
+  color: var(--poster-accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.poster-proj-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.poster-proj-desc {
+  font-size: 15px;
+  color: var(--poster-muted);
+  margin-bottom: 16px;
+}
+.poster-proj-tags {
+  margin-bottom: 20px;
+}
+.poster-tag {
+  font-size: 12px;
+  font-family: monospace;
+  margin-right: 8px;
+  color: var(--poster-accent);
+}
+.poster-proj-actions {
+  display: flex;
+  gap: 16px;
+}
+.poster-action-link {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--poster-text);
+  text-decoration: underline;
+}
+
+/* Experience */
+.poster-exp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.poster-exp-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+}
+.poster-exp-period {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--poster-muted);
+}
+.poster-exp-role {
+  font-size: 18px;
+  font-weight: 800;
+}
+.poster-exp-company {
+  font-size: 14px;
+  color: var(--poster-accent);
+  margin-bottom: 6px;
+}
+.poster-exp-desc {
+  font-size: 14px;
+  color: var(--poster-muted);
+}
+
+/* Contact */
+.poster-contact-giant {
+  font-size: clamp(36px, 8vw, 84px);
+  font-weight: 900;
+  line-height: 0.95;
+  margin-bottom: 24px;
+  letter-spacing: -0.03em;
+}
+.poster-contact-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.poster-btn-massive {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--poster-accent);
+  text-decoration: underline;
+}
+
+/* Footer */
+.poster-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 32px;
+  font-family: monospace;
+  font-size: 12px;
+}
+.poster-btn-top {
+  background: none;
+  border: 2px solid var(--poster-border);
+  color: var(--poster-text);
+  font-weight: 800;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .poster-statement-section, .poster-projects-section, .poster-exp-section, .poster-contact-section {
+    grid-template-columns: 1fr;
+  }
+  .poster-exp-row { grid-template-columns: 1fr; }
+}
+`;
+}
+
+function generatePosterStaticJs(data) {
+  return `(function() {
+  'use strict';
+  const typewriterElem = document.getElementById('posterTypewriter');
+  if (typewriterElem) {
+    try {
+      const skills = JSON.parse(typewriterElem.getAttribute('data-skills') || '[]');
+      if (skills.length > 0) {
+        let skillIdx = 0;
+        let charIdx = 0;
+        let isDeleting = false;
+        function step() {
+          const current = skills[skillIdx % skills.length];
+          if (isDeleting) {
+            charIdx--;
+            typewriterElem.textContent = current.substring(0, charIdx);
+            if (charIdx <= 0) {
+              isDeleting = false;
+              skillIdx++;
+              setTimeout(step, 400);
+              return;
+            }
+          } else {
+            charIdx++;
+            typewriterElem.textContent = current.substring(0, charIdx);
+            if (charIdx >= current.length) {
+              isDeleting = true;
+              setTimeout(step, 2000);
+              return;
+            }
+          }
+          setTimeout(step, isDeleting ? 40 : 90);
+        }
+        setTimeout(step, 800);
+      }
+    } catch(e) {}
+  }
+
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+})();`;
+}
+
+/* ==========================================================================
    REACT SOURCE CODE TEMPLATE JSX BUILDERS
    ========================================================================== */
+
+function getFullSpotlightTemplateJsx() {
+  return "import { useEffect, useState, useMemo, type ReactNode } from \"react\";\nimport {\n  ArrowUp,\n  MapPin,\n  Award,\n  ExternalLink,\n  ChevronRight,\n  Star,\n  FolderGit2,\n} from \"lucide-react\";\n\nimport { SafeLink } from \"../common/SafeLink.jsx\";\nimport { normalizeAvatarUrl } from \"../common/urlUtils.js\";\n\n\n\n// GitSkins exact language dot colors\nconst LANG_COLORS = {\n  JavaScript: \"#f1e05a\",\n  TypeScript: \"#3178c6\",\n  Python: \"#3572A5\",\n  Go: \"#00ADD8\",\n  Rust: \"#dea584\",\n  Ruby: \"#701516\",\n  Java: \"#b07219\",\n  \"C++\": \"#f34b7d\",\n  C: \"#555555\",\n  \"C#\": \"#178600\",\n  PHP: \"#4F5D95\",\n  Swift: \"#F05138\",\n  Kotlin: \"#A97BFF\",\n  Dart: \"#00B4AB\",\n  HTML: \"#e34c26\",\n  CSS: \"#663399\",\n  Shell: \"#89e051\",\n  Vue: \"#41b883\",\n  Svelte: \"#ff3e00\",\n  React: \"#61dafb\",\n  \"Node.js\": \"#339933\",\n  Dockerfile: \"#384d54\",\n};\n\n// Font family map supporting the typography customization settings\nconst FONT_FAMILY_MAP = {\n  Inter: \"'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif\",\n  Roboto: \"'Roboto', -apple-system, BlinkMacSystemFont, sans-serif\",\n  Merriweather: \"'Merriweather', Georgia, serif\",\n  Playfair: \"'Playfair Display', Georgia, serif\",\n  JetBrains: \"'JetBrains Mono', 'Fira Code', monospace\",\n};\n\n// Helper to adjust color shade for gradients and contrast\nfunction adjustBrightness(hex, percent) {\n  const cleanHex = hex.replace(\"#\", \"\");\n  const num = parseInt(cleanHex.length === 3 ? cleanHex.split(\"\").map((c) => c + c).join(\"\") : cleanHex, 16);\n  if (isNaN(num)) return hex;\n  const amt = Math.round(2.55 * percent);\n  const R = Math.max(0, Math.min(255, (num >> 16) + amt));\n  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));\n  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));\n  return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;\n}\n\nexport function SpotlightTemplate({\n  portfolio = {},\n  showEmpty = false,\n  sectionOrder = [\n    \"hero\",\n    \"about\",\n    \"expertise\",\n    \"skills\",\n    \"projects\",\n    \"experience\",\n    \"education\",\n    \"certifications\",\n    \"contact\",\n  ],\n  hiddenSections = [],\n}) {\n  const profile = portfolio.profile;\n  const design = portfolio.design;\n  const socialLinks = portfolio.socialLinks || [];\n  const skills = useMemo(() => portfolio.skills || [], [portfolio.skills]);\n  const experience = portfolio.experience || [];\n  const education = portfolio.education || [];\n  const projects = useMemo(() => portfolio.projects || [], [portfolio.projects]);\n  const certifications = portfolio.certifications || [];\n\n  // ---------------------------------------------------------------------------\n  // 1. DYNAMIC CUSTOMIZATION: ACCENT COLOR, THEME, AND TYPOGRAPHY\n  // ---------------------------------------------------------------------------\n  const accentColor = design?.primaryColor || \"#e3141f\";\n  const accentDeep = useMemo(() => adjustBrightness(accentColor, -30), [accentColor]);\n  const accentDark = useMemo(() => adjustBrightness(accentColor, -20), [accentColor]);\n\n  // Template-specific customization\n  const templateSettings = design?.templateSettings || {};\n  const showGlowHalo = templateSettings.glowHalo !== false;\n  const showExpertiseTree = templateSettings.expertiseTree !== false;\n\n  // Theme mode handling (light / dark / system)\n  const themeSetting = design?.theme || \"system\";\n  const [isDarkMode, setIsDarkMode] = useState(false);\n\n  useEffect(() => {\n    if (themeSetting === \"dark\") {\n      setIsDarkMode(true);\n    } else if (themeSetting === \"light\") {\n      setIsDarkMode(false);\n    } else {\n      const mq = window.matchMedia(\"(prefers-color-scheme: dark)\");\n      setIsDarkMode(mq.matches);\n      const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);\n      mq.addEventListener(\"change\", handler);\n      return () => mq.removeEventListener(\"change\", handler);\n    }\n  }, [themeSetting]);\n\n  // Semantic color tokens responding to theme\n  const colors = useMemo(() => {\n    return isDarkMode\n      ? {\n        paper: \"#0c0c0e\",\n        sectionWhite: \"#141418\",\n        cardBg: \"#1c1c22\",\n        cardBorder: \"rgba(255, 255, 255, 0.08)\",\n        ink: \"#f4f4f6\",\n        inkMuted: \"#a1a1aa\",\n        border: \"rgba(255, 255, 255, 0.08)\",\n        navBg: \"rgba(18, 18, 22, 0.92)\",\n        navInk: \"#ffffff\",\n        waveFill: \"#0c0c0e\",\n        pillBg: \"#27272f\",\n      }\n      : {\n        paper: \"#ffffff\",\n        sectionWhite: \"#ffffff\",\n        cardBg: \"#ffffff\",\n        cardBorder: \"rgba(0, 0, 0, 0.08)\",\n        ink: \"#121212\",\n        inkMuted: \"#555555\",\n        border: \"rgba(0, 0, 0, 0.08)\",\n        navBg: \"rgba(255, 255, 255, 0.92)\",\n        navInk: \"#121212\",\n        waveFill: \"#ffffff\",\n        pillBg: \"#f1f1f3\",\n      };\n  }, [isDarkMode]);\n\n  // Typography font family\n  const selectedFontKey = design?.fontFamily || \"Inter\";\n  const activeFontFamily = FONT_FAMILY_MAP[selectedFontKey] || FONT_FAMILY_MAP.Inter;\n\n  // Navigation scroll state\n  const [isNavSolid, setIsNavSolid] = useState(false);\n  const [showScrollTop, setShowScrollTop] = useState(false);\n\n  // Responsive breakpoint tracking (lg = 1024px) for hero layout\n  const [isLgScreen, setIsLgScreen] = useState(() =>\n    typeof window !== \"undefined\" ? window.innerWidth >= 1024 : false\n  );\n\n  useEffect(() => {\n    if (typeof window === \"undefined\") return;\n\n    if (window.matchMedia) {\n      const mediaQuery = window.matchMedia(\"(min-width: 1024px)\");\n      const updateLg = () => setIsLgScreen(mediaQuery.matches);\n      updateLg();\n      if (mediaQuery.addEventListener) {\n        mediaQuery.addEventListener(\"change\", updateLg);\n        return () => mediaQuery.removeEventListener(\"change\", updateLg);\n      } else if ((mediaQuery ).addListener) {\n        (mediaQuery ).addListener(updateLg);\n        return () => (mediaQuery ).removeListener(updateLg);\n      }\n    }\n\n    const handleResize = () => setIsLgScreen(window.innerWidth >= 1024);\n    window.addEventListener(\"resize\", handleResize);\n    return () => window.removeEventListener(\"resize\", handleResize);\n  }, []);\n\n  useEffect(() => {\n    const handleScroll = () => {\n      const heroEl = document.getElementById(\"top\");\n      if (heroEl) {\n        const { top: heroTop, bottom: heroBottom } = heroEl.getBoundingClientRect();\n        const navHeight = 70;\n        // Transparent only while hero overlaps navigation bar; solid when entirely above or below\n        const isHeroOverlappingNav = heroTop < navHeight && heroBottom > 0;\n        setIsNavSolid(!isHeroOverlappingNav);\n      } else {\n        setIsNavSolid(window.scrollY > 400);\n      }\n      setShowScrollTop(window.scrollY > 400);\n    };\n\n    handleScroll();\n    window.addEventListener(\"scroll\", handleScroll, { passive: true });\n    return () => window.removeEventListener(\"scroll\", handleScroll);\n  }, []);\n\n  const scrollToTop = () => window.scrollTo({ top: 0, behavior: \"smooth\" });\n  const isHidden = (sec: string) => hiddenSections.includes(sec);\n\n  // ---------------------------------------------------------------------------\n  // 2. CANDIDATE PROFILE DATA EXTRACTION\n  // ---------------------------------------------------------------------------\n  const fullName = profile?.fullName || (showEmpty ? \"sunil kumar\" : \"developer\");\n  const firstName = fullName.split(/\\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;\n  const headline = profile?.headline || (showEmpty ? \"HTML and JavaScript developer\" : \"Full Stack Developer\");\n  // Extract GitHub handle and avatar\n  const githubLink = socialLinks.find(\n    (l) =>\n      l.platform?.toLowerCase().includes(\"github\") || l.url?.toLowerCase().includes(\"github.com\")\n  );\n  const githubHandle = githubLink?.url\n    ? githubLink.url.replace(/^https?:\\/\\/(www\\.)?github\\.com\\//i, \"\").replace(/\\/.*$/, \"\")\n    : \"sunilkumar25kush\";\n\n  // Fallback to candidate's github avatar if none uploaded\n  const avatarUrl = profile?.avatarUrl\n    ? normalizeAvatarUrl(profile.avatarUrl)\n    : `https://avatars.githubusercontent.com/${githubHandle}`;\n\n  // Smart headline split for clean multi-line display (exact match to screenshot 1)\n  const headlineLines = useMemo(() => {\n    const text = headline.trim();\n    const words = text.split(/\\s+/);\n    if (words.length <= 1) return { line1: words[0] || \"developer\", line2: \"\" };\n    if (words.length === 2) return { line1: words[0], line2: words[1] };\n    const lastWord = words[words.length - 1];\n    const rest = words.slice(0, words.length - 1).join(\" \");\n    return { line1: rest, line2: lastWord };\n  }, [headline]);\n\n  // All extracted skills s\n  const skillNames = useMemo(() => {\n    const list = skills.map((s) => (typeof s === \"string\" ? s : s.name)).filter(Boolean);\n    if (list.length > 0) return list;\n    return [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"];\n  }, [skills]);\n\n  // Realistic sample projects matching candidate's public repos from screenshots\n  const displayProjects = useMemo(() => {\n    if (projects.length > 0) {\n      return projects.map((p) => ({\n        title: p.title,\n        description: p.description,\n        tags: p.tags || [\"JavaScript\"],\n        repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\\s+/g, \"-\")}`,\n        liveUrl: p.liveUrl,\n        imageUrl: p.imageUrl,\n        featured: p.featured ?? true,\n      }));\n    }\n    return [\n      {\n        title: \"NOTE-PROJECT\",\n        description: \"Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.\",\n        tags: [\"HTML\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,\n        liveUrl: undefined ,\n        imageUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Interviewer\",\n        description: \"Intelligent conversational interview platform simulating technical candidate evaluations.\",\n        tags: [\"JavaScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Resume-builder\",\n        description: \"Next-gen intelligent career document and portfolio generator with ATS optimization.\",\n        tags: [\"TypeScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-CONTENT-GENERATOR\",\n        description: \"Multi-modal AI content synthesizer for automated technical articles, docs, and assets.\",\n        tags: [\"CSS\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n    ];\n  }, [projects, githubHandle]);\n\n  // ---------------------------------------------------------------------------\n  // 3. EXPERTISE CARDS: 4 CONNECTED NODES (MATCHING SCREENSHOT 3)\n  // ---------------------------------------------------------------------------\n  const expertiseNodes = useMemo(() => {\n    const topSkills = skillNames.slice(0, 4);\n    const defaults = [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"];\n    const merged = topSkills.length >= 4 ? topSkills : [...topSkills, ...defaults.slice(topSkills.length)];\n\n    return merged.slice(0, 4).map((skillName, idx) => {\n      const match = displayProjects.find(\n        (p) =>\n          p.tags?.some((t) => t.toLowerCase() === skillName.toLowerCase()) ||\n          p.description?.toLowerCase().includes(skillName.toLowerCase())\n      );\n      const projectName = match?.title || displayProjects[idx % displayProjects.length]?.title || \"Featured-Project\";\n      const count = idx === 1 ? 2 : 1;\n\n      return {\n        num: `0${idx + 1}`,\n        skill: skillName,\n        desc: `${count} featured project${count > 1 ? \"s\" : \"\"}, including ${projectName}.`,\n        isHot: idx === 1, // Card 02 is bold hot accent color\n      };\n    });\n  }, [skillNames, displayProjects]);\n\n  // ---------------------------------------------------------------------------\n  // 4. TECHNICAL STACK CATEGORIZED GROUPS (MATCHING SCREENSHOT 4)\n  // ---------------------------------------------------------------------------\n  const techGroups = useMemo(() => {\n    const all = skillNames;\n    const focus = all.slice(0, 6);\n\n    const frontendKeywords = [\"html\", \"css\", \"javascript\", \"typescript\", \"react\", \"vue\", \"svelte\", \"tailwind\", \"next\"];\n    const backendKeywords = [\"node\", \"python\", \"go\", \"java\", \"c#\", \"express\", \"sql\", \"mongo\", \"api\", \"ai\"];\n    const toolingKeywords = [\"docker\", \"dockerfile\", \"git\", \"github\", \"linux\", \"vite\", \"webpack\", \"aws\", \"ci/cd\"];\n\n    const frontend = all.filter((s) => frontendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const backend = all.filter((s) => backendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const tooling = all.filter((s) => toolingKeywords.some((k) => s.toLowerCase().includes(k)));\n\n    return [\n      {\n        title: \"What I focus on\",\n        items: focus.length > 0 ? focus : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"],\n      },\n      {\n        title: \"Frontend\",\n        items: frontend.length > 0 ? frontend : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"],\n      },\n      {\n        title: \"Data & AI\",\n        items: backend.length > 0 ? backend : [\"Python\"],\n      },\n      {\n        title: \"Tooling & infra\",\n        items: tooling.length > 0 ? tooling : [\"Dockerfile\"],\n      },\n    ];\n  }, [skillNames]);\n\n  // ---------------------------------------------------------------------------\n  // 5. SECTION MAP\n  // ---------------------------------------------------------------------------\n  const sectionMap = {\n    // -------------------------------------------------------------------------\n    // HERO: Exact Match to Screenshot 1\n    // -------------------------------------------------------------------------\n    hero: (\n      <section\n        key=\"hero\"\n        id=\"top\"\n        className=\"spotlight-hero relative text-white overflow-hidden\"\n        style={{\n          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,\n          minHeight: \"100svh\",\n        }}\n      >\n        {/* Main grid: left text, right portrait — both visible in one viewport */}\n        <div\n          className=\"max-w-[1180px] w-full mx-auto px-5 sm:px-10 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10\"\n          style={{ minHeight: \"100svh\", paddingTop: \"80px\", paddingBottom: \"90px\", alignItems: \"center\" }}\n        >\n          {/* Left: Text */}\n          <div className=\"flex flex-col justify-center gap-5\">\n            <h1 className=\"font-extrabold text-[clamp(36px,6.5vw,84px)] leading-[1.03] tracking-[-0.035em]\">\n              <span className=\"block text-white\">Hi, I&apos;m {firstName.toLowerCase()}</span>\n              {headlineLines.line1 && (\n                <span className=\"block text-white mt-1\">{headlineLines.line1}</span>\n              )}\n              {headlineLines.line2 && (\n                <span className=\"block text-white\">{headlineLines.line2}</span>\n              )}\n            </h1>\n\n            <p className=\"max-w-[460px] text-white/90 text-base sm:text-lg leading-[1.65]\">\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            <div className=\"flex flex-wrap items-center gap-3\">\n              <a\n                href=\"#work\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm hover:scale-105 transition-all shadow-md\"\n                style={{ color: accentColor }}\n              >\n                View my work\n              </a>\n              <a\n                href=\"#contact\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm hover:bg-white/10 hover:scale-105 transition-all\"\n              >\n                Contact me\n              </a>\n            </div>\n          </div>\n\n          {/* Right: Portrait — right-aligned, fully visible */}\n          <div className=\"flex items-center justify-center lg:justify-end\">\n            <div\n              className={`relative rounded-[24px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white overflow-hidden bg-white/10 ${\n                showGlowHalo ? \"shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)]\" : \"shadow-md\"\n              }`}\n              style={{\n                width: \"min(300px, 44vw)\",\n                aspectRatio: \"4/5\",\n                marginTop: isLgScreen ? \"-330px\" : undefined,\n                right: isLgScreen ? \"80px\" : undefined,\n                boxShadow: showGlowHalo\n                  ? `0 30px 70px -20px rgba(0,0,0,0.45), 0 0 50px ${accentColor}40`\n                  : undefined,\n              }}\n            >\n              <img\n                src={avatarUrl}\n                alt={fullName}\n                className=\"w-full h-full object-cover object-top\"\n                onError={(e) => {\n                  (e.target ).style.display = \"none\";\n                }}\n              />\n            </div>\n          </div>\n        </div>\n\n        {/* Bottom wave */}\n        <svg\n          className=\"absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]\"\n          viewBox=\"0 0 1440 90\"\n          preserveAspectRatio=\"none\"\n          aria-hidden=\"true\"\n        >\n          <path\n            fill={colors.waveFill}\n            d=\"M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z\"\n          />\n        </svg>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // ABOUT: Exact Match to Screenshot 2 (Hanging Sway Tablet + Bio & Pills)\n    // -------------------------------------------------------------------------\n    about: (\n      <section\n        key=\"about\"\n        id=\"about\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-16 items-center\">\n          {/* Left: Hanging Swaying Tablet */}\n          <div className=\"hanging-container relative justify-self-center pt-[60px] select-none\">\n            {/* Cord & Anchor Nail */}\n            <div\n              className=\"absolute left-1/2 top-0 w-[2px] h-[68px] -translate-x-1/2\"\n              style={{\n                background: isDarkMode\n                  ? \"linear-gradient(to bottom, #888, #444)\"\n                  : \"linear-gradient(to bottom, #bbb, #777)\",\n              }}\n            />\n            <div\n              className=\"absolute left-1/2 -top-1 w-3 h-3 rounded-full -translate-x-1/2 shadow-xs\"\n              style={{ backgroundColor: isDarkMode ? \"#666\" : \"#444\" }}\n            />\n\n            {/* Tablet with Candidate Photo & Sway Motion */}\n            <div\n              className=\"hanging-tablet w-[min(330px,78vw)] aspect-[4/5] p-3 rounded-[32px] shadow-[0_30px_70px_-25px_rgba(0,0,0,0.5)] rotate-[-4deg]\"\n              style={{\n                backgroundColor: isDarkMode ? \"#18181b\" : \"#111111\",\n                transformOrigin: \"50% 0\",\n                animation: \"sway 6s ease-in-out infinite\",\n                willChange: \"transform\",\n              }}\n            >\n              <div className=\"w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center\">\n                <img\n                  src={avatarUrl}\n                  alt={fullName}\n                  className=\"w-full h-full object-cover object-top\"\n                />\n              </div>\n            </div>\n          </div>\n\n          {/* Right: Pill Badge, Title, Bio, Tech Pills & Stats */}\n          <div className=\"space-y-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              HELLO!\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>A little </span>\n              <span style={{ color: accentColor }}>about me</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.7]\" style={{ color: colors.inkMuted }}>\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            {/* Language/Tech Badges with Dots */}\n            <div className=\"flex flex-wrap gap-2.5 pt-2\">\n              {skillNames.slice(0, 8).map((skillName, idx) => {\n                const dotColor = LANG_COLORS[skillName] || accentColor;\n                return (\n                  <span\n                    key={idx}\n                    className=\"inline-flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-xs transition-transform hover:-translate-y-0.5\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span\n                      className=\"w-2.5 h-2.5 rounded-full flex-shrink-0\"\n                      style={{ backgroundColor: dotColor }}\n                    />\n                    <span>{skillName}</span>\n                  </span>\n                );\n              })}\n            </div>\n\n            {/* Stats row */}\n            <div\n              className=\"flex items-center gap-6 pt-4 text-sm font-medium\"\n              style={{ color: colors.inkMuted }}\n            >\n              <span>2 followers</span>\n              <span className=\"flex items-center gap-1.5\">\n                <Star className=\"h-4 w-4\" style={{ color: accentColor }} />\n                <span>1 stars</span>\n              </span>\n              {profile?.location && (\n                <span className=\"flex items-center gap-1.5 ml-auto\">\n                  <MapPin className=\"h-4 w-4\" style={{ color: accentColor }} />\n                  <span>{profile.location}</span>\n                </span>\n              )}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERTISE: Exact Match to Screenshot 3 (Connected Nodes + Dashed Line)\n    // -------------------------------------------------------------------------\n    expertise: (\n      <section\n        key=\"expertise\"\n        id=\"expertise\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300 overflow-hidden\"\n        style={{\n          backgroundColor: colors.sectionWhite,\n          color: colors.ink,\n        }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center\">\n          {/* Left Title & Description */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              MY EXPERTISE\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Building modern digital solutions with </span>\n              <span style={{ color: accentColor }}>code</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.6]\" style={{ color: colors.inkMuted }}>\n              What {firstName.toLowerCase()} spends their time on, from 24 public repositories.\n            </p>\n          </div>\n\n          {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}\n          <div className=\"relative min-h-0 lg:min-h-[460px] flex items-center justify-center p-2 w-full\">\n            {/* SVG Connecting Dashed Curve - hidden on mobile/tablet to avoid distortion */}\n            {showExpertiseTree && (\n              <svg\n                className=\"absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  d=\"M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370\"\n                  fill=\"none\"\n                  stroke={accentColor}\n                  strokeOpacity=\"0.55\"\n                  strokeWidth=\"2\"\n                  strokeDasharray=\"6 8\"\n                  style={{ willChange: \"stroke-dashoffset\" }}\n                  className=\"animate-[dash_18s_linear_infinite]\"\n                />\n              </svg>\n            )}\n\n            {/* 4 Cards Grid */}\n            <div className=\"relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full max-w-[540px]\">\n              {expertiseNodes.map((node) => {\n                if (node.isHot) {\n                  // Hot Accent Card (Card 02)\n                  return (\n                    <div\n                      key={node.num}\n                      className=\"p-6 rounded-[24px] text-white shadow-xl transition-all hover:scale-105\"\n                      style={{\n                        backgroundColor: accentColor,\n                        boxShadow: `0 20px 40px -15px ${accentColor}66`,\n                      }}\n                    >\n                      <span className=\"block text-xs font-mono font-semibold opacity-85 mb-2\">\n                        {node.num}\n                      </span>\n                      <h3 className=\"text-xl font-bold tracking-tight mb-2\">\n                        {node.skill}\n                      </h3>\n                      <p className=\"text-xs text-white/90 leading-relaxed\">\n                        {node.desc}\n                      </p>\n                    </div>\n                  );\n                }\n\n                // Standard Clean Card (Card 01, 03, 04)\n                return (\n                  <div\n                    key={node.num}\n                    className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md hover:scale-102\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span className=\"block text-xs font-mono font-semibold mb-2\" style={{ color: colors.inkMuted }}>\n                      {node.num}\n                    </span>\n                    <h3 className=\"text-xl font-bold tracking-tight mb-2\" style={{ color: colors.ink }}>\n                      {node.skill}\n                    </h3>\n                    <p className=\"text-xs leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {node.desc}\n                    </p>\n                  </div>\n                );\n              })}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // TECHNICAL STACK: Exact Match to Screenshot 4 (4 Cards Grid + Pills)\n    // -------------------------------------------------------------------------\n    skills: (\n      <section\n        key=\"skills\"\n        id=\"skills\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          {/* Header */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              TECHNICAL STACK\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Technologies I </span>\n              <span style={{ color: accentColor }}>work with</span>\n            </h2>\n          </div>\n\n          {/* 4 Cards Grid */}\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6\">\n            {techGroups.map((group, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                  color: colors.ink,\n                }}\n              >\n                <h3 className=\"text-base font-bold tracking-tight mb-4\" style={{ color: colors.ink }}>\n                  {group.title}\n                </h3>\n                <div className=\"flex flex-wrap gap-2\">\n                  {group.items.map((item, itemIdx) => (\n                    <span\n                      key={itemIdx}\n                      className=\"px-3 py-1.5 rounded-lg text-xs font-semibold\"\n                      style={{\n                        backgroundColor: colors.pillBg,\n                        color: colors.ink,\n                      }}\n                    >\n                      {item}\n                    </span>\n                  ))}\n                </div>\n              </div>\n            ))}\n          </div>\n\n          {/* Next Section Indicator Pill (as seen at bottom of screenshot 4) */}\n          <div className=\"pt-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              FEATURED WORK\n            </span>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // FEATURED WORK / PROJECTS\n    // -------------------------------------------------------------------------\n    projects: (\n      <section\n        key=\"projects\"\n        id=\"work\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          <div className=\"flex flex-col sm:flex-row sm:items-end justify-between gap-4\">\n            <div>\n              <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n                <span style={{ color: colors.ink }}>Featured </span>\n                <span style={{ color: accentColor }}>Projects</span>\n              </h2>\n              <p className=\"text-base mt-2\" style={{ color: colors.inkMuted }}>\n                Production-grade applications, developer tooling, and open-source repositories.\n              </p>\n            </div>\n\n            <SafeLink\n              href={`https://github.com/${githubHandle}?tab=repositories`}\n              className=\"inline-flex items-center gap-2 text-sm font-semibold hover:underline\"\n              style={{ color: accentColor }}\n            >\n              <span>View all GitHub repos</span>\n              <ChevronRight className=\"h-4 w-4\" />\n            </SafeLink>\n          </div>\n\n          {/* Project Cards Grid */}\n          <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8\">\n            {displayProjects.map((project, idx) => {\n              const primaryTag = project.tags?.[0] || \"Code\";\n              const tagColor = LANG_COLORS[primaryTag] || accentColor;\n\n              return (\n                <div\n                  key={idx}\n                  className=\"group relative p-7 sm:p-8 rounded-[28px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"space-y-4\">\n                    {/* Project Screenshot / Thumbnail (if available) */}\n                    {project.imageUrl && (\n                      <div className=\"w-full h-44 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10 relative\">\n                        <img\n                          src={project.imageUrl}\n                          alt={project.title}\n                          className=\"w-full h-full object-cover transition-transform duration-500 group-hover:scale-105\"\n                          onError={(e) => {\n                            (e.target ).style.display = \"none\";\n                          }}\n                        />\n                      </div>\n                    )}\n\n                    <div className=\"flex items-center justify-between\">\n                      <span className=\"font-mono text-xs font-bold\" style={{ color: colors.inkMuted }}>\n                        0{idx + 1} / 0{displayProjects.length}\n                      </span>\n                      <div className=\"flex items-center gap-2\">\n                        {project.repoUrl && (\n                          <SafeLink\n                            href={project.repoUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: colors.ink }}\n                            title=\"GitHub Repository\"\n                          >\n                            <FolderGit2 className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                        {project.liveUrl && (\n                          <SafeLink\n                            href={project.liveUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: accentColor }}\n                            title=\"Live Demo\"\n                          >\n                            <ExternalLink className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                      </div>\n                    </div>\n\n                    <h3\n                      className=\"text-2xl font-bold tracking-tight transition-colors group-hover:text-[var(--hover-color)]\"\n                      style={{ color: colors.ink, [\"--hover-color\" ]: accentColor }}\n                    >\n                      {project.title}\n                    </h3>\n\n                    <p className=\"text-sm sm:text-base leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {project.description}\n                    </p>\n                  </div>\n\n                  <div\n                    className=\"flex items-center justify-between pt-6 mt-6 border-t\"\n                    style={{ borderColor: colors.border }}\n                  >\n                    <div className=\"flex items-center gap-2 text-xs font-semibold\" style={{ color: colors.ink }}>\n                      <span className=\"w-2.5 h-2.5 rounded-full\" style={{ backgroundColor: tagColor }} />\n                      <span>{primaryTag}</span>\n                    </div>\n\n                    <span className=\"flex items-center gap-1 text-xs font-medium\" style={{ color: colors.inkMuted }}>\n                      <Star className=\"h-3.5 w-3.5\" style={{ color: accentColor }} />\n                      <span>★ 3</span>\n                    </span>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERIENCE\n    // -------------------------------------------------------------------------\n    experience: (\n      <section\n        key=\"experience\"\n        id=\"experience\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-12\">\n          <div>\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-3\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              CAREER JOURNEY\n            </span>\n            <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Work </span>\n              <span style={{ color: accentColor }}>Experience</span>\n            </h2>\n          </div>\n\n          <div className=\"relative pl-6 sm:pl-8 space-y-10 border-l-2\" style={{ borderColor: `${accentColor}40` }}>\n            {experience.map((exp, idx) => (\n              <div key={idx} className=\"relative group\">\n                <span\n                  className=\"absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-black transition-transform group-hover:scale-125\"\n                  style={{ backgroundColor: accentColor }}\n                />\n\n                <div\n                  className=\"p-6 rounded-[22px] shadow-sm transition-all\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2\">\n                    <h3 className=\"text-xl font-bold tracking-tight\" style={{ color: colors.ink }}>\n                      {exp.title}\n                    </h3>\n                    <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                      {exp.startDate} - {exp.current ? \"Present\" : exp.endDate || \"Present\"}\n                    </span>\n                  </div>\n\n                  <p className=\"text-sm font-semibold mb-3\" style={{ color: colors.inkMuted }}>\n                    {exp.company} {exp.location ? `· ${exp.location}` : \"\"}\n                  </p>\n\n                  {exp.description && (\n                    <p className=\"text-sm leading-relaxed mb-3\" style={{ color: colors.inkMuted }}>\n                      {exp.description}\n                    </p>\n                  )}\n\n                  {exp.highlights && exp.highlights.length > 0 && (\n                    <ul className=\"space-y-1.5 text-xs sm:text-sm\" style={{ color: colors.inkMuted }}>\n                      {exp.highlights.map((h, hIdx) => (\n                        <li key={hIdx} className=\"flex items-start gap-2\">\n                          <span style={{ color: accentColor }}>▸</span>\n                          <span>{h}</span>\n                        </li>\n                      ))}\n                    </ul>\n                  )}\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EDUCATION & CERTIFICATIONS\n    // -------------------------------------------------------------------------\n    education: (\n      <section\n        key=\"education\"\n        id=\"education\"\n        className=\"relative py-20 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-8\">\n          <h2 className=\"font-extrabold text-[clamp(28px,3.5vw,44px)] leading-[1.08] tracking-[-0.035em]\">\n            <span style={{ color: colors.ink }}>Education &amp; </span>\n            <span style={{ color: accentColor }}>Background</span>\n          </h2>\n\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-6\">\n            {education.map((edu, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[22px] shadow-sm\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                  {edu.startDate} - {edu.endDate || \"Present\"}\n                </span>\n                <h3 className=\"text-lg font-bold tracking-tight mt-1\" style={{ color: colors.ink }}>\n                  {edu.degree}\n                </h3>\n                <p className=\"text-sm mt-1\" style={{ color: colors.inkMuted }}>\n                  {edu.institution} {edu.fieldOfStudy ? `· ${edu.fieldOfStudy}` : \"\"}\n                </p>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    certifications: (\n      <section\n        key=\"certifications\"\n        id=\"certifications\"\n        className=\"relative py-16 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-6\">\n          <h2 className=\"font-extrabold text-[clamp(24px,3vw,38px)]\">\n            <span style={{ color: colors.ink }}>Certifications &amp; </span>\n            <span style={{ color: accentColor }}>Honors</span>\n          </h2>\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-4\">\n            {certifications.map((c, idx) => (\n              <div\n                key={idx}\n                className=\"p-5 rounded-2xl flex items-center gap-4 shadow-xs\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <Award className=\"h-6 w-6 flex-shrink-0\" style={{ color: accentColor }} />\n                <div>\n                  <h3 className=\"font-bold text-sm\" style={{ color: colors.ink }}>\n                    {c.name}\n                  </h3>\n                  <p className=\"text-xs\" style={{ color: colors.inkMuted }}>\n                    {c.issuer} {c.issueDate ? `· ${c.issueDate}` : \"\"}\n                  </p>\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // CONTACT: Exact Match to Screenshot 5 (Giant Watermark + Overlapping Red Card)\n    // -------------------------------------------------------------------------\n    contact: (\n      <section\n        key=\"contact\"\n        id=\"contact\"\n        className=\"relative min-h-[85vh] sm:min-h-[90vh] py-20 sm:py-36 px-4 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none\"\n        style={{ backgroundColor: \"#09090b\" }}\n      >\n        {/* Giant Watermark Text (CONTACT on top, Name below) */}\n        <div className=\"absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-6 sm:py-8 z-0 overflow-hidden select-none\">\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            CONTACT\n          </span>\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            {firstName.toLowerCase()}\n          </span>\n        </div>\n\n        {/* Center Floating Accent Card */}\n        <div\n          className=\"relative z-10 w-full max-w-[620px] p-6 sm:p-12 rounded-[24px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]\"\n          style={{\n            background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDark} 100%)`,\n          }}\n        >\n          <h2 className=\"text-2xl sm:text-4xl font-extrabold tracking-tight mb-2\">\n            Discuss an opportunity\n          </h2>\n\n          <p className=\"text-sm sm:text-base text-white/90 leading-relaxed mb-6 sm:mb-8\">\n            Open to new roles, collaborations and interesting problems.\n          </p>\n\n          {/* Direct Action Pills - Only LinkedIn option as requested */}\n          <div className=\"space-y-3\">\n            <SafeLink\n              href=\"https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true\"\n              className=\"flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80\"\n              aria-label=\"Connect on LinkedIn (opens in a new tab)\"\n            >\n              <div className=\"flex items-center gap-3\">\n                <svg className=\"w-5 h-5 fill-current text-white shrink-0\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                  <path d=\"M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z\" />\n                </svg>\n                <span>LinkedIn</span>\n              </div>\n              <span className=\"group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90\">→</span>\n            </SafeLink>\n          </div>\n        </div>\n      </section>\n    ),\n  };\n\n  // ---------------------------------------------------------------------------\n  // 6. RENDER TEMPLATE WITH STICKY FROSTED NAV & GLOBAL STYLES\n  // ---------------------------------------------------------------------------\n  return (\n    <div\n      className=\"spotlight-root relative w-full min-h-screen transition-colors duration-300 overflow-x-hidden\"\n      style={{\n        fontFamily: activeFontFamily,\n        backgroundColor: colors.paper,\n        color: colors.ink,\n      }}\n    >\n      {/* Dynamic Keyframe & Typography Styles */}\n      <style>{`\n        @keyframes sway {\n          0%, 100% {\n            transform: rotate(-4deg);\n          }\n          50% {\n            transform: rotate(4deg);\n          }\n        }\n        @keyframes dash {\n          to {\n            stroke-dashoffset: -1000;\n          }\n        }\n      `}</style>\n\n      {/* Sticky Navigation Bar */}\n      <nav\n        aria-label=\"Primary portfolio navigation\"\n        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isNavSolid ? \"py-3 shadow-md backdrop-blur-md\" : \"py-5 sm:py-6\"\n          }`}\n        style={{\n          backgroundColor: isNavSolid ? colors.navBg : \"transparent\",\n          borderBottom: isNavSolid ? `1px solid ${colors.border}` : \"none\",\n        }}\n      >\n        {/* 3-column nav: logo | centered links | hire-me button */}\n        <div className=\"max-w-[1180px] mx-auto px-5 sm:px-8 grid grid-cols-[auto_1fr_auto] items-center gap-4\">\n          {/* Logo */}\n          <a\n            href=\"#top\"\n            className=\"text-xl sm:text-2xl font-extrabold tracking-tight flex items-center\"\n            style={{ color: isNavSolid ? colors.navInk : \"#ffffff\" }}\n          >\n            <span>{firstName.toLowerCase()}</span>\n            <span style={{ color: accentColor }}>.</span>\n          </a>\n\n          {/* Centered nav links */}\n          <div className=\"hidden sm:flex items-center justify-center gap-6 sm:gap-8 text-sm font-semibold\">\n            {[\"about\", \"expertise\", \"work\", \"contact\"].map((link) => (\n              <a\n                key={link}\n                href={`#${link}`}\n                className=\"capitalize transition-opacity hover:opacity-100\"\n                style={{ color: isNavSolid ? colors.inkMuted : \"rgba(255,255,255,0.85)\" }}\n              >\n                {link.charAt(0).toUpperCase() + link.slice(1)}\n              </a>\n            ))}\n          </div>\n          {/* Empty spacer on mobile so button stays right */}\n          <div className=\"sm:hidden\" />\n\n          {/* Hire me button */}\n          <a\n            href=\"#contact\"\n            className=\"px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-sm whitespace-nowrap\"\n            style={{\n              backgroundColor: isNavSolid\n                ? isDarkMode\n                  ? \"#ffffff\"\n                  : \"#111111\"\n                : \"#ffffff\",\n              color: isNavSolid\n                ? isDarkMode\n                  ? \"#111111\"\n                  : \"#ffffff\"\n                : \"#111111\",\n            }}\n          >\n            Hire me\n          </a>\n        </div>\n      </nav>\n\n      {/* Ordered Section Rendering */}\n      <main className=\"w-full\">\n        {sectionOrder\n          .filter((sec) => !isHidden(sec))\n          .map((sec) => (\n            <div key={sec}>{sectionMap[sec] || null}</div>\n          ))}\n      </main>\n\n\n      {/* Back to Top Floating Button */}\n      {showScrollTop && (\n        <button\n          type=\"button\"\n          onClick={scrollToTop}\n          aria-label=\"Back to top\"\n          className=\"fixed bottom-6 right-6 z-40 p-3 rounded-full text-white shadow-lg transition-all hover:scale-110\"\n          style={{ backgroundColor: accentColor }}\n        >\n          <ArrowUp className=\"h-5 w-5\" />\n        </button>\n      )}\n    </div>\n  );\n}\n";
+}
+
+function getFullPosterTemplateJsx() {
+  return `import React, { useState, useEffect, useMemo } from "react";
+import { ArrowUp, Award, ExternalLink, MapPin } from "lucide-react";
+import { BrandIcon } from "../common/BrandIcon.jsx";
+import { SafeLink } from "../common/SafeLink.jsx";
+import { normalizeAvatarUrl } from "../common/urlUtils.js";
+
+export function PosterTemplate({ portfolio = {} }) {
+  const { profile = {}, socialLinks = [], skills = [], experience = [], projects = [] } = portfolio;
+  const primaryColor = portfolio?.design?.primaryColor || "#e11d2a";
+  const theme = portfolio?.design?.theme || "dark";
+  const isDark = theme === "dark";
+
+  const fullName = profile.fullName || "Developer";
+  const headline = profile.headline || "Creative Software Developer";
+  const bio = profile.bio || "Crafting bold and memorable digital experiences.";
+  const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
+
+  const marqueeText = portfolio?.design?.templateSettings?.marqueeText || "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
+
+  const scrollToTop = () => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div className={\`min-h-screen font-sans transition-colors \${isDark ? "bg-[#09090b] text-[#f4f4f5]" : "bg-[#fdfbf7] text-[#18181b]"}\`}>
+      <div className="overflow-hidden whitespace-nowrap py-2 text-xs font-black tracking-widest text-white uppercase" style={{ backgroundColor: primaryColor }}>
+        <div className="inline-block animate-marquee">
+          <span>{marqueeText} &nbsp;&bull;&nbsp; {marqueeText} &nbsp;&bull;&nbsp; {marqueeText}</span>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+        <header className={\`border-b-4 pb-12 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
+          <div className="flex justify-between items-center mb-8 text-xs font-mono uppercase tracking-wider">
+            <span className="font-bold">{fullName}</span>
+            {socialLinks.length > 0 && (
+              <div className="flex items-center gap-3">
+                {socialLinks.map((s, i) => (
+                  <SafeLink key={i} href={s.url} style={{ color: primaryColor }} className="hover:underline">
+                    {s.label || s.platform}
+                  </SafeLink>
+                ))}
+              </div>
+            )}
+          </div>
+          <h1 className="text-6xl sm:text-8xl md:text-9xl font-black uppercase tracking-tighter leading-none mb-6">
+            {fullName}
+          </h1>
+          <div className="flex flex-wrap items-center gap-4 text-sm font-bold uppercase">
+            <span className={\`px-3 py-1 text-xs \${isDark ? "bg-white text-black" : "bg-black text-white"}\`}>{headline}</span>
+            {skills.length > 0 && (
+              <div className="font-mono text-xs" style={{ color: primaryColor }}>
+                SKILLS: {skills.map(s => s.name).join(" • ")}
+              </div>
+            )}
+          </div>
+        </header>
+
+        <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
+          <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
+            01 / STATEMENT
+          </div>
+          <div className="md:col-span-9 space-y-6">
+            <p className="text-xl sm:text-3xl font-medium leading-relaxed">{bio}</p>
+            {avatarUrl && (
+              <div className={\`w-36 h-36 border-4 overflow-hidden \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
+                <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
+        </section>
+
+        {projects.length > 0 && (
+          <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
+            <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
+              02 / SELECTED WORK
+            </div>
+            <div className="md:col-span-9 space-y-8">
+              {projects.map((p, i) => (
+                <article key={i} className={\`p-8 border-2 \${isDark ? "bg-neutral-900/40 border-neutral-800" : "bg-white border-neutral-900"}\`}>
+                  <div className="font-mono text-xs font-bold mb-2" style={{ color: primaryColor }}>// 0{i + 1}</div>
+                  <h3 className="text-2xl font-black mb-3">{p.title}</h3>
+                  <p className={\`text-sm leading-relaxed mb-4 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{p.description}</p>
+                  {p.tags && p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4 font-mono text-xs" style={{ color: primaryColor }}>
+                      {p.tags.map(t => <span key={t}>#{t}</span>)}
+                    </div>
+                  )}
+                  <div className="flex gap-4 text-xs font-bold underline">
+                    {p.liveUrl && <SafeLink href={p.liveUrl}>Live Project &rarr;</SafeLink>}
+                    {p.repoUrl && <SafeLink href={p.repoUrl}>GitHub Source &rarr;</SafeLink>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {experience.length > 0 && (
+          <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
+            <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
+              03 / TRACK RECORD
+            </div>
+            <div className="md:col-span-9 space-y-6">
+              {experience.map((e, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pb-4">
+                  <div className="text-xs font-mono text-neutral-400">{e.startDate} &mdash; {e.current ? "PRESENT" : e.endDate}</div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <h4 className="font-bold text-base">{e.title}</h4>
+                    <p className="text-xs font-medium" style={{ color: primaryColor }}>{e.company} {e.location ? \`(\${e.location})\` : ""}</p>
+                    {e.description && <p className={\`text-xs leading-relaxed pt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{e.description}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-16">
+          <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
+            04 / INQUIRIES
+          </div>
+          <div className="md:col-span-9 space-y-4">
+            <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tight">LET'S CONNECT</h2>
+            <div className="space-y-2 text-lg sm:text-xl font-bold" style={{ color: primaryColor }}>
+              {profile.email && <div><a href={\`mailto:\${profile.email}\`} className="underline">EMAIL: {profile.email} &rarr;</a></div>}
+              {profile.phone && <div><a href={\`tel:\${profile.phone}\`} className="underline">TEL: {profile.phone} &rarr;</a></div>}
+            </div>
+          </div>
+        </section>
+
+        <footer className={\`border-t-2 pt-6 flex justify-between items-center text-xs font-mono \${isDark ? "border-neutral-800 text-neutral-500" : "border-neutral-900 text-neutral-500"}\`}>
+          <span>&copy; {new Date().getFullYear()} {fullName}. POSTER EDITORIAL ARCHIVE.</span>
+          <button onClick={scrollToTop} className="font-bold underline flex items-center gap-1">
+            <span>TOP</span>
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+`;
+}
 
 function getFullDevPortTemplateJsx() {
   // Transpiled version of DevPortTemplate.tsx
@@ -4063,40 +6275,105 @@ export function normalizeAvatarUrl(rawUrl) {
 }
 
 function getSourceReadme(data) {
-  return `# ${data.title} - React Source Code
+  return `# ${data.title} - Standalone React Source Project
 
-This is a standalone, production-ready portfolio website built with **React 19**, **Vite**, **Tailwind CSS v4**, and **Lucide Icons**.
+This package contains the complete, production-ready source code for your personal portfolio website.
 
-## 🚀 Quick Start
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
+## 🌟 Highlights
+- **100% Standalone**: Completely decoupled from AI Resume Builder. Runs independently without backend API dependencies.
+- **Modern Tech Stack**: React 19, Vite, Tailwind CSS v4, Lucide Icons.
+- **Privacy Guaranteed**: Contains zero API keys, secrets, or internal database metadata.
+
+## 🚀 Quick Start (Local Development)
+1. Install project dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+2. Start the local Vite development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+3. Open \`http://localhost:5173\` in your browser to view your live portfolio.
 
 ## 📦 Production Build
+Compile optimized static production assets:
 \`\`\`bash
 npm run build
 \`\`\`
-The output will be in \`dist/\`.
+The compiled assets will be placed into the \`dist/\` directory.
 
-## 🌐 Deploy to Vercel / Netlify
-1. Connect this repository on Vercel or Netlify.
-2. Build command: \`npm run build\`
-3. Output directory: \`dist\`
+To preview the production build locally:
+\`\`\`bash
+npm run preview
+\`\`\`
+
+## 🌐 Free One-Click Deployment
+
+### Option A: Vercel
+1. Push this folder to a GitHub, GitLab, or Bitbucket repository.
+2. Go to [vercel.com/new](https://vercel.com/new) and import your repository.
+3. Framework Preset: **Vite**
+4. Build Command: \`npm run build\`
+5. Output Directory: \`dist\`
+6. Click **Deploy**.
+
+### Option B: Netlify
+1. Push this folder to your Git provider.
+2. Go to [app.netlify.com](https://app.netlify.com) and click **Add new site > Import an existing project**.
+3. Build Command: \`npm run build\`
+4. Publish Directory: \`dist\`
+5. Click **Deploy site**.
+
+## 🔌 External Dependencies
+- **Google Fonts CDN** (\`fonts.googleapis.com\`): Used for typography rendering (${data.design?.fontFamily || "Inter"}). System fallbacks are defined in CSS for offline scenarios.
 `;
 }
 
 function getStaticReadme(data) {
-  return `# ${data.title} - Static Website Bundle
+  return `# ${data.title} - Standalone Static Website Bundle
 
-This archive contains your self-contained, production-ready portfolio website.
+This archive contains your self-contained, pre-rendered portfolio website.
+
+## 🌟 Highlights
+- **100% Independent**: Zero dependencies on the AI Resume Builder backend. All markup, styles, scripts, and content are bundled.
+- **Zero Configuration**: No Node.js, npm, or build tools required to run.
+- **Privacy Guaranteed**: Does not contain API keys, credentials, or private account fields.
 
 ## 🚀 Instant Local Preview
-Simply double-click \`index.html\` to open your website directly in any web browser!
+There are two ways to preview your website locally:
 
-## 🌐 Free Hosting Deployment
-- **Netlify Drop**: Drag and drop this folder onto [app.netlify.com/drop](https://app.netlify.com/drop).
-- **GitHub Pages**: Upload this folder to your repository and enable Pages in Settings.
+### Option 1: Direct Browser Launch
+Simply double-click \`index.html\` to open the portfolio directly in any modern web browser (Chrome, Firefox, Safari, Edge).
+
+### Option 2: Local HTTP Server (Recommended)
+If you prefer testing over a local HTTP server:
+\`\`\`bash
+# Using Python 3:
+python -m http.server 8080
+
+# Or using npx:
+npx serve .
+\`\`\`
+Then visit \`http://localhost:8080\` in your browser.
+
+## 🌐 Free Static Hosting Deployment
+
+### Option A: Netlify Drop (Drag & Drop, No Git Needed)
+1. Visit [app.netlify.com/drop](https://app.netlify.com/drop).
+2. Drag and drop the unzipped folder containing \`index.html\`.
+3. Your site will be instantly live with a free SSL certificate.
+
+### Option B: GitHub Pages
+1. Create a repository on GitHub (e.g. \`username.github.io\` or \`my-portfolio\`).
+2. Upload the contents of this folder (\`index.html\`, \`assets/\`, \`README.md\`).
+3. In repository **Settings > Pages**, choose \`Branch: main / (root)\` and click **Save**.
+
+### Option C: Cloudflare Pages
+1. Log in to the Cloudflare dashboard and go to **Workers & Pages > Create application > Pages > Direct Upload**.
+2. Upload this folder and deploy in seconds.
+
+## 🔌 External Dependencies
+- **Google Fonts CDN** (\`fonts.googleapis.com\`): Used for custom fonts with system font fallbacks included.
 `;
 }
 
