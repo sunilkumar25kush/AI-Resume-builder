@@ -375,8 +375,8 @@ export function SpotlightTemplate({
             </div>
           </div>
 
-          {/* Right Hero Stage: Avatar Portrait Card */}
-          <div className="spotlight-stage relative flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[460px] h-[380px] sm:h-[500px] lg:h-[580px] mb-[-30px] sm:mb-[-60px]">
+          {/* Right Hero Stage: Avatar Portrait Card overlapping wave */}
+          <div className="spotlight-stage relative z-[5] flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[460px] h-[380px] sm:h-[500px] lg:h-[580px] mb-[-40px] sm:mb-[-70px]">
             <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[32px] border-[8px] sm:border-[10px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10">
               <img
                 src={avatarUrl}
@@ -390,20 +390,18 @@ export function SpotlightTemplate({
           </div>
         </div>
 
-        {/* Bottom Smooth SVG Wave Curve - seamless transition with no subpixel line */}
-        <div className="relative z-10 w-full overflow-hidden leading-none -mb-1 translate-y-[2px]">
-          <svg
-            className="w-full h-[55px] sm:h-[85px] block translate-y-[1px] scale-y-[1.05]"
-            viewBox="0 0 1440 92"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              fill={colors.waveFill}
-              d="M0,60 C320,10 540,10 720,45 C980,80 1200,85 1440,30 L1440,96 L0,96 Z"
-            />
-          </svg>
-        </div>
+        {/* Bottom Smooth SVG Wave Curve: Absolute Pinned to Bottom with Exact GitSkins Curve */}
+        <svg
+          className="absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]"
+          viewBox="0 0 1440 90"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            fill={colors.waveFill}
+            d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z"
+          />
+        </svg>
       </section>
     ),
 
