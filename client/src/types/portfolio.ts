@@ -59,8 +59,32 @@ export interface PortfolioCertification {
   url?: string;
 }
 
+export type PortfolioTemplateId =
+  | "devport"
+  | "creative"
+  | "developer"
+  | "minimal"
+  | "modern"
+  | "executive"
+  | "oss-maintainer"
+  | "motion-studio"
+  | "seyi-editorial"
+  | "sameera-material"
+  | "resume-page"
+  | "poster"
+  | "spotlight"
+  | "dat-immersive"
+  | "nahuel-cosmos"
+  | "ramen-shop"
+  | "danny-webgl"
+  | "portfolio-os"
+  | "buffalo-room"
+  | "folio-2019"
+  | "notebook-room"
+  | "naresh-keyboard";
+
 export interface PortfolioDesignSettings {
-  template: "modern" | "minimal" | "developer" | "executive" | "creative" | "devport";
+  template: PortfolioTemplateId;
   theme: "light" | "dark" | "system";
   primaryColor?: string;
   fontFamily?: string;

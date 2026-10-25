@@ -62,8 +62,33 @@ const certificationSchema = z.object({
   url: z.string().trim().max(1000).optional().default(""),
 });
 
+export const PORTFOLIO_TEMPLATES = Object.freeze([
+  "modern",
+  "minimal",
+  "developer",
+  "executive",
+  "creative",
+  "devport",
+  "oss-maintainer",
+  "motion-studio",
+  "seyi-editorial",
+  "sameera-material",
+  "resume-page",
+  "poster",
+  "spotlight",
+  "dat-immersive",
+  "nahuel-cosmos",
+  "ramen-shop",
+  "danny-webgl",
+  "portfolio-os",
+  "buffalo-room",
+  "folio-2019",
+  "notebook-room",
+  "naresh-keyboard",
+]);
+
 const designSettingsSchema = z.object({
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative", "devport"]).optional().default("devport"),
+  template: z.enum(PORTFOLIO_TEMPLATES).optional().default("devport"),
   theme: z.enum(["light", "dark", "system"]).optional().default("system"),
   primaryColor: z.string().trim().max(50).optional().default("#2563eb"),
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
@@ -117,7 +142,7 @@ const profileUpdateSchema = z.object({
 });
 
 const designUpdateSchema = z.object({
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative", "devport"]).optional(),
+  template: z.enum(PORTFOLIO_TEMPLATES).optional(),
   theme: z.enum(["light", "dark", "system"]).optional(),
   primaryColor: z.string().trim().max(50).optional(),
   fontFamily: z.string().trim().max(100).optional(),
