@@ -1001,10 +1001,16 @@ export function SpotlightTemplate({
           <div className="space-y-3">
             <SafeLink
               href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true"
-              className="flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group shadow-sm"
+              className="flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              aria-label="Connect on LinkedIn (opens in a new tab)"
             >
-              <span>LinkedIn</span>
-              <span className="group-hover:translate-x-1 transition-transform font-bold">→</span>
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 fill-current text-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                </svg>
+                <span>LinkedIn</span>
+              </div>
+              <span className="group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90">→</span>
             </SafeLink>
           </div>
         </div>
