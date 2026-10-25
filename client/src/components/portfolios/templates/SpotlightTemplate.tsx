@@ -439,6 +439,7 @@ export function SpotlightTemplate({
                 backgroundColor: isDarkMode ? "#18181b" : "#111111",
                 transformOrigin: "50% 0",
                 animation: "sway 6s ease-in-out infinite",
+                willChange: "transform",
               }}
             >
               <div className="w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center">
@@ -562,6 +563,7 @@ export function SpotlightTemplate({
                 strokeOpacity="0.55"
                 strokeWidth="2"
                 strokeDasharray="6 8"
+                style={{ willChange: "stroke-dashoffset" }}
                 className="animate-[dash_18s_linear_infinite]"
               />
             </svg>
