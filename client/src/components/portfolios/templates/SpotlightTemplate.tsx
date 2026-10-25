@@ -193,10 +193,25 @@ export function SpotlightTemplate({
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
     : "sunilkumar25kush";
 
-  // Fallback to candidate's github avatar if none uploaded
-  const avatarUrl = profile?.avatarUrl
-    ? normalizeAvatarUrl(profile.avatarUrl)
-    : `https://avatars.githubusercontent.com/${githubHandle}`;
+  // Fallback to candidate's github avatar or sample portrait matching Screenshot 2
+  const fallbackSampleUrl = "/portfolio-templates/spotlight-sample.png";
+  const [heroImgSrc, setHeroImgSrc] = useState<string>(() => {
+    if (profile?.avatarUrl) return normalizeAvatarUrl(profile.avatarUrl);
+    if (githubHandle && githubHandle !== "sunilkumar25kush") {
+      return `https://avatars.githubusercontent.com/${githubHandle}`;
+    }
+    return fallbackSampleUrl;
+  });
+
+  useEffect(() => {
+    if (profile?.avatarUrl) {
+      setHeroImgSrc(normalizeAvatarUrl(profile.avatarUrl));
+    } else if (githubHandle && githubHandle !== "sunilkumar25kush") {
+      setHeroImgSrc(`https://avatars.githubusercontent.com/${githubHandle}`);
+    } else {
+      setHeroImgSrc(fallbackSampleUrl);
+    }
+  }, [profile?.avatarUrl, githubHandle]);
 
   // Smart headline split for clean multi-line display (exact match to screenshot 1)
   const headlineLines = useMemo(() => {
@@ -336,15 +351,15 @@ export function SpotlightTemplate({
       <section
         key="hero"
         id="top"
-        className="spotlight-hero relative min-h-[92vh] sm:min-h-screen text-white overflow-hidden flex flex-col justify-between pt-24 sm:pt-28 pb-0"
+        className="spotlight-hero relative min-h-[85vh] sm:min-h-screen text-white overflow-hidden flex flex-col justify-between pt-16 sm:pt-20 pb-0"
         style={{
           background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,
         }}
       >
-        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-8 min-h-[calc(92vh-100px)] sm:min-h-screen pt-24 pb-24 sm:pb-32">
+        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] lg:grid-cols-[1.1fr_1fr] items-center gap-8 lg:gap-12 min-h-[calc(88vh-80px)] lg:min-h-[calc(100vh-100px)] pt-6 sm:pt-10 pb-16 sm:pb-24">
           {/* Left Hero Copy */}
-          <div className="space-y-6 pt-6 pb-8 lg:py-0">
-            <h1 className="font-extrabold text-[clamp(34px,7vw,86px)] leading-[1.04] tracking-[-0.035em]">
+          <div className="space-y-6 pt-2 pb-4 md:py-0">
+            <h1 className="font-extrabold text-[clamp(34px,6.5vw,86px)] leading-[1.04] tracking-[-0.035em]">
               <span className="block text-white">Hi, I&apos;m {firstName.toLowerCase()}</span>
               {headlineLines.line1 && (
                 <span className="block text-white mt-1">{headlineLines.line1}</span>
@@ -376,14 +391,16 @@ export function SpotlightTemplate({
           </div>
 
           {/* Right Hero Stage: Avatar Portrait Card overlapping wave */}
-          <div className="spotlight-stage relative z-[5] flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[320px] sm:max-w-[460px] h-[340px] sm:h-[500px] lg:h-[580px] mb-[-30px] sm:mb-[-70px]">
-            <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[28px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10">
+          <div className="spotlight-stage relative z-[5] flex items-center md:items-end justify-center justify-self-center md:justify-self-end w-full max-w-[340px] sm:max-w-[420px] lg:max-w-[460px] h-auto md:h-[480px] lg:h-[560px] mt-4 md:mt-0 mb-4 md:mb-[-40px] lg:mb-[-60px]">
+            <div className="relative w-[min(340px,82vw)] sm:w-[320px] lg:w-[360px] aspect-[4/5] rounded-[24px] sm:rounded-[32px] border-[8px] sm:border-[12px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10 shrink-0">
               <img
-                src={avatarUrl}
+                src={heroImgSrc}
                 alt={fullName}
                 className="w-full h-full object-cover object-top filter contrast-105"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
+                onError={() => {
+                  if (heroImgSrc !== fallbackSampleUrl) {
+                    setHeroImgSrc(fallbackSampleUrl);
+                  }
                 }}
               />
             </div>
@@ -444,9 +461,14 @@ export function SpotlightTemplate({
             >
               <div className="w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center">
                 <img
-                  src={avatarUrl}
+                  src={heroImgSrc}
                   alt={fullName}
                   className="w-full h-full object-cover object-top"
+                  onError={() => {
+                    if (heroImgSrc !== fallbackSampleUrl) {
+                      setHeroImgSrc(fallbackSampleUrl);
+                    }
+                  }}
                 />
               </div>
             </div>
