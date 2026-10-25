@@ -2,16 +2,12 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import {
   ArrowLeft,
-  Check,
   Eye,
   EyeOff,
   Globe,
   Loader2,
-  Moon,
-  Palette,
   Pencil,
   Sparkles,
-  Sun,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +17,7 @@ import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
 import { TEMPLATE_METADATA } from "@/components/portfolios/templates/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ColorPresetPicker } from "@/components/portfolios/common/ColorPresetPicker";
 import { ThemeModeToggle } from "@/components/portfolios/common/ThemeModeToggle";
 import type { Portfolio, PortfolioDesignSettings, PortfolioTemplateId } from "@/types/portfolio";
@@ -29,15 +26,6 @@ const PublishModal = lazy(() =>
   import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
 );
 
-const PRESET_COLORS = [
-  { name: "Crimson", value: "#e3141f" },
-  { name: "Cyan", value: "#06b6d4" },
-  { name: "Blue", value: "#2563eb" },
-  { name: "Purple", value: "#9333ea" },
-  { name: "Emerald", value: "#059669" },
-  { name: "Amber", value: "#d97706" },
-  { name: "Slate", value: "#475569" },
-];
 
 const PRESET_FONTS = [
   { id: "Inter", label: "Inter" },
