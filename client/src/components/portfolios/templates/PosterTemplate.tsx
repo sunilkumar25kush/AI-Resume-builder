@@ -496,7 +496,10 @@ export function PosterTemplate({
               </h3>
               <div className="space-y-6">
                 {education.map((edu: PortfolioEducation, idx: number) => (
-                  <div key={idx} className="p-6 bg-white rounded-xl border border-black/10 shadow-sm space-y-1.5 font-['Inter']">
+                  <div
+                    key={idx}
+                    className="p-6 bg-white rounded-xl border-2 border-[#151515] shadow-[4px_4px_0px_#151515] hover:shadow-[6px_6px_0px_#151515] hover:-translate-y-0.5 transition-all duration-200 space-y-1.5 font-['Inter']"
+                  >
                     <span className="font-mono text-xs font-bold text-[#e11d2a]">
                       {edu.startDate} — {edu.endDate || "PRESENT"}
                     </span>
@@ -517,7 +520,10 @@ export function PosterTemplate({
               </h3>
               <div className="space-y-6">
                 {certifications.map((cert: PortfolioCertification, idx: number) => (
-                  <div key={idx} className="p-6 bg-white rounded-xl border border-black/10 shadow-sm flex items-center justify-between gap-4 font-['Inter']">
+                  <div
+                    key={idx}
+                    className="p-6 bg-white rounded-xl border-2 border-[#151515] shadow-[4px_4px_0px_#151515] hover:shadow-[6px_6px_0px_#151515] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-between gap-4 font-['Inter']"
+                  >
                     <div>
                       <h4 className="font-['Anton'] text-2xl uppercase text-[#151515]">
                         {cert.name}
