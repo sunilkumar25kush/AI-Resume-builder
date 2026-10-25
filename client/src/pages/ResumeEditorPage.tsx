@@ -343,11 +343,10 @@ export default function ResumeEditorPage() {
             <button
               type="button"
               onClick={() => setEditorMode("content")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
-                editorMode === "content"
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${editorMode === "content"
                   ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <FileText className="h-3.5 w-3.5" />
               Content
@@ -355,11 +354,10 @@ export default function ResumeEditorPage() {
             <button
               type="button"
               onClick={() => setEditorMode("customize")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
-                editorMode === "customize"
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${editorMode === "customize"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <Palette className="h-3.5 w-3.5" />
               Customize
@@ -411,9 +409,8 @@ export default function ResumeEditorPage() {
               role="tab"
               aria-selected={mobileTab === "edit"}
               onClick={() => setMobileTab("edit")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               {editorMode === "customize" ? "Customize" : "Edit"}
             </button>
@@ -422,9 +419,8 @@ export default function ResumeEditorPage() {
               role="tab"
               aria-selected={mobileTab === "preview"}
               onClick={() => setMobileTab("preview")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mobileTab === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               Preview
             </button>

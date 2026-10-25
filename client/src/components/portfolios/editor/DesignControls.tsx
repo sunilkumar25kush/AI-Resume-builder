@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Check, Laptop, Moon, Palette, Sun, Type } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TEMPLATE_METADATA, type TemplateCategory } from "@/components/portfolios/templates/registry";
 import type { PortfolioDesignSettings } from "@/types/portfolio";
 
 export interface DesignControlsProps {
@@ -20,38 +22,6 @@ const COLOR_PRESETS = [
   { name: "Slate Neutral", hex: "#334155" },
 ];
 
-const TEMPLATES: Array<{
-  id: PortfolioDesignSettings["template"];
-  name: string;
-  desc: string;
-  badge: string;
-}> = [
-  {
-    id: "devport",
-    name: "DevPort",
-    desc: "Cosmic dark aesthetic, orbital avatar, glowing typewriter header, and smooth scroll navigation.",
-    badge: "Featured ★",
-  },
-  {
-    id: "creative",
-    name: "Modern 3D",
-    desc: "Midnight indigo theme, 3D avatar spotlight, electric purple gradient, and floating stats.",
-    badge: "New ★",
-  },
-  {
-    id: "developer",
-    name: "Developer",
-    desc: "Terminal aesthetic, tech-stack cards, active status badge, and code styling.",
-    badge: "Engineering",
-  },
-  {
-    id: "minimal",
-    name: "Minimal",
-    desc: "Quiet elegance, refined typography, and serene editorial whitespace.",
-    badge: "Editorial",
-  },
-];
-
 const FONTS = [
   { id: "Inter", label: "Modern Sans (Inter)", preview: "Sans" },
   { id: "Roboto", label: "Clean Sans (Roboto)", preview: "Sans" },
@@ -60,7 +30,17 @@ const FONTS = [
   { id: "JetBrains", label: "Technical Mono (JetBrains)", preview: "Mono" },
 ];
 
+const CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
+  { id: "all", label: "All Templates" },
+  { id: "3d", label: "3D & WebGL" },
+  { id: "technical", label: "Technical" },
+  { id: "creative", label: "Creative" },
+  { id: "editorial", label: "Editorial" },
+  { id: "minimal", label: "Minimal" },
+];
+
 export function DesignControls({ design, onChange }: DesignControlsProps) {
+  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>("all");
   const currentTemplate = design.template || "devport";
   const currentTheme = design.theme || "system";
   const currentColor = design.primaryColor || "#2563eb";
@@ -72,6 +52,11 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
       ...patch,
     });
   };
+
+  const filteredTemplates = TEMPLATE_METADATA.filter((tpl) => {
+    if (selectedCategory === "all") return true;
+    return tpl.category === selectedCategory;
+  });
 
   return (
     <div className="space-y-6">
@@ -86,34 +71,73 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
       </div>
 
       {/* Template Selection */}
-      <div className="space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          Portfolio Template
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {TEMPLATES.map((tpl) => {
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Portfolio Template ({filteredTemplates.length})
+          </Label>
+
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  selectedCategory === cat.id
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+          {filteredTemplates.map((tpl) => {
             const isSelected = currentTemplate === tpl.id;
             return (
               <div
                 key={tpl.id}
                 onClick={() => handleUpdate({ template: tpl.id })}
-                className={`p-4 rounded-xl border-2 text-left cursor-pointer transition-all relative ${
-                  isSelected
+                className={`p-4 rounded-xl border-2 text-left cursor-pointer transition-all relative ${isSelected
                     ? "border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 shadow-xs"
                     : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-neutral-900"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
                     {tpl.name}
                   </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
-                    {tpl.badge}
-                  </span>
+                  {tpl.badge && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                      {tpl.badge}
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  {tpl.desc}
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed mb-2">
+                  {tpl.description}
                 </p>
+                {tpl.features && tpl.features.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {tpl.features.slice(0, 3).map((feat) => (
+                      <span
+                        key={feat}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono"
+                      >
+                        {feat}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {tpl.author && (
+                  <div className="text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">
+                    By {tpl.author} {tpl.license ? `(${tpl.license})` : ""}
+                  </div>
+                )}
                 {isSelected && (
                   <div className="absolute top-3 right-3 text-blue-600 dark:text-blue-400">
                     <Check className="h-4 w-4" />
@@ -140,9 +164,8 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
                 onClick={() => handleUpdate({ primaryColor: color.hex })}
                 title={color.name}
                 style={{ backgroundColor: color.hex }}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-xs ${
-                  isSelected ? "ring-2 ring-offset-2 ring-neutral-900 dark:ring-white scale-110" : ""
-                }`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-xs ${isSelected ? "ring-2 ring-offset-2 ring-neutral-900 dark:ring-white scale-110" : ""
+                  }`}
               >
                 {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
               </button>
@@ -171,11 +194,10 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
           <button
             type="button"
             onClick={() => handleUpdate({ theme: "light" })}
-            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
-              currentTheme === "light"
+            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${currentTheme === "light"
                 ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
                 : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-850"
-            }`}
+              }`}
           >
             <Sun className="h-3.5 w-3.5" />
             <span>Light</span>
@@ -184,11 +206,10 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
           <button
             type="button"
             onClick={() => handleUpdate({ theme: "dark" })}
-            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
-              currentTheme === "dark"
+            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${currentTheme === "dark"
                 ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
                 : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-850"
-            }`}
+              }`}
           >
             <Moon className="h-3.5 w-3.5" />
             <span>Dark</span>
@@ -197,11 +218,10 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
           <button
             type="button"
             onClick={() => handleUpdate({ theme: "system" })}
-            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
-              currentTheme === "system"
+            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${currentTheme === "system"
                 ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
                 : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-850"
-            }`}
+              }`}
           >
             <Laptop className="h-3.5 w-3.5" />
             <span>System</span>
@@ -222,11 +242,10 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
                 key={f.id}
                 type="button"
                 onClick={() => handleUpdate({ fontFamily: f.id })}
-                className={`p-2.5 rounded-lg border text-left text-xs transition-all ${
-                  isSelected
+                className={`p-2.5 rounded-lg border text-left text-xs transition-all ${isSelected
                     ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-medium"
                     : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-850"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>{f.label}</span>
