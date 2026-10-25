@@ -177,12 +177,24 @@ export function PublishModal({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="gap-1.5 text-xs shrink-0"
+              className={`gap-1.5 text-xs shrink-0 transition-all duration-200 ${
+                copied
+                  ? "border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "hover:border-neutral-300 dark:hover:border-neutral-700"
+              }`}
               title="Copy public link"
+              aria-label={copied ? "Link copied to clipboard" : "Copy public link"}
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-              <span>{copied ? "Copied" : "Copy"}</span>
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 animate-in zoom-in-75 duration-150" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-neutral-500" />
+              )}
+              <span className="font-medium">{copied ? "Copied!" : "Copy Link"}</span>
             </Button>
+            <span className="sr-only" aria-live="polite">
+              {copied ? "Public link copied to clipboard" : ""}
+            </span>
 
             {isPublished && (
               <Button
