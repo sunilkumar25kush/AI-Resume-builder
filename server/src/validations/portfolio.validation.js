@@ -63,28 +63,14 @@ const certificationSchema = z.object({
 });
 
 export const PORTFOLIO_TEMPLATES = Object.freeze([
-  "modern",
-  "minimal",
-  "developer",
-  "executive",
-  "creative",
-  "devport",
-  "oss-maintainer",
-  "motion-studio",
-  "seyi-editorial",
-  "sameera-material",
-  "resume-page",
-  "poster",
   "spotlight",
-  "dat-immersive",
-  "nahuel-cosmos",
-  "ramen-shop",
-  "danny-webgl",
-  "portfolio-os",
-  "buffalo-room",
-  "folio-2019",
-  "notebook-room",
-  "naresh-keyboard",
+  "poster",
+  "devport",
+  "creative",
+  "developer",
+  "minimal",
+  "modern",
+  "executive",
 ]);
 
 const designSettingsSchema = z.object({

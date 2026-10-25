@@ -60,28 +60,14 @@ export interface PortfolioCertification {
 }
 
 export type PortfolioTemplateId =
+  | "spotlight"
+  | "poster"
   | "devport"
   | "creative"
   | "developer"
   | "minimal"
   | "modern"
-  | "executive"
-  | "oss-maintainer"
-  | "motion-studio"
-  | "seyi-editorial"
-  | "sameera-material"
-  | "resume-page"
-  | "poster"
-  | "spotlight"
-  | "dat-immersive"
-  | "nahuel-cosmos"
-  | "ramen-shop"
-  | "danny-webgl"
-  | "portfolio-os"
-  | "buffalo-room"
-  | "folio-2019"
-  | "notebook-room"
-  | "naresh-keyboard";
+  | "executive";
 
 export interface PortfolioDesignSettings {
   template: PortfolioTemplateId;

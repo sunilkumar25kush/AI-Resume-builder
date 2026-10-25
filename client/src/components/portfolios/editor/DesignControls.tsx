@@ -32,10 +32,8 @@ const FONTS = [
 
 const CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
   { id: "all", label: "All Templates" },
-  { id: "3d", label: "3D & WebGL" },
-  { id: "technical", label: "Technical" },
   { id: "creative", label: "Creative" },
-  { id: "editorial", label: "Editorial" },
+  { id: "technical", label: "Technical" },
   { id: "minimal", label: "Minimal" },
 ];
 

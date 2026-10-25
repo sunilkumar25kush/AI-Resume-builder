@@ -265,7 +265,7 @@ async function runAdapterTests() {
   // --------------------------------------------------------------------------
   // TEST 3: Validation & Compatibility Engine for Every Template
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 3] Auditing Template Field Compatibility Across All 20 Templates...");
+  console.log("\n[TEST 3] Auditing Template Field Compatibility Across Active Templates...");
   const uniqueTemplateIds = Array.from(
     new Set(TEMPLATE_METADATA.map((t) => t.id))
   ) as PortfolioTemplateId[];
@@ -285,9 +285,9 @@ async function runAdapterTests() {
   }
 
   // --------------------------------------------------------------------------
-  // TEST 4: Render Verification Across All 20 Templates with Resume 1 (Senior)
+  // TEST 4: Render Verification Across Active Templates with Resume 1 (Senior)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 4] Rendering All 20 Templates with Senior Architect Resume...");
+  console.log("\n[TEST 4] Rendering Active Templates with Senior Architect Resume...");
   for (const meta of TEMPLATE_METADATA) {
     const adaptedForTemplate = adaptResumeToPortfolio(REALISTIC_RESUME_1, {
       template: meta.id,
@@ -309,9 +309,9 @@ async function runAdapterTests() {
   }
 
   // --------------------------------------------------------------------------
-  // TEST 5: Render Verification Across All 20 Templates with Resume 2 (Junior/Fresher)
+  // TEST 5: Render Verification Across Active Templates with Resume 2 (Junior/Fresher)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 5] Rendering All 20 Templates with Junior Graduate Resume (0 Experience)...");
+  console.log("\n[TEST 5] Rendering Active Templates with Junior Graduate Resume (0 Experience)...");
   for (const meta of TEMPLATE_METADATA) {
     const adaptedJunior = adaptResumeToPortfolio(REALISTIC_RESUME_2, {
       template: meta.id,
@@ -333,9 +333,9 @@ async function runAdapterTests() {
   }
 
   // --------------------------------------------------------------------------
-  // TEST 6: Render Verification Across All 20 Templates with Resume 3 (Sparse)
+  // TEST 6: Render Verification Across Active Templates with Resume 3 (Sparse)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 6] Rendering All 20 Templates with Sparse Resume (Edge-Case)...");
+  console.log("\n[TEST 6] Rendering Active Templates with Sparse Resume (Edge-Case)...");
   for (const meta of TEMPLATE_METADATA) {
     const adaptedSparse = adaptResumeToPortfolio(REALISTIC_RESUME_3, {
       template: meta.id,
