@@ -6,7 +6,7 @@ import { Resume } from "../models/Resume.js";
 import { ApiError } from "../utils/ApiError.js";
 import { geminiService } from "./ai/gemini.service.js";
 import { cleanText, normalizeResumeText } from "./resumeParser.js";
-import { createPortfolioSchema } from "../validations/portfolio.validation.js";
+import { createPortfolioSchema, PORTFOLIO_TEMPLATES } from "../validations/portfolio.validation.js";
 
 /** Convert text into a URL-friendly slug */
 export function slugify(text = "") {
@@ -445,24 +445,38 @@ function transformParsedResumeToPortfolio(parsed = {}) {
       }))
     : [];
 
-  const experience = (parsed.experience || []).map((e) => ({
-    title: e.title || "",
-    company: e.company || "",
-    location: e.location || "",
-    startDate: e.startDate || "",
-    endDate: e.endDate || "",
-    current: !e.endDate || e.endDate.toLowerCase().includes("present"),
-    description: e.description || e.achievements || "",
-    highlights: e.technologies ? [e.technologies] : [],
-  }));
+  const experience = (parsed.experience || []).map((e) => {
+    // Extract highlights from achievements or bullet points in description
+    let highlights = [];
+    if (e.achievements) {
+      highlights = String(e.achievements)
+        .split(/\n|•|\*|-/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 2);
+    }
+    if (!highlights.length && e.technologies) {
+      highlights = [String(e.technologies).trim()];
+    }
+
+    return {
+      title: e.title || "",
+      company: e.company || "",
+      location: e.location || "",
+      startDate: e.startDate || "",
+      endDate: e.endDate || "",
+      current: !e.endDate || e.endDate.toLowerCase().includes("present"),
+      description: e.description || e.achievements || "",
+      highlights,
+    };
+  });
 
   const education = (parsed.education || []).map((ed) => ({
     institution: ed.institution || "",
     degree: ed.degree || "",
-    fieldOfStudy: "",
+    fieldOfStudy: ed.fieldOfStudy || "",
     startDate: ed.startDate || "",
     endDate: ed.endDate || "",
-    grade: "",
+    grade: ed.grade || "",
   }));
 
   const projects = (parsed.projects || []).map((p) => ({
@@ -477,26 +491,40 @@ function transformParsedResumeToPortfolio(parsed = {}) {
   }));
 
   const socialLinks = [];
-  if (parsed.contact?.github) {
-    socialLinks.push({ platform: "github", label: "GitHub", url: parsed.contact.github });
+  const github = parsed.contact?.github || parsed.contact?.githubUrl;
+  if (github) {
+    socialLinks.push({ platform: "github", label: "GitHub", url: github });
   }
-  if (parsed.contact?.linkedin) {
-    socialLinks.push({ platform: "linkedin", label: "LinkedIn", url: parsed.contact.linkedin });
+  const linkedin = parsed.contact?.linkedin || parsed.contact?.linkedinUrl;
+  if (linkedin) {
+    socialLinks.push({ platform: "linkedin", label: "LinkedIn", url: linkedin });
   }
-  if (parsed.contact?.website) {
-    socialLinks.push({ platform: "website", label: "Website", url: parsed.contact.website });
+  const website = parsed.contact?.website || parsed.contact?.websiteUrl;
+  if (website) {
+    socialLinks.push({ platform: "website", label: "Website", url: website });
+  }
+  if (Array.isArray(parsed.contact?.customLinks)) {
+    for (const cl of parsed.contact.customLinks) {
+      if (cl?.url) {
+        socialLinks.push({
+          platform: (cl.label || "link").toLowerCase(),
+          label: cl.label || "Link",
+          url: cl.url,
+        });
+      }
+    }
   }
 
   return {
     title: fullName ? `${fullName}'s Portfolio` : "My Portfolio",
     profile: {
       fullName,
-      headline: parsed.title || "Software Professional",
+      headline: parsed.title || parsed.experience?.[0]?.title || "Software Professional",
       bio: parsed.summary || "",
       email: parsed.contact?.email || "",
       phone: parsed.contact?.phone || "",
       location: parsed.contact?.location || "",
-      avatarUrl: "",
+      avatarUrl: parsed.photoUrl || "",
     },
     socialLinks,
     skills,
@@ -504,13 +532,23 @@ function transformParsedResumeToPortfolio(parsed = {}) {
     education,
     projects,
     certifications: Array.isArray(parsed.certifications)
-      ? parsed.certifications.map((c) => ({
-          name: typeof c === "string" ? c : c.name || "",
-          issuer: "",
-        }))
+      ? parsed.certifications
+          .map((c) => {
+            if (typeof c === "string") return { name: c.trim(), issuer: "", issueDate: "", url: "" };
+            if (c && typeof c === "object") {
+              return {
+                name: c.name || "",
+                issuer: c.issuer || "",
+                issueDate: c.issueDate || "",
+                url: c.url || "",
+              };
+            }
+            return null;
+          })
+          .filter((c) => c && c.name)
       : [],
     design: {
-      template: "modern",
+      template: "devport",
       theme: "system",
       primaryColor: "#2563eb",
     },
@@ -639,10 +677,9 @@ function sanitizePortfolioPayload(payload = {}) {
   }
 
   // Normalize design
-  const validTemplates = ["modern", "minimal", "developer", "executive", "creative"];
   const validThemes = ["light", "dark", "system"];
   safe.design = {
-    template: validTemplates.includes(safe.design?.template) ? safe.design.template : "modern",
+    template: PORTFOLIO_TEMPLATES.includes(safe.design?.template) ? safe.design.template : "devport",
     theme: validThemes.includes(safe.design?.theme) ? safe.design.theme : "system",
     primaryColor: safe.design?.primaryColor || "#2563eb",
     fontFamily: safe.design?.fontFamily || "Inter",
@@ -739,14 +776,42 @@ export async function generatePortfolioFromExistingResume(
     throw ApiError.notFound("Resume not found");
   }
 
-  const resumeText = resumeToText(resume.parsedData);
-  if (!resumeText || resumeText.length < 20) {
-    throw ApiError.badRequest("Selected resume contains insufficient data to generate a portfolio");
+  const parsed = resume.parsedData || {};
+  let extracted;
+
+  // If parsedData already contains structured information, adapt directly
+  if (
+    parsed.name ||
+    (Array.isArray(parsed.skills) && parsed.skills.length) ||
+    (Array.isArray(parsed.experience) && parsed.experience.length)
+  ) {
+    extracted = transformParsedResumeToPortfolio(parsed);
+  } else {
+    const resumeText = resumeToText(parsed);
+    if (!resumeText || resumeText.length < 20) {
+      throw ApiError.badRequest("Selected resume contains insufficient data to generate a portfolio");
+    }
+    return generatePortfolioFromResumeText(userId, resumeText, {
+      preferredTemplate,
+      customTitle,
+      resumeId: resume._id,
+    });
   }
 
-  return generatePortfolioFromResumeText(userId, resumeText, {
-    preferredTemplate,
-    customTitle,
-    resumeId: resume._id,
-  });
+  // Apply template preference and custom title overrides
+  if (preferredTemplate) {
+    extracted.design = extracted.design || {};
+    extracted.design.template = preferredTemplate;
+  }
+  if (customTitle?.trim()) {
+    extracted.title = customTitle.trim();
+  }
+
+  extracted.resumeId = resume._id;
+
+  const sanitized = sanitizePortfolioPayload(extracted);
+  const parsedValidation = createPortfolioSchema.safeParse(sanitized);
+  const cleanInput = parsedValidation.success ? parsedValidation.data : sanitized;
+
+  return createPortfolio(userId, cleanInput);
 }

@@ -189,12 +189,12 @@ export const portfolioQuerySchema = z.object({
 
 export const generateFromResumeSchema = z.object({
   resumeId: z.string().regex(OBJECT_ID_REGEX, "Invalid resumeId"),
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
+  template: z.enum(PORTFOLIO_TEMPLATES).optional(),
   title: z.string().trim().max(200).optional(),
 });
 
 export const generateFromUploadSchema = z.object({
-  template: z.enum(["modern", "minimal", "developer", "executive", "creative"]).optional(),
+  template: z.enum(PORTFOLIO_TEMPLATES).optional(),
   title: z.string().trim().max(200).optional(),
 });
 

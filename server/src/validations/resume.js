@@ -42,6 +42,7 @@ const customSectionSchema = z.object({
 
 export const parsedDataSchema = z.object({
   name: z.string().trim().max(200).optional().default(""),
+  title: z.string().trim().max(200).optional().default(""),
   summary: z.string().trim().max(10000).optional().default(""),
   contact: contactSchema.optional().default({}),
   skills: z.array(z.string().trim().max(100)).max(500).optional().default([]),
@@ -62,6 +63,7 @@ export const parsedDataSchema = z.object({
  */
 const parsedDataUpdateSchema = z.object({
   name: z.string().trim().max(200).optional(),
+  title: z.string().trim().max(200).optional(),
   summary: z.string().trim().max(10000).optional(),
   contact: contactSchema.optional(),
   personal: z.record(z.any()).optional(),
