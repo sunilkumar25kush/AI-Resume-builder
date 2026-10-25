@@ -22,8 +22,8 @@ All conclusions are backed by verified source code inspections across production
 | Metric Category | Count | Detailed Breakdown |
 | :--- | :---: | :--- |
 | **Total Discovered Templates** | **20** | **16** GitSkins templates + **4** existing AI Resume Builder templates. |
-| **Immediately Reusable Templates** | **6** | **4** Active AI Resume Builder templates (`devport`, `creative`, `developer`, `minimal`) + **2** GitSkins 2D static templates (`resume-page`, `poster`). |
-| **Templates Requiring Refactoring / Adaptation** | **13** | **13** GitSkins templates (6 2D/editorial/motion + 7 3D WebGL/R3F/Spline requiring upstream GLTF/GLB models or canvas adaptation). |
+| **Fully Integrated & Production Verified** | **6** | **4** Native AI Resume Builder (`devport`, `creative`, `developer`, `minimal`) + **2** GitSkins Native (`poster`, `spotlight`). |
+| **Templates Requiring Refactoring / Assets** | **13** | **13** GitSkins templates (6 2D kinetic/editorial + 7 3D WebGL/R3F requiring upstream models or canvas adaptation). |
 | **Blocked Templates** | **1** | `orbit-studio` (Abhay Raj): Model asset license unverified; upstream repository excludes model files. |
 | **README Templates Disambiguated (Not Web Portfolios)** | **21+** | Markdown profile README templates identified in `readme-template-catalog-DJ_mHdEA.js`. |
 | **Shared Components Disambiguated (Not Templates)** | **9** | `PortfolioRenderer`, `ThemeWrapper`, `SectionContainer`, `AttributionFooter`, `PortfolioGallery`, etc. |
@@ -46,7 +46,7 @@ The following table provides a comprehensive overview of all 20 discovered templ
 | **7** | `oss-maintainer` | Open-Source Maintainer | GitSkins OSS Adaptation | 2D GitHub Badges | **Refactor (Phase 2 MVP)** | Low | MIT / GitSkins |
 | **8** | `resume-page` | One-Page Résumé | GitSkins Native | 2D A4 Print / Web | **Reusable** | Low | Native GitSkins |
 | **9** | `poster` | Poster | GitSkins Native | 2D Display Typography | **Reusable** | Low | Native GitSkins |
-| **10** | `spotlight` | Spotlight | GitSkins Native | 2D + Talking Video | **Refactor** | Medium | Native GitSkins |
+| **10** | `spotlight` | Spotlight | GitSkins Native | 2D + Video Hero | **Active (Integrated & Verified)** | Medium | Native GitSkins |
 | **11** | `seyi-editorial` | Kinetic Editorial | `Oluwadare Oluwaseyi` | Kinetic Scroll 2D | **Refactor** | Medium | MIT + Permission |
 | **12** | `sameera-material`| Material Journal | `Sameera Wijerathna` | Material Cards 2D | **Refactor** | Medium | Author Permission |
 | **13** | `dat-immersive` | Immersive Engineer | `Trần Hữu Đạt` | Glassmorphic 2D | **Refactor** | Medium | MIT + Permission |
