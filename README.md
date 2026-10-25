@@ -31,13 +31,30 @@ Production-ready AI resume builder: resume/JD parsing, AI-driven optimization (A
 | `npm run lint`    | ESLint on client                |
 | `npm run start`   | Start server (production mode)  |
 
+## Portfolio Builder & Templates
+
+Turn any parsed resume or candidate profile into a high-converting developer portfolio in seconds:
+
+- **6 Curated High-Impact Templates:**
+  - `Spotlight`: Authentic curved SVG dynamic bezier banner, interactive spotlight effect, and direct LinkedIn contact integration.
+  - `Poster`: High-contrast brutalist typography, editorial magazine cover cards, and marquee animation.
+  - `DevPort`: Terminal/IDE-inspired developer showcase with command-palette aesthetics.
+  - `Creative (Modern 3D)`: Interactive card depth, particle backdrop, and glowing gradients.
+  - `Developer`: Clean, organized layout prioritizing code repositories and system architecture.
+  - `Minimal`: Distraction-free typography-first portfolio for executives and researchers.
+- **Edge-to-Edge Realtime Preview:** Full viewport immersive preview mode with floating toolbar dock, theme switcher (Light/Dark), accent color picker, and responsive device simulation.
+- **One-Click Export:** Standalone static HTML export with embedded Google Fonts, CSS tokens, and OpenGraph SEO metadata.
+
 ## AI Providers
 
 Switchable via `AI_PROVIDER` in `server/.env`:
 - `ollama` (default) — uses local Ollama at `OLLAMA_URL` with `OLLAMA_MODEL`
 - `gemini` — uses `GEMINI_API_KEY`
 
-## API Documentation
+## Documentation
 
-The backend adheres strictly to RESTful conventions. Full route mappings, backward compatibility aliases, and controller schemas are documented in [server/API.md](server/API.md).
+- [Portfolio System Architecture](docs/PORTFOLIO_SYSTEM.md)
+- [Portfolio REST API & Schemas](docs/PORTFOLIO_API.md)
+- [Portfolio Template Design Guide](docs/PORTFOLIO_TEMPLATES_GUIDE.md)
+- [Server REST API Documentation](server/API.md)
 
