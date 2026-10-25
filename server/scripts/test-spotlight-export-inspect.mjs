@@ -197,5 +197,10 @@ console.log('- Has red gradient hero style:', spotlightJsx.includes('linear-grad
 console.log('- Has hanging swaying tablet:', spotlightJsx.includes('hanging-tablet') && spotlightJsx.includes('animation: "sway 6s ease-in-out infinite"'));
 console.log('- Has connected expertise nodes:', spotlightJsx.includes('expertiseNodes') && spotlightJsx.includes('isHot'));
 console.log('- Has giant CONTACT watermark:', spotlightJsx.includes("font-['Anton']") && spotlightJsx.includes('CONTACT'));
+console.log('\n--- NAV HTML IN STATIC ZIP ---');
+console.log(html.match(/<nav[\s\S]*?<\/nav>/)?.[0]);
+console.log('\n--- NAV CSS IN STATIC ZIP ---');
+console.log(css.match(/\.spotlight-nav-inner[\s\S]*?\.spotlight-logo/)?.[0]);
+
 console.log('\nALL STATIC & REACT EXPORTS FULLY VERIFIED & MATCH SPOTLIGHT TEMPLATE 100%!');
 
