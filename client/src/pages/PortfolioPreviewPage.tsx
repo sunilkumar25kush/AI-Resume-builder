@@ -21,7 +21,7 @@ import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
 import { TEMPLATE_METADATA } from "@/components/portfolios/templates/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { ColorPresetPicker } from "@/components/portfolios/common/ColorPresetPicker";
 import { ThemeModeToggle } from "@/components/portfolios/common/ThemeModeToggle";
 import type { Portfolio, PortfolioDesignSettings, PortfolioTemplateId } from "@/types/portfolio";
 
@@ -376,21 +376,11 @@ export default function PortfolioPreviewPage() {
               <ThemeModeToggle theme={previewTheme} onChange={setPreviewTheme} />
 
               {/* Color Accent Picker */}
-              <div className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neutral-900 border border-neutral-800">
-                <Palette className="h-3 w-3 text-neutral-400" />
-                {PRESET_COLORS.map((col) => (
-                  <button
-                    key={col.name}
-                    type="button"
-                    title={col.name}
-                    onClick={() => setPreviewColor(col.value)}
-                    className="w-3.5 h-3.5 rounded-full border border-white/20 transition-transform hover:scale-125 flex items-center justify-center"
-                    style={{ backgroundColor: col.value }}
-                  >
-                    {previewColor === col.value && <Check className="h-2 w-2 text-white" />}
-                  </button>
-                ))}
-              </div>
+              <ColorPresetPicker
+                currentColor={previewColor}
+                onChange={setPreviewColor}
+                className="hidden xl:flex"
+              />
 
               {/* Font Selector */}
               <div className="hidden 2xl:flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-900 border border-neutral-800">
