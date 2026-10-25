@@ -179,7 +179,10 @@ export function PosterTemplate({
 
         {/* Framed Print Portrait in Center Leaning -3deg */}
         <div className="poster-portrait-framed relative lg:absolute lg:left-1/2 lg:bottom-[14svh] lg:-translate-x-1/2 z-10 pointer-events-none flex items-center justify-center mx-auto mt-[-10vw] lg:mt-0 mb-6 lg:mb-0">
-          <div className="relative rotate-[-3deg] w-[min(58vw,280px)] lg:w-[min(28vw,360px)] min-w-[200px] transition-transform duration-500 hover:rotate-0">
+          <div
+            className="relative rotate-[-3deg] w-[min(58vw,280px)] lg:w-[min(28vw,360px)] min-w-[200px] transition-transform duration-500 hover:rotate-0"
+            style={{ willChange: "transform" }}
+          >
             {avatarUrl ? (
               <img
                 src={avatarUrl}
@@ -244,7 +247,10 @@ export function PosterTemplate({
     // -------------------------------------------------------------------------
     marquee: (
       <div key="marquee" className="poster-band relative z-20 overflow-hidden bg-[#e11d2a] text-white py-[18px] select-none shadow-md">
-        <div className="poster-track flex items-center gap-12 w-max font-['Anton'] text-[clamp(28px,3.4vw,52px)] uppercase whitespace-nowrap animate-[marquee_35s_linear_infinite]">
+        <div
+          className="poster-track flex items-center gap-12 w-max font-['Anton'] text-[clamp(28px,3.4vw,52px)] uppercase whitespace-nowrap animate-[marquee_35s_linear_infinite]"
+          style={{ willChange: "transform" }}
+        >
           <span>CONTRIBUTIONS <b>260</b></span>
           <span className="opacity-90">✦</span>
           <span>HTML</span>
