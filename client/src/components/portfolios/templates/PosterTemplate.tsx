@@ -56,7 +56,7 @@ export function PosterTemplate({
   const profile = portfolio.profile;
   const design = portfolio.design;
   const socialLinks = portfolio.socialLinks || [];
-  const skills = portfolio.skills || [];
+  const skills = useMemo(() => portfolio.skills || [], [portfolio.skills]);
   const experience = portfolio.experience || [];
   const education = portfolio.education || [];
   const projects = portfolio.projects || [];
