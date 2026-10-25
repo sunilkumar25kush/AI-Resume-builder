@@ -11,6 +11,7 @@ import * as portfolioExportService from "../services/portfolioExport.service.js"
  */
 export const createPortfolio = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.createPortfolio(req.user.id, req.validatedBody);
+  console.info(`[portfolio:lifecycle] created id=${portfolio._id || portfolio.id} template=${portfolio.templateId} user=${req.user.id}`);
   res.status(201).json({ success: true, data: { portfolio } });
 });
 
@@ -54,18 +55,21 @@ export const publishPortfolioById = asyncHandler(async (req, res) => {
     req.params.id,
     req.validatedBody || {},
   );
+  console.info(`[portfolio:lifecycle] published id=${req.params.id} slug=${portfolio.slug} user=${req.user.id}`);
   res.json({ success: true, data: { portfolio } });
 });
 
 /** Revert portfolio state to draft */
 export const unpublishPortfolioById = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.unpublishPortfolio(req.user.id, req.params.id);
+  console.info(`[portfolio:lifecycle] unpublished id=${req.params.id} user=${req.user.id}`);
   res.json({ success: true, data: { portfolio } });
 });
 
 /** Delete a portfolio */
 export const deletePortfolioById = asyncHandler(async (req, res) => {
   const result = await portfolioService.deletePortfolio(req.user.id, req.params.id);
+  console.info(`[portfolio:lifecycle] deleted id=${req.params.id} user=${req.user.id}`);
   res.json({ success: true, data: result });
 });
 
