@@ -614,6 +614,12 @@ export function PosterTemplate({
           --body: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
+        .poster-template a:focus-visible,
+        .poster-template button:focus-visible {
+          outline: 3px solid #e11d2a !important;
+          outline-offset: 3px !important;
+        }
+
         /* Paper Noise Texture Overlay */
         .poster-template::before {
           content: '';
