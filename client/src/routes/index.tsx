@@ -38,6 +38,18 @@ export const router = createBrowserRouter([
     element: <PublicPortfolioPage />,
   },
   {
+    path: "/portfolios/:id",
+    element: (
+      <ProtectedRoute>
+        <PortfolioPreviewPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/portfolio-templates/:templateId",
+    element: <PortfolioPreviewPage />,
+  },
+  {
     path: "/print/:id",
     element: <PrintResumePage />,
   },
@@ -169,14 +181,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <PortfoliosPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/portfolios/:id",
-        element: (
-          <ProtectedRoute>
-            <PortfolioPreviewPage />
           </ProtectedRoute>
         ),
       },

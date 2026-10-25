@@ -501,9 +501,21 @@ export default function CreatePortfolioDialog({
                         {tpl.desc}
                       </p>
 
-                      <div className="mt-2 text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
-                        <span>{tpl.previewNote}</span>
+                      <div className="mt-2 w-full flex items-center justify-between text-[10px] font-mono text-muted-foreground/80">
+                        <div className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+                          <span>{tpl.previewNote}</span>
+                        </div>
+                        <a
+                          href={`/portfolio-templates/${tpl.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:text-primary hover:underline flex items-center gap-0.5 text-[10px] font-sans font-medium text-primary/80 transition-colors ml-auto"
+                          title={`Preview full-page ${tpl.name} template`}
+                        >
+                          Preview ↗
+                        </a>
                       </div>
                     </button>
                   );
