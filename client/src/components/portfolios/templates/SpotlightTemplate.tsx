@@ -184,8 +184,6 @@ export function SpotlightTemplate({
   const fullName = profile?.fullName || (showEmpty ? "sunil kumar" : "developer");
   const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile?.headline || (showEmpty ? "HTML and JavaScript developer" : "Full Stack Developer");
-  const contactEmail = profile?.email || "";
-
   // Extract GitHub handle and avatar
   const githubLink = socialLinks.find(
     (l: PortfolioSocialLink) =>
@@ -194,11 +192,6 @@ export function SpotlightTemplate({
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
     : "sunilkumar25kush";
-
-  const linkedinLink = socialLinks.find(
-    (l: PortfolioSocialLink) =>
-      l.platform?.toLowerCase().includes("linkedin") || l.url?.toLowerCase().includes("linkedin.com")
-  );
 
   // Fallback to candidate's github avatar if none uploaded
   const avatarUrl = profile?.avatarUrl
@@ -397,17 +390,17 @@ export function SpotlightTemplate({
           </div>
         </div>
 
-        {/* Bottom Smooth SVG Wave Curve */}
-        <div className="relative z-10 w-full overflow-hidden leading-none">
+        {/* Bottom Smooth SVG Wave Curve - seamless transition with no subpixel line */}
+        <div className="relative z-10 w-full overflow-hidden leading-none -mb-1 translate-y-[2px]">
           <svg
-            className="w-full h-[55px] sm:h-[85px] block"
-            viewBox="0 0 1440 90"
+            className="w-full h-[55px] sm:h-[85px] block translate-y-[1px] scale-y-[1.05]"
+            viewBox="0 0 1440 92"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <path
               fill={colors.waveFill}
-              d="M0,60 C320,10 540,10 720,45 C980,80 1200,85 1440,30 L1440,90 L0,90 Z"
+              d="M0,60 C320,10 540,10 720,45 C980,80 1200,85 1440,30 L1440,96 L0,96 Z"
             />
           </svg>
         </div>
@@ -505,7 +498,7 @@ export function SpotlightTemplate({
             {/* Stats row */}
             <div
               className="flex items-center gap-6 pt-4 text-sm font-medium"
-              style={{ color: colors.inkMuted, borderTop: `1px solid ${colors.border}` }}
+              style={{ color: colors.inkMuted }}
             >
               <span>2 followers</span>
               <span className="flex items-center gap-1.5">
@@ -535,8 +528,6 @@ export function SpotlightTemplate({
         style={{
           backgroundColor: colors.sectionWhite,
           color: colors.ink,
-          borderTop: `1px solid ${colors.border}`,
-          borderBottom: `1px solid ${colors.border}`,
         }}
       >
         <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center">
@@ -1006,35 +997,15 @@ export function SpotlightTemplate({
             Open to new roles, collaborations and interesting problems.
           </p>
 
-          {/* Direct Action Pills */}
+          {/* Direct Action Pills - Only LinkedIn option as requested */}
           <div className="space-y-3">
             <SafeLink
-              href={githubLink?.url || `https://github.com/${githubHandle}`}
-              className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
+              href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true"
+              className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group shadow-sm"
             >
-              <span>GitHub</span>
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <span>LinkedIn</span>
+              <span className="group-hover:translate-x-1 transition-transform font-bold">→</span>
             </SafeLink>
-
-            {contactEmail && (
-              <SafeLink
-                href={`mailto:${contactEmail}`}
-                className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
-              >
-                <span>Email me</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </SafeLink>
-            )}
-
-            {linkedinLink?.url && (
-              <SafeLink
-                href={linkedinLink.url}
-                className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
-              >
-                <span>LinkedIn</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </SafeLink>
-            )}
           </div>
         </div>
       </section>
