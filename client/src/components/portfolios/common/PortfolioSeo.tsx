@@ -55,6 +55,26 @@ export function PortfolioSeo({ portfolio }: PortfolioSeoProps) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       {avatarUrl && <meta name="twitter:image" content={avatarUrl} />}
+
+      {/* Structured Data: Schema.org ProfilePage & Person */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            mainEntity: {
+              "@type": "Person",
+              name: portfolio.profile?.fullName || portfolio.title,
+              description: description,
+              jobTitle: portfolio.profile?.headline,
+              url: canonicalUrl,
+              image: avatarUrl || undefined,
+              sameAs: portfolio.socialLinks?.map((l) => l.url).filter(Boolean) || [],
+            },
+          }),
+        }}
+      />
     </>
   );
 }
