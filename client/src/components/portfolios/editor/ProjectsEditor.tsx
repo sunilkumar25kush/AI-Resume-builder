@@ -72,21 +72,26 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
       </div>
 
       {projects.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 p-8 text-center space-y-2">
-          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-            No projects added yet
-          </p>
-          <p className="text-xs text-neutral-400">
-            Add high-impact engineering projects to attract recruiters and collaborators.
-          </p>
+        <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-800 p-8 text-center space-y-3 bg-neutral-50/50 dark:bg-neutral-900/30">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto text-neutral-400 dark:text-neutral-500">
+            <FolderGit2 className="h-6 w-6" aria-hidden />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              No projects added yet
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto">
+              Add your featured open-source libraries, web applications, or case studies to showcase your technical craft.
+            </p>
+          </div>
           <Button
             type="button"
             variant="default"
             size="sm"
             onClick={handleAddProject}
-            className="mt-2 text-xs"
+            className="mt-2 text-xs gap-1.5 shadow-xs"
           >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Add First Project
+            <Plus className="h-3.5 w-3.5" aria-hidden /> Add First Project
           </Button>
         </div>
       ) : (
