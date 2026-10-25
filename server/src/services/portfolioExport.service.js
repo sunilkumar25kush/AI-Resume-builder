@@ -74,15 +74,19 @@ function getFontFamilyCss(fontFamilyKey) {
 
 const GOOGLE_FONTS_LINK_TAG = `<link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
 
 /**
  * Sanitizes portfolio data to exclude private DB metadata or internal IDs.
  */
 export function sanitizePortfolioData(portfolio) {
-  const rawTemplate = (portfolio.design?.template || "devport").toLowerCase().trim();
+  const rawTemplate = (portfolio.design?.template || "spotlight").toLowerCase().trim();
   const template =
-    rawTemplate === "creative" || rawTemplate === "modern"
+    rawTemplate === "spotlight"
+      ? "spotlight"
+      : rawTemplate === "poster"
+      ? "poster"
+      : rawTemplate === "creative" || rawTemplate === "modern"
       ? "creative"
       : rawTemplate === "developer"
       ? "developer"
@@ -93,7 +97,7 @@ export function sanitizePortfolioData(portfolio) {
   const theme = portfolio.design?.theme || "system";
   const primaryColor =
     portfolio.design?.primaryColor ||
-    (template === "creative" ? "#9333ea" : template === "devport" ? "#06b6d4" : "#2563eb");
+    (template === "spotlight" ? "#e3141f" : template === "poster" ? "#e11d2a" : template === "creative" ? "#9333ea" : template === "devport" ? "#06b6d4" : "#2563eb");
   const fontFamily = portfolio.design?.fontFamily || "Inter";
 
   return {
