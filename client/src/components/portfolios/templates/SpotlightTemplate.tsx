@@ -9,7 +9,6 @@ import {
   FolderGit2,
 } from "lucide-react";
 
-import { AttributionFooter } from "@/components/portfolios/common/AttributionFooter";
 import { SafeLink } from "@/components/portfolios/common/SafeLink";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import type {
@@ -109,6 +108,11 @@ export function SpotlightTemplate({
   const accentDeep = useMemo(() => adjustBrightness(accentColor, -30), [accentColor]);
   const accentDark = useMemo(() => adjustBrightness(accentColor, -20), [accentColor]);
 
+  // Template-specific customization
+  const templateSettings = design?.templateSettings || {};
+  const showGlowHalo = templateSettings.glowHalo !== false;
+  const showExpertiseTree = templateSettings.expertiseTree !== false;
+
   // Theme mode handling (light / dark / system)
   const themeSetting = design?.theme || "system";
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -127,35 +131,35 @@ export function SpotlightTemplate({
     }
   }, [themeSetting]);
 
-  // Semantic color tokens responding to theme (exact GitSkins color palette)
+  // Semantic color tokens responding to theme
   const colors = useMemo(() => {
     return isDarkMode
       ? {
-          paper: "#0d0d0d",
-          sectionWhite: "#141416",
-          cardBg: "#18181c",
-          cardBorder: "rgba(255, 255, 255, 0.1)",
-          ink: "#ffffff",
-          inkMuted: "#a1a1aa",
-          border: "rgba(255, 255, 255, 0.1)",
-          navBg: "rgba(13, 13, 13, 0.92)",
-          navInk: "#ffffff",
-          waveFill: "#0d0d0d",
-          pillBg: "#222226",
-        }
+        paper: "#0c0c0e",
+        sectionWhite: "#141418",
+        cardBg: "#1c1c22",
+        cardBorder: "rgba(255, 255, 255, 0.08)",
+        ink: "#f4f4f6",
+        inkMuted: "#a1a1aa",
+        border: "rgba(255, 255, 255, 0.08)",
+        navBg: "rgba(18, 18, 22, 0.92)",
+        navInk: "#ffffff",
+        waveFill: "#0c0c0e",
+        pillBg: "#27272f",
+      }
       : {
-          paper: "#f6f5f3",
-          sectionWhite: "#ffffff",
-          cardBg: "#ffffff",
-          cardBorder: "rgba(18, 18, 18, 0.1)",
-          ink: "#121212",
-          inkMuted: "#555555",
-          border: "rgba(18, 18, 18, 0.1)",
-          navBg: "rgba(255, 255, 255, 0.92)",
-          navInk: "#121212",
-          waveFill: "#f6f5f3",
-          pillBg: "#f6f5f3",
-        };
+        paper: "#ffffff",
+        sectionWhite: "#ffffff",
+        cardBg: "#ffffff",
+        cardBorder: "rgba(0, 0, 0, 0.08)",
+        ink: "#121212",
+        inkMuted: "#555555",
+        border: "rgba(0, 0, 0, 0.08)",
+        navBg: "rgba(255, 255, 255, 0.92)",
+        navInk: "#121212",
+        waveFill: "#ffffff",
+        pillBg: "#f1f1f3",
+      };
   }, [isDarkMode]);
 
   // Typography font family
@@ -166,11 +170,48 @@ export function SpotlightTemplate({
   const [isNavSolid, setIsNavSolid] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Responsive breakpoint tracking (lg = 1024px) for hero layout
+  const [isLgScreen, setIsLgScreen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia("(min-width: 1024px)");
+      const updateLg = () => setIsLgScreen(mediaQuery.matches);
+      updateLg();
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener("change", updateLg);
+        return () => mediaQuery.removeEventListener("change", updateLg);
+      } else if ((mediaQuery as any).addListener) {
+        (mediaQuery as any).addListener(updateLg);
+        return () => (mediaQuery as any).removeListener(updateLg);
+      }
+    }
+
+    const handleResize = () => setIsLgScreen(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      setIsNavSolid(window.scrollY > 90);
+      const heroEl = document.getElementById("top");
+      if (heroEl) {
+        const { top: heroTop, bottom: heroBottom } = heroEl.getBoundingClientRect();
+        const navHeight = 70;
+        // Transparent only while hero overlaps navigation bar; solid when entirely above or below
+        const isHeroOverlappingNav = heroTop < navHeight && heroBottom > 0;
+        setIsNavSolid(!isHeroOverlappingNav);
+      } else {
+        setIsNavSolid(window.scrollY > 400);
+      }
       setShowScrollTop(window.scrollY > 400);
     };
+
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -193,26 +234,21 @@ export function SpotlightTemplate({
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
     : "sunilkumar25kush";
 
-  // Fallback to candidate's github avatar or sample portrait matching Screenshot 2
-  const fallbackSampleUrl = "/portfolio-templates/spotlight-sample.png";
-  const [heroImgSrc, setHeroImgSrc] = useState<string>(() => {
-    if (profile?.avatarUrl) return normalizeAvatarUrl(profile.avatarUrl);
-    if (githubHandle && githubHandle !== "sunilkumar25kush") {
-      return `https://avatars.githubusercontent.com/${githubHandle}`;
-    }
-    return fallbackSampleUrl;
-  });
+  // Fallback to candidate's github avatar if none uploaded
+  const avatarUrl = profile?.avatarUrl
+    ? normalizeAvatarUrl(profile.avatarUrl)
+    : `https://avatars.githubusercontent.com/${githubHandle}`;
 
-  useEffect(() => {
-    if (profile?.avatarUrl) {
-      setHeroImgSrc(normalizeAvatarUrl(profile.avatarUrl));
-    } else if (githubHandle && githubHandle !== "sunilkumar25kush") {
-      setHeroImgSrc(`https://avatars.githubusercontent.com/${githubHandle}`);
-    } else {
-      setHeroImgSrc(fallbackSampleUrl);
-    }
-  }, [profile?.avatarUrl, githubHandle]);
-
+  // Smart headline split for clean multi-line display (exact match to screenshot 1)
+  const headlineLines = useMemo(() => {
+    const text = headline.trim();
+    const words = text.split(/\s+/);
+    if (words.length <= 1) return { line1: words[0] || "developer", line2: "" };
+    if (words.length === 2) return { line1: words[0], line2: words[1] };
+    const lastWord = words[words.length - 1];
+    const rest = words.slice(0, words.length - 1).join(" ");
+    return { line1: rest, line2: lastWord };
+  }, [headline]);
 
   // All extracted skills as strings
   const skillNames = useMemo(() => {
@@ -230,6 +266,7 @@ export function SpotlightTemplate({
         tags: p.tags || ["JavaScript"],
         repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\s+/g, "-")}`,
         liveUrl: p.liveUrl,
+        imageUrl: p.imageUrl,
         featured: p.featured ?? true,
       }));
     }
@@ -240,6 +277,7 @@ export function SpotlightTemplate({
         tags: ["HTML", "JavaScript"],
         repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,
         liveUrl: undefined as string | undefined,
+        imageUrl: undefined as string | undefined,
         featured: true,
       },
       {
@@ -341,69 +379,88 @@ export function SpotlightTemplate({
       <section
         key="hero"
         id="top"
-        className="spotlight-hero relative min-h-[100svh] text-white overflow-hidden flex flex-col justify-between"
+        className="spotlight-hero relative text-white overflow-hidden"
         style={{
-          background: `radial-gradient(120% 90% at 70% 30%, ${adjustBrightness(accentColor, 15)} 0%, ${accentColor} 45%, ${accentDeep} 100%)`,
+          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,
+          minHeight: "100svh",
         }}
       >
-        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 md:grid-cols-[1.05fr_1fr] items-center gap-6 sm:gap-8 min-h-[100svh] pt-24 sm:pt-28 pb-24 sm:pb-32">
-          {/* Left Hero Copy */}
-          <div className="copy space-y-4 pt-2 pb-6 md:py-0">
-            <h1 className="font-extrabold text-[clamp(42px,6.4vw,92px)] leading-[0.98] tracking-[-0.035em]">
+        {/* Main grid: left text, right portrait — both visible in one viewport */}
+        <div
+          className="max-w-[1180px] w-full mx-auto px-5 sm:px-10 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10"
+          style={{ minHeight: "100svh", paddingTop: "80px", paddingBottom: "90px", alignItems: "center" }}
+        >
+          {/* Left: Text */}
+          <div className="flex flex-col justify-center gap-5">
+            <h1 className="font-extrabold text-[clamp(36px,6.5vw,84px)] leading-[1.03] tracking-[-0.035em]">
               <span className="block text-white">Hi, I&apos;m {firstName.toLowerCase()}</span>
-              <span className="block text-[0.62em] font-extrabold tracking-[-0.03em] mt-[0.18em] text-white">
-                {headline}
-              </span>
+              {headlineLines.line1 && (
+                <span className="block text-white mt-1">{headlineLines.line1}</span>
+              )}
+              {headlineLines.line2 && (
+                <span className="block text-white">{headlineLines.line2}</span>
+              )}
             </h1>
 
-            <p className="max-w-[470px] text-white/92 text-base sm:text-[16.5px] leading-[1.6] my-5">
+            <p className="max-w-[460px] text-white/90 text-base sm:text-lg leading-[1.65]">
               {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}
             </p>
 
-            <div className="actions flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3">
               <a
                 href="#work"
-                className="inline-flex items-center justify-center min-h-[46px] px-6 rounded-full bg-white font-semibold text-[14.5px] transition-transform hover:-translate-y-0.5 shadow-md"
+                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm hover:scale-105 transition-all shadow-md"
                 style={{ color: accentColor }}
               >
                 View my work
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center min-h-[46px] px-6 rounded-full border-[1.5px] border-white/75 text-white font-semibold text-[14.5px] transition-transform hover:-translate-y-0.5 hover:bg-white/10"
+                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm hover:bg-white/10 hover:scale-105 transition-all"
               >
                 Contact me
               </a>
             </div>
           </div>
 
-          {/* Right Hero Stage: Exact GitSkins portrait.framed */}
-          <div className="spotlight-stage relative z-[5] self-center justify-self-center md:justify-self-end w-full max-w-[520px] flex items-center justify-center">
-            <div className="relative w-[min(340px,70vw)] aspect-[4/5] rounded-[28px] border-[8px] sm:border-[10px] border-white/95 shadow-[0_40px_80px_-30px_rgba(40,0,0,0.6)] overflow-hidden bg-black/10 shrink-0">
+          {/* Right: Portrait — right-aligned, fully visible */}
+          <div className="flex items-center justify-center lg:justify-end">
+            <div
+              className={`relative rounded-[24px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white overflow-hidden bg-white/10 ${
+                showGlowHalo ? "shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)]" : "shadow-md"
+              }`}
+              style={{
+                width: "min(300px, 44vw)",
+                aspectRatio: "4/5",
+                marginTop: isLgScreen ? "-330px" : undefined,
+                right: isLgScreen ? "80px" : undefined,
+                boxShadow: showGlowHalo
+                  ? `0 30px 70px -20px rgba(0,0,0,0.45), 0 0 50px ${accentColor}40`
+                  : undefined,
+              }}
+            >
               <img
-                src={heroImgSrc}
+                src={avatarUrl}
                 alt={fullName}
                 className="w-full h-full object-cover object-top"
-                onError={() => {
-                  if (heroImgSrc !== fallbackSampleUrl) {
-                    setHeroImgSrc(fallbackSampleUrl);
-                  }
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
                 }}
               />
             </div>
           </div>
         </div>
 
-        {/* Bottom Smooth SVG Wave Curve: Exact GitSkins curve */}
+        {/* Bottom wave */}
         <svg
-          className="absolute bottom-[-1px] left-0 right-0 w-full h-[70px] sm:h-[90px] block pointer-events-none z-[4]"
+          className="absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]"
           viewBox="0 0 1440 90"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
           <path
             fill={colors.waveFill}
-            d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,90 L0,90 Z"
+            d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z"
           />
         </svg>
       </section>
@@ -448,14 +505,9 @@ export function SpotlightTemplate({
             >
               <div className="w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center">
                 <img
-                  src={heroImgSrc}
+                  src={avatarUrl}
                   alt={fullName}
                   className="w-full h-full object-cover object-top"
-                  onError={() => {
-                    if (heroImgSrc !== fallbackSampleUrl) {
-                      setHeroImgSrc(fallbackSampleUrl);
-                    }
-                  }}
                 />
               </div>
             </div>
@@ -561,21 +613,23 @@ export function SpotlightTemplate({
           {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}
           <div className="relative min-h-0 lg:min-h-[460px] flex items-center justify-center p-2 w-full">
             {/* SVG Connecting Dashed Curve - hidden on mobile/tablet to avoid distortion */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block"
-              aria-hidden="true"
-            >
-              <path
-                d="M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370"
-                fill="none"
-                stroke={accentColor}
-                strokeOpacity="0.55"
-                strokeWidth="2"
-                strokeDasharray="6 8"
-                style={{ willChange: "stroke-dashoffset" }}
-                className="animate-[dash_18s_linear_infinite]"
-              />
-            </svg>
+            {showExpertiseTree && (
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block"
+                aria-hidden="true"
+              >
+                <path
+                  d="M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370"
+                  fill="none"
+                  stroke={accentColor}
+                  strokeOpacity="0.55"
+                  strokeWidth="2"
+                  strokeDasharray="6 8"
+                  style={{ willChange: "stroke-dashoffset" }}
+                  className="animate-[dash_18s_linear_infinite]"
+                />
+              </svg>
+            )}
 
             {/* 4 Cards Grid */}
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full max-w-[540px]">
@@ -753,6 +807,20 @@ export function SpotlightTemplate({
                   }}
                 >
                   <div className="space-y-4">
+                    {/* Project Screenshot / Thumbnail (if available) */}
+                    {project.imageUrl && (
+                      <div className="w-full h-44 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10 relative">
+                        <img
+                          src={project.imageUrl}
+                          alt={project.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs font-bold" style={{ color: colors.inkMuted }}>
                         0{idx + 1} / 0{displayProjects.length}
@@ -1015,7 +1083,7 @@ export function SpotlightTemplate({
             >
               <div className="flex items-center gap-3">
                 <svg className="w-5 h-5 fill-current text-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
                 </svg>
                 <span>LinkedIn</span>
               </div>
@@ -1059,16 +1127,16 @@ export function SpotlightTemplate({
       {/* Sticky Navigation Bar */}
       <nav
         aria-label="Primary portfolio navigation"
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isNavSolid ? "py-3 shadow-md backdrop-blur-md" : "py-5 sm:py-6"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isNavSolid ? "py-3 shadow-md backdrop-blur-md" : "py-5 sm:py-6"
+          }`}
         style={{
           backgroundColor: isNavSolid ? colors.navBg : "transparent",
           borderBottom: isNavSolid ? `1px solid ${colors.border}` : "none",
         }}
       >
-        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 flex items-center justify-between">
-          {/* Logo with period */}
+        {/* Navbar: logo | centered links | hire-me button */}
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 flex items-center justify-between gap-4">
+          {/* Logo */}
           <a
             href="#top"
             className="text-xl sm:text-2xl font-extrabold tracking-tight flex items-center"
@@ -1078,68 +1146,39 @@ export function SpotlightTemplate({
             <span style={{ color: accentColor }}>.</span>
           </a>
 
-          {/* Links & Hire me button */}
-          <div className="flex items-center gap-6 sm:gap-8">
-            <div className="hidden sm:flex items-center gap-6 text-sm font-semibold">
+          {/* Centered nav links */}
+          <div className="hidden sm:flex items-center justify-center gap-6 sm:gap-8 text-sm font-semibold">
+            {["about", "expertise", "work", "contact"].map((link) => (
               <a
-                href="#about"
-                className="transition-colors hover:opacity-100"
-                style={{
-                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
-                }}
+                key={link}
+                href={`#${link}`}
+                className="capitalize transition-opacity hover:opacity-100"
+                style={{ color: isNavSolid ? colors.inkMuted : "rgba(255,255,255,0.85)" }}
               >
-                About
+                {link.charAt(0).toUpperCase() + link.slice(1)}
               </a>
-              <a
-                href="#expertise"
-                className="transition-colors hover:opacity-100"
-                style={{
-                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
-                }}
-              >
-                Expertise
-              </a>
-              <a
-                href="#work"
-                className="transition-colors hover:opacity-100"
-                style={{
-                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
-                }}
-              >
-                Work
-              </a>
-              <a
-                href="#contact"
-                className="transition-colors hover:opacity-100"
-                style={{
-                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
-                }}
-              >
-                Contact
-              </a>
-            </div>
-
-            <a
-              href="#contact"
-              className="px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-xs"
-              style={{
-                backgroundColor: isNavSolid
-                  ? isDarkMode
-                    ? "#ffffff"
-                    : "#111111"
-                  : "#ffffff",
-                color: isNavSolid
-                  ? isDarkMode
-                    ? "#111111"
-                    : "#ffffff"
-                  : isDarkMode
-                  ? "#111111"
-                  : "#111111",
-              }}
-            >
-              Hire me
-            </a>
+            ))}
           </div>
+
+          {/* Hire me button */}
+          <a
+            href="#contact"
+            className="px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-sm whitespace-nowrap"
+            style={{
+              backgroundColor: isNavSolid
+                ? isDarkMode
+                  ? "#ffffff"
+                  : "#111111"
+                : "#ffffff",
+              color: isNavSolid
+                ? isDarkMode
+                  ? "#111111"
+                  : "#ffffff"
+                : "#111111",
+            }}
+          >
+            Hire me
+          </a>
         </div>
       </nav>
 
@@ -1152,13 +1191,6 @@ export function SpotlightTemplate({
           ))}
       </main>
 
-      {/* Attribution Footer */}
-      <AttributionFooter
-        templateName="Spotlight"
-        author="sunil kumar"
-        license="MIT License"
-        originalUrl="https://www.gitskins.com/portfolio-templates/spotlight/?username=sunilkumar25kush"
-      />
 
       {/* Back to Top Floating Button */}
       {showScrollTop && (
