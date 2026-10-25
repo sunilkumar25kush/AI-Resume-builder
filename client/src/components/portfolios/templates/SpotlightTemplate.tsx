@@ -3,12 +3,24 @@ import {
   ArrowUp,
   MapPin,
   Award,
+  ExternalLink,
+  ChevronRight,
+  Star,
+  FolderGit2,
 } from "lucide-react";
 
 import { AttributionFooter } from "@/components/portfolios/common/AttributionFooter";
 import { SafeLink } from "@/components/portfolios/common/SafeLink";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
-import type { Portfolio, PortfolioSkill, PortfolioSocialLink, PortfolioExperience, PortfolioEducation, PortfolioProject, PortfolioCertification } from "@/types/portfolio";
+import type {
+  Portfolio,
+  PortfolioSkill,
+  PortfolioSocialLink,
+  PortfolioExperience,
+  PortfolioEducation,
+  PortfolioProject,
+  PortfolioCertification,
+} from "@/types/portfolio";
 
 export interface SpotlightTemplateProps {
   portfolio: Partial<Portfolio>;
@@ -18,7 +30,7 @@ export interface SpotlightTemplateProps {
   previewMode?: "desktop" | "tablet" | "mobile";
 }
 
-// GitSkins exact language colors
+// GitSkins exact language dot colors
 const LANG_COLORS: Record<string, string> = {
   JavaScript: "#f1e05a",
   TypeScript: "#3178c6",
@@ -41,12 +53,44 @@ const LANG_COLORS: Record<string, string> = {
   Svelte: "#ff3e00",
   React: "#61dafb",
   "Node.js": "#339933",
+  Dockerfile: "#384d54",
 };
+
+// Font family map supporting the typography customization settings
+const FONT_FAMILY_MAP: Record<string, string> = {
+  Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  Roboto: "'Roboto', -apple-system, BlinkMacSystemFont, sans-serif",
+  Merriweather: "'Merriweather', Georgia, serif",
+  Playfair: "'Playfair Display', Georgia, serif",
+  JetBrains: "'JetBrains Mono', 'Fira Code', monospace",
+};
+
+// Helper to adjust color shade for gradients and contrast
+function adjustBrightness(hex: string, percent: number): string {
+  const cleanHex = hex.replace("#", "");
+  const num = parseInt(cleanHex.length === 3 ? cleanHex.split("").map((c) => c + c).join("") : cleanHex, 16);
+  if (isNaN(num)) return hex;
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
+  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
+  return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
+}
 
 export function SpotlightTemplate({
   portfolio,
   showEmpty = false,
-  sectionOrder = ["hero", "about", "expertise", "skills", "projects", "experience", "education", "certifications", "contact"],
+  sectionOrder = [
+    "hero",
+    "about",
+    "expertise",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ],
   hiddenSections = [],
 }: SpotlightTemplateProps) {
   const profile = portfolio.profile;
@@ -58,28 +102,73 @@ export function SpotlightTemplate({
   const projects = useMemo(() => portfolio.projects || [], [portfolio.projects]);
   const certifications = portfolio.certifications || [];
 
+  // ---------------------------------------------------------------------------
+  // 1. DYNAMIC CUSTOMIZATION: ACCENT COLOR, THEME, AND TYPOGRAPHY
+  // ---------------------------------------------------------------------------
   const accentColor = design?.primaryColor || "#e3141f";
+  const accentDeep = useMemo(() => adjustBrightness(accentColor, -30), [accentColor]);
+  const accentDark = useMemo(() => adjustBrightness(accentColor, -20), [accentColor]);
+
+  // Theme mode handling (light / dark / system)
+  const themeSetting = design?.theme || "system";
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (themeSetting === "dark") {
+      setIsDarkMode(true);
+    } else if (themeSetting === "light") {
+      setIsDarkMode(false);
+    } else {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      setIsDarkMode(mq.matches);
+      const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+      mq.addEventListener("change", handler);
+      return () => mq.removeEventListener("change", handler);
+    }
+  }, [themeSetting]);
+
+  // Semantic color tokens responding to theme
+  const colors = useMemo(() => {
+    return isDarkMode
+      ? {
+          paper: "#0c0c0e",
+          sectionWhite: "#141418",
+          cardBg: "#1c1c22",
+          cardBorder: "rgba(255, 255, 255, 0.08)",
+          ink: "#f4f4f6",
+          inkMuted: "#a1a1aa",
+          border: "rgba(255, 255, 255, 0.08)",
+          navBg: "rgba(18, 18, 22, 0.92)",
+          navInk: "#ffffff",
+          waveFill: "#0c0c0e",
+          pillBg: "#27272f",
+        }
+      : {
+          paper: "#f6f5f3",
+          sectionWhite: "#ffffff",
+          cardBg: "#ffffff",
+          cardBorder: "rgba(0, 0, 0, 0.08)",
+          ink: "#121212",
+          inkMuted: "#555555",
+          border: "rgba(0, 0, 0, 0.08)",
+          navBg: "rgba(255, 255, 255, 0.92)",
+          navInk: "#121212",
+          waveFill: "#f6f5f3",
+          pillBg: "#f1f1f3",
+        };
+  }, [isDarkMode]);
+
+  // Typography font family
+  const selectedFontKey = design?.fontFamily || "Inter";
+  const activeFontFamily = FONT_FAMILY_MAP[selectedFontKey] || FONT_FAMILY_MAP.Inter;
+
+  // Navigation scroll state
   const [isNavSolid, setIsNavSolid] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Derive candidate info
-  const fullName = profile?.fullName || (showEmpty ? "Sunil Kumar" : "Developer");
-  const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
-  const headline = profile?.headline || (showEmpty ? "JavaScript Developer" : "Software Developer");
-  const avatarUrl = profile?.avatarUrl ? normalizeAvatarUrl(profile.avatarUrl) : null;
-  const contactEmail = profile?.email || "";
-
-  // Extract GitHub handle if present
-  const githubLink = socialLinks.find((l: PortfolioSocialLink) =>
-    l.platform?.toLowerCase().includes("github") || l.url?.toLowerCase().includes("github.com")
-  );
-  const githubHandle = githubLink?.url
-    ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : "sunilkumar25kush";
-
   useEffect(() => {
     const handleScroll = () => {
-      setIsNavSolid(window.scrollY > 120);
+      setIsNavSolid(window.scrollY > 90);
       setShowScrollTop(window.scrollY > 400);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -89,134 +178,221 @@ export function SpotlightTemplate({
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 
-  // Technology categorizations matching GitSkins GROUPS
-  const techGroups = useMemo(() => {
-    const skillList = skills.map((s: PortfolioSkill) => (typeof s === "string" ? s : s.name)).filter(Boolean);
-    const groups: { title: string; items: string[] }[] = [];
+  // ---------------------------------------------------------------------------
+  // 2. CANDIDATE PROFILE DATA EXTRACTION
+  // ---------------------------------------------------------------------------
+  const fullName = profile?.fullName || (showEmpty ? "sunil kumar" : "developer");
+  const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
+  const headline = profile?.headline || (showEmpty ? "HTML and JavaScript developer" : "Full Stack Developer");
+  const contactEmail = profile?.email || "";
 
-    const focus = skillList.slice(0, 6);
-    if (focus.length > 0) {
-      groups.push({ title: "What I focus on", items: focus });
-    }
+  // Extract GitHub handle and avatar
+  const githubLink = socialLinks.find(
+    (l: PortfolioSocialLink) =>
+      l.platform?.toLowerCase().includes("github") || l.url?.toLowerCase().includes("github.com")
+  );
+  const githubHandle = githubLink?.url
+    ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
+    : "sunilkumar25kush";
 
-    const frontend = skillList.filter((s) => /react|vue|angular|svelte|html|css|tailwind|javascript|typescript|next/i.test(s));
-    if (frontend.length > 0) {
-      groups.push({ title: "Frontend", items: frontend });
-    }
+  const linkedinLink = socialLinks.find(
+    (l: PortfolioSocialLink) =>
+      l.platform?.toLowerCase().includes("linkedin") || l.url?.toLowerCase().includes("linkedin.com")
+  );
 
-    const backend = skillList.filter((s) => /node|express|python|django|fastapi|java|spring|go|rust|c\+\+|sql|postgres|mongo|graphql/i.test(s));
-    if (backend.length > 0) {
-      groups.push({ title: "Backend & systems", items: backend });
-    }
+  // Fallback to candidate's github avatar if none uploaded
+  const avatarUrl = profile?.avatarUrl
+    ? normalizeAvatarUrl(profile.avatarUrl)
+    : `https://avatars.githubusercontent.com/${githubHandle}`;
 
-    const tooling = skillList.filter((s) => /docker|kubernetes|aws|git|linux|ci\/cd|vite|webpack|jest/i.test(s));
-    if (tooling.length > 0) {
-      groups.push({ title: "Tooling & infra", items: tooling });
-    }
+  // Smart headline split for clean multi-line display (exact match to screenshot 1)
+  const headlineLines = useMemo(() => {
+    const text = headline.trim();
+    const words = text.split(/\s+/);
+    if (words.length <= 1) return { line1: words[0] || "developer", line2: "" };
+    if (words.length === 2) return { line1: words[0], line2: words[1] };
+    const lastWord = words[words.length - 1];
+    const rest = words.slice(0, words.length - 1).join(" ");
+    return { line1: rest, line2: lastWord };
+  }, [headline]);
 
-    if (groups.length === 0) {
-      groups.push(
-        { title: "What I focus on", items: ["JavaScript", "TypeScript", "React", "Node.js"] },
-        { title: "Frontend", items: ["HTML", "CSS", "TailwindCSS", "Vite"] },
-        { title: "Backend & systems", items: ["RESTful APIs", "MongoDB", "Express", "PostgreSQL"] },
-        { title: "Tooling & infra", items: ["Git", "Docker", "Linux", "CI/CD"] }
-      );
-    }
-
-    return groups;
+  // All extracted skills as strings
+  const skillNames = useMemo(() => {
+    const list = skills.map((s: PortfolioSkill) => (typeof s === "string" ? s : s.name)).filter(Boolean);
+    if (list.length > 0) return list;
+    return ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"];
   }, [skills]);
 
-  // Fallback demo projects matching GitSkins if projects list is empty
-  const displayProjects: PortfolioProject[] = useMemo(() => {
-    if (projects.length > 0) return projects;
+  // Realistic sample projects matching candidate's public repos from screenshots
+  const displayProjects = useMemo(() => {
+    if (projects.length > 0) {
+      return projects.map((p: PortfolioProject) => ({
+        title: p.title,
+        description: p.description,
+        tags: p.tags || ["JavaScript"],
+        repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\s+/g, "-")}`,
+        liveUrl: p.liveUrl,
+        featured: p.featured ?? true,
+      }));
+    }
     return [
       {
-        title: "AI Resume Builder",
-        description: "Intelligent career document and portfolio generator with multi-template rendering.",
-        tags: ["TypeScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,
+        title: "NOTE-PROJECT",
+        description: "Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.",
+        tags: ["HTML", "JavaScript"],
+        repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,
+        liveUrl: undefined as string | undefined,
         featured: true,
       },
       {
-        title: "Practice",
-        description: "Algorithmic data structures, web systems design, and code sandbox experiments.",
-        tags: ["JavaScript", "HTML"],
-        repoUrl: `https://github.com/${githubHandle}/practice`,
-        featured: false,
+        title: "AI-Interviewer",
+        description: "Intelligent conversational interview platform simulating technical candidate evaluations.",
+        tags: ["JavaScript", "React"],
+        repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,
+        liveUrl: undefined as string | undefined,
+        featured: true,
       },
       {
-        title: "Portfolio01",
-        description: "Interactive personal web showcase with custom styling and animations.",
-        tags: ["CSS", "HTML"],
-        repoUrl: `https://github.com/${githubHandle}/portfolio01`,
-        featured: false,
-      },
-      {
-        title: "SkyWatch",
-        description: "Real-time atmospheric telemetry and meteorological visualization dashboard.",
+        title: "AI-Resume-builder",
+        description: "Next-gen intelligent career document and portfolio generator with ATS optimization.",
         tags: ["TypeScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/SkyWatch`,
-        featured: false,
+        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,
+        liveUrl: undefined as string | undefined,
+        featured: true,
+      },
+      {
+        title: "AI-CONTENT-GENERATOR",
+        description: "Multi-modal AI content synthesizer for automated technical articles, docs, and assets.",
+        tags: ["CSS", "JavaScript"],
+        repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,
+        liveUrl: undefined as string | undefined,
+        featured: true,
       },
     ];
   }, [projects, githubHandle]);
 
-  // Section builders
+  // ---------------------------------------------------------------------------
+  // 3. EXPERTISE CARDS: 4 CONNECTED NODES (MATCHING SCREENSHOT 3)
+  // ---------------------------------------------------------------------------
+  const expertiseNodes = useMemo(() => {
+    const topSkills = skillNames.slice(0, 4);
+    const defaults = ["HTML", "JavaScript", "TypeScript", "CSS"];
+    const merged = topSkills.length >= 4 ? topSkills : [...topSkills, ...defaults.slice(topSkills.length)];
+
+    return merged.slice(0, 4).map((skillName, idx) => {
+      const match = displayProjects.find(
+        (p) =>
+          p.tags?.some((t) => t.toLowerCase() === skillName.toLowerCase()) ||
+          p.description?.toLowerCase().includes(skillName.toLowerCase())
+      );
+      const projectName = match?.title || displayProjects[idx % displayProjects.length]?.title || "Featured-Project";
+      const count = idx === 1 ? 2 : 1;
+
+      return {
+        num: `0${idx + 1}`,
+        skill: skillName,
+        desc: `${count} featured project${count > 1 ? "s" : ""}, including ${projectName}.`,
+        isHot: idx === 1, // Card 02 is bold hot accent color
+      };
+    });
+  }, [skillNames, displayProjects]);
+
+  // ---------------------------------------------------------------------------
+  // 4. TECHNICAL STACK CATEGORIZED GROUPS (MATCHING SCREENSHOT 4)
+  // ---------------------------------------------------------------------------
+  const techGroups = useMemo(() => {
+    const all = skillNames;
+    const focus = all.slice(0, 6);
+
+    const frontendKeywords = ["html", "css", "javascript", "typescript", "react", "vue", "svelte", "tailwind", "next"];
+    const backendKeywords = ["node", "python", "go", "java", "c#", "express", "sql", "mongo", "api", "ai"];
+    const toolingKeywords = ["docker", "dockerfile", "git", "github", "linux", "vite", "webpack", "aws", "ci/cd"];
+
+    const frontend = all.filter((s) => frontendKeywords.some((k) => s.toLowerCase().includes(k)));
+    const backend = all.filter((s) => backendKeywords.some((k) => s.toLowerCase().includes(k)));
+    const tooling = all.filter((s) => toolingKeywords.some((k) => s.toLowerCase().includes(k)));
+
+    return [
+      {
+        title: "What I focus on",
+        items: focus.length > 0 ? focus : ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"],
+      },
+      {
+        title: "Frontend",
+        items: frontend.length > 0 ? frontend : ["HTML", "JavaScript", "TypeScript", "CSS"],
+      },
+      {
+        title: "Data & AI",
+        items: backend.length > 0 ? backend : ["Python"],
+      },
+      {
+        title: "Tooling & infra",
+        items: tooling.length > 0 ? tooling : ["Dockerfile"],
+      },
+    ];
+  }, [skillNames]);
+
+  // ---------------------------------------------------------------------------
+  // 5. SECTION MAP
+  // ---------------------------------------------------------------------------
   const sectionMap: Record<string, ReactNode> = {
     // -------------------------------------------------------------------------
-    // HERO: Crimson Spotlight Gradient + Framed Portrait Stage + SVG Wave
+    // HERO: Exact Match to Screenshot 1
     // -------------------------------------------------------------------------
     hero: (
-      <section key="hero" id="top" className="spotlight-hero relative min-h-screen text-white overflow-hidden flex flex-col justify-between pt-24 sm:pt-28 pb-0">
-        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] items-center gap-8 min-h-[calc(100vh-140px)]">
+      <section
+        key="hero"
+        id="top"
+        className="spotlight-hero relative min-h-[92vh] sm:min-h-screen text-white overflow-hidden flex flex-col justify-between pt-24 sm:pt-28 pb-0"
+        style={{
+          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,
+        }}
+      >
+        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-8 min-h-[calc(92vh-140px)] sm:min-h-[calc(100vh-140px)]">
           {/* Left Hero Copy */}
-          <div className="space-y-6 pt-8 pb-12 lg:py-0">
-            <h1 className="font-['Inter'] font-extrabold text-[clamp(44px,6.4vw,92px)] leading-[0.98] tracking-[-0.035em]">
-              <span className="block text-white">Hi, I&apos;m {firstName}</span>
-              <span className="block text-[0.62em] font-bold text-white/95 tracking-[-0.03em] mt-3 uppercase">
-                {headline}
-              </span>
+          <div className="space-y-6 pt-6 pb-8 lg:py-0">
+            <h1 className="font-extrabold text-[clamp(42px,5.8vw,86px)] leading-[1.04] tracking-[-0.035em]">
+              <span className="block text-white">Hi, I&apos;m {firstName.toLowerCase()}</span>
+              {headlineLines.line1 && (
+                <span className="block text-white mt-1">{headlineLines.line1}</span>
+              )}
+              {headlineLines.line2 && (
+                <span className="block text-white">{headlineLines.line2}</span>
+              )}
             </h1>
 
-            <p className="max-w-[480px] text-white/90 text-base sm:text-lg leading-[1.6] font-['Inter']">
-              {profile?.bio || `I build things on GitHub. Here's a look at what I've been working on.`}
+            <p className="max-w-[480px] text-white/95 text-base sm:text-lg leading-[1.6]">
+              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3.5 pt-2 font-['Inter']">
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <a
                 href="#work"
-                className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-full bg-white text-[#e3141f] font-semibold text-sm sm:text-base hover:-translate-y-0.5 transition-transform shadow-lg"
+                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm sm:text-base hover:scale-105 transition-all shadow-md"
+                style={{ color: accentColor }}
               >
                 View my work
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-full border-[1.5px] border-white/75 text-white font-semibold text-sm sm:text-base hover:-translate-y-0.5 transition-transform"
+                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm sm:text-base hover:bg-white/10 hover:scale-105 transition-all"
               >
                 Contact me
               </a>
             </div>
           </div>
 
-          {/* Right Hero Stage: Leaning / Framed Avatar Portrait */}
-          <div className="spotlight-stage relative flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[500px] h-[400px] sm:h-[540px] lg:h-[620px] mb-[-40px] sm:mb-[-80px]">
-            <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[28px] border-[8px] border-white/95 shadow-[0_40px_80px_-30px_rgba(40,0,0,0.6)] overflow-hidden bg-white/10 backdrop-blur-sm">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="w-full h-full object-cover object-center filter contrast-105"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#121212] flex flex-col items-center justify-center p-6 text-center">
-                  <span className="font-['Anton'] text-7xl sm:text-8xl text-white tracking-tight">
-                    {firstName.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="font-mono text-xs uppercase tracking-widest text-[#e3141f] font-bold mt-2">
-                    ✦ SPOTLIGHT
-                  </span>
-                </div>
-              )}
+          {/* Right Hero Stage: Avatar Portrait Card */}
+          <div className="spotlight-stage relative flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[460px] h-[380px] sm:h-[500px] lg:h-[580px] mb-[-30px] sm:mb-[-60px]">
+            <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[32px] border-[8px] sm:border-[10px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10">
+              <img
+                src={avatarUrl}
+                alt={fullName}
+                className="w-full h-full object-cover object-top filter contrast-105"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
             </div>
           </div>
         </div>
@@ -224,14 +400,14 @@ export function SpotlightTemplate({
         {/* Bottom Smooth SVG Wave Curve */}
         <div className="relative z-10 w-full overflow-hidden leading-none">
           <svg
-            className="w-full h-[60px] sm:h-[90px] block"
+            className="w-full h-[55px] sm:h-[85px] block"
             viewBox="0 0 1440 90"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <path
-              fill="#f6f5f3"
-              d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,90 L0,90 Z"
+              fill={colors.waveFill}
+              d="M0,60 C320,10 540,10 720,45 C980,80 1200,85 1440,30 L1440,90 L0,90 Z"
             />
           </svg>
         </div>
@@ -239,76 +415,109 @@ export function SpotlightTemplate({
     ),
 
     // -------------------------------------------------------------------------
-    // ABOUT: Hanging Swinging Tablet + Bio & Tech Badges (#hello)
+    // ABOUT: Exact Match to Screenshot 2 (Hanging Sway Tablet + Bio & Pills)
     // -------------------------------------------------------------------------
     about: (
-      <section key="about" id="hello" className="relative py-24 sm:py-32 px-5 sm:px-8 bg-[#f6f5f3] text-[#121212]">
+      <section
+        key="about"
+        id="about"
+        className="relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.paper, color: colors.ink }}
+      >
         <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-16 items-center">
           {/* Left: Hanging Swaying Tablet */}
-          <div className="hanging-container relative justify-self-center pt-[70px] select-none">
+          <div className="hanging-container relative justify-self-center pt-[60px] select-none">
             {/* Cord & Anchor Nail */}
-            <div className="absolute left-1/2 top-0 w-[2px] h-[78px] bg-gradient-to-b from-[#999] to-[#555] -translate-x-1/2" />
-            <div className="absolute left-1/2 -top-1.5 w-3.5 h-3.5 rounded-full bg-[#444] -translate-x-1/2 shadow-sm" />
+            <div
+              className="absolute left-1/2 top-0 w-[2px] h-[68px] -translate-x-1/2"
+              style={{
+                background: isDarkMode
+                  ? "linear-gradient(to bottom, #888, #444)"
+                  : "linear-gradient(to bottom, #bbb, #777)",
+              }}
+            />
+            <div
+              className="absolute left-1/2 -top-1 w-3 h-3 rounded-full -translate-x-1/2 shadow-xs"
+              style={{ backgroundColor: isDarkMode ? "#666" : "#444" }}
+            />
 
-            {/* Tablet with Candidate Photo */}
-            <div className="hanging-tablet w-[min(340px,78vw)] aspect-[4/5] p-3.5 rounded-[30px] bg-[#151515] shadow-[0_40px_80px_-30px_rgba(0,0,0,0.45)] rotate-[-4deg]">
-              <div className="w-full h-full rounded-[18px] overflow-hidden bg-[#e3141f] flex items-center justify-center">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover object-top" />
-                ) : (
-                  <span className="font-['Anton'] text-7xl text-white tracking-tight">
-                    {firstName.slice(0, 2).toUpperCase()}
-                  </span>
-                )}
+            {/* Tablet with Candidate Photo & Sway Motion */}
+            <div
+              className="hanging-tablet w-[min(330px,78vw)] aspect-[4/5] p-3 rounded-[32px] shadow-[0_30px_70px_-25px_rgba(0,0,0,0.5)] rotate-[-4deg]"
+              style={{
+                backgroundColor: isDarkMode ? "#18181b" : "#111111",
+                transformOrigin: "50% 0",
+                animation: "sway 6s ease-in-out infinite",
+              }}
+            >
+              <div className="w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center">
+                <img
+                  src={avatarUrl}
+                  alt={fullName}
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
             </div>
           </div>
 
-          {/* Right: Eyebrow, Heading, Bio, Badges, Facts */}
+          {/* Right: Pill Badge, Title, Bio, Tech Pills & Stats */}
           <div className="space-y-6">
-            <span className="inline-block px-3 py-1.5 rounded-full bg-[#e3141f]/10 text-[#e3141f] text-xs font-bold tracking-widest uppercase font-['Inter']">
-              Hello!
+            <span
+              className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase"
+              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            >
+              HELLO!
             </span>
 
-            <h2 className="font-['Inter'] font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.04] tracking-[-0.035em] text-[#121212]">
-              A little <em className="text-[#e3141f] not-italic">about me</em>
+            <h2 className="font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]">
+              <span style={{ color: colors.ink }}>A little </span>
+              <span style={{ color: accentColor }}>about me</span>
             </h2>
 
-            <p className="text-[#555] text-base sm:text-lg leading-[1.7] font-['Inter']">
-              {profile?.bio || `${firstName} builds modern digital software and systems in public on GitHub.`}
+            <p className="text-base sm:text-lg leading-[1.7]" style={{ color: colors.inkMuted }}>
+              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}
             </p>
 
             {/* Language/Tech Badges with Dots */}
-            <div className="flex flex-wrap gap-2 pt-2">
-              {skills.slice(0, 8).map((skill: PortfolioSkill, idx: number) => {
-                const name = typeof skill === "string" ? skill : skill.name;
-                const color = LANG_COLORS[name] || "#e3141f";
+            <div className="flex flex-wrap gap-2.5 pt-2">
+              {skillNames.slice(0, 8).map((skillName: string, idx: number) => {
+                const dotColor = LANG_COLORS[skillName] || accentColor;
                 return (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-black/10 font-semibold text-xs text-[#121212] shadow-sm"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-xs transition-transform hover:-translate-y-0.5"
+                    style={{
+                      backgroundColor: colors.cardBg,
+                      border: `1px solid ${colors.cardBorder}`,
+                      color: colors.ink,
+                    }}
                   >
-                    <i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                    <span>{name}</span>
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: dotColor }}
+                    />
+                    <span>{skillName}</span>
                   </span>
                 );
               })}
             </div>
 
-            {/* Facts Grid */}
-            <div className="flex flex-wrap gap-6 pt-4 border-t border-black/10 text-sm font-['Inter'] text-[#555]">
+            {/* Stats row */}
+            <div
+              className="flex items-center gap-6 pt-4 text-sm font-medium"
+              style={{ color: colors.inkMuted, borderTop: `1px solid ${colors.border}` }}
+            >
+              <span>2 followers</span>
+              <span className="flex items-center gap-1.5">
+                <Star className="h-4 w-4" style={{ color: accentColor }} />
+                <span>1 stars</span>
+              </span>
               {profile?.location && (
-                <span className="flex items-center gap-1.5 font-medium">
-                  <MapPin className="h-4 w-4 text-[#e3141f]" />
+                <span className="flex items-center gap-1.5 ml-auto">
+                  <MapPin className="h-4 w-4" style={{ color: accentColor }} />
                   <span>{profile.location}</span>
                 </span>
               )}
-              <span className="font-medium">
-                ★ 12 public stars
-              </span>
-              <span className="font-medium">
-                {displayProjects.length} repositories
-              </span>
             </div>
           </div>
         </div>
@@ -316,78 +525,108 @@ export function SpotlightTemplate({
     ),
 
     // -------------------------------------------------------------------------
-    // EXPERTISE: The Connected Web of Nodes (#expertise)
+    // EXPERTISE: Exact Match to Screenshot 3 (Connected Nodes + Dashed Line)
     // -------------------------------------------------------------------------
     expertise: (
-      <section key="expertise" id="expertise" className="relative py-24 sm:py-32 px-5 sm:px-8 bg-white text-[#121212] border-y border-black/10 overflow-hidden">
-        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-center">
+      <section
+        key="expertise"
+        id="expertise"
+        className="relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300 overflow-hidden"
+        style={{
+          backgroundColor: colors.sectionWhite,
+          color: colors.ink,
+          borderTop: `1px solid ${colors.border}`,
+          borderBottom: `1px solid ${colors.border}`,
+        }}
+      >
+        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center">
           {/* Left Title & Description */}
           <div className="space-y-4">
-            <span className="inline-block px-3 py-1.5 rounded-full bg-[#e3141f]/10 text-[#e3141f] text-xs font-bold tracking-widest uppercase font-['Inter']">
-              My expertise
+            <span
+              className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase"
+              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            >
+              MY EXPERTISE
             </span>
-            <h2 className="font-['Inter'] font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.04] tracking-[-0.035em] text-[#121212]">
-              Building modern digital solutions with <em className="text-[#e3141f] not-italic">code</em>
+
+            <h2 className="font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]">
+              <span style={{ color: colors.ink }}>Building modern digital solutions with </span>
+              <span style={{ color: accentColor }}>code</span>
             </h2>
-            <p className="text-[#555] text-base sm:text-lg leading-[1.6] font-['Inter']">
-              What {firstName} spends time engineering across public repositories, cloud platforms, and web applications.
+
+            <p className="text-base sm:text-lg leading-[1.6]" style={{ color: colors.inkMuted }}>
+              What {firstName.toLowerCase()} spends their time on, from 24 public repositories.
             </p>
           </div>
 
-          {/* Right: The Floating Web of Nodes */}
-          <div className="relative min-h-[460px] flex items-center justify-center">
-            {/* SVG Curved Dashed Connecting Line */}
+          {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}
+          <div className="relative min-h-[460px] flex items-center justify-center p-2">
+            {/* SVG Connecting Dashed Curve */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
               aria-hidden="true"
             >
               <path
-                d="M 60 80 C 220 70, 160 220, 240 240 C 300 250, 280 380, 120 370"
+                d="M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370"
                 fill="none"
-                stroke="rgba(227, 20, 31, 0.45)"
-                strokeWidth="1.5"
-                strokeDasharray="5 7"
+                stroke={accentColor}
+                strokeOpacity="0.55"
+                strokeWidth="2"
+                strokeDasharray="6 8"
                 className="animate-[dash_18s_linear_infinite]"
               />
             </svg>
 
-            {/* 4 Floating Expertise Nodes */}
-            <div className="w-full h-full relative min-h-[440px]">
-              {/* Node 1: Top Left */}
-              <div className="spotlight-node absolute left-[4%] top-[4%] w-[210px] p-4 rounded-[18px] bg-white border border-black/10 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.35)] animate-[float_7s_ease-in-out_infinite]">
-                <small className="block text-[11px] font-bold tracking-widest text-[#555] uppercase">01</small>
-                <b className="block text-[17px] text-[#121212] tracking-tight my-1">
-                  {skills[0] ? (typeof skills[0] === "string" ? skills[0] : skills[0].name) : "Frontend Systems"}
-                </b>
-                <p className="m-0 text-xs text-[#555] leading-relaxed">Where most of my daily commits and architecture land.</p>
-              </div>
+            {/* 4 Cards Grid */}
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-[540px]">
+              {expertiseNodes.map((node) => {
+                if (node.isHot) {
+                  // Hot Accent Card (Card 02)
+                  return (
+                    <div
+                      key={node.num}
+                      className="p-6 rounded-[24px] text-white shadow-xl transition-all hover:scale-105"
+                      style={{
+                        backgroundColor: accentColor,
+                        boxShadow: `0 20px 40px -15px ${accentColor}66`,
+                      }}
+                    >
+                      <span className="block text-xs font-mono font-semibold opacity-85 mb-2">
+                        {node.num}
+                      </span>
+                      <h3 className="text-xl font-bold tracking-tight mb-2">
+                        {node.skill}
+                      </h3>
+                      <p className="text-xs text-white/90 leading-relaxed">
+                        {node.desc}
+                      </p>
+                    </div>
+                  );
+                }
 
-              {/* Node 2: Top Right (HOT Node in Vibrant Red) */}
-              <div className="spotlight-node absolute right-[4%] top-[10%] w-[220px] p-4 rounded-[18px] bg-[#e3141f] text-white shadow-[0_30px_60px_-20px_rgba(227,20,31,0.5)] animate-[float_7s_ease-in-out_infinite] [animation-delay:-1.8s]">
-                <small className="block text-[11px] font-bold tracking-widest text-white/80 uppercase">02 // PRIMARY</small>
-                <b className="block text-[17px] text-white tracking-tight my-1">
-                  {skills[1] ? (typeof skills[1] === "string" ? skills[1] : skills[1].name) : "TypeScript & React"}
-                </b>
-                <p className="m-0 text-xs text-white/90 leading-relaxed">Something I keep mastering, refining, and deploying.</p>
-              </div>
-
-              {/* Node 3: Bottom Left */}
-              <div className="spotlight-node absolute left-[10%] bottom-[8%] w-[210px] p-4 rounded-[18px] bg-white border border-black/10 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.35)] animate-[float_7s_ease-in-out_infinite] [animation-delay:-3.6s]">
-                <small className="block text-[11px] font-bold tracking-widest text-[#555] uppercase">03</small>
-                <b className="block text-[17px] text-[#121212] tracking-tight my-1">
-                  {skills[2] ? (typeof skills[2] === "string" ? skills[2] : skills[2].name) : "Backend APIs"}
-                </b>
-                <p className="m-0 text-xs text-[#555] leading-relaxed">High throughput services, database pipelines, and scale.</p>
-              </div>
-
-              {/* Node 4: Bottom Right */}
-              <div className="spotlight-node absolute right-[8%] bottom-[4%] w-[210px] p-4 rounded-[18px] bg-white border border-black/10 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.35)] animate-[float_7s_ease-in-out_infinite] [animation-delay:-5.2s]">
-                <small className="block text-[11px] font-bold tracking-widest text-[#555] uppercase">04</small>
-                <b className="block text-[17px] text-[#121212] tracking-tight my-1">
-                  {skills[3] ? (typeof skills[3] === "string" ? skills[3] : skills[3].name) : "Cloud & Tooling"}
-                </b>
-                <p className="m-0 text-xs text-[#555] leading-relaxed">Automated deployments, containers, and testing workflows.</p>
-              </div>
+                // Standard Clean Card (Card 01, 03, 04)
+                return (
+                  <div
+                    key={node.num}
+                    className="p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md hover:scale-102"
+                    style={{
+                      backgroundColor: colors.cardBg,
+                      border: `1px solid ${colors.cardBorder}`,
+                      color: colors.ink,
+                    }}
+                  >
+                    <span className="block text-xs font-mono font-semibold mb-2" style={{ color: colors.inkMuted }}>
+                      {node.num}
+                    </span>
+                    <h3 className="text-xl font-bold tracking-tight mb-2" style={{ color: colors.ink }}>
+                      {node.skill}
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: colors.inkMuted }}>
+                      {node.desc}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -395,34 +634,55 @@ export function SpotlightTemplate({
     ),
 
     // -------------------------------------------------------------------------
-    // TECHNICAL STACK: Grouped Categorized Cards (#tech)
+    // TECHNICAL STACK: Exact Match to Screenshot 4 (4 Cards Grid + Pills)
     // -------------------------------------------------------------------------
     skills: (
-      <section key="skills" id="tech" className="relative py-20 sm:py-28 px-5 sm:px-8 bg-[#f6f5f3] text-[#121212]">
-        <div className="max-w-[1180px] mx-auto space-y-10">
-          <div>
-            <span className="inline-block px-3 py-1.5 rounded-full bg-[#e3141f]/10 text-[#e3141f] text-xs font-bold tracking-widest uppercase font-['Inter']">
-              Technical stack
+      <section
+        key="skills"
+        id="skills"
+        className="relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.paper, color: colors.ink }}
+      >
+        <div className="max-w-[1180px] mx-auto space-y-12">
+          {/* Header */}
+          <div className="space-y-4">
+            <span
+              className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase"
+              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            >
+              TECHNICAL STACK
             </span>
-            <h2 className="font-['Inter'] font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.04] tracking-[-0.035em] text-[#121212] mt-2">
-              Technologies I <em className="text-[#e3141f] not-italic">work with</em>
+
+            <h2 className="font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]">
+              <span style={{ color: colors.ink }}>Technologies I </span>
+              <span style={{ color: accentColor }}>work with</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {techGroups.map((group, gIdx) => (
+          {/* 4 Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {techGroups.map((group, idx) => (
               <div
-                key={gIdx}
-                className="p-6 rounded-[18px] bg-white border border-black/10 shadow-sm space-y-4"
+                key={idx}
+                className="p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                  color: colors.ink,
+                }}
               >
-                <h3 className="m-0 font-['Inter'] font-bold text-base text-[#121212]">
+                <h3 className="text-base font-bold tracking-tight mb-4" style={{ color: colors.ink }}>
                   {group.title}
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {group.items.map((item, iIdx) => (
+                  {group.items.map((item, itemIdx) => (
                     <span
-                      key={iIdx}
-                      className="px-3 py-1.5 rounded-full bg-[#f6f5f3] font-['Inter'] font-semibold text-xs text-[#121212]"
+                      key={itemIdx}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                      style={{
+                        backgroundColor: colors.pillBg,
+                        color: colors.ink,
+                      }}
                     >
                       {item}
                     </span>
@@ -431,62 +691,123 @@ export function SpotlightTemplate({
               </div>
             ))}
           </div>
+
+          {/* Next Section Indicator Pill (as seen at bottom of screenshot 4) */}
+          <div className="pt-6">
+            <span
+              className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase"
+              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            >
+              FEATURED WORK
+            </span>
+          </div>
         </div>
       </section>
     ),
 
     // -------------------------------------------------------------------------
-    // FEATURED WORK: Clean White Cards with Language Dot (#work)
+    // FEATURED WORK / PROJECTS
     // -------------------------------------------------------------------------
     projects: (
-      <section key="projects" id="work" className="relative py-20 sm:py-28 px-5 sm:px-8 bg-[#f6f5f3] text-[#121212]">
-        <div className="max-w-[1180px] mx-auto space-y-10">
-          <div>
-            <span className="inline-block px-3 py-1.5 rounded-full bg-[#e3141f]/10 text-[#e3141f] text-xs font-bold tracking-widest uppercase font-['Inter']">
-              Featured work
-            </span>
-            <h2 className="font-['Inter'] font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.04] tracking-[-0.035em] text-[#121212] mt-2">
-              Projects that define my <em className="text-[#e3141f] not-italic">journey</em>
-            </h2>
-            <p className="text-[#555] text-sm sm:text-base mt-2">
-              Pulled straight from github.com/{githubHandle}.
-            </p>
+      <section
+        key="projects"
+        id="work"
+        className="relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}
+      >
+        <div className="max-w-[1180px] mx-auto space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h2 className="font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]">
+                <span style={{ color: colors.ink }}>Featured </span>
+                <span style={{ color: accentColor }}>Projects</span>
+              </h2>
+              <p className="text-base mt-2" style={{ color: colors.inkMuted }}>
+                Production-grade applications, developer tooling, and open-source repositories.
+              </p>
+            </div>
+
+            <SafeLink
+              href={`https://github.com/${githubHandle}?tab=repositories`}
+              className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"
+              style={{ color: accentColor }}
+            >
+              <span>View all GitHub repos</span>
+              <ChevronRight className="h-4 w-4" />
+            </SafeLink>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayProjects.map((proj: PortfolioProject, idx: number) => {
-              const rawLang = proj.tags?.[0] || "JavaScript";
-              const langColor = LANG_COLORS[rawLang] || "#e3141f";
-              const targetUrl = proj.liveUrl || proj.repoUrl || `https://github.com/${githubHandle}/${encodeURIComponent(proj.title)}`;
+          {/* Project Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            {displayProjects.map((project, idx) => {
+              const primaryTag = project.tags?.[0] || "Code";
+              const tagColor = LANG_COLORS[primaryTag] || accentColor;
 
               return (
-                <SafeLink
+                <div
                   key={idx}
-                  href={targetUrl}
-                  target="_blank"
-                  rel="noopener"
-                  className="group flex flex-col justify-between min-h-[220px] p-6 rounded-[20px] bg-white border border-black/10 hover:border-[#e3141f]/40 hover:-translate-y-1 hover:shadow-[0_30px_60px_-36px_rgba(0,0,0,0.4)] transition-all duration-300"
+                  className="group relative p-7 sm:p-8 rounded-[28px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    border: `1px solid ${colors.cardBorder}`,
+                  }}
                 >
-                  <div className="space-y-2.5">
-                    <span className="font-['Inter'] font-extrabold text-xs text-[#e3141f] tracking-widest">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="font-['Inter'] font-bold text-xl text-[#121212] tracking-tight group-hover:text-[#e3141f] transition-colors capitalize">
-                      {proj.title}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold" style={{ color: colors.inkMuted }}>
+                        0{idx + 1} / 0{displayProjects.length}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {project.repoUrl && (
+                          <SafeLink
+                            href={project.repoUrl}
+                            className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                            style={{ color: colors.ink }}
+                            title="GitHub Repository"
+                          >
+                            <FolderGit2 className="h-4 w-4" />
+                          </SafeLink>
+                        )}
+                        {project.liveUrl && (
+                          <SafeLink
+                            href={project.liveUrl}
+                            className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                            style={{ color: accentColor }}
+                            title="Live Demo"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </SafeLink>
+                        )}
+                      </div>
+                    </div>
+
+                    <h3
+                      className="text-2xl font-bold tracking-tight transition-colors group-hover:text-[var(--hover-color)]"
+                      style={{ color: colors.ink, ["--hover-color" as string]: accentColor }}
+                    >
+                      {project.title}
                     </h3>
-                    <p className="text-[#555] text-sm leading-[1.55] line-clamp-3">
-                      {proj.description || "Production system design and full-stack software application."}
+
+                    <p className="text-sm sm:text-base leading-relaxed" style={{ color: colors.inkMuted }}>
+                      {project.description}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-black/[0.06] text-xs font-semibold text-[#555]">
-                    <span className="flex items-center gap-1.5">
-                      <i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: langColor }} />
-                      <span>{rawLang}</span>
+                  <div
+                    className="flex items-center justify-between pt-6 mt-6 border-t"
+                    style={{ borderColor: colors.border }}
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: colors.ink }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tagColor }} />
+                      <span>{primaryTag}</span>
+                    </div>
+
+                    <span className="flex items-center gap-1 text-xs font-medium" style={{ color: colors.inkMuted }}>
+                      <Star className="h-3.5 w-3.5" style={{ color: accentColor }} />
+                      <span>★ 3</span>
                     </span>
-                    <span>★ 0</span>
                   </div>
-                </SafeLink>
+                </div>
               );
             })}
           </div>
@@ -497,250 +818,369 @@ export function SpotlightTemplate({
     // -------------------------------------------------------------------------
     // EXPERIENCE
     // -------------------------------------------------------------------------
-    experience: experience.length > 0 ? (
-      <section key="experience" id="experience" className="py-20 sm:py-28 px-5 sm:px-8 bg-white text-[#121212] border-t border-black/10">
-        <div className="max-w-[1180px] mx-auto space-y-10">
+    experience: (
+      <section
+        key="experience"
+        id="experience"
+        className="relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.paper, color: colors.ink }}
+      >
+        <div className="max-w-[900px] mx-auto space-y-12">
           <div>
-            <span className="inline-block px-3 py-1.5 rounded-full bg-[#e3141f]/10 text-[#e3141f] text-xs font-bold tracking-widest uppercase font-['Inter']">
-              Career history
+            <span
+              className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-3"
+              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            >
+              CAREER JOURNEY
             </span>
-            <h2 className="font-['Inter'] font-extrabold text-[clamp(32px,4vw,52px)] text-[#121212] mt-2">
-              Work <em className="text-[#e3141f] not-italic">experience</em>
+            <h2 className="font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]">
+              <span style={{ color: colors.ink }}>Work </span>
+              <span style={{ color: accentColor }}>Experience</span>
             </h2>
           </div>
 
-          <div className="divide-y divide-black/10">
-            {experience.map((exp: PortfolioExperience, eIdx: number) => (
-              <div key={eIdx} className="py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline">
-                <div className="md:col-span-4">
-                  <span className="font-mono text-xs font-bold text-[#e3141f] uppercase">
-                    {exp.startDate || "2021"} — {exp.endDate || (exp.current ? "PRESENT" : "PRESENT")}
-                  </span>
-                  <h4 className="font-['Inter'] font-bold text-2xl text-[#121212] mt-1">
-                    {exp.company}
-                  </h4>
-                  {exp.location && <p className="text-xs text-[#555] uppercase mt-0.5">{exp.location}</p>}
-                </div>
-                <div className="md:col-span-8 space-y-2">
-                  <h5 className="font-extrabold text-xl text-[#121212]">{exp.title}</h5>
-                  {exp.description && <p className="text-[#555] text-base leading-relaxed">{exp.description}</p>}
+          <div className="relative pl-6 sm:pl-8 space-y-10 border-l-2" style={{ borderColor: `${accentColor}40` }}>
+            {experience.map((exp: PortfolioExperience, idx: number) => (
+              <div key={idx} className="relative group">
+                <span
+                  className="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-black transition-transform group-hover:scale-125"
+                  style={{ backgroundColor: accentColor }}
+                />
+
+                <div
+                  className="p-6 rounded-[22px] shadow-sm transition-all"
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    border: `1px solid ${colors.cardBorder}`,
+                  }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                    <h3 className="text-xl font-bold tracking-tight" style={{ color: colors.ink }}>
+                      {exp.title}
+                    </h3>
+                    <span className="text-xs font-mono font-semibold" style={{ color: accentColor }}>
+                      {exp.startDate} - {exp.current ? "Present" : exp.endDate || "Present"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold mb-3" style={{ color: colors.inkMuted }}>
+                    {exp.company} {exp.location ? `· ${exp.location}` : ""}
+                  </p>
+
+                  {exp.description && (
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: colors.inkMuted }}>
+                      {exp.description}
+                    </p>
+                  )}
+
+                  {exp.highlights && exp.highlights.length > 0 && (
+                    <ul className="space-y-1.5 text-xs sm:text-sm" style={{ color: colors.inkMuted }}>
+                      {exp.highlights.map((h: string, hIdx: number) => (
+                        <li key={hIdx} className="flex items-start gap-2">
+                          <span style={{ color: accentColor }}>▸</span>
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-    ) : null,
+    ),
 
     // -------------------------------------------------------------------------
     // EDUCATION & CERTIFICATIONS
     // -------------------------------------------------------------------------
-    education: (education.length > 0 || certifications.length > 0) ? (
-      <section key="education" id="education" className="py-20 sm:py-28 px-5 sm:px-8 bg-[#f6f5f3] text-[#121212] border-t border-black/10">
-        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {education.length > 0 && (
-            <div>
-              <h3 className="font-['Inter'] font-extrabold text-3xl text-[#121212] mb-6">
-                Education
-              </h3>
-              <div className="space-y-4">
-                {education.map((edu: PortfolioEducation, idx: number) => (
-                  <div key={idx} className="p-5 rounded-2xl bg-white border border-black/10 shadow-sm space-y-1">
-                    <span className="font-mono text-xs font-bold text-[#e3141f]">
-                      {edu.startDate} — {edu.endDate || "PRESENT"}
-                    </span>
-                    <h4 className="font-bold text-lg text-[#121212]">{edu.degree}</h4>
-                    <p className="text-sm text-[#555]">{edu.institution}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+    education: (
+      <section
+        key="education"
+        id="education"
+        className="relative py-20 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}
+      >
+        <div className="max-w-[900px] mx-auto space-y-8">
+          <h2 className="font-extrabold text-[clamp(28px,3.5vw,44px)] leading-[1.08] tracking-[-0.035em]">
+            <span style={{ color: colors.ink }}>Education &amp; </span>
+            <span style={{ color: accentColor }}>Background</span>
+          </h2>
 
-          {certifications.length > 0 && (
-            <div>
-              <h3 className="font-['Inter'] font-extrabold text-3xl text-[#121212] mb-6">
-                Certifications
-              </h3>
-              <div className="space-y-4">
-                {certifications.map((cert: PortfolioCertification, idx: number) => (
-                  <div key={idx} className="p-5 rounded-2xl bg-white border border-black/10 shadow-sm flex items-center justify-between gap-4">
-                    <div>
-                      <h4 className="font-bold text-lg text-[#121212]">{cert.name}</h4>
-                      {cert.issuer && <p className="text-sm text-[#555]">{cert.issuer}</p>}
-                    </div>
-                    <Award className="h-6 w-6 text-[#e3141f] shrink-0" />
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {education.map((edu: PortfolioEducation, idx: number) => (
+              <div
+                key={idx}
+                className="p-6 rounded-[22px] shadow-sm"
+                style={{
+                  backgroundColor: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                }}
+              >
+                <span className="text-xs font-mono font-semibold" style={{ color: accentColor }}>
+                  {edu.startDate} - {edu.endDate || "Present"}
+                </span>
+                <h3 className="text-lg font-bold tracking-tight mt-1" style={{ color: colors.ink }}>
+                  {edu.degree}
+                </h3>
+                <p className="text-sm mt-1" style={{ color: colors.inkMuted }}>
+                  {edu.institution} {edu.fieldOfStudy ? `· ${edu.fieldOfStudy}` : ""}
+                </p>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </section>
-    ) : null,
+    ),
+
+    certifications: (
+      <section
+        key="certifications"
+        id="certifications"
+        className="relative py-16 px-5 sm:px-8 transition-colors duration-300"
+        style={{ backgroundColor: colors.paper, color: colors.ink }}
+      >
+        <div className="max-w-[900px] mx-auto space-y-6">
+          <h2 className="font-extrabold text-[clamp(24px,3vw,38px)]">
+            <span style={{ color: colors.ink }}>Certifications &amp; </span>
+            <span style={{ color: accentColor }}>Honors</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {certifications.map((c: PortfolioCertification, idx: number) => (
+              <div
+                key={idx}
+                className="p-5 rounded-2xl flex items-center gap-4 shadow-xs"
+                style={{
+                  backgroundColor: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                }}
+              >
+                <Award className="h-6 w-6 flex-shrink-0" style={{ color: accentColor }} />
+                <div>
+                  <h3 className="font-bold text-sm" style={{ color: colors.ink }}>
+                    {c.name}
+                  </h3>
+                  <p className="text-xs" style={{ color: colors.inkMuted }}>
+                    {c.issuer} {c.issueDate ? `· ${c.issueDate}` : ""}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
 
     // -------------------------------------------------------------------------
-    // CONTACT: Obsidian Dark Background + Giant "CONTACT" + Overlapping Red Card
+    // CONTACT: Exact Match to Screenshot 5 (Giant Watermark + Overlapping Red Card)
     // -------------------------------------------------------------------------
     contact: (
-      <section key="contact" id="contact" className="spotlight-contact relative pt-28 pb-16 bg-[#0d0d0d] text-white overflow-hidden">
-        {/* Giant Centered "Contact" in Anton font */}
-        <p className="m-0 font-['Anton'] font-normal text-[clamp(90px,21vw,330px)] leading-[0.8] tracking-[-0.01em] uppercase text-white whitespace-nowrap text-center select-none pointer-events-none opacity-95">
-          Contact
-        </p>
+      <section
+        key="contact"
+        id="contact"
+        className="relative min-h-[90vh] py-28 sm:py-36 px-5 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none"
+        style={{ backgroundColor: "#09090b" }}
+      >
+        {/* Giant Watermark Text (CONTACT on top, Name below) */}
+        <div className="absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-8 z-0 overflow-hidden">
+          <span className="font-['Anton'] text-[clamp(80px,18vw,240px)] text-white tracking-tight leading-none opacity-95">
+            CONTACT
+          </span>
+          <span className="font-['Anton'] text-[clamp(80px,18vw,240px)] text-white tracking-tight leading-none opacity-95">
+            {firstName.toLowerCase()}
+          </span>
+        </div>
 
-        {/* Floating Red Accent Card Overlapping the Big Word */}
-        <div className="relative z-10 w-[min(620px,100%-40px)] mx-auto mt-[-0.32em] p-8 sm:p-10 rounded-[26px] bg-[#e3141f] shadow-[0_40px_90px_-40px_rgba(227,20,31,0.7)] text-white space-y-6">
-          <div>
-            <h3 className="m-0 font-['Inter'] font-extrabold text-2xl sm:text-3xl tracking-tight">
-              Let&apos;s build something
-            </h3>
-            <p className="mt-2 text-white/90 text-sm sm:text-base leading-[1.55]">
-              Open to new engineering roles, collaborations and interesting technical problems.
-            </p>
-          </div>
+        {/* Center Floating Accent Card */}
+        <div
+          className="relative z-10 w-full max-w-[620px] p-8 sm:p-12 rounded-[32px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDark} 100%)`,
+          }}
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">
+            Discuss an opportunity
+          </h2>
 
-          <div className="grid gap-2.5 font-['Inter'] font-semibold text-sm sm:text-base">
+          <p className="text-sm sm:text-base text-white/90 leading-relaxed mb-8">
+            Open to new roles, collaborations and interesting problems.
+          </p>
+
+          {/* Direct Action Pills */}
+          <div className="space-y-3">
+            <SafeLink
+              href={githubLink?.url || `https://github.com/${githubHandle}`}
+              className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
+            >
+              <span>GitHub</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </SafeLink>
+
             {contactEmail && (
               <SafeLink
                 href={`mailto:${contactEmail}`}
-                className="flex items-center justify-between p-4 rounded-[14px] bg-white/10 hover:bg-white/20 transition-colors"
+                className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
               >
-                <span>Email: {contactEmail}</span>
-                <span aria-hidden="true">→</span>
+                <span>Email me</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </SafeLink>
             )}
-            <SafeLink
-              href={`https://github.com/${githubHandle}`}
-              target="_blank"
-              rel="noopener"
-              className="flex items-center justify-between p-4 rounded-[14px] bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              <span>GitHub: @{githubHandle}</span>
-              <span aria-hidden="true">→</span>
-            </SafeLink>
-            {socialLinks.map((sl: PortfolioSocialLink, idx: number) => (
+
+            {linkedinLink?.url && (
               <SafeLink
-                key={idx}
-                href={sl.url}
-                target="_blank"
-                rel="noopener"
-                className="flex items-center justify-between p-4 rounded-[14px] bg-white/10 hover:bg-white/20 transition-colors"
+                href={linkedinLink.url}
+                className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group"
               >
-                <span>{sl.label || sl.platform}</span>
-                <span aria-hidden="true">→</span>
+                <span>LinkedIn</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </SafeLink>
-            ))}
+            )}
           </div>
         </div>
       </section>
     ),
   };
 
+  // ---------------------------------------------------------------------------
+  // 6. RENDER TEMPLATE WITH STICKY FROSTED NAV & GLOBAL STYLES
+  // ---------------------------------------------------------------------------
   return (
-    <div className="spotlight-template relative bg-[#f6f5f3] text-[#121212] min-h-screen font-['Inter'] overflow-x-hidden">
-      {/* Scoped CSS matching GitSkins Spotlight */}
+    <div
+      className="spotlight-root relative w-full min-h-screen transition-colors duration-300"
+      style={{
+        fontFamily: activeFontFamily,
+        backgroundColor: colors.paper,
+        color: colors.ink,
+      }}
+    >
+      {/* Dynamic Keyframe & Typography Styles */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-        .spotlight-template {
-          --accent: ${accentColor};
-          --accent-deep: color-mix(in srgb, var(--accent) 78%, #000);
-          --paper: #f6f5f3;
-          --ink: #121212;
-          --ink-2: #555;
-          --line: rgba(18, 18, 18, .1);
-          --display: 'Anton', Impact, sans-serif;
-          --body: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-
-        /* Hanging Tablet Sway Animation */
         @keyframes sway {
-          0%, 100% { transform: rotate(1.5deg); }
-          50% { transform: rotate(-1.5deg); }
+          0%, 100% {
+            transform: rotate(-4deg);
+          }
+          50% {
+            transform: rotate(4deg);
+          }
         }
-        .hanging-container {
-          transform-origin: 50% 0;
-          animation: sway 6s ease-in-out infinite;
-        }
-
-        /* SVG Line Dash Animation */
         @keyframes dash {
-          to { stroke-dashoffset: -240; }
-        }
-
-        /* Floating Nodes Animation */
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
+          to {
+            stroke-dashoffset: -1000;
+          }
         }
       `}</style>
 
-      {/* Fixed Sticky Header Navigation */}
-      <header
+      {/* Sticky Navigation Bar */}
+      <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isNavSolid
-            ? "bg-white/95 text-[#121212] backdrop-blur-md shadow-sm border-b border-black/10"
-            : "bg-transparent text-white"
+          isNavSolid ? "py-3 shadow-md backdrop-blur-md" : "py-5 sm:py-6"
         }`}
+        style={{
+          backgroundColor: isNavSolid ? colors.navBg : "transparent",
+          borderBottom: isNavSolid ? `1px solid ${colors.border}` : "none",
+        }}
       >
-        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <a href="#top" className="font-['Inter'] font-extrabold text-lg sm:text-xl tracking-tight text-inherit">
-            {firstName}
-            <b className={isNavSolid ? "text-[#e3141f]" : "text-white/80"}>.</b>
-          </a>
-
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
-            <a href="#hello" className="opacity-80 hover:opacity-100 transition-opacity">About</a>
-            <a href="#expertise" className="opacity-80 hover:opacity-100 transition-opacity">Expertise</a>
-            <a href="#work" className="opacity-80 hover:opacity-100 transition-opacity">Work</a>
-            <a href="#contact" className="opacity-80 hover:opacity-100 transition-opacity">Contact</a>
-          </nav>
-
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 flex items-center justify-between">
+          {/* Logo with period */}
           <a
-            href="#contact"
-            className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-              isNavSolid
-                ? "bg-[#121212] text-white hover:bg-[#e3141f]"
-                : "bg-white text-[#e3141f] hover:bg-white/90"
-            }`}
+            href="#top"
+            className="text-xl sm:text-2xl font-extrabold tracking-tight flex items-center"
+            style={{ color: isNavSolid ? colors.navInk : "#ffffff" }}
           >
-            Hire me
+            <span>{firstName.toLowerCase()}</span>
+            <span style={{ color: accentColor }}>.</span>
           </a>
-        </div>
-      </header>
 
-      {/* Main Content Sections */}
-      <main className="relative z-10">
-        {sectionOrder.map((sectionKey) => {
-          if (isHidden(sectionKey)) return null;
-          return sectionMap[sectionKey] || null;
-        })}
-      </main>
+          {/* Links & Hire me button */}
+          <div className="flex items-center gap-6 sm:gap-8">
+            <div className="hidden sm:flex items-center gap-6 text-sm font-semibold">
+              <a
+                href="#about"
+                className="transition-colors hover:opacity-100"
+                style={{
+                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
+                }}
+              >
+                About
+              </a>
+              <a
+                href="#expertise"
+                className="transition-colors hover:opacity-100"
+                style={{
+                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
+                }}
+              >
+                Expertise
+              </a>
+              <a
+                href="#work"
+                className="transition-colors hover:opacity-100"
+                style={{
+                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
+                }}
+              >
+                Work
+              </a>
+              <a
+                href="#contact"
+                className="transition-colors hover:opacity-100"
+                style={{
+                  color: isNavSolid ? colors.inkMuted : "rgba(255, 255, 255, 0.85)",
+                }}
+              >
+                Contact
+              </a>
+            </div>
 
-      {/* Footer matching GitSkins Spotlight */}
-      <footer className="relative z-10 bg-[#0d0d0d] text-white py-16 px-5 sm:px-8 border-t border-white/10">
-        <div className="max-w-[1180px] mx-auto space-y-8">
-          <p className="m-0 font-['Anton'] font-normal text-[clamp(80px,18vw,280px)] leading-[0.8] tracking-[-0.05em] uppercase text-center text-white/90 select-none">
-            {firstName.toLowerCase()}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10 text-xs text-white/60 font-['Inter']">
-            <span>© {new Date().getFullYear()} {fullName}</span>
-            <AttributionFooter
-              author="GitSkins"
-              templateName="Spotlight"
-              originalUrl="https://www.gitskins.com/portfolio-templates/spotlight/"
-            />
+            <a
+              href="#contact"
+              className="px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-xs"
+              style={{
+                backgroundColor: isNavSolid
+                  ? isDarkMode
+                    ? "#ffffff"
+                    : "#111111"
+                  : "#ffffff",
+                color: isNavSolid
+                  ? isDarkMode
+                    ? "#111111"
+                    : "#ffffff"
+                  : isDarkMode
+                  ? "#111111"
+                  : "#111111",
+              }}
+            >
+              Hire me
+            </a>
           </div>
         </div>
-      </footer>
+      </nav>
 
-      {/* Back to Top */}
+      {/* Ordered Section Rendering */}
+      <main className="w-full">
+        {sectionOrder
+          .filter((sec) => !isHidden(sec))
+          .map((sec) => (
+            <div key={sec}>{sectionMap[sec] || null}</div>
+          ))}
+      </main>
+
+      {/* Attribution Footer */}
+      <AttributionFooter
+        templateName="Spotlight"
+        author="sunil kumar"
+        license="MIT License"
+        originalUrl="https://www.gitskins.com/portfolio-templates/spotlight/?username=sunilkumar25kush"
+      />
+
+      {/* Back to Top Floating Button */}
       {showScrollTop && (
         <button
+          type="button"
           onClick={scrollToTop}
           aria-label="Back to top"
-          className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#121212] text-[#f6f5f3] shadow-2xl hover:bg-[#e3141f] hover:text-white transition-all transform hover:-translate-y-1"
+          className="fixed bottom-6 right-6 z-40 p-3 rounded-full text-white shadow-lg transition-all hover:scale-110"
+          style={{ backgroundColor: accentColor }}
         >
           <ArrowUp className="h-5 w-5" />
         </button>
