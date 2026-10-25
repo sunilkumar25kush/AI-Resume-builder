@@ -127,34 +127,34 @@ export function SpotlightTemplate({
     }
   }, [themeSetting]);
 
-  // Semantic color tokens responding to theme
+  // Semantic color tokens responding to theme (exact GitSkins color palette)
   const colors = useMemo(() => {
     return isDarkMode
       ? {
-          paper: "#0c0c0e",
-          sectionWhite: "#141418",
-          cardBg: "#1c1c22",
-          cardBorder: "rgba(255, 255, 255, 0.08)",
-          ink: "#f4f4f6",
+          paper: "#0d0d0d",
+          sectionWhite: "#141416",
+          cardBg: "#18181c",
+          cardBorder: "rgba(255, 255, 255, 0.1)",
+          ink: "#ffffff",
           inkMuted: "#a1a1aa",
-          border: "rgba(255, 255, 255, 0.08)",
-          navBg: "rgba(18, 18, 22, 0.92)",
+          border: "rgba(255, 255, 255, 0.1)",
+          navBg: "rgba(13, 13, 13, 0.92)",
           navInk: "#ffffff",
-          waveFill: "#0c0c0e",
-          pillBg: "#27272f",
+          waveFill: "#0d0d0d",
+          pillBg: "#222226",
         }
       : {
-          paper: "#ffffff",
+          paper: "#f6f5f3",
           sectionWhite: "#ffffff",
           cardBg: "#ffffff",
-          cardBorder: "rgba(0, 0, 0, 0.08)",
+          cardBorder: "rgba(18, 18, 18, 0.1)",
           ink: "#121212",
           inkMuted: "#555555",
-          border: "rgba(0, 0, 0, 0.08)",
+          border: "rgba(18, 18, 18, 0.1)",
           navBg: "rgba(255, 255, 255, 0.92)",
           navInk: "#121212",
-          waveFill: "#ffffff",
-          pillBg: "#f1f1f3",
+          waveFill: "#f6f5f3",
+          pillBg: "#f6f5f3",
         };
   }, [isDarkMode]);
 
@@ -213,16 +213,6 @@ export function SpotlightTemplate({
     }
   }, [profile?.avatarUrl, githubHandle]);
 
-  // Smart headline split for clean multi-line display (exact match to screenshot 1)
-  const headlineLines = useMemo(() => {
-    const text = headline.trim();
-    const words = text.split(/\s+/);
-    if (words.length <= 1) return { line1: words[0] || "developer", line2: "" };
-    if (words.length === 2) return { line1: words[0], line2: words[1] };
-    const lastWord = words[words.length - 1];
-    const rest = words.slice(0, words.length - 1).join(" ");
-    return { line1: rest, line2: lastWord };
-  }, [headline]);
 
   // All extracted skills as strings
   const skillNames = useMemo(() => {
@@ -351,52 +341,49 @@ export function SpotlightTemplate({
       <section
         key="hero"
         id="top"
-        className="spotlight-hero relative min-h-[85vh] sm:min-h-screen text-white overflow-hidden flex flex-col justify-between pt-16 sm:pt-20 pb-0"
+        className="spotlight-hero relative min-h-[100svh] text-white overflow-hidden flex flex-col justify-between"
         style={{
-          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,
+          background: `radial-gradient(120% 90% at 70% 30%, ${adjustBrightness(accentColor, 15)} 0%, ${accentColor} 45%, ${accentDeep} 100%)`,
         }}
       >
-        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] lg:grid-cols-[1.1fr_1fr] items-center gap-8 lg:gap-12 min-h-[calc(88vh-80px)] lg:min-h-[calc(100vh-100px)] pt-6 sm:pt-10 pb-16 sm:pb-24">
+        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 md:grid-cols-[1.05fr_1fr] items-center gap-6 sm:gap-8 min-h-[100svh] pt-24 sm:pt-28 pb-24 sm:pb-32">
           {/* Left Hero Copy */}
-          <div className="space-y-6 pt-2 pb-4 md:py-0">
-            <h1 className="font-extrabold text-[clamp(34px,6.5vw,86px)] leading-[1.04] tracking-[-0.035em]">
+          <div className="copy space-y-4 pt-2 pb-6 md:py-0">
+            <h1 className="font-extrabold text-[clamp(42px,6.4vw,92px)] leading-[0.98] tracking-[-0.035em]">
               <span className="block text-white">Hi, I&apos;m {firstName.toLowerCase()}</span>
-              {headlineLines.line1 && (
-                <span className="block text-white mt-1">{headlineLines.line1}</span>
-              )}
-              {headlineLines.line2 && (
-                <span className="block text-white">{headlineLines.line2}</span>
-              )}
+              <span className="block text-[0.62em] font-extrabold tracking-[-0.03em] mt-[0.18em] text-white">
+                {headline}
+              </span>
             </h1>
 
-            <p className="max-w-[480px] text-white/95 text-base sm:text-lg leading-[1.6]">
+            <p className="max-w-[470px] text-white/92 text-base sm:text-[16.5px] leading-[1.6] my-5">
               {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="actions flex flex-wrap items-center gap-3 pt-2">
               <a
                 href="#work"
-                className="inline-flex items-center justify-center min-h-[46px] w-full sm:w-auto px-7 rounded-full bg-white font-semibold text-sm sm:text-base hover:scale-105 transition-all shadow-md"
+                className="inline-flex items-center justify-center min-h-[46px] px-6 rounded-full bg-white font-semibold text-[14.5px] transition-transform hover:-translate-y-0.5 shadow-md"
                 style={{ color: accentColor }}
               >
                 View my work
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center min-h-[46px] w-full sm:w-auto px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm sm:text-base hover:bg-white/10 hover:scale-105 transition-all"
+                className="inline-flex items-center justify-center min-h-[46px] px-6 rounded-full border-[1.5px] border-white/75 text-white font-semibold text-[14.5px] transition-transform hover:-translate-y-0.5 hover:bg-white/10"
               >
                 Contact me
               </a>
             </div>
           </div>
 
-          {/* Right Hero Stage: Avatar Portrait Card overlapping wave */}
-          <div className="spotlight-stage relative z-[5] flex items-center md:items-end justify-center justify-self-center md:justify-self-end w-full max-w-[340px] sm:max-w-[420px] lg:max-w-[460px] h-auto md:h-[480px] lg:h-[560px] mt-4 md:mt-0 mb-4 md:mb-[-40px] lg:mb-[-60px]">
-            <div className="relative w-[min(340px,82vw)] sm:w-[320px] lg:w-[360px] aspect-[4/5] rounded-[24px] sm:rounded-[32px] border-[8px] sm:border-[12px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10 shrink-0">
+          {/* Right Hero Stage: Exact GitSkins portrait.framed */}
+          <div className="spotlight-stage relative z-[5] self-center justify-self-center md:justify-self-end w-full max-w-[520px] flex items-center justify-center">
+            <div className="relative w-[min(340px,70vw)] aspect-[4/5] rounded-[28px] border-[8px] sm:border-[10px] border-white/95 shadow-[0_40px_80px_-30px_rgba(40,0,0,0.6)] overflow-hidden bg-black/10 shrink-0">
               <img
                 src={heroImgSrc}
                 alt={fullName}
-                className="w-full h-full object-cover object-top filter contrast-105"
+                className="w-full h-full object-cover object-top"
                 onError={() => {
                   if (heroImgSrc !== fallbackSampleUrl) {
                     setHeroImgSrc(fallbackSampleUrl);
@@ -407,16 +394,16 @@ export function SpotlightTemplate({
           </div>
         </div>
 
-        {/* Bottom Smooth SVG Wave Curve: Absolute Pinned to Bottom with Exact GitSkins Curve */}
+        {/* Bottom Smooth SVG Wave Curve: Exact GitSkins curve */}
         <svg
-          className="absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]"
+          className="absolute bottom-[-1px] left-0 right-0 w-full h-[70px] sm:h-[90px] block pointer-events-none z-[4]"
           viewBox="0 0 1440 90"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
           <path
             fill={colors.waveFill}
-            d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z"
+            d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,90 L0,90 Z"
           />
         </svg>
       </section>

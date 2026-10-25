@@ -72,9 +72,11 @@ assert.ok(markup.includes("linkedin.com/in/sunil-kumar-9042aa373"), "Expected Li
 console.log("  ✅ Contact section contains direct LinkedIn CTA.");
 
 // TEST 3: Wave Curve Smooth Blend Background
-console.log("\n[TEST 3] Verifying paper background wave integration...");
-assert.ok(markup.includes("fill=\"#ffffff\""), "Expected seamless white wave fill");
-console.log("  ✅ Bottom hero curve wave fill is aligned to paper white.");
+assert.ok(
+  markup.includes('fill="#f6f5f3"') || markup.includes('fill="#ffffff"'),
+  "Expected seamless paper wave fill",
+);
+console.log("  ✅ Bottom hero curve wave fill is aligned to paper background.");
 
 console.log("\n==================================================================");
 console.log("All Spotlight Template Tests Passed (3/3)");
