@@ -22,6 +22,7 @@ import { TEMPLATE_METADATA } from "@/components/portfolios/templates/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ThemeModeToggle } from "@/components/portfolios/common/ThemeModeToggle";
 import type { Portfolio, PortfolioDesignSettings, PortfolioTemplateId } from "@/types/portfolio";
 
 const PublishModal = lazy(() =>
@@ -372,32 +373,7 @@ export default function PortfolioPreviewPage() {
               </div>
 
               {/* Theme Mode Toggle */}
-              <div className="inline-flex rounded-lg bg-neutral-900 p-0.5 border border-neutral-800">
-                <button
-                  type="button"
-                  title="Light mode"
-                  onClick={() => setPreviewTheme("light")}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    previewTheme === "light"
-                      ? "bg-neutral-800 text-amber-300 font-semibold"
-                      : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  <Sun className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Dark mode"
-                  onClick={() => setPreviewTheme("dark")}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    previewTheme === "dark"
-                      ? "bg-neutral-800 text-blue-300 font-semibold"
-                      : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  <Moon className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <ThemeModeToggle theme={previewTheme} onChange={setPreviewTheme} />
 
               {/* Color Accent Picker */}
               <div className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neutral-900 border border-neutral-800">
