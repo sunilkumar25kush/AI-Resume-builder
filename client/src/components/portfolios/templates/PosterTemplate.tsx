@@ -165,29 +165,33 @@ export function PosterTemplate({
     // HERO: Exact GitSkins Poster Hero
     // -------------------------------------------------------------------------
     hero: (
-      <header key="hero" id="hero" className="poster-hero relative min-h-[100svh] overflow-hidden select-none">
+      <header
+        key="hero"
+        id="hero"
+        className="poster-hero relative min-h-auto lg:min-h-[100svh] overflow-hidden select-none pb-12 lg:pb-0 flex flex-col lg:block"
+      >
         {/* Giant Centered Gradient Outline Word */}
-        <div className="absolute left-1/2 top-[5svh] -translate-x-1/2 z-0 pointer-events-none w-full text-center">
-          <p className="poster-word text-[19vw] leading-[0.82] uppercase tracking-tight">
+        <div className="relative lg:absolute lg:left-1/2 lg:top-[5svh] lg:-translate-x-1/2 z-0 pointer-events-none w-full text-center mt-6 lg:mt-0">
+          <p className="poster-word text-[20vw] lg:text-[19vw] leading-[0.82] uppercase tracking-tight">
             PORTFOLIO
           </p>
         </div>
 
         {/* Framed Print Portrait in Center Leaning -3deg */}
-        <div className="poster-portrait-framed absolute left-1/2 bottom-[14svh] -translate-x-1/2 z-10 pointer-events-none flex items-center justify-center">
-          <div className="relative rotate-[-3deg] w-[min(28vw,360px)] min-w-[220px] transition-transform duration-500 hover:rotate-0">
+        <div className="poster-portrait-framed relative lg:absolute lg:left-1/2 lg:bottom-[14svh] lg:-translate-x-1/2 z-10 pointer-events-none flex items-center justify-center mx-auto mt-[-10vw] lg:mt-0 mb-6 lg:mb-0">
+          <div className="relative rotate-[-3deg] w-[min(58vw,280px)] lg:w-[min(28vw,360px)] min-w-[200px] transition-transform duration-500 hover:rotate-0">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={fullName}
-                className="w-full aspect-[4/5] object-cover bg-white border-[10px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105"
+                className="w-full aspect-[4/5] object-cover bg-white border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105"
               />
             ) : (
               /* Cyberpunk / Grid manga sketch art portrait fallback matching the screenshot */
-              <div className="w-full aspect-[4/5] bg-[#fff] border-[10px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative">
+              <div className="w-full aspect-[4/5] bg-[#fff] border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative">
                 <div className="absolute inset-0 bg-[radial-gradient(#151515_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
                 <div className="relative z-10 text-center px-4">
-                  <span className="font-['Anton'] text-7xl sm:text-8xl text-[#151515] tracking-tighter">
+                  <span className="font-['Anton'] text-6xl sm:text-8xl text-[#151515] tracking-tighter">
                     {firstName.slice(0, 2).toUpperCase()}
                   </span>
                   <p className="font-mono text-xs uppercase tracking-widest text-[#e11d2a] font-bold mt-2">
@@ -200,17 +204,17 @@ export function PosterTemplate({
         </div>
 
         {/* Bottom Left: Hello, I'm + FIRST NAME in giant Anton Red */}
-        <div className="poster-intro absolute left-[clamp(20px,5vw,80px)] bottom-[clamp(28px,7svh,80px)] z-20">
+        <div className="poster-intro relative lg:absolute lg:left-[clamp(20px,5vw,80px)] lg:bottom-[clamp(28px,7svh,80px)] z-20 px-5 sm:px-8 lg:px-0 mt-4 lg:mt-0 text-left">
           <p className="m-0 mb-1 font-['Inter'] font-semibold text-[clamp(16px,1.6vw,24px)] text-[#151515]">
             Hello, I&apos;m
           </p>
-          <h1 className="m-0 font-['Anton'] font-normal text-[clamp(64px,10vw,170px)] leading-[0.86] text-[#e11d2a] uppercase tracking-normal">
+          <h1 className="m-0 font-['Anton'] font-normal text-[clamp(56px,10vw,170px)] leading-[0.86] text-[#e11d2a] uppercase tracking-normal">
             {firstName}
           </h1>
         </div>
 
         {/* Bottom Right: ROLE in Bold Red + Live Typewriter Skills */}
-        <div className="poster-role absolute right-[clamp(20px,5vw,80px)] bottom-[clamp(28px,9svh,110px)] z-20 max-w-[min(34ch,32vw)] text-left">
+        <div className="poster-role relative lg:absolute lg:right-[clamp(20px,5vw,80px)] lg:bottom-[clamp(28px,9svh,110px)] z-20 max-w-full lg:max-w-[min(34ch,32vw)] px-5 sm:px-8 lg:px-0 mt-6 lg:mt-0 text-left">
           <h2 className="m-0 mb-3 font-['Inter'] font-extrabold text-[clamp(20px,2.2vw,34px)] tracking-[-0.01em] text-[#e11d2a] uppercase leading-[1.05]">
             {headline}
           </h2>
@@ -304,7 +308,8 @@ export function PosterTemplate({
             ) || "JavaScript";
             const langColor = LANG_COLORS[techKey] || "#e11d2a";
             const tilt = cardTilts[idx % 4];
-            const isStaggered = (idx % 4 === 1) || (idx % 4 === 3);
+            const isStaggerDesktop = (idx % 4 === 1) || (idx % 4 === 3);
+            const isStaggerTablet = (idx % 2 === 1);
             const targetUrl = proj.liveUrl || proj.repoUrl || `https://github.com/${githubHandle}/${encodeURIComponent(proj.title)}`;
             const initials = (proj.title || "PR").slice(0, 2).toUpperCase();
 
@@ -314,9 +319,9 @@ export function PosterTemplate({
                 href={targetUrl}
                 target="_blank"
                 rel="noopener"
-                className={`poster-card group relative flex flex-col justify-between aspect-[9/14] p-[22px] rounded-[18px] overflow-hidden text-white bg-[#151515] shadow-[0_30px_50px_-30px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-2 hover:rotate-0 hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.7)] ${
-                  isStaggered ? "lg:mt-16" : ""
-                }`}
+                className={`poster-card group relative flex flex-col justify-between aspect-[9/13] sm:aspect-[9/14] p-5 sm:p-[22px] rounded-[18px] overflow-hidden text-white bg-[#151515] shadow-[0_30px_50px_-30px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-2 hover:rotate-0 hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.7)] ${
+                  isStaggerDesktop ? "lg:mt-16" : ""
+                } ${isStaggerTablet ? "sm:mt-10 lg:mt-0" : ""}`}
                 style={{
                   transform: `rotate(${tilt}deg)`,
                 }}
@@ -527,28 +532,32 @@ export function PosterTemplate({
     // CTA: Exact GitSkins "Ready to Build Something?"
     // -------------------------------------------------------------------------
     contact: (
-      <section key="contact" id="contact" className="poster-cta relative min-h-[92svh] overflow-hidden select-none">
+      <section
+        key="contact"
+        id="contact"
+        className="poster-cta relative min-h-auto lg:min-h-[92svh] overflow-hidden select-none py-16 lg:py-0 flex flex-col lg:block"
+      >
         {/* Giant Centered Word: READY TO */}
-        <div className="absolute left-1/2 top-[6svh] -translate-x-1/2 z-0 pointer-events-none w-full text-center">
-          <p className="poster-word text-[19vw] leading-[0.82] uppercase tracking-tight">
+        <div className="relative lg:absolute lg:left-1/2 lg:top-[6svh] lg:-translate-x-1/2 z-0 pointer-events-none w-full text-center mt-4 lg:mt-0">
+          <p className="poster-word text-[20vw] lg:text-[19vw] leading-[0.82] uppercase tracking-tight">
             READY TO
           </p>
         </div>
 
         {/* Leaning Framed Portrait: +3deg in center */}
-        <div className="poster-portrait-framed absolute left-1/2 bottom-[14svh] -translate-x-1/2 z-10 pointer-events-none flex items-center justify-center">
-          <div className="relative rotate-[3deg] w-[min(28vw,360px)] min-w-[220px]">
+        <div className="poster-portrait-framed relative lg:absolute lg:left-1/2 lg:bottom-[14svh] lg:-translate-x-1/2 z-10 pointer-events-none flex items-center justify-center mx-auto mt-[-8vw] lg:mt-0 mb-8 lg:mb-0">
+          <div className="relative rotate-[3deg] w-[min(56vw,260px)] lg:w-[min(28vw,360px)] min-w-[200px]">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={fullName}
-                className="w-full aspect-[4/5] object-cover bg-white border-[10px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105"
+                className="w-full aspect-[4/5] object-cover bg-white border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105"
               />
             ) : (
-              <div className="w-full aspect-[4/5] bg-[#fff] border-[10px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative">
+              <div className="w-full aspect-[4/5] bg-[#fff] border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative">
                 <div className="absolute inset-0 bg-[radial-gradient(#151515_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
                 <div className="relative z-10 text-center px-4">
-                  <span className="font-['Anton'] text-7xl sm:text-8xl text-[#151515] tracking-tighter">
+                  <span className="font-['Anton'] text-6xl sm:text-8xl text-[#151515] tracking-tighter">
                     {firstName.slice(0, 2).toUpperCase()}
                   </span>
                   <p className="font-mono text-xs uppercase tracking-widest text-[#e11d2a] font-bold mt-2">
@@ -561,19 +570,19 @@ export function PosterTemplate({
         </div>
 
         {/* Bottom Left: BUILD SOMETHING? in giant black Anton font */}
-        <div className="absolute left-[clamp(20px,5vw,80px)] bottom-[clamp(36px,10svh,110px)] z-20">
-          <h3 className="m-0 font-['Anton'] font-normal text-[clamp(48px,7.5vw,128px)] leading-[0.9] text-[#151515] uppercase">
+        <div className="poster-cta-line relative lg:absolute lg:left-[clamp(20px,5vw,80px)] lg:bottom-[clamp(36px,10svh,110px)] z-20 px-5 sm:px-8 lg:px-0 mt-4 lg:mt-0">
+          <h3 className="m-0 font-['Anton'] font-normal text-[clamp(44px,7.5vw,128px)] leading-[0.9] text-[#151515] uppercase">
             BUILD SOMETHING?
           </h3>
         </div>
 
         {/* Bottom Right: Red Pill Button "Get in touch →" */}
-        <div className="absolute right-[clamp(20px,5vw,80px)] bottom-[clamp(44px,11svh,120px)] z-20">
+        <div className="poster-cta-go relative lg:absolute lg:right-[clamp(20px,5vw,80px)] lg:bottom-[clamp(44px,11svh,120px)] z-20 px-5 sm:px-8 lg:px-0 mt-6 lg:mt-0">
           <SafeLink
             href={contactEmail ? `mailto:${contactEmail}` : `https://github.com/${githubHandle}`}
             target={contactEmail ? undefined : "_blank"}
             rel="noopener"
-            className="poster-go inline-flex items-center gap-2.5 px-7 py-4 rounded-full bg-[#e11d2a] text-white font-['Inter'] font-extrabold text-[17px] shadow-[0_16px_30px_-14px_#e11d2a] hover:-translate-y-1 transition-transform"
+            className="poster-go inline-flex items-center justify-center w-full sm:w-auto gap-2.5 px-7 py-4 rounded-full bg-[#e11d2a] text-white font-['Inter'] font-extrabold text-[17px] shadow-[0_16px_30px_-14px_#e11d2a] hover:-translate-y-1 transition-transform"
           >
             <span>Get in touch</span>
             <span aria-hidden="true">→</span>
@@ -643,7 +652,7 @@ export function PosterTemplate({
         @media (max-width: 860px) {
           .poster-hero { min-height: auto; padding-bottom: 40px; }
           .poster-hero .poster-word { position: relative; left: auto; top: auto; transform: none; display: block; margin-top: 28px; }
-          .poster-portrait-framed { position: relative !important; left: auto !important; bottom: auto !important; margin: -16vw auto 0 !important; transform: none !important; width: 72vw !important; }
+          .poster-portrait-framed { position: relative !important; left: auto !important; bottom: auto !important; margin: -16vw auto 0 !important; transform: none !important; width: min(72vw, 320px) !important; }
           .poster-intro, .poster-role { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; padding: 0 20px !important; }
           .poster-intro { margin-top: 24px; }
           .poster-role { margin-top: 20px; max-width: none !important; }
@@ -651,6 +660,13 @@ export function PosterTemplate({
           .poster-card:nth-child(2n) { margin-top: 36px !important; }
           .poster-cta { min-height: auto; padding-bottom: 50px; }
           .poster-cta .poster-word { position: relative; left: auto; top: auto; transform: none; display: block; margin-top: 40px; }
+          .poster-cta-line, .poster-cta-go { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; }
+        }
+
+        @media (max-width: 600px) {
+          .poster-cards { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .poster-card:nth-child(2n) { margin-top: 0 !important; }
+          .poster-card { aspect-ratio: auto !important; min-height: 380px !important; }
         }
       `}</style>
 

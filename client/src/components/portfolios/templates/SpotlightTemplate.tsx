@@ -344,7 +344,7 @@ export function SpotlightTemplate({
         <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-8 min-h-[calc(92vh-100px)] sm:min-h-screen pt-24 pb-24 sm:pb-32">
           {/* Left Hero Copy */}
           <div className="space-y-6 pt-6 pb-8 lg:py-0">
-            <h1 className="font-extrabold text-[clamp(42px,5.8vw,86px)] leading-[1.04] tracking-[-0.035em]">
+            <h1 className="font-extrabold text-[clamp(34px,7vw,86px)] leading-[1.04] tracking-[-0.035em]">
               <span className="block text-white">Hi, I&apos;m {firstName.toLowerCase()}</span>
               {headlineLines.line1 && (
                 <span className="block text-white mt-1">{headlineLines.line1}</span>
@@ -358,17 +358,17 @@ export function SpotlightTemplate({
               {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <a
                 href="#work"
-                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm sm:text-base hover:scale-105 transition-all shadow-md"
+                className="inline-flex items-center justify-center min-h-[46px] w-full sm:w-auto px-7 rounded-full bg-white font-semibold text-sm sm:text-base hover:scale-105 transition-all shadow-md"
                 style={{ color: accentColor }}
               >
                 View my work
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm sm:text-base hover:bg-white/10 hover:scale-105 transition-all"
+                className="inline-flex items-center justify-center min-h-[46px] w-full sm:w-auto px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm sm:text-base hover:bg-white/10 hover:scale-105 transition-all"
               >
                 Contact me
               </a>
@@ -376,8 +376,8 @@ export function SpotlightTemplate({
           </div>
 
           {/* Right Hero Stage: Avatar Portrait Card overlapping wave */}
-          <div className="spotlight-stage relative z-[5] flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[460px] h-[380px] sm:h-[500px] lg:h-[580px] mb-[-40px] sm:mb-[-70px]">
-            <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[32px] border-[8px] sm:border-[10px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10">
+          <div className="spotlight-stage relative z-[5] flex items-end justify-center justify-self-center lg:justify-self-end w-full max-w-[320px] sm:max-w-[460px] h-[340px] sm:h-[500px] lg:h-[580px] mb-[-30px] sm:mb-[-70px]">
+            <div className="relative w-[min(340px,78vw)] aspect-[4/5] rounded-[28px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)] overflow-hidden bg-white/10">
               <img
                 src={avatarUrl}
                 alt={fullName}
@@ -549,10 +549,10 @@ export function SpotlightTemplate({
           </div>
 
           {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}
-          <div className="relative min-h-[460px] flex items-center justify-center p-2">
-            {/* SVG Connecting Dashed Curve */}
+          <div className="relative min-h-0 lg:min-h-[460px] flex items-center justify-center p-2 w-full">
+            {/* SVG Connecting Dashed Curve - hidden on mobile/tablet to avoid distortion */}
             <svg
-              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block"
               aria-hidden="true"
             >
               <path
@@ -567,7 +567,7 @@ export function SpotlightTemplate({
             </svg>
 
             {/* 4 Cards Grid */}
-            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-[540px]">
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full max-w-[540px]">
               {expertiseNodes.map((node) => {
                 if (node.isHot) {
                   // Hot Accent Card (Card 02)
@@ -967,31 +967,31 @@ export function SpotlightTemplate({
       <section
         key="contact"
         id="contact"
-        className="relative min-h-[90vh] py-28 sm:py-36 px-5 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none"
+        className="relative min-h-[85vh] sm:min-h-[90vh] py-20 sm:py-36 px-4 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none"
         style={{ backgroundColor: "#09090b" }}
       >
         {/* Giant Watermark Text (CONTACT on top, Name below) */}
-        <div className="absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-8 z-0 overflow-hidden">
-          <span className="font-['Anton'] text-[clamp(80px,18vw,240px)] text-white tracking-tight leading-none opacity-95">
+        <div className="absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-6 sm:py-8 z-0 overflow-hidden select-none">
+          <span className="font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2">
             CONTACT
           </span>
-          <span className="font-['Anton'] text-[clamp(80px,18vw,240px)] text-white tracking-tight leading-none opacity-95">
+          <span className="font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2">
             {firstName.toLowerCase()}
           </span>
         </div>
 
         {/* Center Floating Accent Card */}
         <div
-          className="relative z-10 w-full max-w-[620px] p-8 sm:p-12 rounded-[32px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]"
+          className="relative z-10 w-full max-w-[620px] p-6 sm:p-12 rounded-[24px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]"
           style={{
             background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDark} 100%)`,
           }}
         >
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">
             Discuss an opportunity
           </h2>
 
-          <p className="text-sm sm:text-base text-white/90 leading-relaxed mb-8">
+          <p className="text-sm sm:text-base text-white/90 leading-relaxed mb-6 sm:mb-8">
             Open to new roles, collaborations and interesting problems.
           </p>
 
@@ -999,7 +999,7 @@ export function SpotlightTemplate({
           <div className="space-y-3">
             <SafeLink
               href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true"
-              className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group shadow-sm"
+              className="flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/35 text-white font-semibold text-sm sm:text-base transition-all group shadow-sm"
             >
               <span>LinkedIn</span>
               <span className="group-hover:translate-x-1 transition-transform font-bold">→</span>
@@ -1015,7 +1015,7 @@ export function SpotlightTemplate({
   // ---------------------------------------------------------------------------
   return (
     <div
-      className="spotlight-root relative w-full min-h-screen transition-colors duration-300"
+      className="spotlight-root relative w-full min-h-screen transition-colors duration-300 overflow-x-hidden"
       style={{
         fontFamily: activeFontFamily,
         backgroundColor: colors.paper,
