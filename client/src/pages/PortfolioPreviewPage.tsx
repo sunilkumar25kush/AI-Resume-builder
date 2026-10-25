@@ -147,6 +147,28 @@ export default function PortfolioPreviewPage() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [isControlsHidden, setIsControlsHidden] = useState(false);
 
+  // Keyboard shortcut listener: Pressing 'h' or 'Escape' toggles preview dock visibility
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+      if (e.key === "h" || e.key === "H") {
+        e.preventDefault();
+        setIsControlsHidden((prev) => !prev);
+      } else if (e.key === "Escape" && !isControlsHidden) {
+        setIsControlsHidden(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isControlsHidden]);
+
   useEffect(() => {
     let isMounted = true;
 
