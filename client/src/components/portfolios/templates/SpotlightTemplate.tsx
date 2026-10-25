@@ -144,7 +144,7 @@ export function SpotlightTemplate({
           pillBg: "#27272f",
         }
       : {
-          paper: "#f6f5f3",
+          paper: "#ffffff",
           sectionWhite: "#ffffff",
           cardBg: "#ffffff",
           cardBorder: "rgba(0, 0, 0, 0.08)",
@@ -153,7 +153,7 @@ export function SpotlightTemplate({
           border: "rgba(0, 0, 0, 0.08)",
           navBg: "rgba(255, 255, 255, 0.92)",
           navInk: "#121212",
-          waveFill: "#f6f5f3",
+          waveFill: "#ffffff",
           pillBg: "#f1f1f3",
         };
   }, [isDarkMode]);
@@ -341,7 +341,7 @@ export function SpotlightTemplate({
           background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,
         }}
       >
-        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-8 min-h-[calc(92vh-140px)] sm:min-h-[calc(100vh-140px)]">
+        <div className="wrap max-w-[1180px] w-full mx-auto px-5 sm:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-8 min-h-[calc(92vh-100px)] sm:min-h-screen pt-24 pb-24 sm:pb-32">
           {/* Left Hero Copy */}
           <div className="space-y-6 pt-6 pb-8 lg:py-0">
             <h1 className="font-extrabold text-[clamp(42px,5.8vw,86px)] leading-[1.04] tracking-[-0.035em]">
