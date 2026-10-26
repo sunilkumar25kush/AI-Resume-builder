@@ -5355,9 +5355,85 @@ function generatePosterStaticHtml(data) {
     typeof templateSettings.marqueeText === "string" && templateSettings.marqueeText.trim()
       ? templateSettings.marqueeText.trim()
       : "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
+  const watermarkOpacityClass =
+    templateSettings.watermarkOpacity === "bold"
+      ? "opacity-25"
+      : templateSettings.watermarkOpacity === "hidden"
+      ? "opacity-0"
+      : "opacity-10";
 
-  const skillNames = skills.map((s) => s.name).filter(Boolean);
-  const skillsJson = JSON.stringify(skillNames.length ? skillNames : ["JavaScript", "React", "TypeScript", "Node.js"]);
+  const bio =
+    profile.bio ||
+    (githubHandle
+      ? `I build things on GitHub (${githubHandle}). Here's a look at what I've been working on.`
+      : "I build modern web systems and engineering applications.");
+
+  // Skill names
+  const skillNames = skills.map((s) => (typeof s === "string" ? s : s.name)).filter(Boolean);
+  const heroSkillNames = skillNames.length ? skillNames.slice(0, 4) : ["HTML", "JavaScript", "TypeScript", "CSS"];
+
+  // Projects fallback if empty
+  const displayProjects =
+    projects.length > 0
+      ? projects
+      : [
+          {
+            title: "AI RESUME BUILDER",
+            description: "Intelligent career document and portfolio generator with multi-template rendering.",
+            tags: ["TypeScript", "React"],
+            repoUrl: `https://github.com/${githubHandle || "developer"}/AI-Resume-builder`,
+            featured: true,
+          },
+          {
+            title: "PRACTICE",
+            description: "Algorithmic data structures, web systems design, and code sandbox experiments.",
+            tags: ["JavaScript", "HTML"],
+            repoUrl: `https://github.com/${githubHandle || "developer"}/practice`,
+            featured: false,
+          },
+          {
+            title: "PORTFOLIO01",
+            description: "Interactive personal web showcase with custom styling and animations.",
+            tags: ["CSS", "HTML"],
+            repoUrl: `https://github.com/${githubHandle || "developer"}/portfolio01`,
+            featured: false,
+          },
+          {
+            title: "SKYWATCH",
+            description: "Real-time atmospheric telemetry and meteorological visualization dashboard.",
+            tags: ["TypeScript", "React"],
+            repoUrl: `https://github.com/${githubHandle || "developer"}/SkyWatch`,
+            featured: false,
+          },
+        ];
+
+  const LANG_COLORS = {
+    JavaScript: "#f1e05a",
+    TypeScript: "#3178c6",
+    Python: "#3572A5",
+    Go: "#00ADD8",
+    Rust: "#dea584",
+    Ruby: "#701516",
+    Java: "#b07219",
+    "C++": "#f34b7d",
+    C: "#555555",
+    "C#": "#178600",
+    PHP: "#4F5D95",
+    Swift: "#F05138",
+    Kotlin: "#A97BFF",
+    Dart: "#00B4AB",
+    HTML: "#e34c26",
+    CSS: "#663399",
+    Shell: "#89e051",
+    Vue: "#41b883",
+    Svelte: "#ff3e00",
+    React: "#61dafb",
+    "Node.js": "#339933",
+    Tailwind: "#38bdf8",
+    TailwindCSS: "#38bdf8",
+  };
+
+  const cardTilts = [-1.2, 1, -0.6, 1.4];
 
   const socialLinksHtml = socialLinks
     .map((s) => {
