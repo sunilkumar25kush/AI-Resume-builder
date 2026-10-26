@@ -5785,21 +5785,61 @@ function generatePosterStaticHtml(data) {
     `,
   };
 
-  const rawOrder = data.design?.sectionOrder || [
-    "about",
-    "projects",
-    "skills",
-    "experience",
-    "education",
-    "contact",
-  ];
+  const hiddenSections = Array.isArray(data.design?.hiddenSections) ? data.design.hiddenSections : [];
   const sectionVisibility = data.design?.sectionVisibility || {};
+  const isHidden = (sec) => hiddenSections.includes(sec) || sectionVisibility[sec] === false;
 
-  const renderedSections = rawOrder
-    .filter((sec) => sec !== "hero" && sectionVisibility[sec] !== false)
-    .map((sec) => sectionMap[sec] || "")
-    .filter(Boolean)
-    .join("\n");
+  const rawOrder =
+    Array.isArray(data.design?.sectionOrder) && data.design.sectionOrder.length > 0
+      ? data.design.sectionOrder
+      : ["hero", "projects", "about", "experience", "education", "certifications", "contact"];
+
+  const hasSeparateCert = rawOrder.includes("certifications");
+
+  let marqueeRendered = false;
+
+  const renderedSectionsList = rawOrder
+    .map((sectionKey) => {
+      if (isHidden(sectionKey)) return "";
+      if (sectionKey === "hero") {
+        marqueeRendered = true;
+        return (sectionMap.hero || "") + "\n" + (sectionMap.marquee || "");
+      }
+      if (sectionKey === "marquee") {
+        marqueeRendered = true;
+        return sectionMap.marquee || "";
+      }
+      if (sectionKey === "education" && hasSeparateCert) {
+        if (education.length === 0) return "";
+        return `
+          <section id="education" class="poster-edu-cert-section">
+            <div class="poster-edu-col">
+              <h3 class="poster-sub-title">EDUCATION</h3>
+              <div class="poster-retro-cards">
+                ${education
+                  .map(
+                    (edu) => `
+                  <div class="poster-retro-card">
+                    <span class="poster-retro-date">${escapeHtml(edu.startDate || "")} — ${escapeHtml(edu.endDate || "PRESENT")}</span>
+                    <h4 class="poster-retro-title">${escapeHtml(edu.degree)}</h4>
+                    <p class="poster-retro-sub">${escapeHtml(edu.institution)}</p>
+                  </div>`
+                  )
+                  .join("\n")}
+              </div>
+            </div>
+          </section>
+        `;
+      }
+      return sectionMap[sectionKey] || "";
+    })
+    .filter(Boolean);
+
+  if (!marqueeRendered && !isHidden("marquee") && sectionMap.marquee) {
+    renderedSectionsList.unshift(sectionMap.marquee);
+  }
+
+  const renderedSections = renderedSectionsList.join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
