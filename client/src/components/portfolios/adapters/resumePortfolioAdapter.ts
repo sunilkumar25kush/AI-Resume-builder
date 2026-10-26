@@ -262,16 +262,19 @@ export function normalizeExperience(rawExp: unknown): PortfolioExperience[] {
       let highlights: string[] = [];
       if (Array.isArray(exp.highlights)) {
         highlights = exp.highlights.map((h) => String(h || "").trim()).filter(Boolean);
-      } else if (exp.achievements) {
-        highlights = String(exp.achievements)
-          .split(/\n|•|\*|-/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 2);
-      } else if (exp.description && typeof exp.description === "string" && exp.description.includes("\n")) {
-        highlights = exp.description
-          .split(/\n|•|\*|-/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 5);
+      } else {
+        const rawTexts: string[] = [];
+        if (exp.achievements) rawTexts.push(String(exp.achievements));
+        if (exp.description && typeof exp.description === "string" && (exp.description.includes("\n") || exp.description.includes("•"))) {
+          rawTexts.push(exp.description);
+        }
+        for (const text of rawTexts) {
+          const parts = text
+            .split(/(?:\r?\n|[•*]|(?:^|\n|\s+)-\s+)/)
+            .map((s) => s.trim())
+            .filter((s) => s.length > 2);
+          highlights.push(...parts);
+        }
       }
 
       if (highlights.length === 0 && exp.technologies) {
