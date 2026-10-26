@@ -109,10 +109,12 @@ export const portfoliosApi = {
     id: string,
     format: "source" | "static",
     filenameFallback?: string,
+    previewState?: Partial<Portfolio>,
   ): Promise<void> {
-    const res = await apiClient.get(`/portfolios/${id}/export?format=${format}`, {
-      responseType: "blob",
-    });
+    const url = `/portfolios/${id}/export?format=${format}`;
+    const res = previewState
+      ? await apiClient.post(url, { portfolio: previewState }, { responseType: "blob" })
+      : await apiClient.get(url, { responseType: "blob" });
 
     let filename = filenameFallback || `portfolio-${format === "static" ? "static-website" : "react-source"}.zip`;
     const disposition = res.headers?.["content-disposition"] as string | undefined;
@@ -124,14 +126,14 @@ export const portfoliosApi = {
     }
 
     const blob = new Blob([res.data], { type: "application/zip" });
-    const url = window.URL.createObjectURL(blob);
+    const urlBlob = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    link.href = urlBlob;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(urlBlob);
   },
 };
 
