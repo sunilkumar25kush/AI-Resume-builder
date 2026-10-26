@@ -5585,17 +5585,76 @@ function generatePosterStaticHtml(data) {
       </section>
     ` : "",
 
-    education: (data.education && data.education.length) ? `
-      <!-- Education Section -->
-      <section class="poster-exp-section" id="education">
-        <div class="poster-col-label">${escapeHtml(customLabels.education || "EDUCATION")}</div>
-        <div class="poster-exp-list">
-          ${data.education.map((e) => `
-            <div class="poster-exp-row">
-              <div class="poster-exp-period">${escapeHtml(e.startDate || "")} &mdash; ${escapeHtml(e.endDate || e.graduationDate || "PRESENT")}</div>
-              <div class="poster-exp-info">
-                <h4 class="poster-exp-role">${escapeHtml(e.degree)} ${e.fieldOfStudy ? `in ${escapeHtml(e.fieldOfStudy)}` : ""}</h4>
-                <p class="poster-exp-company">${escapeHtml(e.institution)}</p>
+    about: `
+      <!-- ABOUT ME -->
+      <section id="about" class="poster-about">
+        <div class="poster-about-left">
+          <h3 class="poster-section-title">
+            ABOUT <em class="poster-accent-em">ME</em>
+          </h3>
+        </div>
+        <div class="poster-about-right">
+          <p class="poster-about-bio">${escapeHtml(bio)}</p>
+          <div class="poster-chips">
+            ${(skills.length > 0 ? skills.slice(0, 10) : [
+              { name: "HTML" },
+              { name: "JavaScript" },
+              { name: "TypeScript" },
+              { name: "CSS" },
+              { name: "Python" },
+            ])
+              .map((s) => {
+                const name = typeof s === "string" ? s : s.name;
+                return `<span class="poster-chip">${escapeHtml(name)}</span>`;
+              })
+              .join("\n")}
+          </div>
+          <div class="poster-facts">
+            ${
+              location
+                ? `<span class="poster-fact-item">
+                    <svg class="poster-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>${escapeHtml(location)}</span>
+                  </span>`
+                : ""
+            }
+            ${
+              githubHandle
+                ? `<a href="https://github.com/${escapeHtml(githubHandle)}" target="_blank" rel="noopener noreferrer" class="poster-fact-link">github.com/${escapeHtml(githubHandle)}</a>`
+                : ""
+            }
+          </div>
+        </div>
+      </section>
+    `,
+
+    skills: skills.length > 0 ? `
+      <!-- SKILLS STANDALONE -->
+      <section id="skills" class="poster-skills-section" style="padding: 0 clamp(20px, 5vw, 80px) clamp(60px, 8vw, 100px);">
+        <h3 class="poster-section-title" style="margin-bottom: 24px;">SKILLS &amp; <em class="poster-accent-em">CAPABILITIES</em></h3>
+        <div class="poster-chips">
+          ${skills.map((s) => `<span class="poster-chip">${escapeHtml(typeof s === "string" ? s : s.name)}</span>`).join("\n")}
+        </div>
+      </section>
+    ` : "",
+
+    experience: experience.length > 0 ? `
+      <!-- WORK EXPERIENCE -->
+      <section id="experience" class="poster-experience">
+        <h3 class="poster-section-title poster-exp-title">
+          WORK <em class="poster-accent-em">EXPERIENCE</em>
+        </h3>
+        <div class="poster-exp-rows">
+          ${experience
+            .map(
+              (exp) => `
+            <div class="poster-exp-item">
+              <div class="poster-exp-col-left">
+                <span class="poster-exp-date">${escapeHtml(
+                  [exp.startDate || "", exp.endDate || (exp.current ? "PRESENT" : "")].filter(Boolean).join(" — ") ||
+                    "PRESENT"
+                )}</span>
+                <h4 class="poster-exp-company">${escapeHtml(exp.company)}</h4>
               </div>
             </div>
           `).join("\n")}
