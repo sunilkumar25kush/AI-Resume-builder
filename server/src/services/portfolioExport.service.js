@@ -5332,17 +5332,26 @@ function generateSpotlightStaticJs(data) {
 }
 
 function generatePosterStaticHtml(data) {
-  const { profile, socialLinks, skills, experience, projects } = data;
-  const fullName = profile.fullName || "Developer";
-  const headline = profile.headline || "Creative Software Developer";
-  const bio = profile.bio || "Crafting bold and memorable digital experiences.";
-  const avatarUrl = profile.avatarUrl;
-  const email = profile.email || "";
-  const phone = profile.phone || "";
-  const isDark = data.design?.theme === "dark";
+  const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = data;
+  const fullName = profile.fullName || "Sunil Kumar";
+  const firstName = fullName.split(/\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;
+  const headline = profile.headline || "Software Developer";
+  const location = profile.location || "";
+  const contactEmail = profile.email || "";
 
+  // GitHub handle
+  const githubLink = (socialLinks || []).find(
+    (l) => l.platform?.toLowerCase().includes("github") || l.url?.toLowerCase().includes("github.com")
+  );
+  const githubHandle = githubLink?.url
+    ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
+    : "";
+
+  const avatarUrl = profile.avatarUrl || (githubHandle ? `https://avatars.githubusercontent.com/${githubHandle}` : "");
+
+  const primaryColor = data.design?.primaryColor || "#e11d2a";
   const templateSettings = data.design?.templateSettings || {};
-  const marqueeText =
+  const marqueeCustomText =
     typeof templateSettings.marqueeText === "string" && templateSettings.marqueeText.trim()
       ? templateSettings.marqueeText.trim()
       : "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
