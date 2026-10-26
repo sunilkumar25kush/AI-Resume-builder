@@ -50,3 +50,4 @@ scratch/
 # Vite & Puppeteer Cache
 .vite/
 .cache/
+screenshots/

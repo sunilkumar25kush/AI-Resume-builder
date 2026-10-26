@@ -168,6 +168,20 @@ export default function PortfolioPreviewPage() {
     let isMounted = true;
 
     async function loadData() {
+      const windowOverride = typeof window !== "undefined" && (window as unknown as { __PORTFOLIO_PREVIEW_DATA__?: Portfolio }).__PORTFOLIO_PREVIEW_DATA__;
+      if (windowOverride) {
+        if (isMounted) {
+          setPortfolio(windowOverride);
+          const resolvedTemplate = templateId || templateQuery || windowOverride.design?.template || "spotlight";
+          setPreviewTemplate(resolvedTemplate as PortfolioTemplateId);
+          setPreviewTheme(windowOverride.design?.theme || "light");
+          setPreviewColor(windowOverride.design?.primaryColor || "#e3141f");
+          setPreviewFont(windowOverride.design?.fontFamily || "Inter");
+          setLoading(false);
+        }
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
