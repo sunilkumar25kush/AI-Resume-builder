@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:adapters": "npx tsx scripts/test-resume-adapters.ts",
+    "test:templates": "npx tsx scripts/verify-all-templates.ts",
+    "test:customization": "npx tsx scripts/test-portfolio-customization.ts",
+    "test": "npx tsx scripts/test-resume-adapters.ts && npx tsx scripts/verify-all-templates.ts && npx tsx scripts/test-portfolio-customization.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

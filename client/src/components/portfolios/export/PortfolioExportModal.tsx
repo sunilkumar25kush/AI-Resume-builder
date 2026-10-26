@@ -52,7 +52,7 @@ export function PortfolioExportModal({
     const filenameFallback = `${portfolio.slug || "portfolio"}-${suffix}.zip`;
 
     try {
-      await portfoliosApi.downloadExport(portfolio._id, format, filenameFallback);
+      await portfoliosApi.downloadExport(portfolio._id, format, filenameFallback, portfolio);
       toast.success(
         format === "source"
           ? "React source code ZIP downloaded successfully!"
