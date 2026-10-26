@@ -89,7 +89,7 @@ This initiative expands the platform by integrating an **Interactive Portfolio B
 | **NFR-004** | **Mobile Responsiveness**| Portfolios must render gracefully across mobile (375px+), tablet (768px), and desktop (1024px–1920px). |
 | **NFR-005** | **Security** | Public portfolio views must strictly sanitize user inputs and social links against Cross-Site Scripting (XSS). |
 | **NFR-006** | **Isolation** | Portfolio styles must be strictly scoped (CSS Modules or Tailwind prefixes) to prevent style bleeding into the main app. |
-| **NFR-007** | **Availability** | Public portfolios hosted at `/p/:slug` must be cached via HTTP edge headers (Stale-While-Revalidate: 300s). |
+| **NFR-007** | **Availability & Cache Invalidation** | Public portfolios hosted at `/p/:slug` must be cached via HTTP edge headers (Stale-While-Revalidate: 300s). When a portfolio is unpublished or archived, edge caches must be invalidated immediately via an edge purge (Surrogate-Key / Cache-Tag invalidation) or versioned cache keys (`?v=updatedAt`) so revocation takes effect immediately without waiting for TTL expiry. Automated test suites must include tests covering the unpublishing path, asserting that revoking publication immediately returns HTTP 404 and purges edge-cached responses. |
 
 ---
 

@@ -5,7 +5,7 @@
 **Status:** Architecture Complete — Standing By for Approval  
 **Author:** AI Product Engineering Team  
 **Date:** October 24, 2026  
-**Reviewed Inputs:** [`COMPLETE_TEMPLATE_INVENTORY.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/COMPLETE_TEMPLATE_INVENTORY.md), [`TEMPLATE_DEPENDENCY_MAP.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TEMPLATE_DEPENDENCY_MAP.md), [`PRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/PRD.md), [`TRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TRD.md), [`APP_FLOW.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/APP_FLOW.md), [`DATABASE_SCHEMA.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/FINAL_AUDIT.md)
+**Reviewed Inputs:** [`COMPLETE_TEMPLATE_INVENTORY.md`](./COMPLETE_TEMPLATE_INVENTORY.md), [`TEMPLATE_DEPENDENCY_MAP.md`](./TEMPLATE_DEPENDENCY_MAP.md), [`PRD.md`](./PRD.md), [`TRD.md`](./TRD.md), [`APP_FLOW.md`](./APP_FLOW.md), [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](./FINAL_AUDIT.md)
 
 ---
 
@@ -500,7 +500,7 @@ export const PortfolioRenderer: React.FC<PortfolioTemplateProps> = (props) => {
         </WebGLErrorBoundary>
 
         {/* Legal Attribution Footer */}
-        {portfolio?.attribution?.displayFooter !== false && templateDef.attribution.status !== "native" && (
+        {templateDef.attribution.status !== "native" && (
           <AttributionFooter attribution={templateDef.attribution} />
         )}
       </div>

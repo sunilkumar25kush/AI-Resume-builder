@@ -5,7 +5,7 @@
 **Status:** Complete Dependency Analysis  
 **Author:** AI Product Engineering Team  
 **Date:** October 24, 2026  
-**Related Documents:** [`COMPLETE_TEMPLATE_INVENTORY.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/COMPLETE_TEMPLATE_INVENTORY.md), [`PRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/PRD.md), [`TRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TRD.md), [`APP_FLOW.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/APP_FLOW.md), [`DATABASE_SCHEMA.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/FINAL_AUDIT.md), [`IMPLEMENTATION_ROADMAP.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/IMPLEMENTATION_ROADMAP.md)
+**Related Documents:** [`COMPLETE_TEMPLATE_INVENTORY.md`](./COMPLETE_TEMPLATE_INVENTORY.md), [`PRD.md`](./PRD.md), [`TRD.md`](./TRD.md), [`APP_FLOW.md`](./APP_FLOW.md), [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](./FINAL_AUDIT.md), [`IMPLEMENTATION_ROADMAP.md`](./IMPLEMENTATION_ROADMAP.md)
 
 ---
 
@@ -13,7 +13,7 @@
 
 This document provides a comprehensive dependency map for integrating discovered portfolio templates into the **AI Resume Builder** (`c:\Users\sunil\OneDrive\Desktop\project-resume\AI-Resume-builder`).
 
-It defines the exact coupling, runtime requirements, shared components, asset dependencies, styling systems, and licensing chains across all 20 discovered templates. The goal is to ensure zero disruption to the active ATS resume generation pipeline while introducing rich 3D and kinetic web portfolio capabilities.
+It defines the exact coupling, runtime requirements, shared components, asset dependencies, styling systems, and licensing chains across all 20 supported templates plus the separately blocked `orbit-studio` entry (21 discovered entries total). The goal is to ensure zero disruption to the active ATS resume generation pipeline while introducing rich 3D and kinetic web portfolio capabilities.
 
 ---
 
