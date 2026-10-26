@@ -34,6 +34,14 @@ export function ModernCreativeTemplate({
 
   const primaryColor = portfolio?.design?.primaryColor || "#9333ea";
   const theme = portfolio?.design?.theme || "system";
+  const templateSettings = portfolio?.design?.templateSettings || {};
+  const glassBlurClass =
+    templateSettings.glassBlur === "deep"
+      ? "backdrop-blur-2xl"
+      : templateSettings.glassBlur === "subtle"
+      ? "backdrop-blur-sm"
+      : "backdrop-blur-md";
+  const showGradientGlow = templateSettings.gradientGlow !== false;
   const isLight =
     theme === "light" ||
     (theme === "system" &&
@@ -118,18 +126,20 @@ export function ModernCreativeTemplate({
       }`}
     >
       {/* Subtle deep radial ambient lighting */}
-      <div className={`pointer-events-none fixed inset-0 overflow-hidden z-0 transition-opacity duration-300 ${isLight ? "opacity-20" : "opacity-100"}`}>
-        <div
-          className="absolute top-[10%] right-[10%] h-[550px] w-[550px] rounded-full blur-[150px]"
-          style={{ backgroundColor: `${primaryColor}22` }}
-        />
-        <div className="absolute top-[40%] left-[-5%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[170px]" />
-        <div className="absolute bottom-[5%] right-[20%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
-      </div>
+      {showGradientGlow && (
+        <div className={`pointer-events-none fixed inset-0 overflow-hidden z-0 transition-opacity duration-300 ${isLight ? "opacity-20" : "opacity-100"}`}>
+          <div
+            className="absolute top-[10%] right-[10%] h-[550px] w-[550px] rounded-full blur-[150px]"
+            style={{ backgroundColor: `${primaryColor}22` }}
+          />
+          <div className="absolute top-[40%] left-[-5%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[170px]" />
+          <div className="absolute bottom-[5%] right-[20%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+        </div>
+      )}
 
       {/* Clean Modern Top Navbar */}
       <header
-        className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-200 ${
+        className={`sticky top-0 z-40 ${glassBlurClass} border-b transition-all duration-200 ${
           isLight
             ? "bg-white/85 border-neutral-200/80 shadow-xs text-neutral-800"
             : "bg-[#0b0f19]/85 border-white/5 text-neutral-100"
@@ -522,6 +532,19 @@ export function ModernCreativeTemplate({
                   }`}
                 >
                   <div className="space-y-3">
+                    {/* Project Screenshot / Thumbnail (if available) */}
+                    {proj.imageUrl && (
+                      <div className="w-full h-44 rounded-xl overflow-hidden border border-white/10 mb-2 relative">
+                        <img
+                          src={proj.imageUrl}
+                          alt={proj.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
                     <h4 className={`text-lg font-bold ${isLight ? "text-neutral-900" : "text-white"}`}>{proj.title}</h4>
                     <p className={`text-sm leading-relaxed ${isLight ? "text-neutral-600" : "text-neutral-300"}`}>{proj.description}</p>
                     {proj.tags && proj.tags.length > 0 && (
