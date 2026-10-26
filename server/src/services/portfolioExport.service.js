@@ -1,8 +1,133 @@
 import { ZipArchive } from "archiver";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { exportedPortfolioSchema } from "../validations/portfolio.validation.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Escapes HTML characters for safe embedding into static markup.
  */
+
+function getUploadsSearchRoots() {
+  return [
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "server", "uploads"),
+    path.resolve(__dirname, "../../uploads"),
+    path.resolve(__dirname, "../uploads"),
+  ];
+}
+
+function findLocalUploadedFile(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  const trimmed = rawUrl.trim();
+  const clean = trimmed.replace(/^https?:\/\/[^\/]+/, "").trim();
+  const normalizedClean = clean.replace(/\\/g, "/");
+
+  let uploadSubPath = null;
+  if (normalizedClean.includes("/uploads/")) {
+    uploadSubPath = normalizedClean.substring(normalizedClean.indexOf("/uploads/") + "/uploads/".length);
+  } else if (normalizedClean.startsWith("uploads/")) {
+    uploadSubPath = normalizedClean.substring("uploads/".length);
+  }
+
+  if (!uploadSubPath) return null;
+
+  try {
+    uploadSubPath = decodeURIComponent(uploadSubPath);
+  } catch {}
+
+  const searchRoots = getUploadsSearchRoots();
+  for (const root of searchRoots) {
+    const fullPath = path.resolve(root, uploadSubPath);
+    try {
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        const ext = path.extname(fullPath).toLowerCase();
+        return {
+          fullPath,
+          filename: path.basename(fullPath),
+          ext,
+        };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+function bundlePortfolioAssets(data, archive, isReactSource = false) {
+  const prefix = isReactSource ? "public/assets/images/" : "assets/images/";
+  const relPrefix = isReactSource ? "./assets/images/" : "assets/images/";
+
+  function processImage(rawUrl, fallbackBaseName) {
+    if (!rawUrl || typeof rawUrl !== "string") return null;
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return "";
+
+    // 1. Base64 Data URI
+    if (trimmed.startsWith("data:image/")) {
+      const match = trimmed.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+      if (match) {
+        try {
+          const rawExt = match[1].toLowerCase().replace("+xml", "");
+          const ext = rawExt === "jpeg" ? ".jpg" : `.${rawExt}`;
+          const buffer = Buffer.from(match[2], "base64");
+          const targetName = `${fallbackBaseName}${ext}`;
+          archive.append(buffer, { name: `${prefix}${targetName}` });
+          return `${relPrefix}${targetName}`;
+        } catch (e) {
+          console.warn("[portfolioExport] Failed to bundle base64 image:", e.message);
+        }
+      }
+      return trimmed;
+    }
+
+    // 2. Local uploaded file
+    const localFile = findLocalUploadedFile(trimmed);
+    if (localFile) {
+      try {
+        const fileData = fs.readFileSync(localFile.fullPath);
+        const targetName = `${fallbackBaseName}${localFile.ext || ".png"}`;
+        archive.append(fileData, { name: `${prefix}${targetName}` });
+        return `${relPrefix}${targetName}`;
+      } catch (e) {
+        console.warn("[portfolioExport] Failed to bundle local file:", e.message);
+      }
+    }
+
+    // 3. Machine-specific upload URL that was not found on local disk
+    if (
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/uploads\//i.test(trimmed) ||
+      trimmed.startsWith("/uploads/") ||
+      trimmed.startsWith("uploads/")
+    ) {
+      return "";
+    }
+
+    // 4. External URL (Cloudinary, Unsplash, GitHub avatars, etc.)
+    return trimmed;
+  }
+
+  if (data.profile?.avatarUrl) {
+    const processedAvatar = processImage(data.profile.avatarUrl, "avatar");
+    if (processedAvatar !== null) {
+      data.profile.avatarUrl = processedAvatar;
+    }
+  }
+
+  if (Array.isArray(data.projects)) {
+    data.projects.forEach((proj, idx) => {
+      if (proj.imageUrl) {
+        const processedProj = processImage(proj.imageUrl, `project-${idx + 1}`);
+        if (processedProj !== null) {
+          proj.imageUrl = processedProj;
+        }
+      }
+    });
+  }
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return String(str)
@@ -14,13 +139,27 @@ function escapeHtml(str) {
 }
 
 /**
- * Sanitizes external URLs (allows http, https, mailto, tel).
+ * Sanitizes external URLs (allows http, https, mailto, tel, data, and relative assets).
  */
 function sanitizeUrl(url) {
   if (!url || typeof url !== "string") return "";
   const trimmed = url.trim();
+  if (trimmed.startsWith("data:image/") || trimmed.startsWith("data:application/")) {
+    return trimmed;
+  }
   if (trimmed.startsWith("mailto:") || trimmed.startsWith("tel:")) {
     if (trimmed.includes("\r") || trimmed.includes("\n") || trimmed.includes("\u0000")) return "";
+    return trimmed;
+  }
+  if (
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("../") ||
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("assets/") ||
+    trimmed.startsWith("/assets/") ||
+    trimmed.startsWith("/uploads/") ||
+    trimmed.startsWith("uploads/")
+  ) {
     return trimmed;
   }
   let normalized = trimmed;
@@ -46,6 +185,20 @@ function normalizeExportAvatar(url) {
   const trimmed = url.trim().replace(/^["']|["']$/g, "");
   if (!trimmed) return "";
 
+  if (trimmed.startsWith("data:image/")) {
+    return trimmed;
+  }
+  if (
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("../") ||
+    trimmed.startsWith("assets/") ||
+    trimmed.startsWith("/assets/") ||
+    trimmed.startsWith("/uploads/") ||
+    trimmed.startsWith("uploads/") ||
+    /https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/uploads\//i.test(trimmed)
+  ) {
+    return trimmed;
+  }
   const gdrive = trimmed.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
   if (gdrive) {
     return `https://drive.google.com/uc?export=view&id=${gdrive[1]}`;
@@ -61,15 +214,106 @@ function normalizeExportAvatar(url) {
  */
 function getFontFamilyCss(fontFamilyKey) {
   const map = {
-    Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    Roboto: "'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    Merriweather: "'Merriweather', Georgia, serif",
-    Playfair: "'Playfair Display', Georgia, serif",
-    JetBrains: "'JetBrains Mono', 'Fira Code', monospace",
-    Fira: "'Fira Code', 'JetBrains Mono', monospace",
-    Geist: "'Geist Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    Roboto: "'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+    Merriweather: "'Merriweather', Georgia, 'Times New Roman', serif",
+    Playfair: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    JetBrains: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+    Fira: "'Fira Code', 'JetBrains Mono', 'Courier New', monospace",
+    Geist: "'Geist', 'Geist Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    Anton: "'Anton', Impact, 'Arial Black', sans-serif",
+    Newsreader: "'Newsreader', Georgia, 'Times New Roman', serif",
   };
   return map[fontFamilyKey] || map.Inter;
+}
+
+function getStaticBackgroundEffectHtml(bgEffect, isDark, primaryColor) {
+  if (!bgEffect || bgEffect === "default") return "";
+  if (bgEffect === "mesh") {
+    return `
+  <div class="static-bg-effect static-bg-mesh" aria-hidden="true">
+    <div class="mesh-blob-1" style="background-color: ${primaryColor}25;"></div>
+    <div class="mesh-blob-2" style="background-color: ${primaryColor}1a;"></div>
+  </div>`;
+  }
+  if (bgEffect === "grid") {
+    return `<div class="static-bg-effect static-bg-grid" aria-hidden="true"></div>`;
+  }
+  if (bgEffect === "dots") {
+    return `<div class="static-bg-effect static-bg-dots" aria-hidden="true"></div>`;
+  }
+  if (bgEffect === "aurora") {
+    return `
+  <div class="static-bg-effect static-bg-aurora" aria-hidden="true">
+    <div class="aurora-blob" style="background: radial-gradient(circle, ${primaryColor}33 0%, #ec489922 45%, transparent 70%);"></div>
+  </div>`;
+  }
+  return "";
+}
+
+function getStaticBackgroundEffectCss(isDark = false) {
+  return `
+/* Dynamic Background Effects */
+.static-bg-effect {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.static-bg-mesh {
+  opacity: 0.4;
+  mix-blend-mode: screen;
+  overflow: hidden;
+}
+.mesh-blob-1 {
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  filter: blur(120px);
+}
+.mesh-blob-2 {
+  position: absolute;
+  top: 40%;
+  right: -15%;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  filter: blur(140px);
+}
+.static-bg-grid {
+  opacity: 0.25;
+  background-image: linear-gradient(${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} 1px, transparent 1px),
+                    linear-gradient(90deg, ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.static-bg-dots {
+  opacity: 0.3;
+  background-image: radial-gradient(${isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"} 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.static-bg-aurora {
+  opacity: 0.35;
+  overflow: hidden;
+}
+.aurora-blob {
+  position: absolute;
+  top: -30%;
+  left: 20%;
+  width: 70vw;
+  height: 45vw;
+  border-radius: 50%;
+  filter: blur(130px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .static-bg-effect, .static-bg-effect * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+`;
 }
 
 
@@ -90,7 +334,7 @@ function adjustBrightness(hex, percent) {
 
 const GOOGLE_FONTS_LINK_TAG = `<link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fira+Code:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
 
 /**
  * Sanitizes portfolio data to exclude private DB metadata or internal IDs.
@@ -116,9 +360,10 @@ export function sanitizePortfolioData(portfolio) {
     (template === "spotlight" ? "#e3141f" : template === "poster" ? "#e11d2a" : template === "creative" ? "#9333ea" : template === "devport" ? "#06b6d4" : "#2563eb");
   const fontFamily = portfolio.design?.fontFamily || "Inter";
 
-  return {
+  const cleanData = {
     title: portfolio.title || "Portfolio",
     slug: portfolio.slug || "",
+    version: portfolio.version || 1,
     profile: {
       fullName: portfolio.profile?.fullName || "",
       headline: portfolio.profile?.headline || "",
@@ -147,23 +392,28 @@ export function sanitizePortfolioData(portfolio) {
       current: Boolean(e.current),
       description: e.description || "",
       highlights: Array.isArray(e.highlights) ? e.highlights : [],
+      technologies: e.technologies || "",
     })),
     education: (portfolio.education || []).map((ed) => ({
       institution: ed.institution || "",
       degree: ed.degree || "",
       fieldOfStudy: ed.fieldOfStudy || "",
       startDate: ed.startDate || "",
-      endDate: ed.endDate || "",
+      endDate: ed.endDate || ed.graduationDate || "",
+      graduationDate: ed.graduationDate || ed.endDate || "",
       grade: ed.grade || "",
     })),
     projects: (portfolio.projects || []).map((p) => ({
       title: p.title || "",
       description: p.description || "",
       tags: Array.isArray(p.tags) ? p.tags : [],
-      liveUrl: p.liveUrl || "",
+      liveUrl: p.liveUrl || p.demoUrl || "",
       repoUrl: p.repoUrl || p.githubUrl || "",
       imageUrl: p.imageUrl || "",
       featured: Boolean(p.featured),
+      role: p.role || "",
+      highlights: Array.isArray(p.highlights) ? p.highlights : [],
+      demoUrl: p.demoUrl || p.liveUrl || "",
     })),
     certifications: (portfolio.certifications || []).map((c) => ({
       name: c.name || "",
@@ -173,23 +423,28 @@ export function sanitizePortfolioData(portfolio) {
     })),
     design: {
       template,
+      templateVersion: portfolio.design?.templateVersion || (portfolio.version ? String(portfolio.version) : "1.0.0"),
       theme,
       primaryColor,
       fontFamily,
       backgroundEffect: portfolio.design?.backgroundEffect || "default",
-      sectionOrder: portfolio.design?.sectionOrder || [
-        "hero",
-        "about",
-        "skills",
-        "projects",
-        "experience",
-        "education",
-        "certifications",
-        "contact",
-      ],
+      sectionOrder: Array.isArray(portfolio.design?.sectionOrder) && portfolio.design.sectionOrder.length > 0
+        ? portfolio.design.sectionOrder
+        : [
+            "hero",
+            "about",
+            "skills",
+            "projects",
+            "experience",
+            "education",
+            "certifications",
+            "contact",
+          ],
       sectionVisibility: portfolio.design?.sectionVisibility || {},
       layoutOptions: portfolio.design?.layoutOptions || {},
       templateSettings: portfolio.design?.templateSettings || {},
+      customLabels: portfolio.design?.customLabels || {},
+      customText: portfolio.design?.customText || {},
       customCss: portfolio.design?.customCss || "",
     },
     publication: {
@@ -200,6 +455,12 @@ export function sanitizePortfolioData(portfolio) {
         "Professional portfolio showcase",
     },
   };
+
+  const validationResult = exportedPortfolioSchema.safeParse(cleanData);
+  if (validationResult.success) {
+    return { ...cleanData, ...validationResult.data };
+  }
+  return cleanData;
 }
 
 /**
@@ -249,6 +510,7 @@ export async function exportPortfolioAsSourceZip(rawPortfolio, res) {
   const data = sanitizePortfolioData(rawPortfolio);
   const filename = getExportFilename(data, "source");
   const archive = createArchive(res, filename);
+  bundlePortfolioAssets(data, archive, true);
 
   const selectedTemplate = data.design.template;
 
@@ -285,6 +547,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  base: "./",
   plugins: [react(), tailwindcss()],
 });
 `;
@@ -299,13 +562,14 @@ export default defineConfig({
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>${escapeHtml(data.publication.seoTitle || data.title)}</title>
     <meta name="description" content="${escapeHtml(data.publication.seoDescription)}" />
     ${GOOGLE_FONTS_LINK_TAG}
   </head>
   <body class="${isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100"} antialiased selection:bg-cyan-500/30 selection:text-white">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
 `;
@@ -313,6 +577,8 @@ export default defineConfig({
 
   // 4. src/index.css
   const indexCss = `@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   html {
@@ -334,6 +600,17 @@ export default defineConfig({
 
 .animate-pulse-glow {
   animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 `;
   archive.append(indexCss, { name: "src/index.css" });
@@ -358,6 +635,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   // 7. src/App.jsx
   const appJsx = `import React from "react";
 import portfolioData from "./portfolioData.json";
+import { ThemeWrapper } from "./components/common/ThemeWrapper.jsx";
 import { SpotlightTemplate } from "./components/templates/SpotlightTemplate.jsx";
 import { PosterTemplate } from "./components/templates/PosterTemplate.jsx";
 import { DevPortTemplate } from "./components/templates/DevPortTemplate.jsx";
@@ -378,16 +656,38 @@ export default function App() {
   const templateKey = (portfolioData?.design?.template || "${selectedTemplate}").toLowerCase();
   const SelectedTemplate = TEMPLATE_MAP[templateKey] || SpotlightTemplate;
 
+  const baseOrder = portfolioData?.design?.sectionOrder || [
+    "hero",
+    "about",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ];
+  const resolvedSectionOrder = baseOrder.includes("hero") ? baseOrder : ["hero", ...baseOrder];
+  const resolvedHiddenSections = portfolioData?.design?.sectionVisibility
+    ? Object.entries(portfolioData.design.sectionVisibility)
+        .filter(([, visible]) => visible === false)
+        .map(([key]) => key)
+    : [];
+
   return (
-    <div className="min-h-screen">
-      <SelectedTemplate portfolio={portfolioData} />
-    </div>
+    <ThemeWrapper design={portfolioData?.design}>
+      <SelectedTemplate
+        portfolio={portfolioData}
+        sectionOrder={resolvedSectionOrder}
+        hiddenSections={resolvedHiddenSections}
+      />
+    </ThemeWrapper>
   );
 }
 `;
   archive.append(appJsx, { name: "src/App.jsx" });
 
   // 8. Common Components
+  archive.append(getThemeWrapperJsx(), { name: "src/components/common/ThemeWrapper.jsx" });
   archive.append(getBrandIconJsx(), { name: "src/components/common/BrandIcon.jsx" });
   archive.append(getSafeLinkJsx(), { name: "src/components/common/SafeLink.jsx" });
   archive.append(getUrlUtilsJs(), { name: "src/components/common/urlUtils.js" });
@@ -415,6 +715,7 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
   const data = sanitizePortfolioData(rawPortfolio);
   const filename = getExportFilename(data, "static");
   const archive = createArchive(res, filename);
+  bundlePortfolioAssets(data, archive, false);
 
   const template = data.design.template;
 
@@ -459,6 +760,12 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticJs = generateSpotlightStaticJs(data);
   } else if (template === "poster") {
     staticJs = generatePosterStaticJs(data);
+  } else if (template === "creative") {
+    staticJs = generateCreativeStaticJs(data);
+  } else if (template === "developer") {
+    staticJs = generateDeveloperStaticJs(data);
+  } else if (template === "minimal") {
+    staticJs = generateMinimalStaticJs(data);
   } else {
     staticJs = generateDevPortStaticJs(data, template);
   }
@@ -556,25 +863,37 @@ function generateDevPortStaticHtml(data) {
   // Projects Cards HTML
   const projectsHtml = projects
     .map((p, idx) => {
-      const liveUrl = sanitizeUrl(p.liveUrl);
+      const liveUrl = sanitizeUrl(p.liveUrl || p.demoUrl);
+      const demoUrl = sanitizeUrl(p.demoUrl);
       const repoUrl = sanitizeUrl(p.repoUrl);
       const tagsHtml = (p.tags || [])
         .map((t) => `<span class="proj-tag">#${escapeHtml(t)}</span>`)
         .join("");
+      const highlightsHtml = (p.highlights || [])
+        .map((h) => `<li>${escapeHtml(h)}</li>`)
+        .join("");
 
       return `
         <div class="devport-project-card">
+          ${p.imageUrl ? `
+            <div class="proj-img-wrap">
+              <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" class="proj-img" loading="lazy" />
+            </div>
+          ` : ""}
           <div class="proj-body">
             <div class="proj-top">
               <span class="proj-num">// ${String(idx + 1).padStart(2, "0")}</span>
               <h4 class="proj-title">${escapeHtml(p.title)}</h4>
+              ${p.role ? `<span class="proj-role" style="display:inline-block;margin-left:8px;font-size:12px;opacity:0.8;">(${escapeHtml(p.role)})</span>` : ""}
               ${p.featured ? `<span class="featured-badge">Featured</span>` : ""}
             </div>
             <p class="proj-desc">${escapeHtml(p.description)}</p>
+            ${highlightsHtml ? `<ul class="proj-bullets" style="padding-left:18px;font-size:13px;margin:8px 0;">${highlightsHtml}</ul>` : ""}
             ${tagsHtml ? `<div class="proj-tags">${tagsHtml}</div>` : ""}
           </div>
           <div class="proj-footer">
             ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="btn-live">Live Demo &rarr;</a>` : ""}
+            ${demoUrl && demoUrl !== liveUrl ? `<a href="${escapeHtml(demoUrl)}" target="_blank" rel="noopener noreferrer" class="btn-live">Interactive Preview &rarr;</a>` : ""}
             ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="btn-source">Code Repository</a>` : ""}
           </div>
         </div>
@@ -588,6 +907,9 @@ function generateDevPortStaticHtml(data) {
       const highlightsHtml = (exp.highlights || [])
         .map((h) => `<li>${escapeHtml(h)}</li>`)
         .join("");
+      const techHtml = (exp.technologies || [])
+        .map((t) => `<span class="exp-tech-tag" style="display:inline-block;padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);margin-right:4px;">#${escapeHtml(t)}</span>`)
+        .join("");
 
       return `
         <div class="exp-card">
@@ -600,6 +922,7 @@ function generateDevPortStaticHtml(data) {
           </div>
           ${exp.description ? `<p class="exp-desc">${escapeHtml(exp.description)}</p>` : ""}
           ${highlightsHtml ? `<ul class="exp-bullets">${highlightsHtml}</ul>` : ""}
+          ${techHtml ? `<div class="exp-tech-list" style="margin-top:8px;">${techHtml}</div>` : ""}
         </div>
       `;
     })
@@ -608,11 +931,12 @@ function generateDevPortStaticHtml(data) {
   // Education HTML
   const educationHtml = education
     .map((edu, idx) => {
+      const dateStr = edu.graduationDate || `${edu.startDate || ""} &mdash; ${edu.endDate || "Present"}`;
       return `
         <div class="edu-box">
           <h4 class="edu-box-title">${escapeHtml(edu.degree)} ${edu.fieldOfStudy ? `in ${escapeHtml(edu.fieldOfStudy)}` : ""}</h4>
           <p class="edu-box-inst">${escapeHtml(edu.institution)}</p>
-          <p class="edu-box-date">${escapeHtml(edu.startDate || "")} &mdash; ${escapeHtml(edu.endDate || "Present")}</p>
+          <p class="edu-box-date">${escapeHtml(dateStr)}</p>
         </div>
       `;
     })
@@ -633,6 +957,262 @@ function generateDevPortStaticHtml(data) {
     })
     .join("\n");
 
+  const customLabels = data.design?.customLabels || {};
+  const customText = data.design?.customText || {};
+
+  const sectionMap = {
+    hero: `
+    <!-- 1. HERO SECTION -->
+    <section id="hero" class="devport-hero-section">
+      <div class="hero-grid">
+        <!-- Left Column -->
+        <div class="hero-left">
+          <div class="status-pill">
+            <span class="ping-dot"><span class="ping-ring"></span></span>
+            <span>${escapeHtml(customText.heroAvailability || "Available for opportunities & freelance work")}</span>
+          </div>
+
+          <div class="greeting-block">
+            <p class="sub-greeting">${escapeHtml(customText.heroGreeting || "Hey there! I'm")}</p>
+            <h1 class="hero-full-name">${escapeHtml(fullName)}</h1>
+          </div>
+
+          <div class="typewriter-headline">
+            <span>I&apos;m a</span>
+            <span class="glowing-typewriter-text" id="typewriterText" data-roles='${escapeHtml(rolesJson)}'>${escapeHtml(roles[0] || headline)}</span>
+            <span class="typewriter-cursor"></span>
+          </div>
+
+          <p class="hero-bio-text">${escapeHtml(bio)}</p>
+
+          ${topSkillsHtml ? `
+          <div class="core-tech-container">
+            <p class="core-tech-label">${escapeHtml(customLabels.coreTech || "CORE TECHNOLOGIES")}</p>
+            <div class="core-tech-pills">
+              ${topSkillsHtml}
+            </div>
+          </div>
+          ` : ""}
+
+          <div class="hero-cta-row">
+            <a href="#projects" class="btn-primary-gradient">
+              <span>${escapeHtml(customLabels.viewWork || "View My Work")}</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="#contact" class="btn-secondary-glass">
+              <span>${escapeHtml(customLabels.contactCta || "Let's Talk")}</span>
+            </a>
+            ${location ? `<div class="location-badge"><span>📍 ${escapeHtml(location)}</span></div>` : ""}
+          </div>
+
+          ${socialIconsHtml ? `
+          <div class="hero-connect-row">
+            <span class="connect-label">CONNECT:</span>
+            <div class="connect-icons">
+              ${socialIconsHtml}
+            </div>
+          </div>
+          ` : ""}
+        </div>
+
+        <!-- Right Column: Orbital Avatar Frame + Code Snippet + Stat Badges -->
+        <div class="hero-right">
+          <div class="orbital-stage">
+            <div class="orbital-aura"></div>
+            <div class="orbital-avatar-ring">
+              <div class="orbital-avatar-inner">
+                ${avatarUrl ? `
+                  <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="avatar-photo">
+                ` : `
+                  <div class="avatar-fallback">
+                    <span class="fallback-initials">${escapeHtml(initials)}</span>
+                  </div>
+                `}
+              </div>
+              <div class="orbital-badge badge-top" title="Code">&lt;/&gt;</div>
+              <div class="orbital-badge badge-right" title="Design">&#10024;</div>
+              <div class="orbital-badge badge-bottom" title="Verified">&#10003;</div>
+              <div class="orbital-badge badge-left" title="Passion">&#9829;</div>
+            </div>
+
+            <div class="floating-code-card">
+              <div class="code-card-header">
+                <span class="dot dot-red"></span>
+                <span class="dot dot-amber"></span>
+                <span class="dot dot-green"></span>
+                <span class="code-filename">developer.js</span>
+              </div>
+              <div class="code-card-body">
+                <span class="code-pink">const</span> <span class="code-white">developer</span> = {<br>
+                &nbsp;&nbsp;<span class="code-muted">name:</span> <span class="code-cyan">&quot;${escapeHtml(firstName)}&quot;</span>,<br>
+                &nbsp;&nbsp;<span class="code-muted">skills:</span> <span class="code-amber">[${escapeHtml(codeSkills)}]</span>,<br>
+                &nbsp;&nbsp;<span class="code-muted">hardWorker:</span> <span class="code-emerald">true</span><br>
+                };
+              </div>
+            </div>
+
+            <div class="floating-stat-card stat-left">
+              <div class="stat-icon-box cyan-icon">&#128196;</div>
+              <div>
+                <div class="stat-number">${escapeHtml(projectCount)}</div>
+                <div class="stat-label">${escapeHtml(customLabels.projectsDone || "Projects Done")}</div>
+              </div>
+            </div>
+
+            <div class="floating-stat-card stat-right">
+              <div class="stat-icon-box pink-icon">&#128188;</div>
+              <div>
+                <div class="stat-number">${escapeHtml(experienceYears)}</div>
+                <div class="stat-label">${escapeHtml(customLabels.experienceYears || "Experience")}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`,
+
+    about: `
+    <!-- 2. ABOUT SECTION -->
+    <section id="about" class="devport-section">
+      <div class="glass-section-card">
+        <div class="card-glow-accent"></div>
+        <div class="section-tag-row">
+          <span class="section-tag-num">// 01. ${escapeHtml(customLabels.about || "About Me")}</span>
+        </div>
+        <h2 class="section-main-heading">${escapeHtml(customText.aboutHeadline || "Passionate about turning vision into high-impact software")}</h2>
+        <div class="about-bio-body">
+          <p>${escapeHtml(bio || headline)}</p>
+        </div>
+        ${(location || email || phone) ? `
+        <div class="about-details-grid">
+          ${location ? `<div class="detail-item"><span class="detail-label">Location:</span> <span>${escapeHtml(location)}</span></div>` : ""}
+          ${email ? `<div class="detail-item"><span class="detail-label">Email:</span> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>` : ""}
+          ${phone ? `<div class="detail-item"><span class="detail-label">Phone:</span> <span>${escapeHtml(phone)}</span></div>` : ""}
+        </div>
+        ` : ""}
+      </div>
+    </section>`,
+
+    skills: skills.length ? `
+    <!-- 3. SKILLS SECTION -->
+    <section id="skills" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 02. ${escapeHtml(customLabels.skills || "Skills & Tech Stack")}</div>
+        <h2 class="section-main-heading">${escapeHtml(customText.skillsHeadline || "Tools, Frameworks & Core Competencies")}</h2>
+      </div>
+      <div class="skills-cards-grid">
+        ${allSkillsHtml}
+      </div>
+    </section>` : "",
+
+    projects: projects.length ? `
+    <!-- 4. PROJECTS SECTION -->
+    <section id="projects" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 03. ${escapeHtml(customLabels.projects || "Featured Engineering Projects")}</div>
+        <h2 class="section-main-heading">${escapeHtml(customText.projectsHeadline || "Selected Work & Interactive Case Studies")}</h2>
+      </div>
+      <div class="projects-cards-grid">
+        ${projectsHtml}
+      </div>
+    </section>` : "",
+
+    experience: experience.length ? `
+    <!-- 5. EXPERIENCE SECTION -->
+    <section id="experience" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// 04. ${escapeHtml(customLabels.experience || "Career Experience")}</div>
+        <h2 class="section-main-heading">${escapeHtml(customText.experienceHeadline || "Professional Timeline & Contributions")}</h2>
+      </div>
+      <div class="experience-list">
+        ${experienceHtml}
+      </div>
+    </section>` : "",
+
+    education: (education.length || certifications.length) ? `
+    <!-- 6. EDUCATION & CERTIFICATIONS SECTION -->
+    <section id="education" class="devport-section">
+      <div class="two-col-grid">
+        ${education.length ? `
+        <div>
+          <div class="section-tag-num">// ${escapeHtml(customLabels.education || "Education")}</div>
+          <h3 class="col-heading">${escapeHtml(customText.educationHeadline || "Academic Foundation")}</h3>
+          <div class="edu-list-stack">
+            ${educationHtml}
+          </div>
+        </div>
+        ` : ""}
+        ${certifications.length ? `
+        <div id="certifications">
+          <div class="section-tag-num">// ${escapeHtml(customLabels.certifications || "Certifications")}</div>
+          <h3 class="col-heading">${escapeHtml(customText.certificationsHeadline || "Credentials & Awards")}</h3>
+          <div class="cert-list-stack">
+            ${certsHtml}
+          </div>
+        </div>
+        ` : ""}
+      </div>
+    </section>` : "",
+
+    certifications: certifications.length ? `
+    <section id="certifications" class="devport-section">
+      <div class="section-header-block">
+        <div class="section-tag-num">// ${escapeHtml(customLabels.certifications || "Certifications")}</div>
+        <h3 class="col-heading">${escapeHtml(customText.certificationsHeadline || "Credentials & Awards")}</h3>
+      </div>
+      <div class="cert-list-stack">
+        ${certsHtml}
+      </div>
+    </section>` : "",
+
+    contact: `
+    <!-- 7. CONTACT SECTION -->
+    <section id="contact" class="devport-section">
+      <div class="contact-cta-box">
+        <div class="contact-tag">${escapeHtml(customLabels.contact || "Get In Touch")}</div>
+        <h2 class="contact-headline">${escapeHtml(customText.contactHeadline || "Let's build something extraordinary together")}</h2>
+        <p class="contact-subtext">${escapeHtml(customText.contactSubtext || "Interested in collaborating, hiring for full-time or freelance roles, or just want to say hi? Reach out anytime!")}</p>
+        
+        <div class="contact-btns-row">
+          ${email ? `
+            <a href="mailto:${escapeHtml(email)}" class="btn-primary-gradient btn-lg">
+              <span>Send an Email (${escapeHtml(email)})</span>
+            </a>
+          ` : ""}
+          ${phone ? `
+            <a href="tel:${escapeHtml(phone)}" class="btn-secondary-glass btn-lg">
+              <span>Call: ${escapeHtml(phone)}</span>
+            </a>
+          ` : ""}
+        </div>
+
+        ${socialIconsHtml ? `
+        <div class="contact-social-icons">
+          ${socialIconsHtml}
+        </div>
+        ` : ""}
+      </div>
+    </section>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "hero",
+    "about",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "contact",
+  ];
+  const sectionOrder = rawOrder.includes("hero") ? rawOrder : ["hero", ...rawOrder];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSections = sectionOrder
+    .filter((sec) => sectionVisibility[sec] !== false)
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
+
   const isLight = data.design?.theme === "light";
 
   return `<!DOCTYPE html>
@@ -645,6 +1225,12 @@ function generateDevPortStaticHtml(data) {
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
   ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
+  <style>
+    :root {
+      --primary-color: ${escapeHtml(data.design?.primaryColor || "#06b6d4")};
+      --cyan-accent: ${escapeHtml(data.design?.primaryColor || "#06b6d4")};
+    }
+  </style>
 </head>
 <body class="devport-theme${isLight ? " devport-light" : ""}">
   <!-- Ambient Cosmic Glow Backdrops -->
@@ -671,13 +1257,13 @@ function generateDevPortStaticHtml(data) {
       </a>
 
       <nav class="devport-nav-pills">
-        <a href="#hero" class="nav-pill active">Home</a>
-        <a href="#about" class="nav-pill">About</a>
-        ${skills.length ? `<a href="#skills" class="nav-pill">Skills</a>` : ""}
-        ${projects.length ? `<a href="#projects" class="nav-pill">Projects</a>` : ""}
-        ${experience.length ? `<a href="#experience" class="nav-pill">Experience</a>` : ""}
-        ${(education.length || certifications.length) ? `<a href="#education" class="nav-pill">Education</a>` : ""}
-        <a href="#contact" class="nav-pill">Contact</a>
+        ${sectionVisibility.hero !== false ? `<a href="#hero" class="nav-pill active">Home</a>` : ""}
+        ${sectionVisibility.about !== false ? `<a href="#about" class="nav-pill">About</a>` : ""}
+        ${skills.length && sectionVisibility.skills !== false ? `<a href="#skills" class="nav-pill">Skills</a>` : ""}
+        ${projects.length && sectionVisibility.projects !== false ? `<a href="#projects" class="nav-pill">Projects</a>` : ""}
+        ${experience.length && sectionVisibility.experience !== false ? `<a href="#experience" class="nav-pill">Experience</a>` : ""}
+        ${(education.length || certifications.length) && (sectionVisibility.education !== false || sectionVisibility.certifications !== false) ? `<a href="#education" class="nav-pill">Education</a>` : ""}
+        ${sectionVisibility.contact !== false ? `<a href="#contact" class="nav-pill">Contact</a>` : ""}
       </nav>
 
       <div class="nav-actions">
@@ -691,236 +1277,7 @@ function generateDevPortStaticHtml(data) {
 
   <!-- Main Content Container -->
   <main class="devport-main-container">
-    <!-- 1. HERO SECTION -->
-    <section id="hero" class="devport-hero-section">
-      <div class="hero-grid">
-        <!-- Left Column -->
-        <div class="hero-left">
-          <div class="status-pill">
-            <span class="ping-dot"><span class="ping-ring"></span></span>
-            <span>Available for opportunities &amp; freelance work</span>
-          </div>
-
-          <div class="greeting-block">
-            <p class="sub-greeting">Hey there! I&apos;m</p>
-            <h1 class="hero-full-name">${escapeHtml(fullName)}</h1>
-          </div>
-
-          <div class="typewriter-headline">
-            <span>I&apos;m a</span>
-            <span class="glowing-typewriter-text" id="typewriterText" data-roles='${escapeHtml(rolesJson)}'>${escapeHtml(roles[0] || headline)}</span>
-            <span class="typewriter-cursor"></span>
-          </div>
-
-          <p class="hero-bio-text">${escapeHtml(bio)}</p>
-
-          ${topSkillsHtml ? `
-          <div class="core-tech-container">
-            <p class="core-tech-label">CORE TECHNOLOGIES</p>
-            <div class="core-tech-pills">
-              ${topSkillsHtml}
-            </div>
-          </div>
-          ` : ""}
-
-          <div class="hero-cta-row">
-            <a href="#projects" class="btn-primary-gradient">
-              <span>View My Work</span>
-              <span>&rarr;</span>
-            </a>
-            <a href="#contact" class="btn-secondary-glass">
-              <span>Let&apos;s Talk</span>
-            </a>
-            ${location ? `<div class="location-badge"><span>📍 ${escapeHtml(location)}</span></div>` : ""}
-          </div>
-
-          ${socialIconsHtml ? `
-          <div class="hero-connect-row">
-            <span class="connect-label">CONNECT:</span>
-            <div class="connect-icons">
-              ${socialIconsHtml}
-            </div>
-          </div>
-          ` : ""}
-        </div>
-
-        <!-- Right Column: Orbital Avatar Frame + Code Snippet + Stat Badges -->
-        <div class="hero-right">
-          <div class="orbital-stage">
-            <!-- Background Rotating Aura -->
-            <div class="orbital-aura"></div>
-
-            <!-- Central Circular Avatar Frame -->
-            <div class="orbital-avatar-ring">
-              <div class="orbital-avatar-inner">
-                ${avatarUrl ? `
-                  <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="avatar-photo">
-                ` : `
-                  <div class="avatar-fallback">
-                    <span class="fallback-initials">${escapeHtml(initials)}</span>
-                  </div>
-                `}
-              </div>
-
-              <!-- 4 Orbital Floating Badges -->
-              <div class="orbital-badge badge-top" title="Code">&lt;/&gt;</div>
-              <div class="orbital-badge badge-right" title="Design">&#10024;</div>
-              <div class="orbital-badge badge-bottom" title="Verified">&#10003;</div>
-              <div class="orbital-badge badge-left" title="Passion">&#9829;</div>
-            </div>
-
-            <!-- Floating Code Card (developer.js) -->
-            <div class="floating-code-card">
-              <div class="code-card-header">
-                <span class="dot dot-red"></span>
-                <span class="dot dot-amber"></span>
-                <span class="dot dot-green"></span>
-                <span class="code-filename">developer.js</span>
-              </div>
-              <div class="code-card-body">
-                <span class="code-pink">const</span> <span class="code-white">developer</span> = {<br>
-                &nbsp;&nbsp;<span class="code-muted">name:</span> <span class="code-cyan">&quot;${escapeHtml(firstName)}&quot;</span>,<br>
-                &nbsp;&nbsp;<span class="code-muted">skills:</span> <span class="code-amber">[${escapeHtml(codeSkills)}]</span>,<br>
-                &nbsp;&nbsp;<span class="code-muted">hardWorker:</span> <span class="code-emerald">true</span><br>
-                };
-              </div>
-            </div>
-
-            <!-- Floating Stat 1: Projects Done -->
-            <div class="floating-stat-card stat-left">
-              <div class="stat-icon-box cyan-icon">&#128196;</div>
-              <div>
-                <div class="stat-number">${escapeHtml(projectCount)}</div>
-                <div class="stat-label">Projects Done</div>
-              </div>
-            </div>
-
-            <!-- Floating Stat 2: Experience -->
-            <div class="floating-stat-card stat-right">
-              <div class="stat-icon-box pink-icon">&#128188;</div>
-              <div>
-                <div class="stat-number">${escapeHtml(experienceYears)}</div>
-                <div class="stat-label">Experience</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. ABOUT SECTION -->
-    <section id="about" class="devport-section">
-      <div class="glass-section-card">
-        <div class="card-glow-accent"></div>
-        <div class="section-tag-row">
-          <span class="section-tag-num">// 01. About Me</span>
-        </div>
-        <h2 class="section-main-heading">Passionate about turning vision into high-impact software</h2>
-        <div class="about-bio-body">
-          <p>${escapeHtml(bio || headline)}</p>
-        </div>
-        ${(location || email || phone) ? `
-        <div class="about-details-grid">
-          ${location ? `<div class="detail-item"><span class="detail-label">Location:</span> <span>${escapeHtml(location)}</span></div>` : ""}
-          ${email ? `<div class="detail-item"><span class="detail-label">Email:</span> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>` : ""}
-          ${phone ? `<div class="detail-item"><span class="detail-label">Phone:</span> <span>${escapeHtml(phone)}</span></div>` : ""}
-        </div>
-        ` : ""}
-      </div>
-    </section>
-
-    <!-- 3. SKILLS SECTION -->
-    ${skills.length ? `
-    <section id="skills" class="devport-section">
-      <div class="section-header-block">
-        <div class="section-tag-num">// 02. Skills &amp; Tech Stack</div>
-        <h2 class="section-main-heading">Tools, Frameworks &amp; Core Competencies</h2>
-      </div>
-      <div class="skills-cards-grid">
-        ${allSkillsHtml}
-      </div>
-    </section>
-    ` : ""}
-
-    <!-- 4. PROJECTS SECTION -->
-    ${projects.length ? `
-    <section id="projects" class="devport-section">
-      <div class="section-header-block">
-        <div class="section-tag-num">// 03. Featured Engineering Projects</div>
-        <h2 class="section-main-heading">Selected Work &amp; Interactive Case Studies</h2>
-      </div>
-      <div class="projects-cards-grid">
-        ${projectsHtml}
-      </div>
-    </section>
-    ` : ""}
-
-    <!-- 5. EXPERIENCE SECTION -->
-    ${experience.length ? `
-    <section id="experience" class="devport-section">
-      <div class="section-header-block">
-        <div class="section-tag-num">// 04. Career Experience</div>
-        <h2 class="section-main-heading">Professional Timeline &amp; Contributions</h2>
-      </div>
-      <div class="experience-list">
-        ${experienceHtml}
-      </div>
-    </section>
-    ` : ""}
-
-    <!-- 6. EDUCATION & CERTIFICATIONS SECTION -->
-    ${(education.length || certifications.length) ? `
-    <section id="education" class="devport-section">
-      <div class="two-col-grid">
-        ${education.length ? `
-        <div>
-          <div class="section-tag-num">// Education</div>
-          <h3 class="col-heading">Academic Foundation</h3>
-          <div class="edu-list-stack">
-            ${educationHtml}
-          </div>
-        </div>
-        ` : ""}
-        ${certifications.length ? `
-        <div id="certifications">
-          <div class="section-tag-num">// Certifications</div>
-          <h3 class="col-heading">Credentials &amp; Awards</h3>
-          <div class="cert-list-stack">
-            ${certsHtml}
-          </div>
-        </div>
-        ` : ""}
-      </div>
-    </section>
-    ` : ""}
-
-    <!-- 7. CONTACT SECTION -->
-    <section id="contact" class="devport-section">
-      <div class="contact-cta-box">
-        <div class="contact-tag">Get In Touch</div>
-        <h2 class="contact-headline">Let&apos;s build something extraordinary together</h2>
-        <p class="contact-subtext">Interested in collaborating, hiring for full-time or freelance roles, or just want to say hi? Reach out anytime!</p>
-        
-        <div class="contact-btns-row">
-          ${email ? `
-            <a href="mailto:${escapeHtml(email)}" class="btn-primary-gradient btn-lg">
-              <span>Send an Email (${escapeHtml(email)})</span>
-            </a>
-          ` : ""}
-          ${phone ? `
-            <a href="tel:${escapeHtml(phone)}" class="btn-secondary-glass btn-lg">
-              <span>Call: ${escapeHtml(phone)}</span>
-            </a>
-          ` : ""}
-        </div>
-
-        ${socialIconsHtml ? `
-        <div class="contact-social-icons">
-          ${socialIconsHtml}
-        </div>
-        ` : ""}
-      </div>
-    </section>
+    ${renderedSections}
   </main>
 
   <!-- Floating Bottom-Right Chat Button -->
@@ -957,6 +1314,7 @@ function generateDevPortStaticCss(data) {
   const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
 
   return `/* DevPort Cosmic Theme Stylesheet */
+${getStaticBackgroundEffectCss(data.design?.theme === "light" ? false : true)}
 :root {
   --bg-dark: #090a16;
   --bg-card: rgba(255, 255, 255, 0.03);
@@ -1756,6 +2114,26 @@ body.devport-theme {
   box-shadow: 0 15px 35px rgba(6, 182, 212, 0.15);
 }
 
+.proj-img-wrap {
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.proj-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.devport-project-card:hover .proj-img {
+  transform: scale(1.05);
+}
+
 .proj-top {
   display: flex;
   align-items: center;
@@ -2008,6 +2386,17 @@ body.devport-theme {
   .two-col-grid { grid-template-columns: 1fr; }
   .devport-nav-pills { display: none; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 `;
 }
 
@@ -2018,6 +2407,8 @@ body.devport-theme {
 function generateDevPortStaticJs(data, template) {
   return `(function() {
   'use strict';
+
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // 1. Smooth scroll with header offset
   const navHeight = 76;
@@ -2032,7 +2423,7 @@ function generateDevPortStaticJs(data, template) {
         const offsetPosition = elementPosition + window.pageYOffset - navHeight;
         window.scrollTo({
           top: offsetPosition,
-          behavior: 'smooth'
+          behavior: isReduced ? 'auto' : 'smooth'
         });
       }
     });
@@ -2042,7 +2433,7 @@ function generateDevPortStaticJs(data, template) {
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
     });
   }
 
@@ -2074,6 +2465,11 @@ function generateDevPortStaticJs(data, template) {
     try {
       const roles = JSON.parse(typewriterElem.getAttribute('data-roles') || '[]');
       if (roles.length > 0) {
+        if (isReduced) {
+          typewriterElem.textContent = roles[0];
+          return;
+        }
+
         let roleIndex = 0;
         let charIndex = roles[0].length;
         let isDeleting = true;
@@ -2152,6 +2548,11 @@ function generateCreativeStaticHtml(data) {
       const liveUrl = sanitizeUrl(p.liveUrl);
       return `
         <div class="creative-card">
+          ${p.imageUrl ? `
+            <div class="creative-proj-img-wrap">
+              <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" class="creative-proj-img" loading="lazy" />
+            </div>
+          ` : ""}
           <h3 class="creative-card-title">${escapeHtml(p.title)}</h3>
           <p class="creative-card-desc">${escapeHtml(p.description)}</p>
           ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="btn-creative-link">Explore Project &rarr;</a>` : ""}
@@ -2160,45 +2561,21 @@ function generateCreativeStaticHtml(data) {
     })
     .join("\n");
 
-  const isLight = data.design?.theme === "light";
+  const customLabels = data.design?.customLabels || {};
+  const customText = data.design?.customText || {};
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Modern 3D Portfolio")}</title>
-  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
-  ${GOOGLE_FONTS_LINK_TAG}
-  <link rel="stylesheet" href="assets/style.css">
-</head>
-<body class="creative-theme${isLight ? " creative-light" : ""}">
-  <div class="creative-ambient-glow"></div>
-  <header class="creative-navbar">
-    <div class="container navbar-flex">
-      <a href="#hero" class="creative-logo">${escapeHtml(firstName)}</a>
-      <nav class="creative-nav">
-        <a href="#hero">Home</a>
-        <a href="#about">About</a>
-        <a href="#projects">Work</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <a href="#contact" class="btn-creative-primary">Hire Me</a>
-    </div>
-  </header>
-
-  <main class="container">
+  const sectionMap = {
+    hero: `
     <section id="hero" class="creative-hero">
       <div class="creative-hero-grid">
         <div class="creative-hero-content">
-          <div class="welcome-pill">&#10024; WELCOME TO MY PORTFOLIO</div>
+          <div class="welcome-pill">&#10024; ${escapeHtml(customText.heroGreeting || "WELCOME TO MY PORTFOLIO")}</div>
           <h1 class="creative-name">Hi, I'm <span class="purple-gradient-text">${escapeHtml(fullName)}</span></h1>
           <p class="creative-headline">${escapeHtml(headline)}</p>
           <p class="creative-bio">${escapeHtml(bio)}</p>
           <div class="hero-btns">
-            <a href="#projects" class="btn-creative-primary">Explore My Work &rarr;</a>
-            <a href="#contact" class="btn-creative-outline">Contact Me</a>
+            <a href="#projects" class="btn-creative-primary">${escapeHtml(customLabels.viewWork || "Explore My Work &rarr;")}</a>
+            <a href="#contact" class="btn-creative-outline">${escapeHtml(customLabels.contact || "Contact Me")}</a>
           </div>
           ${socialIconsHtml ? `<div class="socials-row">${socialIconsHtml}</div>` : ""}
         </div>
@@ -2214,43 +2591,154 @@ function generateCreativeStaticHtml(data) {
             </div>
             <div class="floating-exp-badge">
               <span class="exp-badge-num">${escapeHtml(experienceYears)}</span>
-              <span class="exp-badge-text">Years Experience</span>
+              <span class="exp-badge-text">${escapeHtml(customLabels.experienceYears || "Years Experience")}</span>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </section>`,
 
-    <!-- Projects -->
-    ${projects.length ? `
+    about: (bio || headline) ? `
+    <section id="about" class="creative-section">
+      <h2 class="creative-heading">${escapeHtml(customLabels.about || "About Me")}</h2>
+      <div class="creative-card" style="padding: 28px;">
+        <p class="creative-bio" style="font-size: 1.1rem; line-height: 1.8;">${escapeHtml(bio || headline)}</p>
+      </div>
+    </section>` : "",
+
+    projects: projects.length ? `
     <section id="projects" class="creative-section">
-      <h2 class="creative-heading">Featured Projects</h2>
+      <h2 class="creative-heading">${escapeHtml(customLabels.projects || "Featured Projects")}</h2>
       <div class="creative-grid">
         ${projectsHtml}
       </div>
-    </section>
-    ` : ""}
+    </section>` : "",
 
-    <!-- Skills -->
-    ${skills.length ? `
+    skills: skills.length ? `
     <section id="skills" class="creative-section">
-      <h2 class="creative-heading">Skills &amp; Expertise</h2>
+      <h2 class="creative-heading">${escapeHtml(customLabels.skills || "Skills & Expertise")}</h2>
       <div class="creative-skills-wrap">
         ${skillsHtml}
       </div>
-    </section>
-    ` : ""}
+    </section>` : "",
 
-    <!-- Contact -->
+    experience: experience.length ? `
+    <section id="experience" class="creative-section">
+      <h2 class="creative-heading">${escapeHtml(customLabels.experience || "Career Experience")}</h2>
+      <div class="creative-grid">
+        ${experience.map((e) => `
+          <div class="creative-card creative-exp-card">
+            <h3 class="creative-card-title">${escapeHtml(e.title)}</h3>
+            <p class="creative-card-desc" style="color: var(--purple); font-weight: 600;">${escapeHtml(e.company)} ${e.location ? `• ${escapeHtml(e.location)}` : ""}</p>
+            <p class="creative-card-desc" style="font-size: 0.85rem; margin-bottom: 8px;">${escapeHtml(e.startDate || "")} &mdash; ${e.current ? "Present" : escapeHtml(e.endDate || "Present")}</p>
+            ${e.description ? `<p class="creative-card-desc">${escapeHtml(e.description)}</p>` : ""}
+          </div>
+        `).join("\n")}
+      </div>
+    </section>` : "",
+
+    education: (education.length || certifications.length) ? `
+    <section id="education" class="creative-section">
+      <h2 class="creative-heading">${escapeHtml(customLabels.education || "Education & Credentials")}</h2>
+      <div class="creative-grid">
+        ${education.map((edu) => `
+          <div class="creative-card">
+            <h3 class="creative-card-title">${escapeHtml(edu.degree)} ${edu.fieldOfStudy ? `in ${escapeHtml(edu.fieldOfStudy)}` : ""}</h3>
+            <p class="creative-card-desc" style="color: var(--purple); font-weight: 600;">${escapeHtml(edu.institution)}</p>
+            <p class="creative-card-desc" style="font-size: 0.85rem;">${escapeHtml(edu.startDate || "")} &mdash; ${escapeHtml(edu.endDate || "Present")}</p>
+          </div>
+        `).join("\n")}
+        ${certifications.map((c) => `
+          <div class="creative-card">
+            <h3 class="creative-card-title">${escapeHtml(c.name)}</h3>
+            <p class="creative-card-desc" style="color: var(--purple); font-weight: 600;">${escapeHtml(c.issuer)}</p>
+            ${c.issueDate ? `<p class="creative-card-desc" style="font-size: 0.85rem;">Issued ${escapeHtml(c.issueDate)}</p>` : ""}
+          </div>
+        `).join("\n")}
+      </div>
+    </section>` : "",
+
+    certifications: certifications.length ? `
+    <section id="certifications" class="creative-section">
+      <h2 class="creative-heading">${escapeHtml(customLabels.certifications || "Certifications")}</h2>
+      <div class="creative-grid">
+        ${certifications.map((c) => `
+          <div class="creative-card">
+            <h3 class="creative-card-title">${escapeHtml(c.name)}</h3>
+            <p class="creative-card-desc" style="color: var(--purple); font-weight: 600;">${escapeHtml(c.issuer)}</p>
+            ${c.issueDate ? `<p class="creative-card-desc" style="font-size: 0.85rem;">Issued ${escapeHtml(c.issueDate)}</p>` : ""}
+          </div>
+        `).join("\n")}
+      </div>
+    </section>` : "",
+
+    contact: `
     <section id="contact" class="creative-section text-center">
-      <h2 class="creative-heading">Let's Connect</h2>
-      <p class="creative-bio" style="margin: 0 auto 20px;">Ready to collaborate on new opportunities.</p>
+      <h2 class="creative-heading">${escapeHtml(customLabels.contact || "Let's Connect")}</h2>
+      <p class="creative-bio" style="margin: 0 auto 20px;">${escapeHtml(customText.contactSubtext || "Ready to collaborate on new opportunities.")}</p>
       ${email ? `<a href="mailto:${escapeHtml(email)}" class="btn-creative-primary btn-lg">Email Me: ${escapeHtml(email)}</a>` : ""}
-    </section>
+    </section>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "hero",
+    "about",
+    "projects",
+    "skills",
+    "experience",
+    "education",
+    "contact",
+  ];
+  const sectionOrder = rawOrder.includes("hero") ? rawOrder : ["hero", ...rawOrder];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSections = sectionOrder
+    .filter((sec) => sectionVisibility[sec] !== false)
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
+
+  const isLight = data.design?.theme === "light";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Modern 3D Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="creative-theme${isLight ? " creative-light" : ""}">
+  <div class="creative-ambient-glow"></div>
+  <header class="creative-navbar">
+    <div class="container navbar-flex">
+      <a href="#hero" class="creative-logo">${escapeHtml(firstName)}</a>
+      <nav class="creative-nav">
+        ${sectionVisibility.hero !== false ? `<a href="#hero">Home</a>` : ""}
+        ${sectionVisibility.about !== false ? `<a href="#about">About</a>` : ""}
+        ${projects.length && sectionVisibility.projects !== false ? `<a href="#projects">Work</a>` : ""}
+        ${skills.length && sectionVisibility.skills !== false ? `<a href="#skills">Skills</a>` : ""}
+        ${experience.length && sectionVisibility.experience !== false ? `<a href="#experience">Experience</a>` : ""}
+        ${(education.length || certifications.length) && (sectionVisibility.education !== false || sectionVisibility.certifications !== false) ? `<a href="#education">Education</a>` : ""}
+        ${sectionVisibility.contact !== false ? `<a href="#contact">Contact</a>` : ""}
+      </nav>
+      <a href="#contact" class="btn-creative-primary">Hire Me</a>
+    </div>
+  </header>
+
+  <main class="container">
+    ${renderedSections}
   </main>
 
   <footer class="creative-footer">
-    <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Modern 3D Theme.</p>
+    <div class="creative-footer-flex">
+      <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Modern 3D Theme.</p>
+      <button type="button" id="scrollTopBtn" class="creative-top-btn" aria-label="Back to top">^top &uarr;</button>
+    </div>
   </footer>
   <script src="assets/script.js"></script>
 </body>
@@ -2263,6 +2751,7 @@ function generateCreativeStaticCss(data) {
   const isLight = data.design?.theme === "light";
 
   return `
+${getStaticBackgroundEffectCss(isLight ? false : true)}
 :root {
   --bg-dark: ${isLight ? "#f8fafc" : "#0b0f19"};
   --purple: ${primaryColor};
@@ -2423,6 +2912,9 @@ body.creative-theme.creative-light .creative-footer {
 .creative-heading { font-size: 32px; font-weight: 800; margin-bottom: 24px; }
 .creative-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
 .creative-card { padding: 24px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); }
+.creative-proj-img-wrap { width: 100%; height: 180px; overflow: hidden; border-radius: 12px; margin-bottom: 16px; background: rgba(0, 0, 0, 0.2); }
+.creative-proj-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+.creative-card:hover .creative-proj-img { transform: scale(1.05); }
 .creative-card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .creative-card-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 16px; }
 .btn-creative-link { font-size: 13px; color: #c084fc; text-decoration: none; font-weight: 600; }
@@ -2430,10 +2922,95 @@ body.creative-theme.creative-light .creative-footer {
 .creative-skill-pill { padding: 8px 16px; border-radius: 9999px; background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: #c084fc; font-size: 13px; font-weight: 600; }
 .text-center { text-align: center; }
 .creative-footer { text-align: center; padding: 40px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 13px; }
+.creative-footer-flex { display: flex; align-items: center; justify-content: space-between; max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+.creative-top-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--purple);
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+.creative-top-btn:hover {
+  background: rgba(147, 51, 234, 0.2);
+  transform: translateY(-1px);
+}
+.creative-nav a.active {
+  color: var(--purple) !important;
+  font-weight: 700;
+}
 @media (max-width: 768px) {
   .creative-hero-grid { grid-template-columns: 1fr; text-align: center; }
   .creative-name { font-size: 40px; }
+  .creative-nav { display: none; }
 }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+`;
+}
+
+function generateCreativeStaticJs(data) {
+  return `(function() {
+  'use strict';
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navHeight = 76;
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        e.preventDefault();
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: isReduced ? 'auto' : 'smooth'
+        });
+      }
+    });
+  });
+
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
+    });
+  }
+
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.creative-nav a');
+
+  function updateActiveNav() {
+    const scrollPos = window.pageYOffset + 120;
+    sections.forEach(current => {
+      const top = current.offsetTop;
+      const height = current.offsetHeight;
+      const id = current.getAttribute('id');
+      if (scrollPos >= top && scrollPos < top + height) {
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === '#' + id) {
+            link.classList.add('active');
+          }
+        });
+      }
+    });
+  }
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
+})();
 `;
 }
 
@@ -2442,49 +3019,176 @@ body.creative-theme.creative-light .creative-footer {
    ========================================================================== */
 
 function generateDeveloperStaticHtml(data) {
-  const { profile, skills, projects } = data;
+  const { profile, skills, projects, experience, education, certifications, socialLinks } = data;
   const fullName = profile.fullName || "Developer";
   const slug = (fullName).toLowerCase().replace(/\s+/g, "");
   const isLight = data.design?.theme === "light";
+  const isDark = !isLight;
+  const primaryColor = data.design?.primaryColor || "#38bdf8";
+
+  const socialLinksHtml = (socialLinks || [])
+    .map((s) => {
+      const url = sanitizeUrl(s.url);
+      if (!url) return "";
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="term-social-link">[${escapeHtml(s.label || s.platform)}]</a>`;
+    })
+    .join(" ");
+
+  const sectionMap = {
+    hero: `
+      <div id="hero" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> whoami</div>
+        <div class="term-hero-content">
+          ${profile.avatarUrl ? `<img src="${escapeHtml(profile.avatarUrl)}" alt="${escapeHtml(fullName)}" class="term-avatar" referrerpolicy="no-referrer" />` : ""}
+          <div>
+            <h1 class="term-name">${escapeHtml(fullName)}</h1>
+            <p class="term-role">${escapeHtml(profile.headline)}</p>
+          </div>
+        </div>
+      </div>`,
+    about: profile.bio ? `
+      <div id="about" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> cat ./about.txt</div>
+        <p class="term-bio">${escapeHtml(profile.bio)}</p>
+      </div>` : "",
+    skills: skills.length ? `
+      <div id="skills" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> ls -la ./skills</div>
+        <div class="term-skills">
+          ${skills.map(s => `<span class="term-skill-tag">${escapeHtml(s.name)}</span>`).join(" ")}
+        </div>
+      </div>` : "",
+    projects: projects.length ? `
+      <div id="projects" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> cat ./projects.json</div>
+        <div class="term-projects">
+          ${projects.map(p => {
+            const liveUrl = sanitizeUrl(p.liveUrl);
+            const repoUrl = sanitizeUrl(p.repoUrl || p.githubUrl);
+            const tags = (p.tags || []).map(t => `<span class="term-tag">#${escapeHtml(t)}</span>`).join(" ");
+            return `
+              <div class="term-proj-box">
+                <div class="term-proj-header">
+                  <span class="term-proj-title">&gt; ${escapeHtml(p.title)}</span>
+                  <div class="term-proj-links">
+                    ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="term-link">[Live Demo]</a>` : ""}
+                    ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="term-link">[Source]</a>` : ""}
+                  </div>
+                </div>
+                <p class="term-proj-desc">${escapeHtml(p.description)}</p>
+                ${tags ? `<div class="term-proj-tags">${tags}</div>` : ""}
+              </div>`;
+          }).join("")}
+        </div>
+      </div>` : "",
+    experience: experience.length ? `
+      <div id="experience" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> git log --oneline ./experience</div>
+        <div class="term-exp-list">
+          ${experience.map(e => `
+            <div class="term-exp-box">
+              <div class="term-exp-header">
+                <span class="term-exp-title">commit: ${escapeHtml(e.title)} @ ${escapeHtml(e.company)}</span>
+                <span class="term-date">[${escapeHtml(e.startDate || "")} - ${e.current ? "Present" : escapeHtml(e.endDate || "Present")}]</span>
+              </div>
+              ${e.description ? `<p class="term-exp-desc">${escapeHtml(e.description)}</p>` : ""}
+            </div>`).join("")}
+        </div>
+      </div>` : "",
+    education: education.length ? `
+      <div id="education" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> cat ./education.txt</div>
+        <div class="term-edu-list">
+          ${education.map(ed => `
+            <div class="term-edu-box">
+              <span class="term-edu-degree">${escapeHtml(ed.degree)}${ed.fieldOfStudy ? ` in ${escapeHtml(ed.fieldOfStudy)}` : ""} @ ${escapeHtml(ed.institution)}</span>
+              <span class="term-date">[${escapeHtml(ed.startDate || "")} - ${escapeHtml(ed.endDate || "Present")}]</span>
+            </div>`).join("")}
+        </div>
+      </div>` : "",
+    certifications: certifications.length ? `
+      <div id="certifications" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> ls -la ./certifications</div>
+        <div class="term-cert-list">
+          ${certifications.map(c => {
+            const url = sanitizeUrl(c.url);
+            return `
+              <div class="term-cert-box">
+                <span class="term-cert-name">-rw-r--r-- ${escapeHtml(c.name)} (${escapeHtml(c.issuer)})</span>
+                ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="term-link">[Verify]</a>` : ""}
+              </div>`;
+          }).join("")}
+        </div>
+      </div>` : "",
+    contact: `
+      <div id="contact" class="term-section">
+        <div class="prompt-line"><span class="prompt">$</span> echo "\$CONTACT_INFO"</div>
+        <div class="term-contact-info">
+          ${profile.email ? `<div>EMAIL: <a href="mailto:${escapeHtml(profile.email)}" class="term-link">${escapeHtml(profile.email)}</a></div>` : ""}
+          ${profile.phone ? `<div>PHONE: ${escapeHtml(profile.phone)}</div>` : ""}
+          ${profile.location ? `<div>LOCATION: ${escapeHtml(profile.location)}</div>` : ""}
+          ${socialLinksHtml ? `<div class="term-socials-row">SOCIALS: ${socialLinksHtml}</div>` : ""}
+        </div>
+      </div>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "hero",
+    "about",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ];
+  const sectionOrder = rawOrder.includes("hero") ? rawOrder : ["hero", ...rawOrder];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSections = sectionOrder
+    .filter((sec) => sectionVisibility[sec] !== false)
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Terminal Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>">
   ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body class="terminal-theme${isLight ? " terminal-light" : ""}">
+  ${getStaticBackgroundEffectHtml(data.design?.backgroundEffect, isDark, primaryColor)}
   <div class="terminal-container">
     <header class="terminal-bar">
-      <span>~/dev/${escapeHtml(slug)}</span>
+      <div class="terminal-bar-left">
+        <span class="term-prompt-dir">~/dev/${escapeHtml(slug)}</span>
+        <nav class="term-nav">
+          <a href="#hero">.whoami()</a>
+          ${profile.bio ? `<a href="#about">.about()</a>` : ""}
+          ${skills.length ? `<a href="#skills">.skills()</a>` : ""}
+          ${projects.length ? `<a href="#projects">.projects()</a>` : ""}
+          ${experience.length ? `<a href="#experience">.experience()</a>` : ""}
+          ${education.length ? `<a href="#education">.education()</a>` : ""}
+          ${certifications.length ? `<a href="#certifications">.certifications()</a>` : ""}
+          <a href="#contact">.contact()</a>
+        </nav>
+      </div>
+      ${socialLinksHtml ? `<div class="term-socials-bar">${socialLinksHtml}</div>` : ""}
     </header>
     <main>
-      <div class="prompt-line"><span class="prompt">$</span> whoami</div>
-      <h1 class="term-name">${escapeHtml(fullName)}</h1>
-      <p class="term-role">${escapeHtml(profile.headline)}</p>
-      <p class="term-bio">${escapeHtml(profile.bio)}</p>
-
-      <div class="prompt-line"><span class="prompt">$</span> ls -la ./skills</div>
-      <div class="term-skills">
-        ${skills.map(s => `<span class="term-skill-tag">${escapeHtml(s.name)}</span>`).join(" ")}
-      </div>
-
-      <div class="prompt-line"><span class="prompt">$</span> cat ./projects.json</div>
-      <div class="term-projects">
-        ${projects.map(p => `
-          <div class="term-proj-box">
-            <div class="term-proj-title">&gt; ${escapeHtml(p.title)}</div>
-            <div class="term-proj-desc">${escapeHtml(p.description)}</div>
-            ${p.liveUrl ? `<a href="${escapeHtml(sanitizeUrl(p.liveUrl))}" target="_blank" class="term-link">[Live Demo]</a>` : ""}
-          </div>
-        `).join("")}
-      </div>
-
-      <div class="prompt-line"><span class="prompt">$</span> echo "Contact: ${escapeHtml(profile.email || '')}"</div>
+      ${renderedSections}
     </main>
+    <footer class="term-footer">
+      <span>exit 0</span>
+      <button type="button" id="scrollTopBtn" class="term-top-btn" aria-label="Back to top">[Back to Top ↑]</button>
+    </footer>
   </div>
   <script src="assets/script.js"></script>
 </body>
@@ -2492,31 +3196,97 @@ function generateDeveloperStaticHtml(data) {
 }
 
 function generateDeveloperStaticCss(data) {
-  const primaryColor = data?.design?.primaryColor || "#2563eb";
+  const primaryColor = data?.design?.primaryColor || "#38bdf8";
   const fontFamilyCss = getFontFamilyCss(data?.design?.fontFamily || "JetBrains");
   const isLight = data?.design?.theme === "light";
   return `
 :root {
-  --bg-term: ${isLight ? "#f8fafc" : "#0d1117"};
+  --bg-term: ${isLight ? "#f6f8fa" : "#0d1117"};
   --box-bg: ${isLight ? "#ffffff" : "#161b22"};
-  --border-color: ${isLight ? "#e2e8f0" : "#30363d"};
+  --border-color: ${isLight ? "#d0d7de" : "#30363d"};
   --accent: ${primaryColor};
-  --text-main: ${isLight ? "#0f172a" : "#c9d1d9"};
-  --text-sub: ${isLight ? "#64748b" : "#8b949e"};
+  --text-main: ${isLight ? "#24292f" : "#c9d1d9"};
+  --text-sub: ${isLight ? "#57606a" : "#8b949e"};
 }
-body.terminal-theme { background: var(--bg-term); color: var(--text-main); font-family: ${fontFamilyCss}; padding: 24px; line-height: 1.6; }
-.terminal-container { max-width: 800px; margin: 40px auto; background: var(--box-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
-.terminal-bar { border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; color: var(--accent); font-weight: 700; }
-.prompt-line { color: var(--accent); font-size: 13px; margin: 20px 0 8px; }
-.term-name { font-size: 32px; color: var(--text-main); margin-bottom: 6px; }
-.term-role { color: var(--accent); font-size: 15px; margin-bottom: 10px; }
-.term-bio { color: var(--text-sub); font-size: 13px; }
-.term-skills { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
-.term-skill-tag { background: ${isLight ? "#f1f5f9" : "#21262d"}; border: 1px solid var(--border-color); padding: 3px 8px; border-radius: 4px; font-size: 12px; color: var(--accent); }
-.term-proj-box { background: var(--bg-term); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-.term-proj-title { color: var(--accent); font-weight: 600; }
-.term-proj-desc { color: var(--text-sub); font-size: 12px; margin: 4px 0 8px; }
-.term-link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body.terminal-theme { background: var(--bg-term); color: var(--text-main); font-family: ${fontFamilyCss}; padding: 24px; line-height: 1.6; min-height: 100vh; position: relative; }
+.terminal-container { max-width: 860px; margin: 40px auto; background: var(--box-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative; z-index: 1; }
+.terminal-bar { border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 24px; color: var(--accent); font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.terminal-bar-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.term-nav { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.term-nav a { color: var(--text-sub); text-decoration: none; transition: color 0.2s; }
+.term-nav a:hover { color: var(--accent); }
+.term-socials-bar, .term-socials-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.term-social-link { color: var(--text-sub); text-decoration: none; font-size: 12px; }
+.term-social-link:hover { color: var(--accent); }
+.term-section { margin-bottom: 24px; scroll-mt: 20px; }
+.prompt-line { color: var(--accent); font-size: 13px; margin: 0 0 10px; font-weight: 600; }
+.prompt { color: var(--accent); }
+.term-hero-content { display: flex; align-items: center; gap: 18px; }
+.term-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+.term-name { font-size: 32px; color: var(--text-main); margin-bottom: 4px; }
+.term-role { color: var(--accent); font-size: 15px; }
+.term-bio { color: var(--text-sub); font-size: 13px; line-height: 1.6; }
+.term-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+.term-skill-tag { background: ${isLight ? "#f1f5f9" : "#21262d"}; border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--accent); }
+.term-proj-box, .term-exp-box, .term-edu-box, .term-cert-box { background: var(--bg-term); border: 1px solid var(--border-color); padding: 14px; border-radius: 8px; margin-bottom: 12px; }
+.term-proj-header, .term-exp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.term-proj-title, .term-exp-title, .term-edu-degree { color: var(--text-main); font-weight: 700; font-size: 14px; }
+.term-proj-desc, .term-exp-desc { color: var(--text-sub); font-size: 12px; margin: 4px 0 8px; }
+.term-proj-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.term-tag { font-size: 11px; color: var(--text-sub); }
+.term-link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; margin-left: 8px; }
+.term-link:hover { text-decoration: underline; }
+.term-date { font-size: 11px; color: var(--text-sub); }
+.term-contact-info { font-size: 13px; line-height: 1.8; color: var(--text-main); }
+.term-footer { border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); }
+.term-top-btn { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12px; cursor: pointer; }
+.term-top-btn:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .term-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+${getStaticBackgroundEffectCss(isLight ? false : true)}
+`;
+}
+
+function generateDeveloperStaticJs(data) {
+  return `(function() {
+  'use strict';
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navHeight = 60;
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        e.preventDefault();
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: isReduced ? 'auto' : 'smooth'
+        });
+      }
+    });
+  });
+
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
+    });
+  }
+})();
 `;
 }
 
@@ -2524,8 +3294,10 @@ function generateMinimalStaticHtml(data) {
   const { profile, skills, projects, experience, education, certifications, socialLinks } = data;
   const fullName = profile.fullName || "Portfolio";
   const avatarUrl = profile.avatarUrl;
+  const isDark = data.design?.theme === "dark";
+  const primaryColor = data.design?.primaryColor || "#2563eb";
 
-  const socialLinksHtml = socialLinks
+  const socialLinksHtml = (socialLinks || [])
     .map((s) => {
       const url = sanitizeUrl(s.url);
       if (!url) return "";
@@ -2533,16 +3305,21 @@ function generateMinimalStaticHtml(data) {
     })
     .join(" ");
 
-  const skillsHtml = skills
+  const skillsHtml = (skills || [])
     .map((s) => `<span class="min-skill-tag">${escapeHtml(s.name)}</span>`)
     .join(" ");
 
-  const projectsHtml = projects
+  const projectsHtml = (projects || [])
     .map((p) => {
       const liveUrl = sanitizeUrl(p.liveUrl);
-      const repoUrl = sanitizeUrl(p.githubUrl);
+      const repoUrl = sanitizeUrl(p.repoUrl || p.githubUrl);
       return `
         <div class="min-item">
+          ${p.imageUrl ? `
+            <div class="min-proj-img-wrap">
+              <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" class="min-proj-img" loading="lazy" />
+            </div>
+          ` : ""}
           <div class="min-item-header">
             <h3 class="min-item-title">${escapeHtml(p.title)}</h3>
             <div class="min-item-links">
@@ -2551,13 +3328,13 @@ function generateMinimalStaticHtml(data) {
             </div>
           </div>
           <p class="min-item-desc">${escapeHtml(p.description)}</p>
-          ${p.tags && p.tags.length ? `<div class="min-tags">${p.tags.map(t => `<span class="min-tag">${escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
+          ${p.tags && p.tags.length ? `<div class="min-tags">${p.tags.map(t => `<span class="min-tag">#${escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
         </div>
       `;
     })
     .join("\n");
 
-  const experienceHtml = experience
+  const experienceHtml = (experience || [])
     .map((e) => `
       <div class="min-item">
         <div class="min-item-header">
@@ -2569,13 +3346,91 @@ function generateMinimalStaticHtml(data) {
     `)
     .join("\n");
 
-  const isDark = data.design?.theme === "dark";
+  const educationHtml = (education || [])
+    .map((ed) => `
+      <div class="min-item">
+        <div class="min-item-header">
+          <h3 class="min-item-title">${escapeHtml(ed.degree)}${ed.fieldOfStudy ? ` in ${escapeHtml(ed.fieldOfStudy)}` : ""} <span class="min-company">@ ${escapeHtml(ed.institution)}</span></h3>
+          <span class="min-date">${escapeHtml(ed.startDate || "")} &mdash; ${escapeHtml(ed.endDate || "Present")}</span>
+        </div>
+      </div>
+    `)
+    .join("\n");
+
+  const certificationsHtml = (certifications || [])
+    .map((c) => {
+      const url = sanitizeUrl(c.url);
+      return `
+        <div class="min-item">
+          <div class="min-item-header">
+            <h3 class="min-item-title">${escapeHtml(c.name)} <span class="min-company">by ${escapeHtml(c.issuer)}</span></h3>
+            ${c.issueDate ? `<span class="min-date">${escapeHtml(c.issueDate)}</span>` : ""}
+          </div>
+          ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="min-link">Credential &rarr;</a>` : ""}
+        </div>
+      `;
+    })
+    .join("\n");
+
+  const sectionMap = {
+    skills: skills.length ? `
+      <section id="skills" class="min-section">
+        <h2 class="min-heading">Skills &amp; Technologies</h2>
+        <div class="min-skills-list">${skillsHtml}</div>
+      </section>` : "",
+    projects: projects.length ? `
+      <section id="projects" class="min-section">
+        <h2 class="min-heading">Selected Projects</h2>
+        ${projectsHtml}
+      </section>` : "",
+    experience: experience.length ? `
+      <section id="experience" class="min-section">
+        <h2 class="min-heading">Experience</h2>
+        ${experienceHtml}
+      </section>` : "",
+    education: education.length ? `
+      <section id="education" class="min-section">
+        <h2 class="min-heading">Education</h2>
+        ${educationHtml}
+      </section>` : "",
+    certifications: certifications.length ? `
+      <section id="certifications" class="min-section">
+        <h2 class="min-heading">Certifications</h2>
+        ${certificationsHtml}
+      </section>` : "",
+    contact: `
+      <section id="contact" class="min-section min-contact-section">
+        <h2 class="min-heading">Contact</h2>
+        <div class="min-contact-body">
+          ${profile.email ? `<p>Email: <a href="mailto:${escapeHtml(profile.email)}" class="min-link">${escapeHtml(profile.email)}</a></p>` : ""}
+          ${profile.phone ? `<p>Phone: ${escapeHtml(profile.phone)}</p>` : ""}
+          ${profile.location ? `<p>Location: ${escapeHtml(profile.location)}</p>` : ""}
+        </div>
+      </section>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSections = rawOrder
+    .filter((sec) => sec !== "hero" && sec !== "about" && sectionVisibility[sec] !== false)
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
@@ -2583,42 +3438,38 @@ function generateMinimalStaticHtml(data) {
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body class="minimal-theme${isDark ? " minimal-dark" : " minimal-light"}">
+  ${getStaticBackgroundEffectHtml(data.design?.backgroundEffect, isDark, primaryColor)}
   <div class="minimal-wrap">
-    <header class="min-header">
+    <header class="min-nav-bar">
+      <a href="#hero" class="min-nav-title">${escapeHtml(fullName)}</a>
+      <nav class="min-nav-links">
+        ${profile.bio ? `<a href="#about">About</a>` : ""}
+        ${projects.length ? `<a href="#projects">Work</a>` : ""}
+        ${skills.length ? `<a href="#skills">Skills</a>` : ""}
+        ${experience.length ? `<a href="#experience">Experience</a>` : ""}
+        ${(education.length || certifications.length) ? `<a href="#education">Education</a>` : ""}
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+    <div id="hero" class="min-header">
       <div class="min-avatar-row">
-        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="min-avatar" />` : ""}
+        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="min-avatar" referrerpolicy="no-referrer" />` : ""}
         <div>
           <h1 class="min-name">${escapeHtml(fullName)}</h1>
           <p class="min-role">${escapeHtml(profile.headline)}</p>
         </div>
       </div>
-      <p class="min-bio">${escapeHtml(profile.bio)}</p>
+      ${profile.bio ? `<div id="about"><p class="min-bio">${escapeHtml(profile.bio)}</p></div>` : ""}
       ${socialLinksHtml ? `<div class="min-socials">${socialLinksHtml}</div>` : ""}
-    </header>
+    </div>
     <main>
-      ${skills.length ? `
-      <section class="min-section">
-        <h2 class="min-heading">Skills &amp; Technologies</h2>
-        <div class="min-skills-list">
-          ${skillsHtml}
-        </div>
-      </section>
-      ` : ""}
-      ${projects.length ? `
-      <section class="min-section">
-        <h2 class="min-heading">Selected Projects</h2>
-        ${projectsHtml}
-      </section>
-      ` : ""}
-      ${experience.length ? `
-      <section class="min-section">
-        <h2 class="min-heading">Experience</h2>
-        ${experienceHtml}
-      </section>
-      ` : ""}
+      ${renderedSections}
     </main>
     <footer class="min-footer">
-      <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Minimal Editorial Theme.</p>
+      <div class="min-footer-flex">
+        <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. Minimal Editorial Theme.</p>
+        <button type="button" id="scrollTopBtn" class="min-top-btn" aria-label="Back to top">Top &uarr;</button>
+      </div>
     </footer>
   </div>
   <script src="assets/script.js"></script>
@@ -2631,6 +3482,7 @@ function generateMinimalStaticCss(data) {
   const fontFamilyCss = getFontFamilyCss(data?.design?.fontFamily);
   const isDark = data?.design?.theme === "dark";
   return `
+${getStaticBackgroundEffectCss(isDark)}
 :root {
   --min-bg: ${isDark ? "#0f172a" : "#fafafa"};
   --min-text: ${isDark ? "#f8fafc" : "#171717"};
@@ -2639,7 +3491,36 @@ function generateMinimalStaticCss(data) {
   --min-accent: ${primaryColor};
 }
 body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-family: ${fontFamilyCss}; padding: 48px 24px; line-height: 1.7; }
-.minimal-wrap { max-width: 680px; margin: 0 auto; }
+.minimal-wrap { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+.min-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--min-border);
+}
+.min-nav-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--min-text);
+  text-decoration: none;
+}
+.min-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.min-nav-links a {
+  font-size: 13px;
+  color: var(--min-sub);
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+.min-nav-links a:hover {
+  color: var(--min-accent);
+}
 .min-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
 .min-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid var(--min-border); }
 .min-name { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; color: var(--min-text); }
@@ -2647,11 +3528,13 @@ body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-fam
 .min-bio { color: var(--min-sub); font-size: 14px; margin: 16px 0; }
 .min-socials { display: flex; gap: 12px; margin-bottom: 32px; }
 .min-social-link { font-size: 13px; color: var(--min-accent); text-decoration: underline; font-weight: 500; }
-.min-section { margin-top: 40px; }
+.min-section { margin-top: 40px; scroll-mt: 24px; }
 .min-heading { font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.15em; color: var(--min-accent); margin-bottom: 20px; font-weight: 700; }
 .min-skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .min-skill-tag { background: ${isDark ? "#1e293b" : "#f0f0f0"}; border: 1px solid var(--min-border); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--min-text); }
 .min-item { border-bottom: 1px solid var(--min-border); padding-bottom: 16px; margin-bottom: 20px; }
+.min-proj-img-wrap { width: 100%; max-height: 240px; overflow: hidden; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--min-border); }
+.min-proj-img { width: 100%; height: 100%; object-fit: cover; }
 .min-item-header { display: flex; justify-content: space-between; align-items: baseline; }
 .min-item-title { font-size: 16px; font-weight: 600; color: var(--min-text); }
 .min-company { font-weight: 400; color: var(--min-sub); font-size: 14px; }
@@ -2661,7 +3544,64 @@ body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-fam
 .min-tags { display: flex; gap: 6px; margin-top: 6px; }
 .min-tag { font-size: 11px; color: var(--min-sub); background: ${isDark ? "#1e293b" : "#f4f4f4"}; padding: 2px 6px; border-radius: 4px; }
 .min-link { color: var(--min-accent); font-size: 12px; text-decoration: underline; font-weight: 500; }
-.min-footer { margin-top: 60px; font-size: 12px; color: var(--min-sub); text-align: center; }
+.min-footer { margin-top: 60px; font-size: 12px; color: var(--min-sub); }
+.min-footer-flex { display: flex; align-items: center; justify-content: space-between; }
+.min-top-btn {
+  background: none;
+  border: none;
+  color: var(--min-accent);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.min-top-btn:hover { text-decoration: underline; }
+@media (max-width: 600px) {
+  .min-nav-links { gap: 10px; font-size: 12px; flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+`;
+}
+
+function generateMinimalStaticJs(data) {
+  return `(function() {
+  'use strict';
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navHeight = 60;
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        e.preventDefault();
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: isReduced ? 'auto' : 'smooth'
+        });
+      }
+    });
+  });
+
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
+    });
+  }
+})();
 `;
 }
 
@@ -2671,7 +3611,7 @@ body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-fam
 
 function generateSpotlightStaticHtml(data) {
   const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = data;
-  const fullName = profile.fullName || "Sunil Kumar";
+  const fullName = profile.fullName || "Developer";
   const firstName = fullName.split(/\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile.headline || "Full Stack Developer";
   const bio = profile.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`;
@@ -2713,14 +3653,20 @@ function generateSpotlightStaticHtml(data) {
   const accentDark = adjustBrightness(primaryColor, -20);
 
   // GitHub handle & Avatar
-  const githubLink = socialLinks.find(
+  const githubLink = (socialLinks || []).find(
     (l) => l.platform?.toLowerCase().includes("github") || l.url?.toLowerCase().includes("github.com")
   );
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : "sunilkumar25kush";
+    : "";
 
-  const avatarUrl = profile.avatarUrl || `https://avatars.githubusercontent.com/${githubHandle}`;
+  const avatarUrl = profile.avatarUrl || (githubHandle ? `https://avatars.githubusercontent.com/${githubHandle}` : "");
+
+  const linkedinLink = (socialLinks || []).find(
+    (l) => l.platform?.toLowerCase().includes("linkedin") || l.url?.toLowerCase().includes("linkedin.com")
+  );
+  const contactHref = linkedinLink?.url || (profile.email ? `mailto:${profile.email}` : (socialLinks?.[0]?.url || "#top"));
+  const contactLabel = linkedinLink ? "LinkedIn" : (profile.email ? "Email" : "Connect");
 
   // Headline lines split
   const headlineWords = headline.trim().split(/\s+/);
@@ -2845,36 +3791,9 @@ function generateSpotlightStaticHtml(data) {
     },
   ];
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Spotlight Portfolio")}</title>
-  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
-  ${GOOGLE_FONTS_LINK_TAG}
-  <link rel="stylesheet" href="assets/style.css">
-</head>
-<body class="spotlight-body">
-  <!-- Fixed Top Navigation -->
-  <nav id="spotlightNav" aria-label="Primary portfolio navigation" class="spotlight-nav spotlight-nav-transparent">
-    <div class="spotlight-nav-inner">
-      <a href="#top" class="spotlight-logo">
-        <span>${escapeHtml(firstName.toLowerCase())}</span><span class="spotlight-dot">.</span>
-      </a>
-      <div class="spotlight-nav-center">
-        <a href="#about" class="spotlight-nav-link">About</a>
-        <a href="#expertise" class="spotlight-nav-link">Expertise</a>
-        <a href="#work" class="spotlight-nav-link">Work</a>
-        <a href="#contact" class="spotlight-nav-link">Contact</a>
-      </div>
-      <a href="#contact" class="spotlight-nav-btn">Hire me</a>
-    </div>
-  </nav>
-
-  <main class="w-full">
-    <!-- HERO SECTION -->
+  
+  const sectionMap = {
+    hero: `<!-- HERO SECTION -->
     <section id="top" class="spotlight-hero">
       <div class="spotlight-hero-container">
         <!-- Left Hero Copy -->
@@ -2903,9 +3822,8 @@ function generateSpotlightStaticHtml(data) {
       <svg class="spotlight-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z" />
       </svg>
-    </section>
-
-    <!-- ABOUT SECTION -->
+    </section>`,
+    about: `<!-- ABOUT SECTION -->
     <section id="about" class="spotlight-section-about">
       <div class="spotlight-about-container">
         <!-- Left: Hanging Swaying Tablet -->
@@ -2954,9 +3872,8 @@ function generateSpotlightStaticHtml(data) {
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- EXPERTISE SECTION (4 Connected Nodes + Dashed Line) -->
+    </section>`,
+    expertise: `<!-- EXPERTISE SECTION (4 Connected Nodes + Dashed Line) -->
     <section id="expertise" class="spotlight-section-expertise">
       <div class="spotlight-expertise-container">
         <!-- Left: Title -->
@@ -2998,9 +3915,8 @@ function generateSpotlightStaticHtml(data) {
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- TECHNICAL STACK SECTION -->
+    </section>`,
+    skills: `<!-- TECHNICAL STACK SECTION -->
     <section id="skills" class="spotlight-section-skills">
       <div class="spotlight-skills-container">
         <div class="spotlight-skills-header">
@@ -3027,9 +3943,8 @@ function generateSpotlightStaticHtml(data) {
           <span class="spotlight-pill-tag">FEATURED WORK</span>
         </div>
       </div>
-    </section>
-
-    <!-- FEATURED WORK / PROJECTS SECTION -->
+    </section>`,
+    projects: `<!-- FEATURED WORK / PROJECTS SECTION -->
     <section id="work" class="spotlight-section-projects">
       <div class="spotlight-projects-container">
         <div class="spotlight-projects-header">
@@ -3039,10 +3954,12 @@ function generateSpotlightStaticHtml(data) {
             </h2>
             <p class="spotlight-projects-sub">Production-grade applications, developer tooling, and open-source repositories.</p>
           </div>
+          ${githubHandle ? `
           <a href="https://github.com/${escapeHtml(githubHandle)}?tab=repositories" target="_blank" rel="noopener noreferrer" class="spotlight-repo-link">
             <span>View all GitHub repos</span>
             <svg class="spotlight-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
           </a>
+          ` : ""}
         </div>
 
         <div class="spotlight-projects-grid">
@@ -3089,9 +4006,8 @@ function generateSpotlightStaticHtml(data) {
           }).join("")}
         </div>
       </div>
-    </section>
-
-    <!-- WORK EXPERIENCE SECTION -->
+    </section>`,
+    experience: `<!-- WORK EXPERIENCE SECTION -->
     ${experience.length ? `
       <section id="experience" class="spotlight-section-experience">
         <div class="spotlight-exp-container">
@@ -3126,9 +4042,8 @@ function generateSpotlightStaticHtml(data) {
       </section>
     ` : ""}
 
-    <!-- EDUCATION & CERTIFICATIONS -->
-    ${education.length ? `
-      <section id="education" class="spotlight-section-edu">
+    <!-- EDUCATION & CERTIFICATIONS -->`,
+    education: education.length ? `<section id="education" class="spotlight-section-edu">
         <div class="spotlight-edu-container">
           <h2 class="spotlight-section-title">
             <span>Education &amp; </span><span class="spotlight-accent-text">Background</span>
@@ -3143,11 +4058,8 @@ function generateSpotlightStaticHtml(data) {
             `).join("")}
           </div>
         </div>
-      </section>
-    ` : ""}
-
-    ${certifications.length ? `
-      <section id="certifications" class="spotlight-section-cert">
+      </section>` : "",
+    certifications: certifications.length ? `<section id="certifications" class="spotlight-section-cert">
         <div class="spotlight-edu-container">
           <h2 class="spotlight-section-title">
             <span>Certifications &amp; </span><span class="spotlight-accent-text">Honors</span>
@@ -3164,10 +4076,8 @@ function generateSpotlightStaticHtml(data) {
             `).join("")}
           </div>
         </div>
-      </section>
-    ` : ""}
-
-    <!-- CONTACT SECTION (Giant Watermark + Center Floating Red Card) -->
+      </section>` : "",
+    contact: `<!-- CONTACT SECTION (Giant Watermark + Center Floating Red Card) -->
     <section id="contact" class="spotlight-contact-section">
       <div class="spotlight-watermark-wrap">
         <span class="spotlight-watermark font-anton">CONTACT</span>
@@ -3178,17 +4088,78 @@ function generateSpotlightStaticHtml(data) {
         <h2 class="spotlight-contact-title">Discuss an opportunity</h2>
         <p class="spotlight-contact-sub">Open to new roles, collaborations and interesting problems.</p>
         <div class="spotlight-contact-actions">
-          <a href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" class="spotlight-linkedin-btn" aria-label="Connect on LinkedIn">
+          <a href="${escapeHtml(contactHref)}" ${contactHref.startsWith("http") ? `target="_blank" rel="noopener noreferrer"` : ""} class="spotlight-linkedin-btn" aria-label="Connect via ${escapeHtml(contactLabel)}">
             <div class="spotlight-linkedin-left">
-              <svg class="spotlight-linkedin-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
-              <span>LinkedIn</span>
+              ${linkedinLink ? `
+                <svg class="spotlight-linkedin-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+              ` : `
+                <svg class="spotlight-linkedin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              `}
+              <span>${escapeHtml(contactLabel)}</span>
             </div>
             <span class="spotlight-linkedin-arrow">&rarr;</span>
           </a>
         </div>
       </div>
-    </section>
-  </main>
+    </section>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "hero",
+    "about",
+    "expertise",
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "certifications",
+    "contact",
+  ];
+  const sectionOrder = rawOrder.includes("hero") ? rawOrder : ["hero", ...rawOrder];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSectionKeys = sectionOrder.filter((sec) => sectionVisibility[sec] !== false);
+  const renderedSections = renderedSectionKeys
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
+
+  const hasAbout = renderedSectionKeys.includes("about");
+  const hasExpertise = renderedSectionKeys.includes("expertise");
+  const hasSkills = renderedSectionKeys.includes("skills");
+  const hasWork = renderedSectionKeys.includes("projects");
+  const hasContact = renderedSectionKeys.includes("contact");
+return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Spotlight Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  ${GOOGLE_FONTS_LINK_TAG}
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="spotlight-body">
+  ${getStaticBackgroundEffectHtml(data.design?.backgroundEffect, isDarkMode, primaryColor)}
+  <!-- Fixed Top Navigation -->
+  <nav id="spotlightNav" aria-label="Primary portfolio navigation" class="spotlight-nav spotlight-nav-transparent">
+    <div class="spotlight-nav-inner">
+      <a href="#top" class="spotlight-logo">
+        <span>${escapeHtml(firstName.toLowerCase())}</span><span class="spotlight-dot">.</span>
+      </a>
+      <div class="spotlight-nav-center">
+        ${hasAbout ? '<a href="#about" class="spotlight-nav-link">About</a>' : ''}
+        ${hasExpertise ? '<a href="#expertise" class="spotlight-nav-link">Expertise</a>' : (hasSkills ? '<a href="#skills" class="spotlight-nav-link">Skills</a>' : '')}
+        ${hasWork ? '<a href="#work" class="spotlight-nav-link">Work</a>' : ''}
+        ${hasContact ? '<a href="#contact" class="spotlight-nav-link">Contact</a>' : ''}
+      </div>
+      ${hasContact ? '<a href="#contact" class="spotlight-nav-btn">Hire me</a>' : '<a href="#top" class="spotlight-nav-btn">Back to top</a>'}
+    </div>
+  </nav>
+
+  <main class="w-full">\n    ${renderedSections}\n  </main>
 
   <!-- Back to Top Floating Button -->
   <button type="button" id="scrollTopBtn" aria-label="Back to top" class="spotlight-scroll-top">
@@ -3237,7 +4208,7 @@ function generateSpotlightStaticCss(data) {
   const accentDeep = adjustBrightness(primaryColor, -30);
   const accentDark = adjustBrightness(primaryColor, -20);
 
-  return `/* Spotlight Signature GitSkins Template Stylesheet */
+  return `/* Spotlight Signature GitSkins Template Stylesheet */\n${getStaticBackgroundEffectCss(isDarkMode)}
 :root {
   --spotlight-accent: ${primaryColor};
   --spotlight-accent-deep: ${accentDeep};
@@ -4157,6 +5128,24 @@ body.spotlight-body {
   .spotlight-expertise-grid { grid-template-columns: 1fr; }
   .spotlight-contact-card { padding: 32px 20px; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hanging-tablet {
+    animation: none !important;
+    transform: none !important;
+  }
+  .animate-dash {
+    animation: none !important;
+  }
+}
 `;
 }
 
@@ -4167,6 +5156,7 @@ function generateSpotlightStaticJs(data) {
   const hero = document.getElementById('top');
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   const navHeight = 70;
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function updateNav() {
     if (hero && nav) {
@@ -4201,14 +5191,17 @@ function generateSpotlightStaticJs(data) {
         e.preventDefault();
         const elementPosition = targetElement.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - (targetId === '#top' ? 0 : navHeight);
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: isReduced ? 'auto' : 'smooth'
+        });
       }
     });
   });
 
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', function() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
     });
   }
 })();`;
@@ -4252,6 +5245,11 @@ function generatePosterStaticHtml(data) {
       return `
         <article class="poster-project-card">
           <div class="poster-proj-num">// 0${idx + 1}</div>
+          ${p.imageUrl ? `
+            <div class="poster-proj-img-wrap">
+              <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" class="poster-proj-img" loading="lazy" />
+            </div>
+          ` : ""}
           <h3 class="poster-proj-title">${escapeHtml(p.title)}</h3>
           <p class="poster-proj-desc">${escapeHtml(p.description)}</p>
           ${tagsHtml ? `<div class="poster-proj-tags">${tagsHtml}</div>` : ""}
@@ -4277,11 +5275,104 @@ function generatePosterStaticHtml(data) {
     `)
     .join("\n");
 
+  const customLabels = data.design?.customLabels || {};
+  const customText = data.design?.customText || {};
+
+  const sectionMap = {
+    about: `
+      <!-- Bio / Statement Section -->
+      <section class="poster-statement-section" id="about">
+        <div class="poster-col-label">01 / ${escapeHtml(customLabels.about || "STATEMENT")}</div>
+        <div class="poster-statement-content">
+          <p class="poster-statement-text">${escapeHtml(bio)}</p>
+          ${avatarUrl ? `
+            <div class="poster-portrait-wrap">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-portrait-img" />
+            </div>
+          ` : ""}
+        </div>
+      </section>`,
+
+    projects: projects.length ? `
+      <!-- Featured Projects Section -->
+      <section class="poster-projects-section" id="projects">
+        <div class="poster-col-label">02 / ${escapeHtml(customLabels.projects || "SELECTED WORK")}</div>
+        <div class="poster-projects-grid">
+          ${projectsHtml}
+        </div>
+      </section>` : "",
+
+    skills: skills.length ? `
+      <!-- Skills Section -->
+      <section class="poster-skills-section" id="skills" style="border-bottom: 2px solid var(--poster-border); padding-bottom: 3rem; margin-bottom: 3rem;">
+        <div class="poster-col-label" style="font-family: var(--poster-font); font-weight: 700; font-size: 0.85rem; color: var(--poster-accent); margin-bottom: 1.5rem;">${escapeHtml(customLabels.skills || "SKILLS & CAPABILITIES")}</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+          ${skills.map((s) => `<span style="border: 2px solid var(--poster-border); padding: 0.5rem 1rem; font-family: monospace; font-size: 0.9rem; font-weight: 700;">${escapeHtml(s.name)}</span>`).join("\n")}
+        </div>
+      </section>` : "",
+
+    experience: experience.length ? `
+      <!-- Experience Section -->
+      <section class="poster-exp-section" id="experience">
+        <div class="poster-col-label">03 / ${escapeHtml(customLabels.experience || "TRACK RECORD")}</div>
+        <div class="poster-exp-list">
+          ${experienceHtml}
+        </div>
+      </section>` : "",
+
+    education: (data.education && data.education.length) ? `
+      <!-- Education Section -->
+      <section class="poster-exp-section" id="education">
+        <div class="poster-col-label">${escapeHtml(customLabels.education || "EDUCATION")}</div>
+        <div class="poster-exp-list">
+          ${data.education.map((e) => `
+            <div class="poster-exp-row">
+              <div class="poster-exp-period">${escapeHtml(e.startDate || "")} &mdash; ${escapeHtml(e.endDate || e.graduationDate || "PRESENT")}</div>
+              <div class="poster-exp-info">
+                <h4 class="poster-exp-role">${escapeHtml(e.degree)} ${e.fieldOfStudy ? `in ${escapeHtml(e.fieldOfStudy)}` : ""}</h4>
+                <p class="poster-exp-company">${escapeHtml(e.institution)}</p>
+              </div>
+            </div>
+          `).join("\n")}
+        </div>
+      </section>` : "",
+
+    contact: `
+      <!-- Contact Section -->
+      <section class="poster-contact-section" id="contact">
+        <div class="poster-col-label">04 / ${escapeHtml(customLabels.contact || "INQUIRIES")}</div>
+        <div class="poster-contact-content">
+          <h2 class="poster-contact-giant">${escapeHtml(customText.contactHeadline || "LET'S CONNECT")}</h2>
+          <div class="poster-contact-actions">
+            ${email ? `<a href="mailto:${escapeHtml(email)}" class="poster-btn-massive">EMAIL: ${escapeHtml(email)} &rarr;</a>` : ""}
+            ${phone ? `<a href="tel:${escapeHtml(phone)}" class="poster-btn-massive">TEL: ${escapeHtml(phone)} &rarr;</a>` : ""}
+          </div>
+        </div>
+      </section>`,
+  };
+
+  const rawOrder = data.design?.sectionOrder || [
+    "about",
+    "projects",
+    "skills",
+    "experience",
+    "education",
+    "contact",
+  ];
+  const sectionVisibility = data.design?.sectionVisibility || {};
+
+  const renderedSections = rawOrder
+    .filter((sec) => sec !== "hero" && sectionVisibility[sec] !== false)
+    .map((sec) => sectionMap[sec] || "")
+    .filter(Boolean)
+    .join("\n");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>${escapeHtml(data.publication.seoTitle || fullName + " - Poster Portfolio")}</title>
   <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
@@ -4314,50 +5405,7 @@ function generatePosterStaticHtml(data) {
     </header>
 
     <main class="poster-main">
-      <!-- Bio / Statement Section -->
-      <section class="poster-statement-section">
-        <div class="poster-col-label">01 / STATEMENT</div>
-        <div class="poster-statement-content">
-          <p class="poster-statement-text">${escapeHtml(bio)}</p>
-          ${avatarUrl ? `
-            <div class="poster-portrait-wrap">
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-portrait-img" />
-            </div>
-          ` : ""}
-        </div>
-      </section>
-
-      <!-- Featured Projects Section -->
-      ${projects.length ? `
-      <section class="poster-projects-section" id="projects">
-        <div class="poster-col-label">02 / SELECTED WORK</div>
-        <div class="poster-projects-grid">
-          ${projectsHtml}
-        </div>
-      </section>
-      ` : ""}
-
-      <!-- Experience Section -->
-      ${experience.length ? `
-      <section class="poster-exp-section" id="experience">
-        <div class="poster-col-label">03 / TRACK RECORD</div>
-        <div class="poster-exp-list">
-          ${experienceHtml}
-        </div>
-      </section>
-      ` : ""}
-
-      <!-- Contact Section -->
-      <section class="poster-contact-section" id="contact">
-        <div class="poster-col-label">04 / INQUIRIES</div>
-        <div class="poster-contact-content">
-          <h2 class="poster-contact-giant">LET'S CONNECT</h2>
-          <div class="poster-contact-actions">
-            ${email ? `<a href="mailto:${escapeHtml(email)}" class="poster-btn-massive">EMAIL: ${escapeHtml(email)} &rarr;</a>` : ""}
-            ${phone ? `<a href="tel:${escapeHtml(phone)}" class="poster-btn-massive">TEL: ${escapeHtml(phone)} &rarr;</a>` : ""}
-          </div>
-        </div>
-      </section>
+      ${renderedSections}
     </main>
 
     <footer class="poster-footer">
@@ -4377,6 +5425,7 @@ function generatePosterStaticCss(data) {
   const isDark = data.design?.theme === "dark";
 
   return `/* Poster Bold Editorial Stylesheet */
+${getStaticBackgroundEffectCss(isDark)}
 :root {
   --poster-accent: ${primaryColor};
   --poster-font: ${fontFamilyCss};
@@ -4524,6 +5573,20 @@ body.poster-theme {
   padding: 32px;
   background: ${isDark ? "#121215" : "#ffffff"};
 }
+.poster-proj-img-wrap {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid var(--poster-border);
+  background: ${isDark ? "#1c1c20" : "#f0ede6"};
+}
+.poster-proj-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .poster-proj-num {
   font-family: monospace;
   color: var(--poster-accent);
@@ -4635,43 +5698,86 @@ body.poster-theme {
   }
   .poster-exp-row { grid-template-columns: 1fr; }
 }
+
+.poster-ticker:hover .poster-ticker-track,
+.poster-ticker:focus-within .poster-ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .poster-ticker-track {
+    animation: none !important;
+  }
+}
 `;
 }
 
 function generatePosterStaticJs(data) {
   return `(function() {
   'use strict';
+  const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navHeight = 80;
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        e.preventDefault();
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: isReduced ? 'auto' : 'smooth'
+        });
+      }
+    });
+  });
+
   const typewriterElem = document.getElementById('posterTypewriter');
   if (typewriterElem) {
     try {
       const skills = JSON.parse(typewriterElem.getAttribute('data-skills') || '[]');
       if (skills.length > 0) {
-        let skillIdx = 0;
-        let charIdx = 0;
-        let isDeleting = false;
-        function step() {
-          const current = skills[skillIdx % skills.length];
-          if (isDeleting) {
-            charIdx--;
-            typewriterElem.textContent = current.substring(0, charIdx);
-            if (charIdx <= 0) {
-              isDeleting = false;
-              skillIdx++;
-              setTimeout(step, 400);
-              return;
+        if (isReduced) {
+          typewriterElem.textContent = skills[0];
+        } else {
+          let skillIdx = 0;
+          let charIdx = 0;
+          let isDeleting = false;
+          function step() {
+            const current = skills[skillIdx % skills.length];
+            if (isDeleting) {
+              charIdx--;
+              typewriterElem.textContent = current.substring(0, charIdx);
+              if (charIdx <= 0) {
+                isDeleting = false;
+                skillIdx++;
+                setTimeout(step, 400);
+                return;
+              }
+            } else {
+              charIdx++;
+              typewriterElem.textContent = current.substring(0, charIdx);
+              if (charIdx >= current.length) {
+                isDeleting = true;
+                setTimeout(step, 2000);
+                return;
+              }
             }
-          } else {
-            charIdx++;
-            typewriterElem.textContent = current.substring(0, charIdx);
-            if (charIdx >= current.length) {
-              isDeleting = true;
-              setTimeout(step, 2000);
-              return;
-            }
+            setTimeout(step, isDeleting ? 40 : 90);
           }
-          setTimeout(step, isDeleting ? 40 : 90);
+          setTimeout(step, 800);
         }
-        setTimeout(step, 800);
       }
     } catch(e) {}
   }
@@ -4679,7 +5785,7 @@ function generatePosterStaticJs(data) {
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
     });
   }
 })();`;
@@ -4690,155 +5796,11 @@ function generatePosterStaticJs(data) {
    ========================================================================== */
 
 function getFullSpotlightTemplateJsx() {
-  return "import { useEffect, useState, useMemo } from \"react\";\nimport {\n  ArrowUp,\n  MapPin,\n  Award,\n  ExternalLink,\n  ChevronRight,\n  Star,\n  FolderGit2,\n} from \"lucide-react\";\n\nimport { SafeLink } from \"../common/SafeLink.jsx\";\nimport { normalizeAvatarUrl } from \"../common/urlUtils.js\";\n\n\n\n// GitSkins exact language dot colors\nconst LANG_COLORS = {\n  JavaScript: \"#f1e05a\",\n  TypeScript: \"#3178c6\",\n  Python: \"#3572A5\",\n  Go: \"#00ADD8\",\n  Rust: \"#dea584\",\n  Ruby: \"#701516\",\n  Java: \"#b07219\",\n  \"C++\": \"#f34b7d\",\n  C: \"#555555\",\n  \"C#\": \"#178600\",\n  PHP: \"#4F5D95\",\n  Swift: \"#F05138\",\n  Kotlin: \"#A97BFF\",\n  Dart: \"#00B4AB\",\n  HTML: \"#e34c26\",\n  CSS: \"#663399\",\n  Shell: \"#89e051\",\n  Vue: \"#41b883\",\n  Svelte: \"#ff3e00\",\n  React: \"#61dafb\",\n  \"Node.js\": \"#339933\",\n  Dockerfile: \"#384d54\",\n};\n\n// Font family map supporting the typography customization settings\nconst FONT_FAMILY_MAP = {\n  Inter: \"'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif\",\n  Roboto: \"'Roboto', -apple-system, BlinkMacSystemFont, sans-serif\",\n  Merriweather: \"'Merriweather', Georgia, serif\",\n  Playfair: \"'Playfair Display', Georgia, serif\",\n  JetBrains: \"'JetBrains Mono', 'Fira Code', monospace\",\n};\n\n// Helper to adjust color shade for gradients and contrast\nfunction adjustBrightness(hex, percent) {\n  const cleanHex = hex.replace(\"#\", \"\");\n  const num = parseInt(cleanHex.length === 3 ? cleanHex.split(\"\").map((c) => c + c).join(\"\") : cleanHex, 16);\n  if (isNaN(num)) return hex;\n  const amt = Math.round(2.55 * percent);\n  const R = Math.max(0, Math.min(255, (num >> 16) + amt));\n  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));\n  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));\n  return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;\n}\n\nexport function SpotlightTemplate({\n  portfolio = {},\n  showEmpty = false,\n  sectionOrder = [\n    \"hero\",\n    \"about\",\n    \"expertise\",\n    \"skills\",\n    \"projects\",\n    \"experience\",\n    \"education\",\n    \"certifications\",\n    \"contact\",\n  ],\n  hiddenSections = [],\n}) {\n  const profile = portfolio.profile;\n  const design = portfolio.design;\n  const socialLinks = portfolio.socialLinks || [];\n  const skills = useMemo(() => portfolio.skills || [], [portfolio.skills]);\n  const experience = portfolio.experience || [];\n  const education = portfolio.education || [];\n  const projects = useMemo(() => portfolio.projects || [], [portfolio.projects]);\n  const certifications = portfolio.certifications || [];\n\n  // ---------------------------------------------------------------------------\n  // 1. DYNAMIC CUSTOMIZATION: ACCENT COLOR, THEME, AND TYPOGRAPHY\n  // ---------------------------------------------------------------------------\n  const accentColor = design?.primaryColor || \"#e3141f\";\n  const accentDeep = useMemo(() => adjustBrightness(accentColor, -30), [accentColor]);\n  const accentDark = useMemo(() => adjustBrightness(accentColor, -20), [accentColor]);\n\n  // Template-specific customization\n  const templateSettings = design?.templateSettings || {};\n  const showGlowHalo = templateSettings.glowHalo !== false;\n  const showExpertiseTree = templateSettings.expertiseTree !== false;\n\n  // Theme mode handling (light / dark / system)\n  const themeSetting = design?.theme || \"system\";\n  const [isDarkMode, setIsDarkMode] = useState(false);\n\n  useEffect(() => {\n    if (themeSetting === \"dark\") {\n      setIsDarkMode(true);\n    } else if (themeSetting === \"light\") {\n      setIsDarkMode(false);\n    } else {\n      const mq = window.matchMedia(\"(prefers-color-scheme: dark)\");\n      setIsDarkMode(mq.matches);\n      const handler = (e) => setIsDarkMode(e.matches);\n      mq.addEventListener(\"change\", handler);\n      return () => mq.removeEventListener(\"change\", handler);\n    }\n  }, [themeSetting]);\n\n  // Semantic color tokens responding to theme\n  const colors = useMemo(() => {\n    return isDarkMode\n      ? {\n        paper: \"#0c0c0e\",\n        sectionWhite: \"#141418\",\n        cardBg: \"#1c1c22\",\n        cardBorder: \"rgba(255, 255, 255, 0.08)\",\n        ink: \"#f4f4f6\",\n        inkMuted: \"#a1a1aa\",\n        border: \"rgba(255, 255, 255, 0.08)\",\n        navBg: \"rgba(18, 18, 22, 0.92)\",\n        navInk: \"#ffffff\",\n        waveFill: \"#0c0c0e\",\n        pillBg: \"#27272f\",\n      }\n      : {\n        paper: \"#ffffff\",\n        sectionWhite: \"#ffffff\",\n        cardBg: \"#ffffff\",\n        cardBorder: \"rgba(0, 0, 0, 0.08)\",\n        ink: \"#121212\",\n        inkMuted: \"#555555\",\n        border: \"rgba(0, 0, 0, 0.08)\",\n        navBg: \"rgba(255, 255, 255, 0.92)\",\n        navInk: \"#121212\",\n        waveFill: \"#ffffff\",\n        pillBg: \"#f1f1f3\",\n      };\n  }, [isDarkMode]);\n\n  // Typography font family\n  const selectedFontKey = design?.fontFamily || \"Inter\";\n  const activeFontFamily = FONT_FAMILY_MAP[selectedFontKey] || FONT_FAMILY_MAP.Inter;\n\n  // Navigation scroll state\n  const [isNavSolid, setIsNavSolid] = useState(false);\n  const [showScrollTop, setShowScrollTop] = useState(false);\n\n  // Responsive breakpoint tracking (lg = 1024px) for hero layout\n  const [isLgScreen, setIsLgScreen] = useState(() =>\n    typeof window !== \"undefined\" ? window.innerWidth >= 1024 : false\n  );\n\n  useEffect(() => {\n    if (typeof window === \"undefined\") return;\n\n    if (window.matchMedia) {\n      const mediaQuery = window.matchMedia(\"(min-width: 1024px)\");\n      const updateLg = () => setIsLgScreen(mediaQuery.matches);\n      updateLg();\n      if (mediaQuery.addEventListener) {\n        mediaQuery.addEventListener(\"change\", updateLg);\n        return () => mediaQuery.removeEventListener(\"change\", updateLg);\n      } else if ((mediaQuery ).addListener) {\n        (mediaQuery ).addListener(updateLg);\n        return () => (mediaQuery ).removeListener(updateLg);\n      }\n    }\n\n    const handleResize = () => setIsLgScreen(window.innerWidth >= 1024);\n    window.addEventListener(\"resize\", handleResize);\n    return () => window.removeEventListener(\"resize\", handleResize);\n  }, []);\n\n  useEffect(() => {\n    const handleScroll = () => {\n      const heroEl = document.getElementById(\"top\");\n      if (heroEl) {\n        const { top: heroTop, bottom: heroBottom } = heroEl.getBoundingClientRect();\n        const navHeight = 70;\n        // Transparent only while hero overlaps navigation bar; solid when entirely above or below\n        const isHeroOverlappingNav = heroTop < navHeight && heroBottom > 0;\n        setIsNavSolid(!isHeroOverlappingNav);\n      } else {\n        setIsNavSolid(window.scrollY > 400);\n      }\n      setShowScrollTop(window.scrollY > 400);\n    };\n\n    handleScroll();\n    window.addEventListener(\"scroll\", handleScroll, { passive: true });\n    return () => window.removeEventListener(\"scroll\", handleScroll);\n  }, []);\n\n  const scrollToTop = () => window.scrollTo({ top: 0, behavior: \"smooth\" });\n  const isHidden = (sec) => hiddenSections.includes(sec);\n\n  // ---------------------------------------------------------------------------\n  // 2. CANDIDATE PROFILE DATA EXTRACTION\n  // ---------------------------------------------------------------------------\n  const fullName = profile?.fullName || (showEmpty ? \"sunil kumar\" : \"developer\");\n  const firstName = fullName.split(/\\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;\n  const headline = profile?.headline || (showEmpty ? \"HTML and JavaScript developer\" : \"Full Stack Developer\");\n  // Extract GitHub handle and avatar\n  const githubLink = socialLinks.find(\n    (l) =>\n      l.platform?.toLowerCase().includes(\"github\") || l.url?.toLowerCase().includes(\"github.com\")\n  );\n  const githubHandle = githubLink?.url\n    ? githubLink.url.replace(/^https?:\\/\\/(www\\.)?github\\.com\\//i, \"\").replace(/\\/.*$/, \"\")\n    : \"sunilkumar25kush\";\n\n  // Fallback to candidate's github avatar if none uploaded\n  const avatarUrl = profile?.avatarUrl\n    ? normalizeAvatarUrl(profile.avatarUrl)\n    : `https://avatars.githubusercontent.com/${githubHandle}`;\n\n  // Smart headline split for clean multi-line display (exact match to screenshot 1)\n  const headlineLines = useMemo(() => {\n    const text = headline.trim();\n    const words = text.split(/\\s+/);\n    if (words.length <= 1) return { line1: words[0] || \"developer\", line2: \"\" };\n    if (words.length === 2) return { line1: words[0], line2: words[1] };\n    const lastWord = words[words.length - 1];\n    const rest = words.slice(0, words.length - 1).join(\" \");\n    return { line1: rest, line2: lastWord };\n  }, [headline]);\n\n  // All extracted skills s\n  const skillNames = useMemo(() => {\n    const list = skills.map((s) => (typeof s === \"string\" ? s : s.name)).filter(Boolean);\n    if (list.length > 0) return list;\n    return [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"];\n  }, [skills]);\n\n  // Realistic sample projects matching candidate's public repos from screenshots\n  const displayProjects = useMemo(() => {\n    if (projects.length > 0) {\n      return projects.map((p) => ({\n        title: p.title,\n        description: p.description,\n        tags: p.tags || [\"JavaScript\"],\n        repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\\s+/g, \"-\")}`,\n        liveUrl: p.liveUrl,\n        imageUrl: p.imageUrl,\n        featured: p.featured ?? true,\n      }));\n    }\n    return [\n      {\n        title: \"NOTE-PROJECT\",\n        description: \"Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.\",\n        tags: [\"HTML\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,\n        liveUrl: undefined ,\n        imageUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Interviewer\",\n        description: \"Intelligent conversational interview platform simulating technical candidate evaluations.\",\n        tags: [\"JavaScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Resume-builder\",\n        description: \"Next-gen intelligent career document and portfolio generator with ATS optimization.\",\n        tags: [\"TypeScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-CONTENT-GENERATOR\",\n        description: \"Multi-modal AI content synthesizer for automated technical articles, docs, and assets.\",\n        tags: [\"CSS\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n    ];\n  }, [projects, githubHandle]);\n\n  // ---------------------------------------------------------------------------\n  // 3. EXPERTISE CARDS: 4 CONNECTED NODES (MATCHING SCREENSHOT 3)\n  // ---------------------------------------------------------------------------\n  const expertiseNodes = useMemo(() => {\n    const topSkills = skillNames.slice(0, 4);\n    const defaults = [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"];\n    const merged = topSkills.length >= 4 ? topSkills : [...topSkills, ...defaults.slice(topSkills.length)];\n\n    return merged.slice(0, 4).map((skillName, idx) => {\n      const match = displayProjects.find(\n        (p) =>\n          p.tags?.some((t) => t.toLowerCase() === skillName.toLowerCase()) ||\n          p.description?.toLowerCase().includes(skillName.toLowerCase())\n      );\n      const projectName = match?.title || displayProjects[idx % displayProjects.length]?.title || \"Featured-Project\";\n      const count = idx === 1 ? 2 : 1;\n\n      return {\n        num: `0${idx + 1}`,\n        skill: skillName,\n        desc: `${count} featured project${count > 1 ? \"s\" : \"\"}, including ${projectName}.`,\n        isHot: idx === 1, // Card 02 is bold hot accent color\n      };\n    });\n  }, [skillNames, displayProjects]);\n\n  // ---------------------------------------------------------------------------\n  // 4. TECHNICAL STACK CATEGORIZED GROUPS (MATCHING SCREENSHOT 4)\n  // ---------------------------------------------------------------------------\n  const techGroups = useMemo(() => {\n    const all = skillNames;\n    const focus = all.slice(0, 6);\n\n    const frontendKeywords = [\"html\", \"css\", \"javascript\", \"typescript\", \"react\", \"vue\", \"svelte\", \"tailwind\", \"next\"];\n    const backendKeywords = [\"node\", \"python\", \"go\", \"java\", \"c#\", \"express\", \"sql\", \"mongo\", \"api\", \"ai\"];\n    const toolingKeywords = [\"docker\", \"dockerfile\", \"git\", \"github\", \"linux\", \"vite\", \"webpack\", \"aws\", \"ci/cd\"];\n\n    const frontend = all.filter((s) => frontendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const backend = all.filter((s) => backendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const tooling = all.filter((s) => toolingKeywords.some((k) => s.toLowerCase().includes(k)));\n\n    return [\n      {\n        title: \"What I focus on\",\n        items: focus.length > 0 ? focus : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"],\n      },\n      {\n        title: \"Frontend\",\n        items: frontend.length > 0 ? frontend : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"],\n      },\n      {\n        title: \"Data & AI\",\n        items: backend.length > 0 ? backend : [\"Python\"],\n      },\n      {\n        title: \"Tooling & infra\",\n        items: tooling.length > 0 ? tooling : [\"Dockerfile\"],\n      },\n    ];\n  }, [skillNames]);\n\n  // ---------------------------------------------------------------------------\n  // 5. SECTION MAP\n  // ---------------------------------------------------------------------------\n  const sectionMap = {\n    // -------------------------------------------------------------------------\n    // HERO: Exact Match to Screenshot 1\n    // -------------------------------------------------------------------------\n    hero: (\n      <section\n        key=\"hero\"\n        id=\"top\"\n        className=\"spotlight-hero relative text-white overflow-hidden\"\n        style={{\n          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,\n          minHeight: \"100svh\",\n        }}\n      >\n        {/* Main grid: left text, right portrait — both visible in one viewport */}\n        <div\n          className=\"max-w-[1180px] w-full mx-auto px-5 sm:px-10 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10\"\n          style={{ minHeight: \"100svh\", paddingTop: \"80px\", paddingBottom: \"90px\", alignItems: \"center\" }}\n        >\n          {/* Left: Text */}\n          <div className=\"flex flex-col justify-center gap-5\">\n            <h1 className=\"font-extrabold text-[clamp(36px,6.5vw,84px)] leading-[1.03] tracking-[-0.035em]\">\n              <span className=\"block text-white\">Hi, I&apos;m {firstName.toLowerCase()}</span>\n              {headlineLines.line1 && (\n                <span className=\"block text-white mt-1\">{headlineLines.line1}</span>\n              )}\n              {headlineLines.line2 && (\n                <span className=\"block text-white\">{headlineLines.line2}</span>\n              )}\n            </h1>\n\n            <p className=\"max-w-[460px] text-white/90 text-base sm:text-lg leading-[1.65]\">\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            <div className=\"flex flex-wrap items-center gap-3\">\n              <a\n                href=\"#work\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm hover:scale-105 transition-all shadow-md\"\n                style={{ color: accentColor }}\n              >\n                View my work\n              </a>\n              <a\n                href=\"#contact\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm hover:bg-white/10 hover:scale-105 transition-all\"\n              >\n                Contact me\n              </a>\n            </div>\n          </div>\n\n          {/* Right: Portrait — right-aligned, fully visible */}\n          <div className=\"flex items-center justify-center lg:justify-end\">\n            <div\n              className={`relative rounded-[24px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white overflow-hidden bg-white/10 ${\n                showGlowHalo ? \"shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)]\" : \"shadow-md\"\n              }`}\n              style={{\n                width: \"min(300px, 44vw)\",\n                aspectRatio: \"4/5\",\n                marginTop: isLgScreen ? \"-330px\" : undefined,\n                right: isLgScreen ? \"80px\" : undefined,\n                boxShadow: showGlowHalo\n                  ? `0 30px 70px -20px rgba(0,0,0,0.45), 0 0 50px ${accentColor}40`\n                  : undefined,\n              }}\n            >\n              <img\n                src={avatarUrl}\n                alt={fullName}\n                className=\"w-full h-full object-cover object-top\"\n                onError={(e) => {\n                  (e.target ).style.display = \"none\";\n                }}\n              />\n            </div>\n          </div>\n        </div>\n\n        {/* Bottom wave */}\n        <svg\n          className=\"absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]\"\n          viewBox=\"0 0 1440 90\"\n          preserveAspectRatio=\"none\"\n          aria-hidden=\"true\"\n        >\n          <path\n            fill={colors.waveFill}\n            d=\"M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z\"\n          />\n        </svg>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // ABOUT: Exact Match to Screenshot 2 (Hanging Sway Tablet + Bio & Pills)\n    // -------------------------------------------------------------------------\n    about: (\n      <section\n        key=\"about\"\n        id=\"about\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-16 items-center\">\n          {/* Left: Hanging Swaying Tablet */}\n          <div className=\"hanging-container relative justify-self-center pt-[60px] select-none\">\n            {/* Cord & Anchor Nail */}\n            <div\n              className=\"absolute left-1/2 top-0 w-[2px] h-[68px] -translate-x-1/2\"\n              style={{\n                background: isDarkMode\n                  ? \"linear-gradient(to bottom, #888, #444)\"\n                  : \"linear-gradient(to bottom, #bbb, #777)\",\n              }}\n            />\n            <div\n              className=\"absolute left-1/2 -top-1 w-3 h-3 rounded-full -translate-x-1/2 shadow-xs\"\n              style={{ backgroundColor: isDarkMode ? \"#666\" : \"#444\" }}\n            />\n\n            {/* Tablet with Candidate Photo & Sway Motion */}\n            <div\n              className=\"hanging-tablet w-[min(330px,78vw)] aspect-[4/5] p-3 rounded-[32px] shadow-[0_30px_70px_-25px_rgba(0,0,0,0.5)] rotate-[-4deg]\"\n              style={{\n                backgroundColor: isDarkMode ? \"#18181b\" : \"#111111\",\n                transformOrigin: \"50% 0\",\n                animation: \"sway 6s ease-in-out infinite\",\n                willChange: \"transform\",\n              }}\n            >\n              <div className=\"w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center\">\n                <img\n                  src={avatarUrl}\n                  alt={fullName}\n                  className=\"w-full h-full object-cover object-top\"\n                />\n              </div>\n            </div>\n          </div>\n\n          {/* Right: Pill Badge, Title, Bio, Tech Pills & Stats */}\n          <div className=\"space-y-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              HELLO!\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>A little </span>\n              <span style={{ color: accentColor }}>about me</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.7]\" style={{ color: colors.inkMuted }}>\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            {/* Language/Tech Badges with Dots */}\n            <div className=\"flex flex-wrap gap-2.5 pt-2\">\n              {skillNames.slice(0, 8).map((skillName, idx) => {\n                const dotColor = LANG_COLORS[skillName] || accentColor;\n                return (\n                  <span\n                    key={idx}\n                    className=\"inline-flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-xs transition-transform hover:-translate-y-0.5\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span\n                      className=\"w-2.5 h-2.5 rounded-full flex-shrink-0\"\n                      style={{ backgroundColor: dotColor }}\n                    />\n                    <span>{skillName}</span>\n                  </span>\n                );\n              })}\n            </div>\n\n            {/* Stats row */}\n            <div\n              className=\"flex items-center gap-6 pt-4 text-sm font-medium\"\n              style={{ color: colors.inkMuted }}\n            >\n              <span>2 followers</span>\n              <span className=\"flex items-center gap-1.5\">\n                <Star className=\"h-4 w-4\" style={{ color: accentColor }} />\n                <span>1 stars</span>\n              </span>\n              {profile?.location && (\n                <span className=\"flex items-center gap-1.5 ml-auto\">\n                  <MapPin className=\"h-4 w-4\" style={{ color: accentColor }} />\n                  <span>{profile.location}</span>\n                </span>\n              )}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERTISE: Exact Match to Screenshot 3 (Connected Nodes + Dashed Line)\n    // -------------------------------------------------------------------------\n    expertise: (\n      <section\n        key=\"expertise\"\n        id=\"expertise\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300 overflow-hidden\"\n        style={{\n          backgroundColor: colors.sectionWhite,\n          color: colors.ink,\n        }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center\">\n          {/* Left Title & Description */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              MY EXPERTISE\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Building modern digital solutions with </span>\n              <span style={{ color: accentColor }}>code</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.6]\" style={{ color: colors.inkMuted }}>\n              What {firstName.toLowerCase()} spends their time on, from 24 public repositories.\n            </p>\n          </div>\n\n          {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}\n          <div className=\"relative min-h-0 lg:min-h-[460px] flex items-center justify-center p-2 w-full\">\n            {/* SVG Connecting Dashed Curve - hidden on mobile/tablet to avoid distortion */}\n            {showExpertiseTree && (\n              <svg\n                className=\"absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  d=\"M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370\"\n                  fill=\"none\"\n                  stroke={accentColor}\n                  strokeOpacity=\"0.55\"\n                  strokeWidth=\"2\"\n                  strokeDasharray=\"6 8\"\n                  style={{ willChange: \"stroke-dashoffset\" }}\n                  className=\"animate-[dash_18s_linear_infinite]\"\n                />\n              </svg>\n            )}\n\n            {/* 4 Cards Grid */}\n            <div className=\"relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full max-w-[540px]\">\n              {expertiseNodes.map((node) => {\n                if (node.isHot) {\n                  // Hot Accent Card (Card 02)\n                  return (\n                    <div\n                      key={node.num}\n                      className=\"p-6 rounded-[24px] text-white shadow-xl transition-all hover:scale-105\"\n                      style={{\n                        backgroundColor: accentColor,\n                        boxShadow: `0 20px 40px -15px ${accentColor}66`,\n                      }}\n                    >\n                      <span className=\"block text-xs font-mono font-semibold opacity-85 mb-2\">\n                        {node.num}\n                      </span>\n                      <h3 className=\"text-xl font-bold tracking-tight mb-2\">\n                        {node.skill}\n                      </h3>\n                      <p className=\"text-xs text-white/90 leading-relaxed\">\n                        {node.desc}\n                      </p>\n                    </div>\n                  );\n                }\n\n                // Standard Clean Card (Card 01, 03, 04)\n                return (\n                  <div\n                    key={node.num}\n                    className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md hover:scale-102\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span className=\"block text-xs font-mono font-semibold mb-2\" style={{ color: colors.inkMuted }}>\n                      {node.num}\n                    </span>\n                    <h3 className=\"text-xl font-bold tracking-tight mb-2\" style={{ color: colors.ink }}>\n                      {node.skill}\n                    </h3>\n                    <p className=\"text-xs leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {node.desc}\n                    </p>\n                  </div>\n                );\n              })}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // TECHNICAL STACK: Exact Match to Screenshot 4 (4 Cards Grid + Pills)\n    // -------------------------------------------------------------------------\n    skills: (\n      <section\n        key=\"skills\"\n        id=\"skills\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          {/* Header */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              TECHNICAL STACK\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Technologies I </span>\n              <span style={{ color: accentColor }}>work with</span>\n            </h2>\n          </div>\n\n          {/* 4 Cards Grid */}\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6\">\n            {techGroups.map((group, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                  color: colors.ink,\n                }}\n              >\n                <h3 className=\"text-base font-bold tracking-tight mb-4\" style={{ color: colors.ink }}>\n                  {group.title}\n                </h3>\n                <div className=\"flex flex-wrap gap-2\">\n                  {group.items.map((item, itemIdx) => (\n                    <span\n                      key={itemIdx}\n                      className=\"px-3 py-1.5 rounded-lg text-xs font-semibold\"\n                      style={{\n                        backgroundColor: colors.pillBg,\n                        color: colors.ink,\n                      }}\n                    >\n                      {item}\n                    </span>\n                  ))}\n                </div>\n              </div>\n            ))}\n          </div>\n\n          {/* Next Section Indicator Pill (as seen at bottom of screenshot 4) */}\n          <div className=\"pt-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              FEATURED WORK\n            </span>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // FEATURED WORK / PROJECTS\n    // -------------------------------------------------------------------------\n    projects: (\n      <section\n        key=\"projects\"\n        id=\"work\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          <div className=\"flex flex-col sm:flex-row sm:items-end justify-between gap-4\">\n            <div>\n              <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n                <span style={{ color: colors.ink }}>Featured </span>\n                <span style={{ color: accentColor }}>Projects</span>\n              </h2>\n              <p className=\"text-base mt-2\" style={{ color: colors.inkMuted }}>\n                Production-grade applications, developer tooling, and open-source repositories.\n              </p>\n            </div>\n\n            <SafeLink\n              href={`https://github.com/${githubHandle}?tab=repositories`}\n              className=\"inline-flex items-center gap-2 text-sm font-semibold hover:underline\"\n              style={{ color: accentColor }}\n            >\n              <span>View all GitHub repos</span>\n              <ChevronRight className=\"h-4 w-4\" />\n            </SafeLink>\n          </div>\n\n          {/* Project Cards Grid */}\n          <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8\">\n            {displayProjects.map((project, idx) => {\n              const primaryTag = project.tags?.[0] || \"Code\";\n              const tagColor = LANG_COLORS[primaryTag] || accentColor;\n\n              return (\n                <div\n                  key={idx}\n                  className=\"group relative p-7 sm:p-8 rounded-[28px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"space-y-4\">\n                    {/* Project Screenshot / Thumbnail (if available) */}\n                    {project.imageUrl && (\n                      <div className=\"w-full h-44 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10 relative\">\n                        <img\n                          src={project.imageUrl}\n                          alt={project.title}\n                          className=\"w-full h-full object-cover transition-transform duration-500 group-hover:scale-105\"\n                          onError={(e) => {\n                            (e.target ).style.display = \"none\";\n                          }}\n                        />\n                      </div>\n                    )}\n\n                    <div className=\"flex items-center justify-between\">\n                      <span className=\"font-mono text-xs font-bold\" style={{ color: colors.inkMuted }}>\n                        0{idx + 1} / 0{displayProjects.length}\n                      </span>\n                      <div className=\"flex items-center gap-2\">\n                        {project.repoUrl && (\n                          <SafeLink\n                            href={project.repoUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: colors.ink }}\n                            title=\"GitHub Repository\"\n                          >\n                            <FolderGit2 className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                        {project.liveUrl && (\n                          <SafeLink\n                            href={project.liveUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: accentColor }}\n                            title=\"Live Demo\"\n                          >\n                            <ExternalLink className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                      </div>\n                    </div>\n\n                    <h3\n                      className=\"text-2xl font-bold tracking-tight transition-colors group-hover:text-[var(--hover-color)]\"\n                      style={{ color: colors.ink, [\"--hover-color\" ]: accentColor }}\n                    >\n                      {project.title}\n                    </h3>\n\n                    <p className=\"text-sm sm:text-base leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {project.description}\n                    </p>\n                  </div>\n\n                  <div\n                    className=\"flex items-center justify-between pt-6 mt-6 border-t\"\n                    style={{ borderColor: colors.border }}\n                  >\n                    <div className=\"flex items-center gap-2 text-xs font-semibold\" style={{ color: colors.ink }}>\n                      <span className=\"w-2.5 h-2.5 rounded-full\" style={{ backgroundColor: tagColor }} />\n                      <span>{primaryTag}</span>\n                    </div>\n\n                    <span className=\"flex items-center gap-1 text-xs font-medium\" style={{ color: colors.inkMuted }}>\n                      <Star className=\"h-3.5 w-3.5\" style={{ color: accentColor }} />\n                      <span>★ 3</span>\n                    </span>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERIENCE\n    // -------------------------------------------------------------------------\n    experience: (\n      <section\n        key=\"experience\"\n        id=\"experience\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-12\">\n          <div>\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-3\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              CAREER JOURNEY\n            </span>\n            <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Work </span>\n              <span style={{ color: accentColor }}>Experience</span>\n            </h2>\n          </div>\n\n          <div className=\"relative pl-6 sm:pl-8 space-y-10 border-l-2\" style={{ borderColor: `${accentColor}40` }}>\n            {experience.map((exp, idx) => (\n              <div key={idx} className=\"relative group\">\n                <span\n                  className=\"absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-black transition-transform group-hover:scale-125\"\n                  style={{ backgroundColor: accentColor }}\n                />\n\n                <div\n                  className=\"p-6 rounded-[22px] shadow-sm transition-all\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2\">\n                    <h3 className=\"text-xl font-bold tracking-tight\" style={{ color: colors.ink }}>\n                      {exp.title}\n                    </h3>\n                    <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                      {exp.startDate} - {exp.current ? \"Present\" : exp.endDate || \"Present\"}\n                    </span>\n                  </div>\n\n                  <p className=\"text-sm font-semibold mb-3\" style={{ color: colors.inkMuted }}>\n                    {exp.company} {exp.location ? `· ${exp.location}` : \"\"}\n                  </p>\n\n                  {exp.description && (\n                    <p className=\"text-sm leading-relaxed mb-3\" style={{ color: colors.inkMuted }}>\n                      {exp.description}\n                    </p>\n                  )}\n\n                  {exp.highlights && exp.highlights.length > 0 && (\n                    <ul className=\"space-y-1.5 text-xs sm:text-sm\" style={{ color: colors.inkMuted }}>\n                      {exp.highlights.map((h, hIdx) => (\n                        <li key={hIdx} className=\"flex items-start gap-2\">\n                          <span style={{ color: accentColor }}>▸</span>\n                          <span>{h}</span>\n                        </li>\n                      ))}\n                    </ul>\n                  )}\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EDUCATION & CERTIFICATIONS\n    // -------------------------------------------------------------------------\n    education: (\n      <section\n        key=\"education\"\n        id=\"education\"\n        className=\"relative py-20 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-8\">\n          <h2 className=\"font-extrabold text-[clamp(28px,3.5vw,44px)] leading-[1.08] tracking-[-0.035em]\">\n            <span style={{ color: colors.ink }}>Education &amp; </span>\n            <span style={{ color: accentColor }}>Background</span>\n          </h2>\n\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-6\">\n            {education.map((edu, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[22px] shadow-sm\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                  {edu.startDate} - {edu.endDate || \"Present\"}\n                </span>\n                <h3 className=\"text-lg font-bold tracking-tight mt-1\" style={{ color: colors.ink }}>\n                  {edu.degree}\n                </h3>\n                <p className=\"text-sm mt-1\" style={{ color: colors.inkMuted }}>\n                  {edu.institution} {edu.fieldOfStudy ? `· ${edu.fieldOfStudy}` : \"\"}\n                </p>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    certifications: (\n      <section\n        key=\"certifications\"\n        id=\"certifications\"\n        className=\"relative py-16 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-6\">\n          <h2 className=\"font-extrabold text-[clamp(24px,3vw,38px)]\">\n            <span style={{ color: colors.ink }}>Certifications &amp; </span>\n            <span style={{ color: accentColor }}>Honors</span>\n          </h2>\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-4\">\n            {certifications.map((c, idx) => (\n              <div\n                key={idx}\n                className=\"p-5 rounded-2xl flex items-center gap-4 shadow-xs\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <Award className=\"h-6 w-6 flex-shrink-0\" style={{ color: accentColor }} />\n                <div>\n                  <h3 className=\"font-bold text-sm\" style={{ color: colors.ink }}>\n                    {c.name}\n                  </h3>\n                  <p className=\"text-xs\" style={{ color: colors.inkMuted }}>\n                    {c.issuer} {c.issueDate ? `· ${c.issueDate}` : \"\"}\n                  </p>\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // CONTACT: Exact Match to Screenshot 5 (Giant Watermark + Overlapping Red Card)\n    // -------------------------------------------------------------------------\n    contact: (\n      <section\n        key=\"contact\"\n        id=\"contact\"\n        className=\"relative min-h-[85vh] sm:min-h-[90vh] py-20 sm:py-36 px-4 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none\"\n        style={{ backgroundColor: \"#09090b\" }}\n      >\n        {/* Giant Watermark Text (CONTACT on top, Name below) */}\n        <div className=\"absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-6 sm:py-8 z-0 overflow-hidden select-none\">\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            CONTACT\n          </span>\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            {firstName.toLowerCase()}\n          </span>\n        </div>\n\n        {/* Center Floating Accent Card */}\n        <div\n          className=\"relative z-10 w-full max-w-[620px] p-6 sm:p-12 rounded-[24px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]\"\n          style={{\n            background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDark} 100%)`,\n          }}\n        >\n          <h2 className=\"text-2xl sm:text-4xl font-extrabold tracking-tight mb-2\">\n            Discuss an opportunity\n          </h2>\n\n          <p className=\"text-sm sm:text-base text-white/90 leading-relaxed mb-6 sm:mb-8\">\n            Open to new roles, collaborations and interesting problems.\n          </p>\n\n          {/* Direct Action Pills - Only LinkedIn option as requested */}\n          <div className=\"space-y-3\">\n            <SafeLink\n              href=\"https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true\"\n              className=\"flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80\"\n              aria-label=\"Connect on LinkedIn (opens in a new tab)\"\n            >\n              <div className=\"flex items-center gap-3\">\n                <svg className=\"w-5 h-5 fill-current text-white shrink-0\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                  <path d=\"M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z\" />\n                </svg>\n                <span>LinkedIn</span>\n              </div>\n              <span className=\"group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90\">→</span>\n            </SafeLink>\n          </div>\n        </div>\n      </section>\n    ),\n  };\n\n  // ---------------------------------------------------------------------------\n  // 6. RENDER TEMPLATE WITH STICKY FROSTED NAV & GLOBAL STYLES\n  // ---------------------------------------------------------------------------\n  return (\n    <div\n      className=\"spotlight-root relative w-full min-h-screen transition-colors duration-300 overflow-x-hidden\"\n      style={{\n        fontFamily: activeFontFamily,\n        backgroundColor: colors.paper,\n        color: colors.ink,\n      }}\n    >\n      {/* Dynamic Keyframe & Typography Styles */}\n      <style>{`\n        @keyframes sway {\n          0%, 100% {\n            transform: rotate(-4deg);\n          }\n          50% {\n            transform: rotate(4deg);\n          }\n        }\n        @keyframes dash {\n          to {\n            stroke-dashoffset: -1000;\n          }\n        }\n      `}</style>\n\n      {/* Sticky Navigation Bar */}\n      <nav\n        aria-label=\"Primary portfolio navigation\"\n        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isNavSolid ? \"py-3 shadow-md backdrop-blur-md\" : \"py-5 sm:py-6\"\n          }`}\n        style={{\n          backgroundColor: isNavSolid ? colors.navBg : \"transparent\",\n          borderBottom: isNavSolid ? `1px solid ${colors.border}` : \"none\",\n        }}\n      >\n        {/* Navbar: logo | centered links | hire-me button */}\n        <div className=\"max-w-[1180px] mx-auto px-5 sm:px-8 flex items-center justify-between gap-4\">\n          {/* Logo */}\n          <a\n            href=\"#top\"\n            className=\"text-xl sm:text-2xl font-extrabold tracking-tight flex items-center\"\n            style={{ color: isNavSolid ? colors.navInk : \"#ffffff\" }}\n          >\n            <span>{firstName.toLowerCase()}</span>\n            <span style={{ color: accentColor }}>.</span>\n          </a>\n\n          {/* Centered nav links */}\n          <div className=\"hidden sm:flex items-center justify-center gap-6 sm:gap-8 text-sm font-semibold\">\n            {[\"about\", \"expertise\", \"work\", \"contact\"].map((link) => (\n              <a\n                key={link}\n                href={`#${link}`}\n                className=\"capitalize transition-opacity hover:opacity-100\"\n                style={{ color: isNavSolid ? colors.inkMuted : \"rgba(255,255,255,0.85)\" }}\n              >\n                {link.charAt(0).toUpperCase() + link.slice(1)}\n              </a>\n            ))}\n          </div>\n\n          {/* Hire me button */}\n          <a\n            href=\"#contact\"\n            className=\"px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-sm whitespace-nowrap\"\n            style={{\n              backgroundColor: isNavSolid\n                ? isDarkMode\n                  ? \"#ffffff\"\n                  : \"#111111\"\n                : \"#ffffff\",\n              color: isNavSolid\n                ? isDarkMode\n                  ? \"#111111\"\n                  : \"#ffffff\"\n                : \"#111111\",\n            }}\n          >\n            Hire me\n          </a>\n        </div>\n      </nav>\n\n      {/* Ordered Section Rendering */}\n      <main className=\"w-full\">\n        {sectionOrder\n          .filter((sec) => !isHidden(sec))\n          .map((sec) => (\n            <div key={sec}>{sectionMap[sec] || null}</div>\n          ))}\n      </main>\n\n\n      {/* Back to Top Floating Button */}\n      {showScrollTop && (\n        <button\n          type=\"button\"\n          onClick={scrollToTop}\n          aria-label=\"Back to top\"\n          className=\"fixed bottom-6 right-6 z-40 p-3 rounded-full text-white shadow-lg transition-all hover:scale-110\"\n          style={{ backgroundColor: accentColor }}\n        >\n          <ArrowUp className=\"h-5 w-5\" />\n        </button>\n      )}\n    </div>\n  );\n}\n";
+  return "import { useEffect, useState, useMemo } from \"react\";\nimport {\n  ArrowUp,\n  MapPin,\n  Award,\n  ExternalLink,\n  ChevronRight,\n  Star,\n  FolderGit2,\n} from \"lucide-react\";\n\nimport { SafeLink } from \"../common/SafeLink.jsx\";\nimport { normalizeAvatarUrl } from \"../common/urlUtils.js\";\n\n\n\n// GitSkins exact language dot colors\nconst LANG_COLORS = {\n  JavaScript: \"#f1e05a\",\n  TypeScript: \"#3178c6\",\n  Python: \"#3572A5\",\n  Go: \"#00ADD8\",\n  Rust: \"#dea584\",\n  Ruby: \"#701516\",\n  Java: \"#b07219\",\n  \"C++\": \"#f34b7d\",\n  C: \"#555555\",\n  \"C#\": \"#178600\",\n  PHP: \"#4F5D95\",\n  Swift: \"#F05138\",\n  Kotlin: \"#A97BFF\",\n  Dart: \"#00B4AB\",\n  HTML: \"#e34c26\",\n  CSS: \"#663399\",\n  Shell: \"#89e051\",\n  Vue: \"#41b883\",\n  Svelte: \"#ff3e00\",\n  React: \"#61dafb\",\n  \"Node.js\": \"#339933\",\n  Dockerfile: \"#384d54\",\n};\n\n// Font family map supporting the typography customization settings\nconst FONT_FAMILY_MAP = {\n  Inter: \"'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif\",\n  Roboto: \"'Roboto', -apple-system, BlinkMacSystemFont, sans-serif\",\n  Merriweather: \"'Merriweather', Georgia, serif\",\n  Playfair: \"'Playfair Display', Georgia, serif\",\n  JetBrains: \"'JetBrains Mono', 'Fira Code', monospace\",\n};\n\n// Helper to adjust color shade for gradients and contrast\nfunction adjustBrightness(hex, percent) {\n  const cleanHex = hex.replace(\"#\", \"\");\n  const num = parseInt(cleanHex.length === 3 ? cleanHex.split(\"\").map((c) => c + c).join(\"\") : cleanHex, 16);\n  if (isNaN(num)) return hex;\n  const amt = Math.round(2.55 * percent);\n  const R = Math.max(0, Math.min(255, (num >> 16) + amt));\n  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));\n  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));\n  return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;\n}\n\nexport function SpotlightTemplate({\n  portfolio = {},\n  showEmpty = false,\n  sectionOrder = [\n    \"hero\",\n    \"about\",\n    \"expertise\",\n    \"skills\",\n    \"projects\",\n    \"experience\",\n    \"education\",\n    \"certifications\",\n    \"contact\",\n  ],\n  hiddenSections = [],\n}) {\n  const profile = portfolio.profile;\n  const design = portfolio.design;\n  const socialLinks = portfolio.socialLinks || [];\n  const skills = useMemo(() => portfolio.skills || [], [portfolio.skills]);\n  const experience = portfolio.experience || [];\n  const education = portfolio.education || [];\n  const projects = useMemo(() => portfolio.projects || [], [portfolio.projects]);\n  const certifications = portfolio.certifications || [];\n\n  // ---------------------------------------------------------------------------\n  // 1. DYNAMIC CUSTOMIZATION: ACCENT COLOR, THEME, AND TYPOGRAPHY\n  // ---------------------------------------------------------------------------\n  const accentColor = design?.primaryColor || \"#e3141f\";\n  const accentDeep = useMemo(() => adjustBrightness(accentColor, -30), [accentColor]);\n  const accentDark = useMemo(() => adjustBrightness(accentColor, -20), [accentColor]);\n\n  // Template-specific customization\n  const templateSettings = design?.templateSettings || {};\n  const showGlowHalo = templateSettings.glowHalo !== false;\n  const showExpertiseTree = templateSettings.expertiseTree !== false;\n\n  // Theme mode handling (light / dark / system)\n  const themeSetting = design?.theme || \"system\";\n  const [isDarkMode, setIsDarkMode] = useState(false);\n\n  useEffect(() => {\n    if (themeSetting === \"dark\") {\n      setIsDarkMode(true);\n    } else if (themeSetting === \"light\") {\n      setIsDarkMode(false);\n    } else {\n      const mq = window.matchMedia(\"(prefers-color-scheme: dark)\");\n      setIsDarkMode(mq.matches);\n      const handler = (e) => setIsDarkMode(e.matches);\n      mq.addEventListener(\"change\", handler);\n      return () => mq.removeEventListener(\"change\", handler);\n    }\n  }, [themeSetting]);\n\n  // Semantic color tokens responding to theme\n  const colors = useMemo(() => {\n    return isDarkMode\n      ? {\n        paper: \"#0c0c0e\",\n        sectionWhite: \"#141418\",\n        cardBg: \"#1c1c22\",\n        cardBorder: \"rgba(255, 255, 255, 0.08)\",\n        ink: \"#f4f4f6\",\n        inkMuted: \"#a1a1aa\",\n        border: \"rgba(255, 255, 255, 0.08)\",\n        navBg: \"rgba(18, 18, 22, 0.92)\",\n        navInk: \"#ffffff\",\n        waveFill: \"#0c0c0e\",\n        pillBg: \"#27272f\",\n      }\n      : {\n        paper: \"#ffffff\",\n        sectionWhite: \"#ffffff\",\n        cardBg: \"#ffffff\",\n        cardBorder: \"rgba(0, 0, 0, 0.08)\",\n        ink: \"#121212\",\n        inkMuted: \"#555555\",\n        border: \"rgba(0, 0, 0, 0.08)\",\n        navBg: \"rgba(255, 255, 255, 0.92)\",\n        navInk: \"#121212\",\n        waveFill: \"#ffffff\",\n        pillBg: \"#f1f1f3\",\n      };\n  }, [isDarkMode]);\n\n  // Typography font family\n  const selectedFontKey = design?.fontFamily || \"Inter\";\n  const activeFontFamily = FONT_FAMILY_MAP[selectedFontKey] || FONT_FAMILY_MAP.Inter;\n\n  // Navigation scroll state\n  const [isNavSolid, setIsNavSolid] = useState(false);\n  const [showScrollTop, setShowScrollTop] = useState(false);\n\n  // Responsive breakpoint tracking (lg = 1024px) for hero layout\n  const [isLgScreen, setIsLgScreen] = useState(() =>\n    typeof window !== \"undefined\" ? window.innerWidth >= 1024 : false\n  );\n\n  useEffect(() => {\n    if (typeof window === \"undefined\") return;\n\n    if (window.matchMedia) {\n      const mediaQuery = window.matchMedia(\"(min-width: 1024px)\");\n      const updateLg = () => setIsLgScreen(mediaQuery.matches);\n      updateLg();\n      if (mediaQuery.addEventListener) {\n        mediaQuery.addEventListener(\"change\", updateLg);\n        return () => mediaQuery.removeEventListener(\"change\", updateLg);\n      } else if ((mediaQuery ).addListener) {\n        (mediaQuery ).addListener(updateLg);\n        return () => (mediaQuery ).removeListener(updateLg);\n      }\n    }\n\n    const handleResize = () => setIsLgScreen(window.innerWidth >= 1024);\n    window.addEventListener(\"resize\", handleResize);\n    return () => window.removeEventListener(\"resize\", handleResize);\n  }, []);\n\n  useEffect(() => {\n    const handleScroll = () => {\n      const heroEl = document.getElementById(\"top\");\n      if (heroEl) {\n        const { top: heroTop, bottom: heroBottom } = heroEl.getBoundingClientRect();\n        const navHeight = 70;\n        // Transparent only while hero overlaps navigation bar; solid when entirely above or below\n        const isHeroOverlappingNav = heroTop < navHeight && heroBottom > 0;\n        setIsNavSolid(!isHeroOverlappingNav);\n      } else {\n        setIsNavSolid(window.scrollY > 400);\n      }\n      setShowScrollTop(window.scrollY > 400);\n    };\n\n    handleScroll();\n    window.addEventListener(\"scroll\", handleScroll, { passive: true });\n    return () => window.removeEventListener(\"scroll\", handleScroll);\n  }, []);\n\n  const scrollToTop = () => { const prefersReduced = typeof window !== \"undefined\" && window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches; window.scrollTo({ top: 0, behavior: prefersReduced ? \"auto\" : \"smooth\" }); };\n  const isHidden = (sec) => hiddenSections.includes(sec);\n\n  // ---------------------------------------------------------------------------\n  // 2. CANDIDATE PROFILE DATA EXTRACTION\n  // ---------------------------------------------------------------------------\n  const fullName = profile?.fullName || (showEmpty ? \"sunil kumar\" : \"developer\");\n  const firstName = fullName.split(/\\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;\n  const headline = profile?.headline || (showEmpty ? \"HTML and JavaScript developer\" : \"Full Stack Developer\");\n  // Extract GitHub handle and avatar\n  const githubLink = socialLinks.find(\n    (l) =>\n      l.platform?.toLowerCase().includes(\"github\") || l.url?.toLowerCase().includes(\"github.com\")\n  );\n  const githubHandle = githubLink?.url\n    ? githubLink.url.replace(/^https?:\\/\\/(www\\.)?github\\.com\\//i, \"\").replace(/\\/.*$/, \"\")\n    : \"sunilkumar25kush\";\n\n  // Fallback to candidate's github avatar if none uploaded\n  const avatarUrl = profile?.avatarUrl\n    ? normalizeAvatarUrl(profile.avatarUrl)\n    : `https://avatars.githubusercontent.com/${githubHandle}`;\n\n  // Smart headline split for clean multi-line display (exact match to screenshot 1)\n  const headlineLines = useMemo(() => {\n    const text = headline.trim();\n    const words = text.split(/\\s+/);\n    if (words.length <= 1) return { line1: words[0] || \"developer\", line2: \"\" };\n    if (words.length === 2) return { line1: words[0], line2: words[1] };\n    const lastWord = words[words.length - 1];\n    const rest = words.slice(0, words.length - 1).join(\" \");\n    return { line1: rest, line2: lastWord };\n  }, [headline]);\n\n  // All extracted skills s\n  const skillNames = useMemo(() => {\n    const list = skills.map((s) => (typeof s === \"string\" ? s : s.name)).filter(Boolean);\n    if (list.length > 0) return list;\n    return [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"];\n  }, [skills]);\n\n  // Realistic sample projects matching candidate's public repos from screenshots\n  const displayProjects = useMemo(() => {\n    if (projects.length > 0) {\n      return projects.map((p) => ({\n        title: p.title,\n        description: p.description,\n        tags: p.tags || [\"JavaScript\"],\n        repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\\s+/g, \"-\")}`,\n        liveUrl: p.liveUrl,\n        imageUrl: p.imageUrl,\n        featured: p.featured ?? true,\n      }));\n    }\n    return [\n      {\n        title: \"NOTE-PROJECT\",\n        description: \"Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.\",\n        tags: [\"HTML\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,\n        liveUrl: undefined ,\n        imageUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Interviewer\",\n        description: \"Intelligent conversational interview platform simulating technical candidate evaluations.\",\n        tags: [\"JavaScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-Resume-builder\",\n        description: \"Next-gen intelligent career document and portfolio generator with ATS optimization.\",\n        tags: [\"TypeScript\", \"React\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n      {\n        title: \"AI-CONTENT-GENERATOR\",\n        description: \"Multi-modal AI content synthesizer for automated technical articles, docs, and assets.\",\n        tags: [\"CSS\", \"JavaScript\"],\n        repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,\n        liveUrl: undefined ,\n        featured: true,\n      },\n    ];\n  }, [projects, githubHandle]);\n\n  // ---------------------------------------------------------------------------\n  // 3. EXPERTISE CARDS: 4 CONNECTED NODES (MATCHING SCREENSHOT 3)\n  // ---------------------------------------------------------------------------\n  const expertiseNodes = useMemo(() => {\n    const topSkills = skillNames.slice(0, 4);\n    const defaults = [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"];\n    const merged = topSkills.length >= 4 ? topSkills : [...topSkills, ...defaults.slice(topSkills.length)];\n\n    return merged.slice(0, 4).map((skillName, idx) => {\n      const match = displayProjects.find(\n        (p) =>\n          p.tags?.some((t) => t.toLowerCase() === skillName.toLowerCase()) ||\n          p.description?.toLowerCase().includes(skillName.toLowerCase())\n      );\n      const projectName = match?.title || displayProjects[idx % displayProjects.length]?.title || \"Featured-Project\";\n      const count = idx === 1 ? 2 : 1;\n\n      return {\n        num: `0${idx + 1}`,\n        skill: skillName,\n        desc: `${count} featured project${count > 1 ? \"s\" : \"\"}, including ${projectName}.`,\n        isHot: idx === 1, // Card 02 is bold hot accent color\n      };\n    });\n  }, [skillNames, displayProjects]);\n\n  // ---------------------------------------------------------------------------\n  // 4. TECHNICAL STACK CATEGORIZED GROUPS (MATCHING SCREENSHOT 4)\n  // ---------------------------------------------------------------------------\n  const techGroups = useMemo(() => {\n    const all = skillNames;\n    const focus = all.slice(0, 6);\n\n    const frontendKeywords = [\"html\", \"css\", \"javascript\", \"typescript\", \"react\", \"vue\", \"svelte\", \"tailwind\", \"next\"];\n    const backendKeywords = [\"node\", \"python\", \"go\", \"java\", \"c#\", \"express\", \"sql\", \"mongo\", \"api\", \"ai\"];\n    const toolingKeywords = [\"docker\", \"dockerfile\", \"git\", \"github\", \"linux\", \"vite\", \"webpack\", \"aws\", \"ci/cd\"];\n\n    const frontend = all.filter((s) => frontendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const backend = all.filter((s) => backendKeywords.some((k) => s.toLowerCase().includes(k)));\n    const tooling = all.filter((s) => toolingKeywords.some((k) => s.toLowerCase().includes(k)));\n\n    return [\n      {\n        title: \"What I focus on\",\n        items: focus.length > 0 ? focus : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\", \"Python\", \"Dockerfile\"],\n      },\n      {\n        title: \"Frontend\",\n        items: frontend.length > 0 ? frontend : [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"],\n      },\n      {\n        title: \"Data & AI\",\n        items: backend.length > 0 ? backend : [\"Python\"],\n      },\n      {\n        title: \"Tooling & infra\",\n        items: tooling.length > 0 ? tooling : [\"Dockerfile\"],\n      },\n    ];\n  }, [skillNames]);\n\n  // ---------------------------------------------------------------------------\n  // 5. SECTION MAP\n  // ---------------------------------------------------------------------------\n  const sectionMap = {\n    // -------------------------------------------------------------------------\n    // HERO: Exact Match to Screenshot 1\n    // -------------------------------------------------------------------------\n    hero: (\n      <section\n        key=\"hero\"\n        id=\"top\"\n        className=\"spotlight-hero relative text-white overflow-hidden\"\n        style={{\n          background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDeep} 100%)`,\n          minHeight: \"100svh\",\n        }}\n      >\n        {/* Main grid: left text, right portrait — both visible in one viewport */}\n        <div\n          className=\"max-w-[1180px] w-full mx-auto px-5 sm:px-10 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10\"\n          style={{ minHeight: \"100svh\", paddingTop: \"80px\", paddingBottom: \"90px\", alignItems: \"center\" }}\n        >\n          {/* Left: Text */}\n          <div className=\"flex flex-col justify-center gap-5\">\n            <h1 className=\"font-extrabold text-[clamp(36px,6.5vw,84px)] leading-[1.03] tracking-[-0.035em]\">\n              <span className=\"block text-white\">Hi, I&apos;m {firstName.toLowerCase()}</span>\n              {headlineLines.line1 && (\n                <span className=\"block text-white mt-1\">{headlineLines.line1}</span>\n              )}\n              {headlineLines.line2 && (\n                <span className=\"block text-white\">{headlineLines.line2}</span>\n              )}\n            </h1>\n\n            <p className=\"max-w-[460px] text-white/90 text-base sm:text-lg leading-[1.65]\">\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            <div className=\"flex flex-wrap items-center gap-3\">\n              <a\n                href=\"#work\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full bg-white font-semibold text-sm hover:scale-105 transition-all shadow-md\"\n                style={{ color: accentColor }}\n              >\n                View my work\n              </a>\n              <a\n                href=\"#contact\"\n                className=\"inline-flex items-center justify-center min-h-[46px] px-7 rounded-full border-[1.5px] border-white text-white font-semibold text-sm hover:bg-white/10 hover:scale-105 transition-all\"\n              >\n                Contact me\n              </a>\n            </div>\n          </div>\n\n          {/* Right: Portrait — right-aligned, fully visible */}\n          <div className=\"flex items-center justify-center lg:justify-end\">\n            <div\n              className={`relative rounded-[24px] sm:rounded-[32px] border-[6px] sm:border-[10px] border-white overflow-hidden bg-white/10 ${\n                showGlowHalo ? \"shadow-[0_30px_70px_-20px_rgba(0,0,0,0.45)]\" : \"shadow-md\"\n              }`}\n              style={{\n                width: \"min(300px, 44vw)\",\n                aspectRatio: \"4/5\",\n                marginTop: isLgScreen ? \"-330px\" : undefined,\n                right: isLgScreen ? \"80px\" : undefined,\n                boxShadow: showGlowHalo\n                  ? `0 30px 70px -20px rgba(0,0,0,0.45), 0 0 50px ${accentColor}40`\n                  : undefined,\n              }}\n            >\n              <img\n                src={avatarUrl}\n                alt={fullName}\n                className=\"w-full h-full object-cover object-top\"\n                onError={(e) => {\n                  (e.target ).style.display = \"none\";\n                }}\n              />\n            </div>\n          </div>\n        </div>\n\n        {/* Bottom wave */}\n        <svg\n          className=\"absolute bottom-[-1px] left-0 right-0 w-full h-[60px] sm:h-[90px] block pointer-events-none z-[4]\"\n          viewBox=\"0 0 1440 90\"\n          preserveAspectRatio=\"none\"\n          aria-hidden=\"true\"\n        >\n          <path\n            fill={colors.waveFill}\n            d=\"M0,60 C240,10 420,10 720,48 C1020,86 1200,86 1440,40 L1440,92 L0,92 Z\"\n          />\n        </svg>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // ABOUT: Exact Match to Screenshot 2 (Hanging Sway Tablet + Bio & Pills)\n    // -------------------------------------------------------------------------\n    about: (\n      <section\n        key=\"about\"\n        id=\"about\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-16 items-center\">\n          {/* Left: Hanging Swaying Tablet */}\n          <div className=\"hanging-container relative justify-self-center pt-[60px] select-none\">\n            {/* Cord & Anchor Nail */}\n            <div\n              className=\"absolute left-1/2 top-0 w-[2px] h-[68px] -translate-x-1/2\"\n              style={{\n                background: isDarkMode\n                  ? \"linear-gradient(to bottom, #888, #444)\"\n                  : \"linear-gradient(to bottom, #bbb, #777)\",\n              }}\n            />\n            <div\n              className=\"absolute left-1/2 -top-1 w-3 h-3 rounded-full -translate-x-1/2 shadow-xs\"\n              style={{ backgroundColor: isDarkMode ? \"#666\" : \"#444\" }}\n            />\n\n            {/* Tablet with Candidate Photo & Sway Motion */}\n            <div\n              className=\"hanging-tablet w-[min(330px,78vw)] aspect-[4/5] p-3 rounded-[32px] shadow-[0_30px_70px_-25px_rgba(0,0,0,0.5)] rotate-[-4deg]\"\n              style={{\n                backgroundColor: isDarkMode ? \"#18181b\" : \"#111111\",\n                transformOrigin: \"50% 0\",\n                animation: \"sway 6s ease-in-out infinite\",\n                willChange: \"transform\",\n              }}\n            >\n              <div className=\"w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center\">\n                <img\n                  src={avatarUrl}\n                  alt={fullName}\n                  className=\"w-full h-full object-cover object-top\"\n                />\n              </div>\n            </div>\n          </div>\n\n          {/* Right: Pill Badge, Title, Bio, Tech Pills & Stats */}\n          <div className=\"space-y-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              HELLO!\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>A little </span>\n              <span style={{ color: accentColor }}>about me</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.7]\" style={{ color: colors.inkMuted }}>\n              {profile?.bio || `Explore ${fullName.toLowerCase()}'s public projects and open-source work.`}\n            </p>\n\n            {/* Language/Tech Badges with Dots */}\n            <div className=\"flex flex-wrap gap-2.5 pt-2\">\n              {skillNames.slice(0, 8).map((skillName, idx) => {\n                const dotColor = LANG_COLORS[skillName] || accentColor;\n                return (\n                  <span\n                    key={idx}\n                    className=\"inline-flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-xs transition-transform hover:-translate-y-0.5\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span\n                      className=\"w-2.5 h-2.5 rounded-full flex-shrink-0\"\n                      style={{ backgroundColor: dotColor }}\n                    />\n                    <span>{skillName}</span>\n                  </span>\n                );\n              })}\n            </div>\n\n            {/* Stats row */}\n            <div\n              className=\"flex items-center gap-6 pt-4 text-sm font-medium\"\n              style={{ color: colors.inkMuted }}\n            >\n              <span>2 followers</span>\n              <span className=\"flex items-center gap-1.5\">\n                <Star className=\"h-4 w-4\" style={{ color: accentColor }} />\n                <span>1 stars</span>\n              </span>\n              {profile?.location && (\n                <span className=\"flex items-center gap-1.5 ml-auto\">\n                  <MapPin className=\"h-4 w-4\" style={{ color: accentColor }} />\n                  <span>{profile.location}</span>\n                </span>\n              )}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERTISE: Exact Match to Screenshot 3 (Connected Nodes + Dashed Line)\n    // -------------------------------------------------------------------------\n    expertise: (\n      <section\n        key=\"expertise\"\n        id=\"expertise\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300 overflow-hidden\"\n        style={{\n          backgroundColor: colors.sectionWhite,\n          color: colors.ink,\n        }}\n      >\n        <div className=\"max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center\">\n          {/* Left Title & Description */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              MY EXPERTISE\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Building modern digital solutions with </span>\n              <span style={{ color: accentColor }}>code</span>\n            </h2>\n\n            <p className=\"text-base sm:text-lg leading-[1.6]\" style={{ color: colors.inkMuted }}>\n              What {firstName.toLowerCase()} spends their time on, from 24 public repositories.\n            </p>\n          </div>\n\n          {/* Right: The 4 Connected Nodes with Dashed Connecting Line */}\n          <div className=\"relative min-h-0 lg:min-h-[460px] flex items-center justify-center p-2 w-full\">\n            {/* SVG Connecting Dashed Curve - hidden on mobile/tablet to avoid distortion */}\n            {showExpertiseTree && (\n              <svg\n                className=\"absolute inset-0 w-full h-full pointer-events-none overflow-visible hidden lg:block\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  d=\"M 120 90 C 260 70, 200 240, 290 230 C 340 240, 310 370, 140 370\"\n                  fill=\"none\"\n                  stroke={accentColor}\n                  strokeOpacity=\"0.55\"\n                  strokeWidth=\"2\"\n                  strokeDasharray=\"6 8\"\n                  style={{ willChange: \"stroke-dashoffset\" }}\n                  className=\"animate-[dash_18s_linear_infinite]\"\n                />\n              </svg>\n            )}\n\n            {/* 4 Cards Grid */}\n            <div className=\"relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full max-w-[540px]\">\n              {expertiseNodes.map((node) => {\n                if (node.isHot) {\n                  // Hot Accent Card (Card 02)\n                  return (\n                    <div\n                      key={node.num}\n                      className=\"p-6 rounded-[24px] text-white shadow-xl transition-all hover:scale-105\"\n                      style={{\n                        backgroundColor: accentColor,\n                        boxShadow: `0 20px 40px -15px ${accentColor}66`,\n                      }}\n                    >\n                      <span className=\"block text-xs font-mono font-semibold opacity-85 mb-2\">\n                        {node.num}\n                      </span>\n                      <h3 className=\"text-xl font-bold tracking-tight mb-2\">\n                        {node.skill}\n                      </h3>\n                      <p className=\"text-xs text-white/90 leading-relaxed\">\n                        {node.desc}\n                      </p>\n                    </div>\n                  );\n                }\n\n                // Standard Clean Card (Card 01, 03, 04)\n                return (\n                  <div\n                    key={node.num}\n                    className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md hover:scale-102\"\n                    style={{\n                      backgroundColor: colors.cardBg,\n                      border: `1px solid ${colors.cardBorder}`,\n                      color: colors.ink,\n                    }}\n                  >\n                    <span className=\"block text-xs font-mono font-semibold mb-2\" style={{ color: colors.inkMuted }}>\n                      {node.num}\n                    </span>\n                    <h3 className=\"text-xl font-bold tracking-tight mb-2\" style={{ color: colors.ink }}>\n                      {node.skill}\n                    </h3>\n                    <p className=\"text-xs leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {node.desc}\n                    </p>\n                  </div>\n                );\n              })}\n            </div>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // TECHNICAL STACK: Exact Match to Screenshot 4 (4 Cards Grid + Pills)\n    // -------------------------------------------------------------------------\n    skills: (\n      <section\n        key=\"skills\"\n        id=\"skills\"\n        className=\"relative py-24 sm:py-32 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          {/* Header */}\n          <div className=\"space-y-4\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              TECHNICAL STACK\n            </span>\n\n            <h2 className=\"font-extrabold text-[clamp(34px,4.5vw,56px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Technologies I </span>\n              <span style={{ color: accentColor }}>work with</span>\n            </h2>\n          </div>\n\n          {/* 4 Cards Grid */}\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6\">\n            {techGroups.map((group, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[24px] shadow-sm transition-all hover:shadow-md\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                  color: colors.ink,\n                }}\n              >\n                <h3 className=\"text-base font-bold tracking-tight mb-4\" style={{ color: colors.ink }}>\n                  {group.title}\n                </h3>\n                <div className=\"flex flex-wrap gap-2\">\n                  {group.items.map((item, itemIdx) => (\n                    <span\n                      key={itemIdx}\n                      className=\"px-3 py-1.5 rounded-lg text-xs font-semibold\"\n                      style={{\n                        backgroundColor: colors.pillBg,\n                        color: colors.ink,\n                      }}\n                    >\n                      {item}\n                    </span>\n                  ))}\n                </div>\n              </div>\n            ))}\n          </div>\n\n          {/* Next Section Indicator Pill (as seen at bottom of screenshot 4) */}\n          <div className=\"pt-6\">\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              FEATURED WORK\n            </span>\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // FEATURED WORK / PROJECTS\n    // -------------------------------------------------------------------------\n    projects: (\n      <section\n        key=\"projects\"\n        id=\"work\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[1180px] mx-auto space-y-12\">\n          <div className=\"flex flex-col sm:flex-row sm:items-end justify-between gap-4\">\n            <div>\n              <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n                <span style={{ color: colors.ink }}>Featured </span>\n                <span style={{ color: accentColor }}>Projects</span>\n              </h2>\n              <p className=\"text-base mt-2\" style={{ color: colors.inkMuted }}>\n                Production-grade applications, developer tooling, and open-source repositories.\n              </p>\n            </div>\n\n            <SafeLink\n              href={`https://github.com/${githubHandle}?tab=repositories`}\n              className=\"inline-flex items-center gap-2 text-sm font-semibold hover:underline\"\n              style={{ color: accentColor }}\n            >\n              <span>View all GitHub repos</span>\n              <ChevronRight className=\"h-4 w-4\" />\n            </SafeLink>\n          </div>\n\n          {/* Project Cards Grid */}\n          <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8\">\n            {displayProjects.map((project, idx) => {\n              const primaryTag = project.tags?.[0] || \"Code\";\n              const tagColor = LANG_COLORS[primaryTag] || accentColor;\n\n              return (\n                <div\n                  key={idx}\n                  className=\"group relative p-7 sm:p-8 rounded-[28px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"space-y-4\">\n                    {/* Project Screenshot / Thumbnail (if available) */}\n                    {project.imageUrl && (\n                      <div className=\"w-full h-44 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10 relative\">\n                        <img\n                          src={project.imageUrl}\n                          alt={project.title}\n                          className=\"w-full h-full object-cover transition-transform duration-500 group-hover:scale-105\"\n                          onError={(e) => {\n                            (e.target ).style.display = \"none\";\n                          }}\n                        />\n                      </div>\n                    )}\n\n                    <div className=\"flex items-center justify-between\">\n                      <span className=\"font-mono text-xs font-bold\" style={{ color: colors.inkMuted }}>\n                        0{idx + 1} / 0{displayProjects.length}\n                      </span>\n                      <div className=\"flex items-center gap-2\">\n                        {project.repoUrl && (\n                          <SafeLink\n                            href={project.repoUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: colors.ink }}\n                            title=\"GitHub Repository\"\n                          >\n                            <FolderGit2 className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                        {project.liveUrl && (\n                          <SafeLink\n                            href={project.liveUrl}\n                            className=\"p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10\"\n                            style={{ color: accentColor }}\n                            title=\"Live Demo\"\n                          >\n                            <ExternalLink className=\"h-4 w-4\" />\n                          </SafeLink>\n                        )}\n                      </div>\n                    </div>\n\n                    <h3\n                      className=\"text-2xl font-bold tracking-tight transition-colors group-hover:text-[var(--hover-color)]\"\n                      style={{ color: colors.ink, [\"--hover-color\" ]: accentColor }}\n                    >\n                      {project.title}\n                    </h3>\n\n                    <p className=\"text-sm sm:text-base leading-relaxed\" style={{ color: colors.inkMuted }}>\n                      {project.description}\n                    </p>\n                  </div>\n\n                  <div\n                    className=\"flex items-center justify-between pt-6 mt-6 border-t\"\n                    style={{ borderColor: colors.border }}\n                  >\n                    <div className=\"flex items-center gap-2 text-xs font-semibold\" style={{ color: colors.ink }}>\n                      <span className=\"w-2.5 h-2.5 rounded-full\" style={{ backgroundColor: tagColor }} />\n                      <span>{primaryTag}</span>\n                    </div>\n\n                    <span className=\"flex items-center gap-1 text-xs font-medium\" style={{ color: colors.inkMuted }}>\n                      <Star className=\"h-3.5 w-3.5\" style={{ color: accentColor }} />\n                      <span>★ 3</span>\n                    </span>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EXPERIENCE\n    // -------------------------------------------------------------------------\n    experience: (\n      <section\n        key=\"experience\"\n        id=\"experience\"\n        className=\"relative py-20 sm:py-28 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-12\">\n          <div>\n            <span\n              className=\"inline-block px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-3\"\n              style={{ backgroundColor: `${accentColor}18`, color: accentColor }}\n            >\n              CAREER JOURNEY\n            </span>\n            <h2 className=\"font-extrabold text-[clamp(32px,4vw,52px)] leading-[1.08] tracking-[-0.035em]\">\n              <span style={{ color: colors.ink }}>Work </span>\n              <span style={{ color: accentColor }}>Experience</span>\n            </h2>\n          </div>\n\n          <div className=\"relative pl-6 sm:pl-8 space-y-10 border-l-2\" style={{ borderColor: `${accentColor}40` }}>\n            {experience.map((exp, idx) => (\n              <div key={idx} className=\"relative group\">\n                <span\n                  className=\"absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-black transition-transform group-hover:scale-125\"\n                  style={{ backgroundColor: accentColor }}\n                />\n\n                <div\n                  className=\"p-6 rounded-[22px] shadow-sm transition-all\"\n                  style={{\n                    backgroundColor: colors.cardBg,\n                    border: `1px solid ${colors.cardBorder}`,\n                  }}\n                >\n                  <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2\">\n                    <h3 className=\"text-xl font-bold tracking-tight\" style={{ color: colors.ink }}>\n                      {exp.title}\n                    </h3>\n                    <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                      {exp.startDate} - {exp.current ? \"Present\" : exp.endDate || \"Present\"}\n                    </span>\n                  </div>\n\n                  <p className=\"text-sm font-semibold mb-3\" style={{ color: colors.inkMuted }}>\n                    {exp.company} {exp.location ? `· ${exp.location}` : \"\"}\n                  </p>\n\n                  {exp.description && (\n                    <p className=\"text-sm leading-relaxed mb-3\" style={{ color: colors.inkMuted }}>\n                      {exp.description}\n                    </p>\n                  )}\n\n                  {exp.highlights && exp.highlights.length > 0 && (\n                    <ul className=\"space-y-1.5 text-xs sm:text-sm\" style={{ color: colors.inkMuted }}>\n                      {exp.highlights.map((h, hIdx) => (\n                        <li key={hIdx} className=\"flex items-start gap-2\">\n                          <span style={{ color: accentColor }}>▸</span>\n                          <span>{h}</span>\n                        </li>\n                      ))}\n                    </ul>\n                  )}\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // EDUCATION & CERTIFICATIONS\n    // -------------------------------------------------------------------------\n    education: (\n      <section\n        key=\"education\"\n        id=\"education\"\n        className=\"relative py-20 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.sectionWhite, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-8\">\n          <h2 className=\"font-extrabold text-[clamp(28px,3.5vw,44px)] leading-[1.08] tracking-[-0.035em]\">\n            <span style={{ color: colors.ink }}>Education &amp; </span>\n            <span style={{ color: accentColor }}>Background</span>\n          </h2>\n\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-6\">\n            {education.map((edu, idx) => (\n              <div\n                key={idx}\n                className=\"p-6 rounded-[22px] shadow-sm\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <span className=\"text-xs font-mono font-semibold\" style={{ color: accentColor }}>\n                  {edu.startDate} - {edu.endDate || \"Present\"}\n                </span>\n                <h3 className=\"text-lg font-bold tracking-tight mt-1\" style={{ color: colors.ink }}>\n                  {edu.degree}\n                </h3>\n                <p className=\"text-sm mt-1\" style={{ color: colors.inkMuted }}>\n                  {edu.institution} {edu.fieldOfStudy ? `· ${edu.fieldOfStudy}` : \"\"}\n                </p>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    certifications: (\n      <section\n        key=\"certifications\"\n        id=\"certifications\"\n        className=\"relative py-16 px-5 sm:px-8 transition-colors duration-300\"\n        style={{ backgroundColor: colors.paper, color: colors.ink }}\n      >\n        <div className=\"max-w-[900px] mx-auto space-y-6\">\n          <h2 className=\"font-extrabold text-[clamp(24px,3vw,38px)]\">\n            <span style={{ color: colors.ink }}>Certifications &amp; </span>\n            <span style={{ color: accentColor }}>Honors</span>\n          </h2>\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-4\">\n            {certifications.map((c, idx) => (\n              <div\n                key={idx}\n                className=\"p-5 rounded-2xl flex items-center gap-4 shadow-xs\"\n                style={{\n                  backgroundColor: colors.cardBg,\n                  border: `1px solid ${colors.cardBorder}`,\n                }}\n              >\n                <Award className=\"h-6 w-6 flex-shrink-0\" style={{ color: accentColor }} />\n                <div>\n                  <h3 className=\"font-bold text-sm\" style={{ color: colors.ink }}>\n                    {c.name}\n                  </h3>\n                  <p className=\"text-xs\" style={{ color: colors.inkMuted }}>\n                    {c.issuer} {c.issueDate ? `· ${c.issueDate}` : \"\"}\n                  </p>\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </section>\n    ),\n\n    // -------------------------------------------------------------------------\n    // CONTACT: Exact Match to Screenshot 5 (Giant Watermark + Overlapping Red Card)\n    // -------------------------------------------------------------------------\n    contact: (\n      <section\n        key=\"contact\"\n        id=\"contact\"\n        className=\"relative min-h-[85vh] sm:min-h-[90vh] py-20 sm:py-36 px-4 sm:px-8 overflow-hidden flex flex-col justify-center items-center select-none\"\n        style={{ backgroundColor: \"#09090b\" }}\n      >\n        {/* Giant Watermark Text (CONTACT on top, Name below) */}\n        <div className=\"absolute inset-0 flex flex-col justify-between items-center pointer-events-none py-6 sm:py-8 z-0 overflow-hidden select-none\">\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            CONTACT\n          </span>\n          <span className=\"font-['Anton'] text-[clamp(44px,14vw,220px)] text-white tracking-tight leading-none opacity-95 text-center px-2\">\n            {firstName.toLowerCase()}\n          </span>\n        </div>\n\n        {/* Center Floating Accent Card */}\n        <div\n          className=\"relative z-10 w-full max-w-[620px] p-6 sm:p-12 rounded-[24px] sm:rounded-[36px] text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)]\"\n          style={{\n            background: `linear-gradient(135deg, ${accentColor} 0%, ${accentDark} 100%)`,\n          }}\n        >\n          <h2 className=\"text-2xl sm:text-4xl font-extrabold tracking-tight mb-2\">\n            Discuss an opportunity\n          </h2>\n\n          <p className=\"text-sm sm:text-base text-white/90 leading-relaxed mb-6 sm:mb-8\">\n            Open to new roles, collaborations and interesting problems.\n          </p>\n\n          {/* Direct Action Pills - Only LinkedIn option as requested */}\n          <div className=\"space-y-3\">\n            <SafeLink\n              href=\"https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true\"\n              className=\"flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80\"\n              aria-label=\"Connect on LinkedIn (opens in a new tab)\"\n            >\n              <div className=\"flex items-center gap-3\">\n                <svg className=\"w-5 h-5 fill-current text-white shrink-0\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                  <path d=\"M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z\" />\n                </svg>\n                <span>LinkedIn</span>\n              </div>\n              <span className=\"group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90\">→</span>\n            </SafeLink>\n          </div>\n        </div>\n      </section>\n    ),\n  };\n\n  // ---------------------------------------------------------------------------\n  // 6. RENDER TEMPLATE WITH STICKY FROSTED NAV & GLOBAL STYLES\n  // ---------------------------------------------------------------------------\n  return (\n    <div\n      className=\"spotlight-root relative w-full min-h-screen transition-colors duration-300 overflow-x-hidden\"\n      style={{\n        fontFamily: activeFontFamily,\n        backgroundColor: colors.paper,\n        color: colors.ink,\n      }}\n    >\n      {/* Dynamic Keyframe & Typography Styles */}\n      <style>{`\n        @keyframes sway {\n          0%, 100% {\n            transform: rotate(-4deg);\n          }\n          50% {\n            transform: rotate(4deg);\n          }\n        }\n        @keyframes dash {\n          to {\n            stroke-dashoffset: -1000;\n          }\n        }\n      `}</style>\n\n      {/* Sticky Navigation Bar */}\n      <nav\n        aria-label=\"Primary portfolio navigation\"\n        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isNavSolid ? \"py-3 shadow-md backdrop-blur-md\" : \"py-5 sm:py-6\"\n          }`}\n        style={{\n          backgroundColor: isNavSolid ? colors.navBg : \"transparent\",\n          borderBottom: isNavSolid ? `1px solid ${colors.border}` : \"none\",\n        }}\n      >\n        {/* Navbar: logo | centered links | hire-me button */}\n        <div className=\"max-w-[1180px] mx-auto px-5 sm:px-8 flex items-center justify-between gap-4\">\n          {/* Logo */}\n          <a\n            href=\"#top\"\n            className=\"text-xl sm:text-2xl font-extrabold tracking-tight flex items-center\"\n            style={{ color: isNavSolid ? colors.navInk : \"#ffffff\" }}\n          >\n            <span>{firstName.toLowerCase()}</span>\n            <span style={{ color: accentColor }}>.</span>\n          </a>\n\n          {/* Centered nav links */}\n          <div className=\"hidden sm:flex items-center justify-center gap-6 sm:gap-8 text-sm font-semibold\">\n            {[\"about\", \"expertise\", \"work\", \"contact\"].map((link) => (\n              <a\n                key={link}\n                href={`#${link}`}\n                className=\"capitalize transition-opacity hover:opacity-100\"\n                style={{ color: isNavSolid ? colors.inkMuted : \"rgba(255,255,255,0.85)\" }}\n              >\n                {link.charAt(0).toUpperCase() + link.slice(1)}\n              </a>\n            ))}\n          </div>\n\n          {/* Hire me button */}\n          <a\n            href=\"#contact\"\n            className=\"px-5 py-2 rounded-full font-semibold text-xs sm:text-sm transition-all hover:scale-105 shadow-sm whitespace-nowrap\"\n            style={{\n              backgroundColor: isNavSolid\n                ? isDarkMode\n                  ? \"#ffffff\"\n                  : \"#111111\"\n                : \"#ffffff\",\n              color: isNavSolid\n                ? isDarkMode\n                  ? \"#111111\"\n                  : \"#ffffff\"\n                : \"#111111\",\n            }}\n          >\n            Hire me\n          </a>\n        </div>\n      </nav>\n\n      {/* Ordered Section Rendering */}\n      <main className=\"w-full\">\n        {sectionOrder\n          .filter((sec) => !isHidden(sec))\n          .map((sec) => (\n            <div key={sec}>{sectionMap[sec] || null}</div>\n          ))}\n      </main>\n\n\n      {/* Back to Top Floating Button */}\n      {showScrollTop && (\n        <button\n          type=\"button\"\n          onClick={scrollToTop}\n          aria-label=\"Back to top\"\n          className=\"fixed bottom-6 right-6 z-40 p-3 rounded-full text-white shadow-lg transition-all hover:scale-110\"\n          style={{ backgroundColor: accentColor }}\n        >\n          <ArrowUp className=\"h-5 w-5\" />\n        </button>\n      )}\n    </div>\n  );\n}\n";
 }
 
 function getFullPosterTemplateJsx() {
-  return `import React, { useState, useEffect, useMemo } from "react";
-import { ArrowUp, Award, ExternalLink, MapPin } from "lucide-react";
-import { BrandIcon } from "../common/BrandIcon.jsx";
-import { SafeLink } from "../common/SafeLink.jsx";
-import { normalizeAvatarUrl } from "../common/urlUtils.js";
-
-export function PosterTemplate({ portfolio = {} }) {
-  const { profile = {}, socialLinks = [], skills = [], experience = [], projects = [] } = portfolio;
-  const primaryColor = portfolio?.design?.primaryColor || "#e11d2a";
-  const theme = portfolio?.design?.theme || "dark";
-  const isDark = theme === "dark";
-
-  const fullName = profile.fullName || "Developer";
-  const headline = profile.headline || "Creative Software Developer";
-  const bio = profile.bio || "Crafting bold and memorable digital experiences.";
-  const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
-
-  const marqueeText = portfolio?.design?.templateSettings?.marqueeText || "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
-
-  const scrollToTop = () => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  return (
-    <div className={\`min-h-screen font-sans transition-colors \${isDark ? "bg-[#09090b] text-[#f4f4f5]" : "bg-[#fdfbf7] text-[#18181b]"}\`}>
-      <div className="overflow-hidden whitespace-nowrap py-2 text-xs font-black tracking-widest text-white uppercase" style={{ backgroundColor: primaryColor }}>
-        <div className="inline-block animate-marquee">
-          <span>{marqueeText} &nbsp;&bull;&nbsp; {marqueeText} &nbsp;&bull;&nbsp; {marqueeText}</span>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
-        <header className={\`border-b-4 pb-12 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
-          <div className="flex justify-between items-center mb-8 text-xs font-mono uppercase tracking-wider">
-            <span className="font-bold">{fullName}</span>
-            {socialLinks.length > 0 && (
-              <div className="flex items-center gap-3">
-                {socialLinks.map((s, i) => (
-                  <SafeLink key={i} href={s.url} style={{ color: primaryColor }} className="hover:underline">
-                    {s.label || s.platform}
-                  </SafeLink>
-                ))}
-              </div>
-            )}
-          </div>
-          <h1 className="text-6xl sm:text-8xl md:text-9xl font-black uppercase tracking-tighter leading-none mb-6">
-            {fullName}
-          </h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm font-bold uppercase">
-            <span className={\`px-3 py-1 text-xs \${isDark ? "bg-white text-black" : "bg-black text-white"}\`}>{headline}</span>
-            {skills.length > 0 && (
-              <div className="font-mono text-xs" style={{ color: primaryColor }}>
-                SKILLS: {skills.map(s => s.name).join(" • ")}
-              </div>
-            )}
-          </div>
-        </header>
-
-        <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
-          <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
-            01 / STATEMENT
-          </div>
-          <div className="md:col-span-9 space-y-6">
-            <p className="text-xl sm:text-3xl font-medium leading-relaxed">{bio}</p>
-            {avatarUrl && (
-              <div className={\`w-36 h-36 border-4 overflow-hidden \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
-                <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
-              </div>
-            )}
-          </div>
-        </section>
-
-        {projects.length > 0 && (
-          <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
-            <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
-              02 / SELECTED WORK
-            </div>
-            <div className="md:col-span-9 space-y-8">
-              {projects.map((p, i) => (
-                <article key={i} className={\`p-8 border-2 \${isDark ? "bg-neutral-900/40 border-neutral-800" : "bg-white border-neutral-900"}\`}>
-                  <div className="font-mono text-xs font-bold mb-2" style={{ color: primaryColor }}>// 0{i + 1}</div>
-                  <h3 className="text-2xl font-black mb-3">{p.title}</h3>
-                  <p className={\`text-sm leading-relaxed mb-4 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{p.description}</p>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4 font-mono text-xs" style={{ color: primaryColor }}>
-                      {p.tags.map(t => <span key={t}>#{t}</span>)}
-                    </div>
-                  )}
-                  <div className="flex gap-4 text-xs font-bold underline">
-                    {p.liveUrl && <SafeLink href={p.liveUrl}>Live Project &rarr;</SafeLink>}
-                    {p.repoUrl && <SafeLink href={p.repoUrl}>GitHub Source &rarr;</SafeLink>}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {experience.length > 0 && (
-          <section className={\`grid grid-cols-1 md:grid-cols-12 gap-8 border-b-2 pb-16 \${isDark ? "border-neutral-800" : "border-neutral-900"}\`}>
-            <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
-              03 / TRACK RECORD
-            </div>
-            <div className="md:col-span-9 space-y-6">
-              {experience.map((e, i) => (
-                <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pb-4">
-                  <div className="text-xs font-mono text-neutral-400">{e.startDate} &mdash; {e.current ? "PRESENT" : e.endDate}</div>
-                  <div className="sm:col-span-2 space-y-1">
-                    <h4 className="font-bold text-base">{e.title}</h4>
-                    <p className="text-xs font-medium" style={{ color: primaryColor }}>{e.company} {e.location ? \`(\${e.location})\` : ""}</p>
-                    {e.description && <p className={\`text-xs leading-relaxed pt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{e.description}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-16">
-          <div className="md:col-span-3 font-mono font-bold text-xs" style={{ color: primaryColor }}>
-            04 / INQUIRIES
-          </div>
-          <div className="md:col-span-9 space-y-4">
-            <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tight">LET'S CONNECT</h2>
-            <div className="space-y-2 text-lg sm:text-xl font-bold" style={{ color: primaryColor }}>
-              {profile.email && <div><a href={\`mailto:\${profile.email}\`} className="underline">EMAIL: {profile.email} &rarr;</a></div>}
-              {profile.phone && <div><a href={\`tel:\${profile.phone}\`} className="underline">TEL: {profile.phone} &rarr;</a></div>}
-            </div>
-          </div>
-        </section>
-
-        <footer className={\`border-t-2 pt-6 flex justify-between items-center text-xs font-mono \${isDark ? "border-neutral-800 text-neutral-500" : "border-neutral-900 text-neutral-500"}\`}>
-          <span>&copy; {new Date().getFullYear()} {fullName}. POSTER EDITORIAL ARCHIVE.</span>
-          <button onClick={scrollToTop} className="font-bold underline flex items-center gap-1">
-            <span>TOP</span>
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-`;
+  return "import { useEffect, useState, useMemo } from \"react\";\nimport { ArrowUp, MapPin, Award, } from \"lucide-react\";\nimport { SafeLink } from \"../common/SafeLink.jsx\";\nimport { normalizeAvatarUrl } from \"../common/urlUtils.js\";\n// GitSkins exact technology accent colors for the corner radial glow\nconst LANG_COLORS = {\n    JavaScript: \"#f1e05a\",\n    TypeScript: \"#3178c6\",\n    Python: \"#3572A5\",\n    Go: \"#00ADD8\",\n    Rust: \"#dea584\",\n    Ruby: \"#701516\",\n    Java: \"#b07219\",\n    \"C++\": \"#f34b7d\",\n    C: \"#555555\",\n    \"C#\": \"#178600\",\n    PHP: \"#4F5D95\",\n    Swift: \"#F05138\",\n    Kotlin: \"#A97BFF\",\n    Dart: \"#00B4AB\",\n    HTML: \"#e34c26\",\n    CSS: \"#663399\",\n    Shell: \"#89e051\",\n    Vue: \"#41b883\",\n    Svelte: \"#ff3e00\",\n    React: \"#61dafb\",\n    \"Node.js\": \"#339933\",\n    Tailwind: \"#38bdf8\",\n    TailwindCSS: \"#38bdf8\",\n};\nexport function PosterTemplate({ portfolio, showEmpty = false, sectionOrder = [\"hero\", \"projects\", \"about\", \"experience\", \"education\", \"certifications\", \"contact\"], hiddenSections = [], }) {\n    const profile = portfolio.profile;\n    const design = portfolio.design;\n    const socialLinks = portfolio.socialLinks || [];\n    const skills = useMemo(() => portfolio.skills || [], [portfolio.skills]);\n    const experience = portfolio.experience || [];\n    const education = portfolio.education || [];\n    const projects = useMemo(() => portfolio.projects || [], [portfolio.projects]);\n    const certifications = portfolio.certifications || [];\n    const accentColor = design?.primaryColor || \"#e11d2a\";\n    const templateSettings = design?.templateSettings || {};\n    const marqueeCustomText = typeof templateSettings.marqueeText === \"string\" && templateSettings.marqueeText.trim()\n        ? templateSettings.marqueeText.trim()\n        : \"CREATIVE • VISIONARY • ENGINEER • FULLSTACK\";\n    const watermarkOpacityClass = templateSettings.watermarkOpacity === \"bold\"\n        ? \"opacity-25\"\n        : templateSettings.watermarkOpacity === \"hidden\"\n            ? \"opacity-0\"\n            : \"opacity-10\";\n    const [showBackToTop, setShowBackToTop] = useState(false);\n    // Derive candidate names & handles\n    const fullName = profile?.fullName || (showEmpty ? \"Sunil Kumar\" : \"Developer\");\n    const firstName = fullName.split(/\\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;\n    const headline = profile?.headline || (showEmpty ? \"JavaScript Developer\" : \"Software Developer\");\n    const avatarUrl = profile?.avatarUrl ? normalizeAvatarUrl(profile.avatarUrl) : null;\n    const contactEmail = profile?.email || \"\";\n    // Extract GitHub handle if present in social links\n    const githubLink = socialLinks.find((l) => l.platform?.toLowerCase().includes(\"github\") || l.url?.toLowerCase().includes(\"github.com\"));\n    const githubHandle = githubLink?.url\n        ? githubLink.url.replace(/^https?:\\/\\/(www\\.)?github\\.com\\//i, \"\").replace(/\\/.*$/, \"\")\n        : (showEmpty ? \"sunilkumar25kush\" : null);\n    // Skills for typewriter in hero derived from skills\n    const skillNames = useMemo(() => {\n        const list = skills.map((s) => (typeof s === \"string\" ? s : s.name)).filter(Boolean);\n        return list.length ? list.slice(0, 4) : (showEmpty ? [\"HTML\", \"JavaScript\", \"TypeScript\", \"CSS\"] : []);\n    }, [skills, showEmpty]);\n    // Typewriter Skills State matching GitSkins exactly\n    const [typedSkills, setTypedSkills] = useState([]);\n    const [activeSkillIdx, setActiveSkillIdx] = useState(0);\n    const [currentCharIdx, setCurrentCharIdx] = useState(0);\n    useEffect(() => {\n        const handleScroll = () => setShowBackToTop(window.scrollY > 400);\n        window.addEventListener(\"scroll\", handleScroll, { passive: true });\n        return () => window.removeEventListener(\"scroll\", handleScroll);\n    }, []);\n    const scrollToTop = () => {\n    const prefersReduced = typeof window !== \"undefined\" && window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n    window.scrollTo({ top: 0, behavior: prefersReduced ? \"auto\" : \"smooth\" });\n  };\n    \n  useEffect(() => {\n    const handleAnchorClick = (e) => {\n      const target = e.target.closest('a[href^=\"#\"]');\n      if (!target) return;\n      const href = target.getAttribute(\"href\");\n      if (!href || href === \"#\") return;\n      const el = document.querySelector(href);\n      if (!el) return;\n      e.preventDefault();\n      const offset = 80;\n      const bodyRect = document.body.getBoundingClientRect().top;\n      const elementRect = el.getBoundingClientRect().top;\n      const offsetPosition = elementRect - bodyRect - offset;\n      const prefersReduced = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n      window.scrollTo({\n        top: offsetPosition,\n        behavior: prefersReduced ? \"auto\" : \"smooth\",\n      });\n    };\n    document.addEventListener(\"click\", handleAnchorClick);\n    return () => document.removeEventListener(\"click\", handleAnchorClick);\n  }, []);\n\n  const isHidden = (sec) => hiddenSections.includes(sec);\n    // Typewriter animation: types each skill character by character with blinking caret\n    useEffect(() => {\n        if (activeSkillIdx >= skillNames.length)\n            return;\n        const currentTarget = skillNames[activeSkillIdx];\n        if (currentCharIdx < currentTarget.length) {\n            const timer = setTimeout(() => {\n                setCurrentCharIdx((prev) => prev + 1);\n            }, 38);\n            return () => clearTimeout(timer);\n        }\n        else {\n            const pauseTimer = setTimeout(() => {\n                setTypedSkills((prev) => [\n                    ...prev,\n                    { text: currentTarget, done: true },\n                ]);\n                setActiveSkillIdx((prev) => prev + 1);\n                setCurrentCharIdx(0);\n            }, 220);\n            return () => clearTimeout(pauseTimer);\n        }\n    }, [activeSkillIdx, currentCharIdx, skillNames]);\n    // Fallback demo projects matching GitSkins layout only when showEmpty is true\n    const displayProjects = useMemo(() => {\n        if (projects.length > 0)\n            return projects;\n        if (!showEmpty)\n            return [];\n        return [\n            {\n                title: \"AI RESUME BUILDER\",\n                description: \"Intelligent career document and portfolio generator with multi-template rendering.\",\n                tags: [\"TypeScript\", \"React\"],\n                repoUrl: `https://github.com/${githubHandle || \"developer\"}/AI-Resume-builder`,\n                featured: true,\n            },\n            {\n                title: \"PRACTICE\",\n                description: \"Algorithmic data structures, web systems design, and code sandbox experiments.\",\n                tags: [\"JavaScript\", \"HTML\"],\n                repoUrl: `https://github.com/${githubHandle || \"developer\"}/practice`,\n                featured: false,\n            },\n            {\n                title: \"PORTFOLIO01\",\n                description: \"Interactive personal web showcase with custom styling and animations.\",\n                tags: [\"CSS\", \"HTML\"],\n                repoUrl: `https://github.com/${githubHandle || \"developer\"}/portfolio01`,\n                featured: false,\n            },\n            {\n                title: \"SKYWATCH\",\n                description: \"Real-time atmospheric telemetry and meteorological visualization dashboard.\",\n                tags: [\"TypeScript\", \"React\"],\n                repoUrl: `https://github.com/${githubHandle || \"developer\"}/SkyWatch`,\n                featured: false,\n            },\n        ];\n    }, [projects, showEmpty, githubHandle]);\n    // Card tilts matching GitSkins poster\n    const cardTilts = [-1.2, 1, -0.6, 1.4];\n    // Section builders\n    const sectionMap = {\n        // -------------------------------------------------------------------------\n        // HERO: Exact GitSkins Poster Hero\n        // -------------------------------------------------------------------------\n        hero: (<header key=\"hero\" id=\"hero\" className=\"poster-hero relative min-h-auto lg:min-h-[100svh] overflow-hidden select-none pb-12 lg:pb-0 flex flex-col lg:block\">\n        {/* Giant Centered Gradient Outline Word */}\n        <div className=\"relative lg:absolute lg:left-1/2 lg:top-[5svh] lg:-translate-x-1/2 z-0 pointer-events-none w-full text-center mt-6 lg:mt-0\">\n          <p className=\"poster-word text-[20vw] lg:text-[19vw] leading-[0.82] uppercase tracking-tight\">\n            PORTFOLIO\n          </p>\n        </div>\n\n        {/* Framed Print Portrait in Center Leaning -3deg */}\n        <div className=\"poster-portrait-framed relative lg:absolute lg:left-1/2 lg:bottom-[14svh] lg:-translate-x-1/2 z-10 pointer-events-none flex items-center justify-center mx-auto mt-[-10vw] lg:mt-0 mb-6 lg:mb-0\">\n          <div className=\"relative rotate-[-3deg] w-[min(58vw,280px)] lg:w-[min(28vw,360px)] min-w-[200px] transition-transform duration-500 hover:rotate-0\" style={{ willChange: \"transform\" }}>\n            {avatarUrl ? (<img src={avatarUrl} alt={fullName} className=\"w-full aspect-[4/5] object-cover bg-white border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105\"/>) : (\n            /* Cyberpunk / Grid manga sketch art portrait fallback matching the screenshot */\n            <div className=\"w-full aspect-[4/5] bg-[#fff] border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative\">\n                <div className=\"absolute inset-0 bg-[radial-gradient(#151515_1px,transparent_1px)] [background-size:16px_16px] opacity-20\"/>\n                <div className=\"relative z-10 text-center px-4\">\n                  <span className=\"font-['Anton'] text-6xl sm:text-8xl text-[#151515] tracking-tighter\">\n                    {firstName.slice(0, 2).toUpperCase()}\n                  </span>\n                  <p className=\"font-mono text-xs uppercase tracking-widest text-[#e11d2a] font-bold mt-2\">\n                    ✦ DEVELOPER PRINT\n                  </p>\n                </div>\n              </div>)}\n          </div>\n        </div>\n\n        {/* Bottom Left: Hello, I'm + FIRST NAME in giant Anton Red */}\n        <div className=\"poster-intro relative lg:absolute lg:left-[clamp(20px,5vw,80px)] lg:bottom-[clamp(28px,7svh,80px)] z-20 px-5 sm:px-8 lg:px-0 mt-4 lg:mt-0 text-left\">\n          <p className=\"m-0 mb-1 font-['Inter'] font-semibold text-[clamp(16px,1.6vw,24px)] text-[#151515]\">\n            Hello, I&apos;m\n          </p>\n          <h1 className=\"m-0 font-['Anton'] font-normal text-[clamp(56px,10vw,170px)] leading-[0.86] text-[#e11d2a] uppercase tracking-normal\">\n            {firstName}\n          </h1>\n        </div>\n\n        {/* Bottom Right: ROLE in Bold Red + Live Typewriter Skills */}\n        <div className=\"poster-role relative lg:absolute lg:right-[clamp(20px,5vw,80px)] lg:bottom-[clamp(28px,9svh,110px)] z-20 max-w-full lg:max-w-[min(34ch,32vw)] px-5 sm:px-8 lg:px-0 mt-6 lg:mt-0 text-left\">\n          <h2 className=\"m-0 mb-3 font-['Inter'] font-extrabold text-[clamp(20px,2.2vw,34px)] tracking-[-0.01em] text-[#e11d2a] uppercase leading-[1.05]\">\n            {headline}\n          </h2>\n          <ul className=\"m-0 p-0 list-none grid gap-1.5 font-['Inter']\">\n            {typedSkills.map((sk, idx) => (<li key={idx} className=\"flex gap-2.5 items-baseline text-[clamp(14px,1.15vw,18px)] text-[#4b4b4b]\">\n                <span className=\"text-[#151515] text-[0.9em]\">✦</span>\n                <span className=\"font-medium text-[#151515]\">{sk.text}</span>\n              </li>))}\n            {activeSkillIdx < skillNames.length && (<li className=\"flex gap-2.5 items-baseline text-[clamp(14px,1.15vw,18px)] text-[#4b4b4b]\">\n                <span className=\"text-[#151515] text-[0.9em]\">✦</span>\n                <span className=\"font-medium text-[#151515]\">\n                  {skillNames[activeSkillIdx].slice(0, currentCharIdx)}\n                </span>\n                <span className=\"inline-block w-[1.5px] h-[1em] ml-0.5 bg-[#151515] animate-[blink_1s_steps(2)_infinite]\"/>\n              </li>)}\n          </ul>\n        </div>\n      </header>),\n        // -------------------------------------------------------------------------\n        // MARQUEE BAND: Exact Red Ticker with Contributions, Languages, Repos\n        // -------------------------------------------------------------------------\n        marquee: (<div key=\"marquee\" className=\"poster-band relative z-20 overflow-hidden text-white py-[18px] select-none shadow-md\" style={{ backgroundColor: accentColor }}>\n        <div className=\"poster-track flex items-center gap-12 w-max font-['Anton'] text-[clamp(28px,3.4vw,52px)] uppercase whitespace-nowrap animate-[marquee_35s_linear_infinite]\" style={{ willChange: \"transform\" }}>\n          <span>{marqueeCustomText}</span>\n          {displayProjects.length > 0 && (<>\n              <span className=\"opacity-90\">✦</span>\n              <span>REPOS <b>{displayProjects.length}</b></span>\n            </>)}\n          <span className=\"opacity-90\">✦</span>\n          <span>{marqueeCustomText}</span>\n          {displayProjects.length > 0 && (<>\n              <span className=\"opacity-90\">✦</span>\n              <span>REPOS <b>{displayProjects.length}</b></span>\n            </>)}\n          <span className=\"opacity-90\">✦</span>\n        </div>\n      </div>),\n        // -------------------------------------------------------------------------\n        // SELECTED WORK: Staggered Tall Cards (9:14) with Initials Watermark & Glowing Colors\n        // -------------------------------------------------------------------------\n        projects: displayProjects.length > 0 ? (<section key=\"projects\" id=\"work\" className=\"poster-work relative py-[clamp(80px,10vw,140px)] overflow-hidden\">\n        {/* Giant Ghost \"PORTFOLIO\" in Background */}\n        <div className={`absolute left-1/2 top-10 -translate-x-1/2 z-0 pointer-events-none select-none ${watermarkOpacityClass}`}>\n          <p className=\"poster-word text-[19vw] leading-none uppercase tracking-tight\">\n            PORTFOLIO\n          </p>\n        </div>\n\n        {/* Head: SELECTED WORK + Subtitle */}\n        <div className=\"relative z-10 px-[clamp(20px,5vw,80px)] flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12\">\n          <h3 className=\"m-0 font-['Anton'] font-normal text-[clamp(48px,7vw,110px)] leading-[0.9] text-[#151515] uppercase\">\n            SELECTED <em className=\"text-[#e11d2a] not-italic\">WORK</em>\n          </h3>\n          <p className=\"m-0 max-w-[38ch] text-[#4b4b4b] text-sm sm:text-base leading-[1.55] font-['Inter']\">\n            {githubHandle\n                ? `Projects pulled straight from github.com/${githubHandle}, built in public.`\n                : \"Featured projects and open source code repositories.\"}\n          </p>\n        </div>\n\n        {/* Cards Grid: 4 columns on desktop, 2 on tablet, staggered */}\n        <div className=\"poster-cards relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[clamp(14px,1.6vw,24px)] px-[clamp(20px,5vw,80px)]\">\n          {displayProjects.map((proj, idx) => {\n                const rawLang = proj.tags?.[0] || \"JavaScript\";\n                const techKey = Object.keys(LANG_COLORS).find((k) => k.toLowerCase() === rawLang.toLowerCase()) || \"JavaScript\";\n                const langColor = LANG_COLORS[techKey] || \"#e11d2a\";\n                const tilt = cardTilts[idx % 4];\n                const isStaggerDesktop = (idx % 4 === 1) || (idx % 4 === 3);\n                const isStaggerTablet = (idx % 2 === 1);\n                const targetUrl = proj.liveUrl || proj.repoUrl || (githubHandle ? `https://github.com/${githubHandle}/${encodeURIComponent(proj.title)}` : undefined);\n                const initials = (proj.title || \"PR\").slice(0, 2).toUpperCase();\n                const cardContent = (<>\n                {/* Glowing Corner Radial Gradient */}\n                <span className=\"absolute inset-0 z-0 pointer-events-none\" style={{\n                        background: `radial-gradient(120% 70% at 20% 0%, ${langColor} 0%, transparent 60%), linear-gradient(160deg, #1b1b1b, #0e0e0e)`,\n                    }}/>\n\n                {/* Ghost Initials Watermark in Card Background */}\n                <span className=\"absolute right-[-6%] bottom-[-8%] z-0 font-['Anton'] text-[220px] leading-none text-white/[0.06] uppercase select-none pointer-events-none group-hover:text-white/[0.09] transition-colors\">\n                  {initials}\n                </span>\n\n                {/* Card Top: Number 01, 02 */}\n                <div className=\"relative z-10\">\n                  <span className=\"font-['Anton'] text-[22px] opacity-60 group-hover:opacity-100 transition-opacity\">\n                    {String(idx + 1).padStart(2, \"0\")}\n                  </span>\n                </div>\n\n                {/* Project Screenshot / Thumbnail (if available) */}\n                {proj.imageUrl && (<div className=\"relative z-10 w-full h-28 rounded-lg overflow-hidden border border-white/20 my-2\">\n                    <img src={proj.imageUrl} alt={proj.title} className=\"w-full h-full object-cover group-hover:scale-105 transition-transform duration-500\" onError={(e) => {\n                            e.target.style.display = \"none\";\n                        }}/>\n                  </div>)}\n\n                {/* Card Bottom: Title, Description, Language Meta with dot & star */}\n                <div className=\"relative z-10 space-y-2.5\">\n                  <h4 className=\"m-0 font-['Anton'] font-normal text-[clamp(28px,2.4vw,40px)] leading-[0.95] uppercase text-white overflow-wrap-anywhere group-hover:text-[#e11d2a] transition-colors\">\n                    {proj.title}\n                  </h4>\n                  <p className=\"m-0 text-[14px] leading-[1.5] text-white/75 line-clamp-4 font-['Inter']\">\n                    {proj.description || \"No description yet.\"}\n                  </p>\n                  <div className=\"flex items-center gap-3.5 text-[13px] font-semibold text-white/85 font-['Inter'] pt-1\">\n                    <span className=\"flex items-center\">\n                      <i className=\"inline-block w-[9px] h-[9px] mr-1.5 rounded-full\" style={{ backgroundColor: langColor }}/>\n                      <span>{rawLang}</span>\n                    </span>\n                    {showEmpty && <span>★ 0</span>}\n                  </div>\n                </div>\n              </>);\n                const cardClassName = `poster-card group relative flex flex-col justify-between aspect-[9/13] sm:aspect-[9/14] p-5 sm:p-[22px] rounded-[18px] overflow-hidden text-white bg-[#151515] shadow-[0_30px_50px_-30px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-2 hover:rotate-0 hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.7)] ${isStaggerDesktop ? \"lg:mt-16\" : \"\"} ${isStaggerTablet ? \"sm:mt-10 lg:mt-0\" : \"\"}`;\n                if (targetUrl) {\n                    return (<SafeLink key={idx} href={targetUrl} target=\"_blank\" rel=\"noopener\" className={cardClassName} style={{ transform: `rotate(${tilt}deg)` }}>\n                  {cardContent}\n                </SafeLink>);\n                }\n                return (<div key={idx} className={cardClassName} style={{ transform: `rotate(${tilt}deg)` }}>\n                {cardContent}\n              </div>);\n            })}\n        </div>\n      </section>) : null,\n        // -------------------------------------------------------------------------\n        // ABOUT: Exact GitSkins About Layout (Left: ABOUT ME, Right: Bio, Chips, Link)\n        // -------------------------------------------------------------------------\n        about: (<section key=\"about\" id=\"about\" className=\"poster-about px-[clamp(20px,5vw,80px)] pb-[clamp(80px,10vw,140px)] grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-[clamp(28px,5vw,80px)] items-start\">\n        {/* Left: ABOUT ME */}\n        <div>\n          <h3 className=\"m-0 font-['Anton'] font-normal text-[clamp(48px,6vw,96px)] leading-[0.9] uppercase text-[#151515]\">\n            ABOUT <em className=\"text-[#e11d2a] not-italic\">ME</em>\n          </h3>\n        </div>\n\n        {/* Right: Bio + Chips + GitHub link */}\n        <div>\n          <p className=\"m-0 mb-6 font-['Inter'] text-[clamp(18px,1.7vw,26px)] leading-[1.5] text-[#151515]\">\n            {profile?.bio || (githubHandle ? `I build things on GitHub (${githubHandle}). Here's a look at what I've been working on.` : \"I build modern web systems and engineering applications.\")}\n          </p>\n\n          {/* Skill Capsule Chips */}\n          <div className=\"poster-chips flex flex-wrap gap-2 mb-6\">\n            {(skills.length > 0 ? skills.slice(0, 10) : (showEmpty ? [\n                { name: \"HTML\" },\n                { name: \"JavaScript\" },\n                { name: \"TypeScript\" },\n                { name: \"CSS\" },\n                { name: \"Python\" },\n            ] : [])).map((s, sIdx) => {\n                const name = typeof s === \"string\" ? s : s.name;\n                return (<span key={sIdx} className=\"px-3.5 py-2 border-[1.5px] border-[#151515] rounded-full font-['Inter'] font-semibold text-sm text-[#151515] bg-transparent hover:bg-[#151515] hover:text-[#efece6] transition-colors\">\n                  {name}\n                </span>);\n            })}\n          </div>\n\n          {/* Quick Facts / Links */}\n          <div className=\"poster-facts flex flex-wrap gap-4 text-sm font-['Inter'] text-[#4b4b4b]\">\n            {profile?.location && (<span className=\"flex items-center gap-1.5\">\n                <MapPin className=\"h-4 w-4 text-[#e11d2a]\"/>\n                <span>{profile.location}</span>\n              </span>)}\n            {githubHandle && (<SafeLink href={`https://github.com/${githubHandle}`} target=\"_blank\" rel=\"noopener\" className=\"text-[#151515] font-semibold underline underline-offset-4 hover:text-[#e11d2a] transition-colors\">\n                github.com/{githubHandle}\n              </SafeLink>)}\n          </div>\n        </div>\n      </section>),\n        // -------------------------------------------------------------------------\n        // EXPERIENCE: Timeline Adapted in Poster Style\n        // -------------------------------------------------------------------------\n        experience: experience.length > 0 ? (<section key=\"experience\" id=\"experience\" className=\"px-[clamp(20px,5vw,80px)] pb-[clamp(80px,10vw,140px)] border-t border-black/10 pt-16\">\n        <h3 className=\"m-0 font-['Anton'] font-normal text-[clamp(48px,6vw,96px)] leading-[0.9] uppercase text-[#151515] mb-12\">\n          WORK <em className=\"text-[#e11d2a] not-italic\">EXPERIENCE</em>\n        </h3>\n        <div className=\"divide-y divide-black/10\">\n          {experience.map((exp, eIdx) => (<div key={eIdx} className=\"py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline\">\n              <div className=\"md:col-span-4\">\n                <span className=\"font-mono text-xs font-bold text-[#e11d2a] uppercase\">\n                  {[exp.startDate || (showEmpty ? \"2021\" : \"\"), exp.endDate || (exp.current ? \"PRESENT\" : \"\")].filter(Boolean).join(\" — \") || (showEmpty ? \"2021 — PRESENT\" : \"PRESENT\")}\n                </span>\n                <h4 className=\"font-['Anton'] text-3xl uppercase text-[#151515] mt-1\">\n                  {exp.company}\n                </h4>\n              </div>\n              <div className=\"md:col-span-8 space-y-2 font-['Inter']\">\n                <h5 className=\"font-extrabold text-xl text-[#151515] uppercase\">\n                  {exp.title}\n                </h5>\n                {exp.description && (<p className=\"text-[#4b4b4b] text-base leading-relaxed\">{exp.description}</p>)}\n                {exp.highlights && exp.highlights.length > 0 && (<ul className=\"space-y-1 pt-2 list-none p-0\">\n                    {exp.highlights.map((h, hIdx) => (<li key={hIdx} className=\"flex gap-2 text-sm text-[#151515]\">\n                        <span className=\"text-[#e11d2a]\">✦</span>\n                        <span>{h}</span>\n                      </li>))}\n                  </ul>)}\n              </div>\n            </div>))}\n        </div>\n      </section>) : null,\n        // -------------------------------------------------------------------------\n        // EDUCATION & CERTIFICATIONS\n        // -------------------------------------------------------------------------\n        education: (education.length > 0 || certifications.length > 0) ? (<section key=\"education\" id=\"education\" className=\"px-[clamp(20px,5vw,80px)] pb-[clamp(80px,10vw,140px)] border-t border-black/10 pt-16\">\n        <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-12\">\n          {education.length > 0 && (<div>\n              <h3 className=\"m-0 font-['Anton'] text-[clamp(40px,5vw,72px)] uppercase text-[#151515] mb-8\">\n                EDUCATION\n              </h3>\n              <div className=\"space-y-6\">\n                {education.map((edu, idx) => (<div key={idx} className=\"p-6 bg-white rounded-xl border-2 border-[#151515] shadow-[4px_4px_0px_#151515] hover:shadow-[6px_6px_0px_#151515] hover:-translate-y-0.5 transition-all duration-200 space-y-1.5 font-['Inter']\">\n                    <span className=\"font-mono text-xs font-bold text-[#e11d2a]\">\n                      {edu.startDate} — {edu.endDate || \"PRESENT\"}\n                    </span>\n                    <h4 className=\"font-['Anton'] text-2xl uppercase text-[#151515]\">\n                      {edu.degree}\n                    </h4>\n                    <p className=\"font-semibold text-sm text-[#4b4b4b]\">{edu.institution}</p>\n                  </div>))}\n              </div>\n            </div>)}\n\n          {certifications.length > 0 && (<div>\n              <h3 className=\"m-0 font-['Anton'] text-[clamp(40px,5vw,72px)] uppercase text-[#151515] mb-8\">\n                CERTIFICATIONS\n              </h3>\n              <div className=\"space-y-6\">\n                {certifications.map((cert, idx) => (<div key={idx} className=\"p-6 bg-white rounded-xl border-2 border-[#151515] shadow-[4px_4px_0px_#151515] hover:shadow-[6px_6px_0px_#151515] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-between gap-4 font-['Inter']\">\n                    <div>\n                      <h4 className=\"font-['Anton'] text-2xl uppercase text-[#151515]\">\n                        {cert.name}\n                      </h4>\n                      {cert.issuer && <p className=\"font-semibold text-sm text-[#4b4b4b]\">{cert.issuer}</p>}\n                    </div>\n                    <Award className=\"h-7 w-7 text-[#e11d2a] shrink-0\"/>\n                  </div>))}\n              </div>\n            </div>)}\n        </div>\n      </section>) : null,\n        // -------------------------------------------------------------------------\n        // CTA: Exact GitSkins \"Ready to Build Something?\"\n        // -------------------------------------------------------------------------\n        contact: (<section key=\"contact\" id=\"contact\" className=\"poster-cta relative min-h-auto lg:min-h-[92svh] overflow-hidden select-none py-16 lg:py-0 flex flex-col lg:block\">\n        {/* Giant Centered Word: READY TO */}\n        <div className=\"relative lg:absolute lg:left-1/2 lg:top-[6svh] lg:-translate-x-1/2 z-0 pointer-events-none w-full text-center mt-4 lg:mt-0\">\n          <p className=\"poster-word text-[20vw] lg:text-[19vw] leading-[0.82] uppercase tracking-tight\">\n            READY TO\n          </p>\n        </div>\n\n        {/* Leaning Framed Portrait: +3deg in center */}\n        <div className=\"poster-portrait-framed relative lg:absolute lg:left-1/2 lg:bottom-[14svh] lg:-translate-x-1/2 z-10 pointer-events-none flex items-center justify-center mx-auto mt-[-8vw] lg:mt-0 mb-8 lg:mb-0\">\n          <div className=\"relative rotate-[3deg] w-[min(56vw,260px)] lg:w-[min(28vw,360px)] min-w-[200px]\">\n            {avatarUrl ? (<img src={avatarUrl} alt={fullName} className=\"w-full aspect-[4/5] object-cover bg-white border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] filter contrast-105\"/>) : (<div className=\"w-full aspect-[4/5] bg-[#fff] border-[8px] sm:border-[12px] border-white rounded-[6px] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center overflow-hidden relative\">\n                <div className=\"absolute inset-0 bg-[radial-gradient(#151515_1px,transparent_1px)] [background-size:16px_16px] opacity-20\"/>\n                <div className=\"relative z-10 text-center px-4\">\n                  <span className=\"font-['Anton'] text-6xl sm:text-8xl text-[#151515] tracking-tighter\">\n                    {firstName.slice(0, 2).toUpperCase()}\n                  </span>\n                  <p className=\"font-mono text-xs uppercase tracking-widest text-[#e11d2a] font-bold mt-2\">\n                    ✦ READY TO BUILD\n                  </p>\n                </div>\n              </div>)}\n          </div>\n        </div>\n\n        {/* Bottom Left: BUILD SOMETHING? in giant black Anton font */}\n        <div className=\"poster-cta-line relative lg:absolute lg:left-[clamp(20px,5vw,80px)] lg:bottom-[clamp(36px,10svh,110px)] z-20 px-5 sm:px-8 lg:px-0 mt-4 lg:mt-0\">\n          <h3 className=\"m-0 font-['Anton'] font-normal text-[clamp(44px,7.5vw,128px)] leading-[0.9] text-[#151515] uppercase\">\n            BUILD SOMETHING?\n          </h3>\n        </div>\n\n        {/* Bottom Right: Red Pill Button \"Get in touch →\" */}\n        <div className=\"poster-cta-go relative lg:absolute lg:right-[clamp(20px,5vw,80px)] lg:bottom-[clamp(44px,11svh,120px)] z-20 px-5 sm:px-8 lg:px-0 mt-6 lg:mt-0\">\n          <SafeLink href={contactEmail ? `mailto:${contactEmail}` : (githubHandle ? `https://github.com/${githubHandle}` : \"#hero\")} target={contactEmail || !githubHandle ? undefined : \"_blank\"} rel=\"noopener\" className=\"poster-go inline-flex items-center justify-center w-full sm:w-auto gap-2.5 px-7 py-4 rounded-full bg-[#e11d2a] text-white font-['Inter'] font-extrabold text-[17px] shadow-[0_16px_30px_-14px_#e11d2a] hover:-translate-y-1 transition-transform\">\n            <span>Get in touch</span>\n            <span aria-hidden=\"true\">→</span>\n          </SafeLink>\n        </div>\n      </section>),\n    };\n    return (<div className=\"poster-template relative bg-[#efece6] text-[#151515] min-h-screen font-['Inter'] overflow-x-hidden\">\n      {/* Scoped CSS matching GitSkins exactly */}\n      <style>{`\n        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap');\n\n        .poster-template {\n          --accent: ${accentColor};\n          --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);\n          --paper: #efece6;\n          --ink: #151515;\n          --ink-2: #4b4b4b;\n          --display: 'Anton', 'Bebas Neue', Impact, sans-serif;\n          --body: 'Inter', system-ui, -apple-system, sans-serif;\n        }\n\n        .poster-template a:focus-visible,\n        .poster-template button:focus-visible {\n          outline: 3px solid #e11d2a !important;\n          outline-offset: 3px !important;\n        }\n\n        /* Paper Noise Texture Overlay */\n        .poster-template::before {\n          content: '';\n          position: fixed;\n          inset: 0;\n          z-index: 0;\n          pointer-events: none;\n          opacity: 0.35;\n          mix-blend-mode: multiply;\n          background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");\n        }\n\n        /* The Giant Word */\n        .poster-word {\n          margin: 0;\n          font-family: var(--display);\n          font-weight: 400;\n          text-transform: uppercase;\n          line-height: .82;\n          padding-top: .14em;\n          margin-top: -.14em;\n          letter-spacing: -.01em;\n          white-space: nowrap;\n          user-select: none;\n          color: transparent;\n          -webkit-text-stroke: 2px var(--accent);\n          background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 55%, transparent) 45%, color-mix(in srgb, var(--accent) 6%, transparent) 100%);\n          -webkit-background-clip: text;\n          background-clip: text;\n        }\n\n        /* Marquee Animation */\n        @media (prefers-reduced-motion: reduce) {\n          .poster-track { animation: none !important; transform: none !important; }\n          .poster-portrait-framed > div { transform: none !important; animation: none !important; }\n        }\n        .poster-band:hover .poster-track,\n        .poster-band:focus-within .poster-track {\n          animation-play-state: paused;\n        }\n        @keyframes marquee {\n          to { transform: translateX(-50%); }\n        }\n\n        /* Cursor Blink */\n        @keyframes blink {\n          50% { opacity: 0; }\n        }\n\n        @media (max-width: 860px) {\n          .poster-hero { min-height: auto; padding-bottom: 40px; }\n          .poster-hero .poster-word { position: relative; left: auto; top: auto; transform: none; display: block; margin-top: 28px; }\n          .poster-portrait-framed { position: relative !important; left: auto !important; bottom: auto !important; margin: -16vw auto 0 !important; transform: none !important; width: min(72vw, 320px) !important; }\n          .poster-intro, .poster-role { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; padding: 0 20px !important; }\n          .poster-intro { margin-top: 24px; }\n          .poster-role { margin-top: 20px; max-width: none !important; }\n          .poster-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }\n          .poster-card:nth-child(2n) { margin-top: 36px !important; }\n          .poster-cta { min-height: auto; padding-bottom: 50px; }\n          .poster-cta .poster-word { position: relative; left: auto; top: auto; transform: none; display: block; margin-top: 40px; }\n          .poster-cta-line, .poster-cta-go { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; }\n        }\n\n        @media (max-width: 600px) {\n          .poster-cards { grid-template-columns: 1fr !important; gap: 20px !important; }\n          .poster-card:nth-child(2n) { margin-top: 0 !important; }\n          .poster-card { aspect-ratio: auto !important; min-height: 380px !important; }\n        }\n      `}</style>\n\n      {/* Main Content Sections */}\n      <main className=\"relative z-10\">\n        {sectionOrder.map((sectionKey) => {\n            if (isHidden(sectionKey))\n                return null;\n            if (sectionKey === \"hero\") {\n                return (<div key=\"hero-with-marquee\">\n                {sectionMap.hero}\n                {sectionMap.marquee}\n              </div>);\n            }\n            return sectionMap[sectionKey] || null;\n        })}\n      </main>\n\n      {/* Footer matching GitSkins exactly */}\n      <footer className=\"relative z-10 py-[22px] px-[clamp(20px,5vw,80px)] flex justify-between gap-4 text-[13px] text-[#4b4b4b] border-t border-black/[0.08] font-['Inter']\">\n        <span>© {new Date().getFullYear()} {fullName}</span>\n      </footer>\n\n      {/* Back to Top */}\n      {showBackToTop && (<button onClick={scrollToTop} aria-label=\"Back to top\" className=\"fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#151515] text-[#efece6] shadow-xl hover:bg-[#e11d2a] hover:text-white transition-all transform hover:-translate-y-1\">\n          <ArrowUp className=\"h-5 w-5\"/>\n        </button>)}\n    </div>);\n}\n";
 }
 
 function getFullDevPortTemplateJsx() {
@@ -4877,8 +5839,13 @@ const TECH_PILL_COLORS = [
   "border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
 ];
 
-export function DevPortTemplate({ portfolio = {} }) {
+export function DevPortTemplate({
+  portfolio = {},
+  sectionOrder = ["hero", "about", "skills", "projects", "experience", "education", "contact"],
+  hiddenSections = [],
+}) {
   const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = portfolio;
+  const isHidden = (sec) => hiddenSections.includes(sec);
 
   const primaryColor = portfolio?.design?.primaryColor || "#06b6d4";
   const theme = portfolio?.design?.theme || "system";
@@ -4919,6 +5886,10 @@ export function DevPortTemplate({ portfolio = {} }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayText(roles[0] || "");
+      return;
+    }
     const currentFullRole = roles[currentRoleIndex % roles.length];
     const typingSpeed = isDeleting ? 40 : 80;
 
@@ -4942,6 +5913,7 @@ export function DevPortTemplate({ portfolio = {} }) {
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
+    const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!el) return;
     const headerOffset = 76;
     const elementPosition = el.getBoundingClientRect().top;
@@ -4949,7 +5921,7 @@ export function DevPortTemplate({ portfolio = {} }) {
 
     window.scrollTo({
       top: offsetPosition,
-      behavior: "smooth",
+      behavior: typeof prefersReduced !== "undefined" && prefersReduced ? "auto" : "smooth",
     });
     setActiveSection(id);
   };
@@ -5110,7 +6082,10 @@ export function DevPortTemplate({ portfolio = {} }) {
       </header>
 
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 space-y-24 py-8 sm:py-16">
-        <section id="hero" className="pt-8 sm:pt-14 pb-12 sm:pb-20">
+        {(() => {
+          const sectionMap = {
+            hero: (
+              <section key="hero" id="hero" className="pt-8 sm:pt-14 pb-12 sm:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             <div className="lg:col-span-7 space-y-6 text-left">
               <div
@@ -5393,10 +6368,10 @@ export function DevPortTemplate({ portfolio = {} }) {
               </div>
             </div>
           </div>
-        </section>
-
-        {bio && (
-          <section id="about" className="scroll-mt-20">
+              </section>
+            ),
+            about: bio ? (
+              <section key="about" id="about" className="scroll-mt-20">
             <div
               className={\`p-6 sm:p-10 rounded-2xl border backdrop-blur-xl shadow-xl relative overflow-hidden \${
                 isLight ? "bg-white border-neutral-200/90 text-neutral-900" : "bg-white/[0.03] border-white/10 text-neutral-100"
@@ -5427,11 +6402,10 @@ export function DevPortTemplate({ portfolio = {} }) {
                 <p className="whitespace-pre-line">{bio}</p>
               </div>
             </div>
-          </section>
-        )}
-
-        {skills.length > 0 && (
-          <section id="skills" className="scroll-mt-20 space-y-6">
+              </section>
+            ) : null,
+            skills: skills.length > 0 ? (
+              <section key="skills" id="skills" className="scroll-mt-20 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
@@ -5492,11 +6466,10 @@ export function DevPortTemplate({ portfolio = {} }) {
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {projects.length > 0 && (
-          <section id="projects" className="scroll-mt-20 space-y-6">
+              </section>
+            ) : null,
+            projects: projects.length > 0 ? (
+              <section key="projects" id="projects" className="scroll-mt-20 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
@@ -5593,11 +6566,10 @@ export function DevPortTemplate({ portfolio = {} }) {
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {experience.length > 0 && (
-          <section id="experience" className="scroll-mt-20 space-y-6">
+              </section>
+            ) : null,
+            experience: experience.length > 0 ? (
+              <section key="experience" id="experience" className="scroll-mt-20 space-y-6">
             <div className="flex items-center gap-2.5 mb-1.5">
               <div
                 className="h-7 w-7 rounded-lg flex items-center justify-center"
@@ -5657,11 +6629,10 @@ export function DevPortTemplate({ portfolio = {} }) {
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {(education.length > 0 || certifications.length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              </section>
+            ) : null,
+            education: (education.length > 0 || certifications.length > 0) ? (
+              <div key="education" className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {education.length > 0 && (
               <section id="education" className="scroll-mt-20 space-y-4">
                 <div className="flex items-center gap-2">
@@ -5713,10 +6684,10 @@ export function DevPortTemplate({ portfolio = {} }) {
                 </div>
               </section>
             )}
-          </div>
-        )}
-
-        <section id="contact" className="scroll-mt-20">
+              </div>
+            ) : null,
+            contact: (
+              <section key="contact" id="contact" className="scroll-mt-20">
           <div
             className={\`p-8 sm:p-12 rounded-3xl border backdrop-blur-2xl shadow-2xl relative overflow-hidden text-center space-y-6 \${
               isLight
@@ -5787,7 +6758,14 @@ export function DevPortTemplate({ portfolio = {} }) {
               </div>
             )}
           </div>
-        </section>
+              </section>
+            ),
+          };
+          return sectionOrder
+            .filter((sec) => !isHidden(sec))
+            .map((sec) => sectionMap[sec])
+            .filter(Boolean);
+        })()}
       </main>
 
       <button
@@ -5835,352 +6813,15 @@ export function DevPortTemplate({ portfolio = {} }) {
 }
 
 function getFullModernCreativeTemplateJsx() {
-  return `import React from "react";
-import { ArrowRight, Code2, Mail, Sparkles, User } from "lucide-react";
-import { BrandIcon } from "../common/BrandIcon.jsx";
-import { SafeLink } from "../common/SafeLink.jsx";
-import { normalizeAvatarUrl } from "../common/urlUtils.js";
-
-export function ModernCreativeTemplate({ portfolio = {} }) {
-  const { profile = {}, socialLinks = [], skills = [], projects = [], experience = [] } = portfolio;
-  const primaryColor = portfolio?.design?.primaryColor || "#9333ea";
-  const theme = portfolio?.design?.theme || "system";
-  const isLight =
-    theme === "light" ||
-    (theme === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-color-scheme: light)").matches &&
-      !window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-
-  const fullName = profile.fullName || "Creative Engineer";
-  const firstName = fullName ? fullName.split(" ")[0] : "Creative";
-  const headline = profile.headline || "Data Analyst & Creative Engineer";
-  const bio = profile.bio || "Data Analyst with extensive experience transforming raw data into actionable insights.";
-  const avatarUrl = normalizeAvatarUrl(profile.avatarUrl);
-
-  const primaryGradient = \`linear-gradient(90deg, \${primaryColor}, #6366f1)\`;
-  const haloGradient = \`linear-gradient(135deg, \${primaryColor}, #6366f1, #ec4899)\`;
-
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const offset = 76;
-    const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: pos, behavior: "smooth" });
-  };
-
-  return (
-    <div className={\`relative min-h-screen transition-colors duration-300 font-sans antialiased overflow-x-hidden \${isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#0b0f19] text-neutral-100"}\`}>
-      <header className={\`sticky top-0 z-40 backdrop-blur-xl border-b h-18 flex items-center transition-colors \${isLight ? "bg-white/85 border-neutral-200" : "bg-[#0b0f19]/85 border-white/5"}\`}>
-        <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
-          <span className={\`font-bold text-lg \${isLight ? "text-neutral-900" : "text-white"}\`}>{firstName}</span>
-          <nav className={\`flex gap-6 text-sm \${isLight ? "text-neutral-600" : "text-neutral-400"}\`}>
-            <button onClick={() => scrollTo("hero")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Home</button>
-            <button onClick={() => scrollTo("projects")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Projects</button>
-            <button onClick={() => scrollTo("contact")} className={\`hover:\${isLight ? "text-neutral-900" : "text-white"}\`}>Contact</button>
-          </nav>
-          <button
-            onClick={() => scrollTo("contact")}
-            style={{ background: primaryGradient, boxShadow: \`0 0 20px \${primaryColor}55\` }}
-            className="px-5 py-2 rounded-xl text-sm font-semibold text-white"
-          >
-            Hire Me
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-16 space-y-20">
-        <section id="hero" className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase border"
-              style={{ backgroundColor: \`\${primaryColor}15\`, borderColor: \`\${primaryColor}30\`, color: primaryColor }}
-            >
-              <Sparkles className="h-3.5 w-3.5" style={{ color: primaryColor }} />
-              <span>Welcome to my portfolio</span>
-            </div>
-            <h1 className={\`text-5xl sm:text-6xl font-extrabold \${isLight ? "text-neutral-900" : "text-white"}\`}>
-              Hi, I'm <span className="text-transparent bg-clip-text" style={{ backgroundImage: haloGradient }}>{fullName}</span>
-            </h1>
-            <p className="text-xl font-semibold font-mono" style={{ color: primaryColor }}>{headline}</p>
-            <p className={\`text-base max-w-xl \${isLight ? "text-neutral-600" : "text-neutral-300"}\`}>{bio}</p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => scrollTo("projects")}
-                style={{ background: primaryGradient, boxShadow: \`0 0 20px \${primaryColor}66\` }}
-                className="px-6 py-3 rounded-xl text-sm font-semibold text-white"
-              >
-                Explore My Work &rarr;
-              </button>
-              <button
-                onClick={() => scrollTo("contact")}
-                className={\`px-6 py-3 rounded-xl text-sm font-medium border transition-colors \${isLight ? "border-neutral-300 text-neutral-800 hover:bg-neutral-100" : "border-white/15 text-white hover:bg-white/10"}\`}
-              >
-                Contact Me
-              </button>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 flex justify-center">
-            <div
-              className="relative w-64 h-64 rounded-full p-2"
-              style={{ background: haloGradient, boxShadow: \`0 0 50px \${primaryColor}50\` }}
-            >
-              <div className={\`w-full h-full rounded-full overflow-hidden flex items-center justify-center \${isLight ? "bg-white" : "bg-indigo-950"}\`}>
-                {avatarUrl ? <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" /> : <span className="text-5xl font-black" style={{ color: primaryColor }}>{fullName[0]}</span>}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {projects.length > 0 && (
-          <section id="projects" className="space-y-8">
-            <h2 className={\`text-3xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>Featured Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map((p, idx) => (
-                <div key={idx} className={\`p-6 rounded-2xl border space-y-4 \${isLight ? "bg-white border-neutral-200 shadow-sm" : "bg-white/[0.03] border-white/10"}\`}>
-                  <h3 className={\`font-bold text-lg \${isLight ? "text-neutral-900" : "text-white"}\`}>{p.title}</h3>
-                  <p className={\`text-sm \${isLight ? "text-neutral-600" : "text-neutral-300"}\`}>{p.description}</p>
-                  {p.liveUrl && <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-sm font-semibold hover:underline">Explore Project &rarr;</SafeLink>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
-    </div>
-  );
-}
-`;
+  return "import { useEffect, useMemo, useState } from \"react\";\nimport { ArrowRight, ArrowUp, Briefcase, Camera, Code2, ExternalLink, Mail, Sparkles, User, } from \"lucide-react\";\nimport { BrandIcon } from \"../common/BrandIcon.jsx\";\nimport { SafeLink } from \"../common/SafeLink.jsx\";\nimport { normalizeAvatarUrl } from \"../common/urlUtils.js\";\nexport function ModernCreativeTemplate({ portfolio, showEmpty = false, sectionOrder: _sectionOrder = [\"hero\", \"about\", \"skills\", \"projects\", \"experience\", \"education\", \"certifications\", \"contact\"], hiddenSections = [], }) {\n    const { profile, socialLinks = [], skills = [], experience = [], projects = [] } = portfolio;\n    const primaryColor = portfolio?.design?.primaryColor || \"#9333ea\";\n    const theme = portfolio?.design?.theme || \"system\";\n    const templateSettings = portfolio?.design?.templateSettings || {};\n    const glassBlurClass = templateSettings.glassBlur === \"deep\"\n        ? \"backdrop-blur-2xl\"\n        : templateSettings.glassBlur === \"subtle\"\n            ? \"backdrop-blur-sm\"\n            : \"backdrop-blur-md\";\n    const showGradientGlow = templateSettings.gradientGlow !== false;\n    const isLight = theme === \"light\" ||\n        (theme === \"system\" &&\n            typeof window !== \"undefined\" &&\n            window.matchMedia?.(\"(prefers-color-scheme: light)\").matches &&\n            !window.matchMedia?.(\"(prefers-color-scheme: dark)\").matches);\n    const [activeSection, setActiveSection] = useState(\"hero\");\n    const fullName = profile?.fullName || (showEmpty ? \"John Doe\" : \"\");\n    const headline = profile?.headline || (showEmpty ? \"Data Analyst & Creative Engineer\" : \"\");\n    const bio = profile?.bio ||\n        (showEmpty\n            ? \"Data Analyst with 4+ years of experience transforming raw data into actionable insights. Skilled in SQL, Python, and data visualization.\"\n            : \"\");\n    const avatarUrl = normalizeAvatarUrl(profile?.avatarUrl, 288);\n    const firstName = fullName ? fullName.split(\" \")[0] : \"John\";\n    const initials = (fullName || \"JD\")\n        .split(\" \")\n        .map((n) => n[0])\n        .filter(Boolean)\n        .slice(0, 2)\n        .join(\"\")\n        .toUpperCase();\n    // Dynamic styling tokens\n    const primaryGradient = `linear-gradient(90deg, ${primaryColor}, #6366f1)`;\n    const haloGradient = `linear-gradient(135deg, ${primaryColor}, #6366f1, #ec4899)`;\n    // Experience calculation for floating stat badge\n    const experienceYears = useMemo(() => {\n        if (experience.length === 0)\n            return \"4+\";\n        const yrs = Math.max(1, experience.length * 1.5);\n        return `${Math.round(yrs)}+`;\n    }, [experience]);\n    // Smooth scroll handler with header offset\n    const scrollTo = (id) => {\n        const el = document.getElementById(id);\n        if (!el)\n            return;\n        const headerOffset = 76;\n        const elementPosition = el.getBoundingClientRect().top;\n        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;\n        window.scrollTo({\n            top: offsetPosition,\n            behavior: \"smooth\",\n        });\n        setActiveSection(id);\n    };\n    // Active section spy on scroll\n    useEffect(() => {\n        const handleScroll = () => {\n            const scrollPos = window.scrollY + 120;\n            const sections = [\"hero\", \"about\", \"skills\", \"projects\", \"experience\", \"education\", \"certifications\", \"contact\"];\n            for (const s of sections) {\n                const el = document.getElementById(s);\n                if (el) {\n                    const top = el.offsetTop;\n                    const height = el.offsetHeight;\n                    if (scrollPos >= top && scrollPos < top + height) {\n                        setActiveSection(s);\n                        break;\n                    }\n                }\n            }\n        };\n        window.addEventListener(\"scroll\", handleScroll, { passive: true });\n        return () => window.removeEventListener(\"scroll\", handleScroll);\n    }, []);\n    const isHidden = (sec) => hiddenSections.includes(sec);\n    return (<div className={`relative min-h-screen transition-colors duration-300 selection:bg-purple-500/30 selection:text-white antialiased overflow-x-hidden scroll-smooth ${isLight ? \"bg-[#f8fafc] text-neutral-900\" : \"bg-[#0b0f19] text-neutral-100\"}`}>\n      {/* Subtle deep radial ambient lighting */}\n      {showGradientGlow && (<div className={`pointer-events-none fixed inset-0 overflow-hidden z-0 transition-opacity duration-300 ${isLight ? \"opacity-20\" : \"opacity-100\"}`}>\n          <div className=\"absolute top-[10%] right-[10%] h-[550px] w-[550px] rounded-full blur-[150px]\" style={{ backgroundColor: `${primaryColor}22` }}/>\n          <div className=\"absolute top-[40%] left-[-5%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[170px]\"/>\n          <div className=\"absolute bottom-[5%] right-[20%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]\"/>\n        </div>)}\n\n      {/* Clean Modern Top Navbar */}\n      <header className={`sticky top-0 z-40 ${glassBlurClass} border-b transition-all duration-200 ${isLight\n            ? \"bg-white/85 border-neutral-200/80 shadow-xs text-neutral-800\"\n            : \"bg-[#0b0f19]/85 border-white/5 text-neutral-100\"}`}>\n        <div className=\"max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4\">\n          {/* Logo / Brand Name */}\n          <button type=\"button\" onClick={() => scrollTo(\"hero\")} className=\"text-lg font-bold tracking-tight transition-colors\" style={{ color: primaryColor }}>\n            {firstName || \"Portfolio\"}\n          </button>\n\n          {/* Nav Items */}\n          <nav className={`hidden md:flex items-center gap-6 text-sm ${isLight ? \"text-neutral-600\" : \"text-neutral-400\"}`}>\n            {[\n            { id: \"hero\", label: \"Home\" },\n            { id: \"about\", label: \"About\", condition: !!bio || showEmpty },\n            { id: \"skills\", label: \"Skills\", condition: skills.length > 0 || showEmpty },\n            { id: \"projects\", label: \"Projects\", condition: projects.length > 0 || showEmpty },\n            { id: \"experience\", label: \"Experience\", condition: experience.length > 0 || showEmpty },\n            { id: \"contact\", label: \"Contact\", condition: true },\n        ]\n            .filter((item) => item.condition !== false)\n            .map((item) => (<button key={item.id} type=\"button\" onClick={() => scrollTo(item.id)} style={activeSection === item.id ? { color: primaryColor, fontWeight: 600 } : {}} className={`transition-colors ${activeSection === item.id\n                ? \"font-semibold\"\n                : isLight\n                    ? \"hover:text-neutral-900\"\n                    : \"hover:text-white\"}`}>\n                  {item.label}\n                </button>))}\n          </nav>\n\n          {/* CTA Button */}\n          <button type=\"button\" onClick={() => scrollTo(\"contact\")} style={{\n            background: primaryGradient,\n            boxShadow: `0 0 20px ${primaryColor}45`,\n        }} className=\"inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]\">\n            <span>Hire Me</span>\n            <ArrowRight className=\"h-3.5 w-3.5\"/>\n          </button>\n        </div>\n      </header>\n\n      {/* Main Content */}\n      <main className=\"relative z-10 max-w-6xl mx-auto px-4 sm:px-6 space-y-24 py-8 sm:py-16\">\n        {/* ============================================================== */}\n        {/* 1. HERO SECTION                                                */}\n        {/* ============================================================== */}\n        <section id=\"hero\" className=\"pt-8 sm:pt-12 pb-10 sm:pb-16\">\n          <div className=\"grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center\">\n            {/* Left Content */}\n            <div className=\"lg:col-span-7 space-y-6 text-left\">\n              {/* Welcome Badge */}\n              <div className=\"inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase border\" style={{\n            borderColor: `${primaryColor}40`,\n            backgroundColor: `${primaryColor}15`,\n            color: primaryColor,\n        }}>\n                <Sparkles className=\"h-3.5 w-3.5\"/>\n                <span>Welcome to my portfolio</span>\n              </div>\n\n              {/* Headline with Glowing Name */}\n              <div className=\"space-y-2\">\n                <h1 className={`text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.08] ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n                  <span>Hi, I&apos;m </span>\n                  <span style={{\n            backgroundImage: `linear-gradient(90deg, ${primaryColor}, #818cf8, #f472b6)`,\n            WebkitBackgroundClip: \"text\",\n            WebkitTextFillColor: \"transparent\",\n        }}>\n                    {fullName || \"John Doe\"}\n                  </span>\n                </h1>\n                {headline && (<p className=\"text-sm sm:text-base font-medium font-mono\" style={{ color: primaryColor }}>\n                    {headline}\n                  </p>)}\n              </div>\n\n              {/* Bio / Description */}\n              {bio && (<p className={`text-base sm:text-lg leading-relaxed max-w-xl font-normal ${isLight ? \"text-neutral-600\" : \"text-neutral-300/90\"}`}>\n                  {bio}\n                </p>)}\n\n              {/* Action Buttons */}\n              <div className=\"pt-2 flex flex-wrap items-center gap-3.5\">\n                <button type=\"button\" onClick={() => scrollTo(\"contact\")} style={{\n            background: primaryGradient,\n            boxShadow: `0 0 25px ${primaryColor}45`,\n        }} className=\"inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-[1.02] active:scale-[0.98]\">\n                  <span>Get In Touch</span>\n                  <ArrowRight className=\"h-4 w-4\"/>\n                </button>\n\n                <button type=\"button\" onClick={() => scrollTo(\"projects\")} className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border transition-all hover:scale-[1.02] ${isLight\n            ? \"border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 shadow-xs\"\n            : \"border-white/15 bg-white/5 hover:bg-white/10 text-white\"}`}>\n                  <span>View My Work</span>\n                </button>\n              </div>\n\n              {/* Connect Row */}\n              <div className=\"pt-4 flex items-center gap-3\">\n                <span className={`text-xs font-mono uppercase tracking-widest ${isLight ? \"text-neutral-400\" : \"text-neutral-500\"}`}>\n                  CONNECT\n                </span>\n                <div className=\"flex items-center gap-2\">\n                  {socialLinks.length > 0 ? (socialLinks.map((link, idx) => (<SafeLink key={`${link.platform}-${idx}`} href={link.url} className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-all hover:scale-110 ${isLight\n                ? \"border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 shadow-xs\"\n                : \"border-white/10 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white\"}`} title={link.label || link.platform}>\n                        <BrandIcon name={link.platform} size={15}/>\n                      </SafeLink>))) : (<>\n                      <SafeLink href=\"https://github.com\" className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-all ${isLight ? \"border-neutral-300 bg-white text-neutral-700\" : \"border-white/10 bg-white/5 text-neutral-300\"}`} title=\"GitHub\">\n                        <BrandIcon name=\"github\" size={15}/>\n                      </SafeLink>\n                      <SafeLink href=\"https://linkedin.com\" className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-all ${isLight ? \"border-neutral-300 bg-white text-neutral-700\" : \"border-white/10 bg-white/5 text-neutral-300\"}`} title=\"LinkedIn\">\n                        <BrandIcon name=\"linkedin\" size={15}/>\n                      </SafeLink>\n                    </>)}\n                </div>\n              </div>\n            </div>\n\n            {/* Right Column: 3D Avatar Frame with Camera badge & Floating Experience Card */}\n            <div className=\"lg:col-span-5 flex justify-center lg:justify-end relative\">\n              <div className=\"relative w-[300px] sm:w-[380px] h-[340px] sm:h-[400px] flex items-center justify-center\">\n                {/* Ambient aura */}\n                <div className=\"absolute inset-2 rounded-full blur-3xl opacity-20\" style={{ backgroundColor: primaryColor }}/>\n\n                {/* Circular Spotlight Container */}\n                <div className=\"relative z-10 w-64 h-64 sm:w-72 sm:h-72 rounded-full p-2 border flex items-center justify-center shadow-2xl\" style={{\n            background: haloGradient,\n            borderColor: `${primaryColor}55`,\n            boxShadow: `0 0 50px ${primaryColor}50`,\n        }}>\n                  <div className={`w-full h-full rounded-full overflow-hidden flex items-center justify-center relative ${isLight ? \"bg-white\" : \"bg-[#111827]\"}`}>\n                    {avatarUrl ? (<img src={avatarUrl} alt={fullName || \"Portfolio Avatar\"} width={288} height={288} loading=\"eager\" decoding=\"async\" className=\"w-full h-full object-cover\" referrerPolicy=\"no-referrer\"/>) : (<div className={`w-full h-full flex flex-col items-center justify-center ${isLight ? \"bg-neutral-100 text-neutral-800\" : \"bg-[#1e293b] text-white\"}`}>\n                        <span className=\"text-5xl font-extrabold font-mono\" style={{ color: primaryColor }}>\n                          {initials}\n                        </span>\n                        <span className=\"text-xs text-neutral-400 mt-2\">Avatar</span>\n                      </div>)}\n                  </div>\n\n                  {/* Camera icon badge */}\n                  <div className={`absolute bottom-2 right-4 z-20 h-9 w-9 rounded-full bg-white shadow-xl flex items-center justify-center border-2 ${isLight ? \"border-neutral-200 text-neutral-800\" : \"border-[#0b0f19] text-neutral-900\"}`}>\n                    <Camera className=\"h-4 w-4\" style={{ color: primaryColor }}/>\n                  </div>\n                </div>\n\n                {/* Floating Stat Card: 4+ Years Experience (Bottom Left) */}\n                <div className={`absolute bottom-2 left-0 sm:-left-4 z-20 px-4 py-2.5 rounded-2xl border shadow-2xl backdrop-blur-md flex items-center gap-3 ${isLight ? \"bg-white border-neutral-200 text-neutral-900 shadow-lg\" : \"bg-white/95 border-white/15 text-neutral-900\"}`}>\n                  <div className=\"text-2xl font-extrabold font-mono leading-none\" style={{ color: primaryColor }}>\n                    {experienceYears}\n                  </div>\n                  <div className=\"text-[11px] font-semibold text-neutral-600 leading-tight\">\n                    <p>Years</p>\n                    <p>Experience</p>\n                  </div>\n                </div>\n              </div>\n            </div>\n          </div>\n        </section>\n\n        {/* ============================================================== */}\n        {/* 2. ABOUT SECTION                                               */}\n        {/* ============================================================== */}\n        {!isHidden(\"about\") && (bio || showEmpty) && (<section id=\"about\" className=\"scroll-mt-20\">\n            <div className={`p-6 sm:p-10 rounded-2xl border backdrop-blur-xl shadow-xl ${isLight ? \"bg-white border-neutral-200 shadow-sm text-neutral-900\" : \"bg-white/[0.02] border-white/10 text-neutral-100\"}`}>\n              <div className=\"flex items-center gap-2.5 mb-4\">\n                <div className=\"h-8 w-8 rounded-lg flex items-center justify-center\" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>\n                  <User className=\"h-4 w-4\"/>\n                </div>\n                <h2 className=\"text-xs font-mono uppercase tracking-widest font-semibold\" style={{ color: primaryColor }}>\n                  About Me\n                </h2>\n              </div>\n              <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight mb-6 ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n                Transforming complexity into elegant, actionable solutions\n              </h3>\n              <p className={`text-base leading-relaxed whitespace-pre-line ${isLight ? \"text-neutral-700\" : \"text-neutral-300\"}`}>\n                {bio}\n              </p>\n            </div>\n          </section>)}\n\n        {/* ============================================================== */}\n        {/* 3. SKILLS SECTION                                              */}\n        {/* ============================================================== */}\n        {!isHidden(\"skills\") && (skills.length > 0 || showEmpty) && (<section id=\"skills\" className=\"scroll-mt-20 space-y-6\">\n            <div className=\"flex items-center gap-2.5\">\n              <div className=\"h-8 w-8 rounded-lg flex items-center justify-center\" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>\n                <Code2 className=\"h-4 w-4\"/>\n              </div>\n              <div>\n                <h2 className=\"text-xs font-mono uppercase tracking-widest font-semibold\" style={{ color: primaryColor }}>\n                  Expertise\n                </h2>\n                <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n                  Skills & Technologies\n                </h3>\n              </div>\n            </div>\n\n            <div className=\"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3\">\n              {(skills.length > 0\n                ? skills\n                : [\n                    { name: \"Python\", category: \"Languages\" },\n                    { name: \"SQL\", category: \"Database\" },\n                    { name: \"Tableau\", category: \"Analytics\" },\n                    { name: \"React\", category: \"Frontend\" },\n                ]).map((skill, idx) => (<div key={`${skill.name}-${idx}`} className={`p-3.5 rounded-xl border transition-all flex items-center justify-between ${isLight\n                    ? \"bg-white border-neutral-200 hover:border-neutral-400 shadow-xs\"\n                    : \"bg-white/[0.02] border-white/10 hover:bg-white/[0.05]\"}`}>\n                  <span className={`text-sm font-semibold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{skill.name}</span>\n                  {skill.category && (<span className=\"text-[10px] font-mono font-medium\" style={{ color: primaryColor }}>\n                      {skill.category}\n                    </span>)}\n                </div>))}\n            </div>\n          </section>)}\n\n        {/* ============================================================== */}\n        {/* 4. PROJECTS SECTION                                            */}\n        {/* ============================================================== */}\n        {!isHidden(\"projects\") && (projects.length > 0 || showEmpty) && (<section id=\"projects\" className=\"scroll-mt-20 space-y-6\">\n            <div className=\"flex items-center gap-2.5\">\n              <div className=\"h-8 w-8 rounded-lg flex items-center justify-center\" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>\n                <Sparkles className=\"h-4 w-4\"/>\n              </div>\n              <div>\n                <h2 className=\"text-xs font-mono uppercase tracking-widest font-semibold\" style={{ color: primaryColor }}>\n                  Featured Work\n                </h2>\n                <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n                  Projects & Case Studies\n                </h3>\n              </div>\n            </div>\n\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6\">\n              {projects.map((proj, idx) => (<div key={`${proj.title}-${idx}`} className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${isLight\n                    ? \"bg-white border-neutral-200 hover:border-neutral-400 shadow-sm hover:shadow-md\"\n                    : \"bg-white/[0.02] border-white/10 hover:bg-white/[0.05]\"}`}>\n                  <div className=\"space-y-3\">\n                    {/* Project Screenshot / Thumbnail (if available) */}\n                    {proj.imageUrl && (<div className=\"w-full h-44 rounded-xl overflow-hidden border border-white/10 mb-2 relative\">\n                        <img src={proj.imageUrl} alt={proj.title} className=\"w-full h-full object-cover group-hover:scale-105 transition-transform duration-500\" onError={(e) => {\n                        e.target.style.display = \"none\";\n                    }}/>\n                      </div>)}\n                    <h4 className={`text-lg font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{proj.title}</h4>\n                    <p className={`text-sm leading-relaxed ${isLight ? \"text-neutral-600\" : \"text-neutral-300\"}`}>{proj.description}</p>\n                    {proj.tags && proj.tags.length > 0 && (<div className=\"flex flex-wrap gap-1.5 pt-2\">\n                        {proj.tags.map((t) => (<span key={t} style={{\n                            backgroundColor: `${primaryColor}15`,\n                            borderColor: `${primaryColor}30`,\n                            color: primaryColor,\n                        }} className=\"px-2.5 py-0.5 rounded-full text-xs font-mono border\">\n                            #{t}\n                          </span>))}\n                      </div>)}\n                  </div>\n\n                  {(proj.liveUrl || proj.repoUrl) && (<div className={`pt-6 flex items-center gap-4 border-t mt-4 ${isLight ? \"border-neutral-200\" : \"border-white/10\"}`}>\n                      {proj.liveUrl && (<SafeLink href={proj.liveUrl} style={{ color: primaryColor }} className=\"inline-flex items-center gap-1.5 text-xs font-semibold hover:underline transition-colors\">\n                          <span>Live Demo</span>\n                          <ExternalLink className=\"h-3.5 w-3.5\"/>\n                        </SafeLink>)}\n                      {proj.repoUrl && (<SafeLink href={proj.repoUrl} className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${isLight ? \"text-neutral-600 hover:text-neutral-900\" : \"text-neutral-400 hover:text-white\"}`}>\n                          <BrandIcon name=\"github\" size={14}/>\n                          <span>Code Repository</span>\n                        </SafeLink>)}\n                    </div>)}\n                </div>))}\n            </div>\n          </section>)}\n\n        {/* ============================================================== */}\n        {/* 5. EXPERIENCE SECTION                                          */}\n        {/* ============================================================== */}\n        {!isHidden(\"experience\") && (experience.length > 0 || showEmpty) && (<section id=\"experience\" className=\"scroll-mt-20 space-y-6\">\n            <div className=\"flex items-center gap-2.5\">\n              <div className=\"h-8 w-8 rounded-lg flex items-center justify-center\" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>\n                <Briefcase className=\"h-4 w-4\"/>\n              </div>\n              <div>\n                <h2 className=\"text-xs font-mono uppercase tracking-widest font-semibold\" style={{ color: primaryColor }}>\n                  Career Path\n                </h2>\n                <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n                  Professional Experience\n                </h3>\n              </div>\n            </div>\n\n            <div className=\"space-y-4\">\n              {experience.map((exp, idx) => (<div key={`${exp.company}-${idx}`} className={`p-6 rounded-2xl border flex flex-col sm:flex-row sm:items-start justify-between gap-4 ${isLight\n                    ? \"bg-white border-neutral-200 shadow-sm text-neutral-900\"\n                    : \"bg-white/[0.02] border-white/10 text-neutral-100\"}`}>\n                  <div className=\"space-y-1.5\">\n                    <h4 className={`text-base font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{exp.title}</h4>\n                    <p className=\"text-sm font-semibold font-mono\" style={{ color: primaryColor }}>{exp.company}</p>\n                    {exp.description && (<p className={`text-sm leading-relaxed pt-1 ${isLight ? \"text-neutral-600\" : \"text-neutral-300\"}`}>\n                        {exp.description}\n                      </p>)}\n                  </div>\n                  <div className={`text-xs font-mono shrink-0 ${isLight ? \"text-neutral-500\" : \"text-neutral-400\"}`}>\n                    {exp.startDate} — {exp.current ? \"Present\" : exp.endDate || \"Present\"}\n                  </div>\n                </div>))}\n            </div>\n          </section>)}\n\n        {/* ============================================================== */}\n        {/* 6. CONTACT SECTION                                             */}\n        {/* ============================================================== */}\n        <section id=\"contact\" className=\"scroll-mt-20 pb-12\">\n          <div className={`p-8 sm:p-12 rounded-3xl border backdrop-blur-xl text-center space-y-6 ${isLight ? \"bg-white border-neutral-200 text-neutral-900 shadow-sm\" : \"border-white/10 bg-white/[0.03] text-white\"}`}>\n            <h3 className={`text-3xl sm:text-4xl font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>\n              Let&apos;s build something great together\n            </h3>\n            <p className={`max-w-lg mx-auto text-sm sm:text-base ${isLight ? \"text-neutral-600\" : \"text-neutral-300\"}`}>\n              Available for full-time roles, freelance opportunities, and collaborative initiatives.\n            </p>\n            <div className=\"pt-2 flex justify-center\">\n              <SafeLink href={`mailto:${profile?.email || \"hello@example.com\"}`} style={{\n            background: primaryGradient,\n            boxShadow: `0 0 25px ${primaryColor}45`,\n        }} className=\"inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-95 transition-all hover:scale-105\">\n                <Mail className=\"h-4 w-4\"/>\n                <span>Get In Touch</span>\n              </SafeLink>\n            </div>\n          </div>\n        </section>\n      </main>\n\n      {/* Footer */}\n      <footer className={`border-t py-8 relative z-10 ${isLight ? \"bg-white border-neutral-200 text-neutral-500\" : \"bg-[#0b0f19] border-white/10 text-neutral-400\"}`}>\n        <div className=\"max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs font-mono\">\n          <span>© {new Date().getFullYear()} {fullName || \"Portfolio\"}. All rights reserved.</span>\n          <button type=\"button\" onClick={() => scrollTo(\"hero\")} style={{ color: primaryColor }} className=\"inline-flex items-center gap-1.5 hover:underline transition-colors\">\n            <span>^top</span>\n            <ArrowUp className=\"h-3.5 w-3.5\"/>\n          </button>\n        </div>\n      </footer>\n    </div>);\n}\n";
 }
 
 function getFullDeveloperTemplateJsx() {
-  return `import React from "react";
-import { Terminal, ArrowUp } from "lucide-react";
-import { BrandIcon } from "../common/BrandIcon.jsx";
-import { SafeLink } from "../common/SafeLink.jsx";
-
-export function DeveloperTemplate({ portfolio = {} }) {
-  const { profile = {}, skills = [], projects = [], experience = [], socialLinks = [] } = portfolio;
-  const fullName = profile.fullName || "Developer";
-  const primaryColor = portfolio?.design?.primaryColor || "#38bdf8";
-  const theme = portfolio?.design?.theme || "dark";
-  const isLight = theme === "light";
-
-  const scrollToTop = () => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  return (
-    <div className={\`min-h-screen font-mono p-6 sm:p-12 transition-colors \${isLight ? "bg-[#f6f8fa] text-[#24292f]" : "bg-[#0d1117] text-[#c9d1d9]"}\`}>
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className={\`border-b pb-4 font-bold flex items-center justify-between gap-2 \${isLight ? "border-[#d0d7de]" : "border-[#30363d]"}\`}>
-          <div className="flex items-center gap-2" style={{ color: primaryColor }}>
-            <Terminal className="h-5 w-5" />
-            <span>~/dev/{fullName.toLowerCase().replace(/\\s+/g, "")}</span>
-          </div>
-          {socialLinks.length > 0 && (
-            <div className="flex items-center gap-2">
-              {socialLinks.map((l, i) => (
-                <SafeLink key={i} href={l.url} className={\`p-1 rounded \${isLight ? "hover:bg-neutral-200 text-neutral-600" : "hover:bg-neutral-800 text-neutral-400 hover:text-white"}\`}>
-                  <BrandIcon name={l.platform} size={15} />
-                </SafeLink>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs" style={{ color: primaryColor }}>$ whoami</p>
-          <h1 className={\`text-4xl font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>{fullName}</h1>
-          <p className="text-sm font-semibold" style={{ color: primaryColor }}>{profile.headline}</p>
-          {profile.bio && <p className={\`text-sm pt-2 \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{profile.bio}</p>}
-        </div>
-
-        {skills.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs" style={{ color: primaryColor }}>$ ls -la ./skills</p>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((s, i) => (
-                <span key={i} className={\`px-2.5 py-1 rounded border text-xs \${isLight ? "bg-white border-[#d0d7de] text-neutral-800" : "bg-[#21262d] border-[#30363d] text-[#7ee787]"}\`}>
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {projects.length > 0 && (
-          <div className="space-y-4">
-            <p className="text-xs" style={{ color: primaryColor }}>$ cat ./projects.json</p>
-            <div className="grid grid-cols-1 gap-4">
-              {projects.map((p, i) => (
-                <div key={i} className={\`p-4 rounded border space-y-2 \${isLight ? "bg-white border-[#d0d7de]" : "bg-[#161b22] border-[#30363d]"}\`}>
-                  <div className="flex items-center justify-between">
-                    <h4 className={\`font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>&gt; {p.title}</h4>
-                    {p.liveUrl && (
-                      <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-xs underline flex items-center gap-1">
-                        [Live Demo]
-                      </SafeLink>
-                    )}
-                  </div>
-                  <p className={\`text-xs \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{p.description}</p>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {p.tags.map(t => (
-                        <span key={t} className="text-[10px] text-neutral-500 font-mono">#{t}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {experience.length > 0 && (
-          <div className="space-y-4">
-            <p className="text-xs" style={{ color: primaryColor }}>$ git log --oneline ./experience</p>
-            <div className="space-y-3">
-              {experience.map((e, i) => (
-                <div key={i} className={\`p-4 rounded border \${isLight ? "bg-white border-[#d0d7de]" : "bg-[#161b22] border-[#30363d]"}\`}>
-                  <div className="flex justify-between items-start text-xs">
-                    <span className={\`font-bold \${isLight ? "text-neutral-900" : "text-white"}\`}>{e.title} @ {e.company}</span>
-                    <span className="text-neutral-500">{e.startDate} - {e.current ? "Present" : e.endDate}</span>
-                  </div>
-                  {e.description && <p className={\`text-xs mt-2 \${isLight ? "text-neutral-600" : "text-[#8b949e]"}\`}>{e.description}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <footer className={\`border-t pt-6 flex justify-between text-xs text-neutral-500 \${isLight ? "border-[#d0d7de]" : "border-[#30363d]"}\`}>
-          <span>exit 0</span>
-          <button onClick={scrollToTop} className="hover:underline flex items-center gap-1" style={{ color: primaryColor }}>
-            <span>^top</span>
-            <ArrowUp className="h-3 w-3" />
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-`;
+  return "import React, { useEffect } from \"react\";\nimport { Terminal, ArrowUp } from \"lucide-react\";\nimport { BrandIcon } from \"../common/BrandIcon.jsx\";\nimport { SafeLink } from \"../common/SafeLink.jsx\";\n\nexport function DeveloperTemplate({\n  portfolio = {},\n  sectionOrder = [\"hero\", \"about\", \"skills\", \"projects\", \"experience\", \"education\", \"certifications\", \"contact\"],\n  hiddenSections = [],\n}) {\n  const { profile = {}, skills = [], projects = [], experience = [], education = [], certifications = [], socialLinks = [] } = portfolio;\n  const fullName = profile.fullName || \"Developer\";\n  const primaryColor = portfolio?.design?.primaryColor || \"#38bdf8\";\n  const theme = portfolio?.design?.theme || \"dark\";\n  const isLight = theme === \"light\";\n\n  const scrollToTop = () => {\n    if (typeof window !== \"undefined\") {\n      const prefersReduced = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n      window.scrollTo({ top: 0, behavior: prefersReduced ? \"auto\" : \"smooth\" });\n    }\n  };\n\n  useEffect(() => {\n    const handleAnchorClick = (e) => {\n      const target = e.target.closest('a[href^=\"#\"]');\n      if (!target) return;\n      const href = target.getAttribute(\"href\");\n      if (!href || href === \"#\") return;\n      const el = document.querySelector(href);\n      if (!el) return;\n      e.preventDefault();\n      const offset = 80;\n      const bodyRect = document.body.getBoundingClientRect().top;\n      const elementRect = el.getBoundingClientRect().top;\n      const offsetPosition = elementRect - bodyRect - offset;\n      const prefersReduced = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n      window.scrollTo({\n        top: offsetPosition,\n        behavior: prefersReduced ? \"auto\" : \"smooth\",\n      });\n    };\n    document.addEventListener(\"click\", handleAnchorClick);\n    return () => document.removeEventListener(\"click\", handleAnchorClick);\n  }, []);\n\n  const isHidden = (sec) => hiddenSections.includes(sec);\n\n  const sectionMap = {\n    hero: (\n      <div key=\"hero\" id=\"hero\" className=\"space-y-2\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ whoami</p>\n        <h1 className={`text-4xl font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{fullName}</h1>\n        <p className=\"text-sm font-semibold\" style={{ color: primaryColor }}>{profile.headline}</p>\n        {profile.bio && <p className={`text-sm pt-2 ${isLight ? \"text-neutral-600\" : \"text-[#8b949e]\"}`}>{profile.bio}</p>}\n      </div>\n    ),\n    about: (\n      <div key=\"about\" id=\"about\" className=\"space-y-2\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ cat ./bio.txt</p>\n        {profile.bio && <p className={`text-sm pt-2 ${isLight ? \"text-neutral-600\" : \"text-[#8b949e]\"}`}>{profile.bio}</p>}\n      </div>\n    ),\n    skills: skills.length > 0 ? (\n      <div key=\"skills\" id=\"skills\" className=\"space-y-3\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ ls -la ./skills</p>\n        <div className=\"flex flex-wrap gap-2\">\n          {skills.map((s, i) => (\n            <span key={i} className={`px-2.5 py-1 rounded border text-xs ${isLight ? \"bg-white border-[#d0d7de] text-neutral-800\" : \"bg-[#21262d] border-[#30363d] text-[#7ee787]\"}`}>\n              {typeof s === \"string\" ? s : s.name}\n            </span>\n          ))}\n        </div>\n      </div>\n    ) : null,\n    projects: projects.length > 0 ? (\n      <div key=\"projects\" id=\"projects\" className=\"space-y-4\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ cat ./projects.json</p>\n        <div className=\"grid grid-cols-1 gap-4\">\n          {projects.map((p, i) => (\n            <div key={i} className={`p-4 rounded border space-y-2 ${isLight ? \"bg-white border-[#d0d7de]\" : \"bg-[#161b22] border-[#30363d]\"}`}>\n              <div className=\"flex items-center justify-between\">\n                <h4 className={`font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>&gt; {p.title}</h4>\n                <div className=\"flex items-center gap-3\">\n                  {p.liveUrl && (\n                    <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className=\"text-xs underline flex items-center gap-1\">\n                      [Live Demo]\n                    </SafeLink>\n                  )}\n                  {p.repoUrl && (\n                    <SafeLink href={p.repoUrl} className=\"text-xs text-neutral-400 underline flex items-center gap-1\">\n                      [GitHub]\n                    </SafeLink>\n                  )}\n                </div>\n              </div>\n              <p className={`text-xs ${isLight ? \"text-neutral-600\" : \"text-[#8b949e]\"}`}>{p.description}</p>\n              {p.tags && p.tags.length > 0 && (\n                <div className=\"flex flex-wrap gap-1 pt-1\">\n                  {p.tags.map((t) => (\n                    <span key={t} className=\"text-[10px] text-neutral-500 font-mono\">#{t}</span>\n                  ))}\n                </div>\n              )}\n            </div>\n          ))}\n        </div>\n      </div>\n    ) : null,\n    experience: experience.length > 0 ? (\n      <div key=\"experience\" id=\"experience\" className=\"space-y-4\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ git log --oneline ./experience</p>\n        <div className=\"space-y-3\">\n          {experience.map((e, i) => (\n            <div key={i} className={`p-4 rounded border ${isLight ? \"bg-white border-[#d0d7de]\" : \"bg-[#161b22] border-[#30363d]\"}`}>\n              <div className=\"flex justify-between items-start text-xs\">\n                <span className={`font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{e.title} @ {e.company}</span>\n                <span className=\"text-neutral-500\">{e.startDate} - {e.current ? \"Present\" : e.endDate}</span>\n              </div>\n              {e.description && <p className={`text-xs mt-2 ${isLight ? \"text-neutral-600\" : \"text-[#8b949e]\"}`}>{e.description}</p>}\n            </div>\n          ))}\n        </div>\n      </div>\n    ) : null,\n    education: education.length > 0 ? (\n      <div key=\"education\" id=\"education\" className=\"space-y-4\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ cat ./education.txt</p>\n        <div className=\"space-y-3\">\n          {education.map((edu, i) => (\n            <div key={i} className={`p-4 rounded border ${isLight ? \"bg-white border-[#d0d7de]\" : \"bg-[#161b22] border-[#30363d]\"}`}>\n              <div className=\"flex justify-between items-start text-xs\">\n                <span className={`font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{edu.degree}</span>\n                <span className=\"text-neutral-500\">{edu.startDate} - {edu.endDate || \"Present\"}</span>\n              </div>\n              <p className=\"text-xs font-medium mt-1\" style={{ color: primaryColor }}>{edu.institution}</p>\n            </div>\n          ))}\n        </div>\n      </div>\n    ) : null,\n    certifications: certifications.length > 0 ? (\n      <div key=\"certifications\" id=\"certifications\" className=\"space-y-4\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ ls -l ./certifications</p>\n        <div className=\"grid grid-cols-1 sm:grid-cols-2 gap-3\">\n          {certifications.map((c, i) => (\n            <div key={i} className={`p-3 rounded border text-xs ${isLight ? \"bg-white border-[#d0d7de]\" : \"bg-[#161b22] border-[#30363d]\"}`}>\n              <span className={`font-bold ${isLight ? \"text-neutral-900\" : \"text-white\"}`}>{c.name}</span>\n              <p className=\"text-neutral-500 text-[11px] mt-0.5\">{c.issuer} {c.issueDate ? `(${c.issueDate})` : \"\"}</p>\n            </div>\n          ))}\n        </div>\n      </div>\n    ) : null,\n    contact: (\n      <div key=\"contact\" id=\"contact\" className=\"space-y-3\">\n        <p className=\"text-xs\" style={{ color: primaryColor }}>$ ./send_ping.sh</p>\n        <div className={`p-5 rounded border space-y-3 ${isLight ? \"bg-white border-[#d0d7de]\" : \"bg-[#161b22] border-[#30363d]\"}`}>\n          <p className={`text-xs ${isLight ? \"text-neutral-600\" : \"text-[#8b949e]\"}`}>Feel free to reach out for collaborations, questions, or opportunities.</p>\n          <div className=\"flex flex-wrap gap-4 text-xs font-bold\" style={{ color: primaryColor }}>\n            {profile.email && <a href={`mailto:${profile.email}`} className=\"hover:underline\">&gt; mailto:{profile.email}</a>}\n            {profile.phone && <a href={`tel:${profile.phone}`} className=\"hover:underline\">&gt; tel:{profile.phone}</a>}\n          </div>\n        </div>\n      </div>\n    ),\n  };\n\n  return (\n    <div className={`min-h-screen font-mono p-6 sm:p-12 transition-colors ${isLight ? \"bg-[#f6f8fa] text-[#24292f]\" : \"bg-[#0d1117] text-[#c9d1d9]\"}`}>\n      <div className=\"max-w-4xl mx-auto space-y-8\">\n        <header className={`sticky top-0 z-20 backdrop-blur-md py-3 border-b font-bold flex items-center justify-between gap-2 ${isLight ? \"bg-[#f6f8fa]/90 border-[#d0d7de]\" : \"bg-[#0d1117]/90 border-[#30363d]\"}`}>\n          <div className=\"flex items-center gap-2\" style={{ color: primaryColor }}>\n            <Terminal className=\"h-5 w-5\" />\n            <span>~/dev/{fullName.toLowerCase().replace(/\\s+/g, \"\")}</span>\n          </div>\n\n          <nav className=\"hidden sm:flex items-center gap-4 text-xs font-mono text-neutral-500\">\n            <a href=\"#hero\" className=\"hover:underline\">.whoami()</a>\n            {profile.bio && <a href=\"#about\" className=\"hover:underline\">.about()</a>}\n            {skills.length > 0 && <a href=\"#skills\" className=\"hover:underline\">.skills()</a>}\n            {projects.length > 0 && <a href=\"#projects\" className=\"hover:underline\">.projects()</a>}\n            {experience.length > 0 && <a href=\"#experience\" className=\"hover:underline\">.experience()</a>}\n            {profile.email && <a href=\"#contact\" className=\"hover:underline\">.contact()</a>}\n          </nav>\n\n          {socialLinks.length > 0 && (\n            <div className=\"flex items-center gap-2\">\n              {socialLinks.map((l, i) => (\n                <SafeLink key={i} href={l.url} className={`p-1 rounded ${isLight ? \"hover:bg-neutral-200 text-neutral-600\" : \"hover:bg-neutral-800 text-neutral-400 hover:text-white\"}`}>\n                  <BrandIcon name={l.platform} size={15} />\n                </SafeLink>\n              ))}\n            </div>\n          )}\n        </header>\n\n        {sectionOrder\n          .filter((sec) => !isHidden(sec))\n          .map((sec) => sectionMap[sec])\n          .filter(Boolean)}\n\n        <footer className={`border-t pt-6 flex justify-between text-xs text-neutral-500 ${isLight ? \"border-[#d0d7de]\" : \"border-[#30363d]\"}`}>\n          <span>exit 0</span>\n          <button onClick={scrollToTop} className=\"hover:underline flex items-center gap-1\" style={{ color: primaryColor }}>\n            <span>^top</span>\n            <ArrowUp className=\"h-3 w-3\" />\n          </button>\n        </footer>\n      </div>\n    </div>\n  );\n}\n";
 }
 
 function getFullMinimalTemplateJsx() {
-  return `import React from "react";
-import { ArrowUp } from "lucide-react";
-import { BrandIcon } from "../common/BrandIcon.jsx";
-import { SafeLink } from "../common/SafeLink.jsx";
-
-export function MinimalTemplate({ portfolio = {} }) {
-  const { profile = {}, projects = [], skills = [], experience = [], socialLinks = [] } = portfolio;
-  const fullName = profile.fullName || "Portfolio";
-  const primaryColor = portfolio?.design?.primaryColor || "#171717";
-  const theme = portfolio?.design?.theme || "light";
-  const isDark = theme === "dark";
-
-  const scrollToTop = () => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  return (
-    <div className={\`min-h-screen font-sans p-8 sm:p-20 transition-colors \${isDark ? "bg-[#0a0a0a] text-neutral-100" : "bg-[#fafafa] text-[#171717]"}\`}>
-      <div className="max-w-2xl mx-auto space-y-12">
-        <header className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-light tracking-tight">{fullName}</h1>
-            {socialLinks.length > 0 && (
-              <div className="flex items-center gap-3">
-                {socialLinks.map((l, i) => (
-                  <SafeLink key={i} href={l.url} className={\`p-1 rounded \${isDark ? "text-neutral-400 hover:text-white" : "text-neutral-600 hover:text-black"}\`}>
-                    <BrandIcon name={l.platform} size={16} />
-                  </SafeLink>
-                ))}
-              </div>
-            )}
-          </div>
-          <p className="text-sm font-medium" style={{ color: primaryColor }}>{profile.headline}</p>
-          {profile.bio && <p className={\`text-sm leading-relaxed \${isDark ? "text-neutral-300" : "text-neutral-600"}\`}>{profile.bio}</p>}
-        </header>
-
-        {skills.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((s, i) => (
-                <span key={i} className={\`px-2.5 py-1 text-xs rounded border \${isDark ? "border-neutral-800 bg-neutral-900 text-neutral-300" : "border-neutral-200 bg-white text-neutral-700"}\`}>
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {projects.length > 0 && (
-          <section className="space-y-6">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Selected Projects</h2>
-            <div className="space-y-6">
-              {projects.map((p, i) => (
-                <div key={i} className={\`border-b pb-4 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-medium text-base">{p.title}</h3>
-                    {p.liveUrl && (
-                      <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className="text-xs underline inline-block">
-                        Visit &rarr;
-                      </SafeLink>
-                    )}
-                  </div>
-                  <p className={\`text-xs mt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{p.description}</p>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-2">
-                      {p.tags.map(t => (
-                        <span key={t} className="text-[10px] text-neutral-400 font-mono">#{t}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {experience.length > 0 && (
-          <section className="space-y-6">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-neutral-400">Experience</h2>
-            <div className="space-y-4">
-              {experience.map((e, i) => (
-                <div key={i} className={\`border-b pb-4 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
-                  <div className="flex justify-between items-baseline text-sm">
-                    <span className="font-medium">{e.title}</span>
-                    <span className="text-xs text-neutral-400">{e.startDate} - {e.current ? "Present" : e.endDate}</span>
-                  </div>
-                  <p className="text-xs font-mono mt-0.5" style={{ color: primaryColor }}>{e.company}</p>
-                  {e.description && <p className={\`text-xs mt-1 \${isDark ? "text-neutral-400" : "text-neutral-600"}\`}>{e.description}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <footer className={\`border-t pt-8 flex justify-between items-center text-xs text-neutral-400 \${isDark ? "border-neutral-800" : "border-neutral-200"}\`}>
-          <span>© {new Date().getFullYear()} {fullName}</span>
-          <button onClick={scrollToTop} className="hover:underline flex items-center gap-1" style={{ color: primaryColor }}>
-            <span>Top</span>
-            <ArrowUp className="h-3 w-3" />
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-`;
+  return "import React, { useEffect } from \"react\";\nimport { ArrowUp } from \"lucide-react\";\nimport { BrandIcon } from \"../common/BrandIcon.jsx\";\nimport { SafeLink } from \"../common/SafeLink.jsx\";\n\nexport function MinimalTemplate({\n  portfolio = {},\n  sectionOrder = [\"hero\", \"about\", \"skills\", \"projects\", \"experience\", \"education\", \"certifications\", \"contact\"],\n  hiddenSections = [],\n}) {\n  const { profile = {}, projects = [], skills = [], experience = [], education = [], certifications = [], socialLinks = [] } = portfolio;\n  const fullName = profile.fullName || \"Portfolio\";\n  const primaryColor = portfolio?.design?.primaryColor || \"#171717\";\n  const theme = portfolio?.design?.theme || \"light\";\n  const isDark = theme === \"dark\";\n  const isHidden = (sec) => hiddenSections.includes(sec);\n\n  const scrollToTop = () => {\n    if (typeof window !== \"undefined\") {\n      const prefersReduced = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n      window.scrollTo({ top: 0, behavior: prefersReduced ? \"auto\" : \"smooth\" });\n    }\n  };\n\n  useEffect(() => {\n    const handleAnchorClick = (e) => {\n      const target = e.target.closest('a[href^=\"#\"]');\n      if (!target) return;\n      const href = target.getAttribute(\"href\");\n      if (!href || href === \"#\") return;\n      const el = document.querySelector(href);\n      if (!el) return;\n      e.preventDefault();\n      const offset = 70;\n      const bodyRect = document.body.getBoundingClientRect().top;\n      const elementRect = el.getBoundingClientRect().top;\n      const offsetPosition = elementRect - bodyRect - offset;\n      const prefersReduced = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n      window.scrollTo({\n        top: offsetPosition,\n        behavior: prefersReduced ? \"auto\" : \"smooth\",\n      });\n    };\n    document.addEventListener(\"click\", handleAnchorClick);\n    return () => document.removeEventListener(\"click\", handleAnchorClick);\n  }, []);\n\n  const sectionMap = {\n    hero: (\n      <header key=\"hero\" id=\"hero\" className=\"space-y-4 pt-4\">\n        <div className=\"flex items-center justify-between\">\n          <h1 className=\"text-4xl font-light tracking-tight\">{fullName}</h1>\n          {socialLinks.length > 0 && (\n            <div className=\"flex items-center gap-3\">\n              {socialLinks.map((l, i) => (\n                <SafeLink key={i} href={l.url} className={`p-1 rounded ${isDark ? \"text-neutral-400 hover:text-white\" : \"text-neutral-600 hover:text-black\"}`}>\n                  <BrandIcon name={l.platform} size={16} />\n                </SafeLink>\n              ))}\n            </div>\n          )}\n        </div>\n        <p className=\"text-sm font-medium\" style={{ color: primaryColor }}>{profile.headline}</p>\n        {profile.bio && <p className={`text-sm leading-relaxed ${isDark ? \"text-neutral-300\" : \"text-neutral-600\"}`}>{profile.bio}</p>}\n      </header>\n    ),\n\n    about: profile.bio ? (\n      <section key=\"about\" id=\"about\" className=\"space-y-3\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">About</h2>\n        <p className={`text-sm leading-relaxed ${isDark ? \"text-neutral-300\" : \"text-neutral-600\"}`}>{profile.bio}</p>\n      </section>\n    ) : null,\n\n    skills: skills.length > 0 ? (\n      <section key=\"skills\" id=\"skills\" className=\"space-y-3\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Skills</h2>\n        <div className=\"flex flex-wrap gap-2\">\n          {skills.map((s, i) => (\n            <span key={i} className={`px-2.5 py-1 text-xs rounded border ${isDark ? \"border-neutral-800 bg-neutral-900 text-neutral-300\" : \"border-neutral-200 bg-white text-neutral-700\"}`}>\n              {typeof s === \"string\" ? s : s.name}\n            </span>\n          ))}\n        </div>\n      </section>\n    ) : null,\n\n    projects: projects.length > 0 ? (\n      <section key=\"projects\" id=\"projects\" className=\"space-y-6\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Selected Projects</h2>\n        <div className=\"space-y-6\">\n          {projects.map((p, i) => (\n            <div key={i} className={`border-b pb-4 ${isDark ? \"border-neutral-800\" : \"border-neutral-200\"}`}>\n              <div className=\"flex justify-between items-baseline\">\n                <h3 className=\"font-medium text-base\">{p.title}</h3>\n                <div className=\"flex items-center gap-3\">\n                  {p.liveUrl && (\n                    <SafeLink href={p.liveUrl} style={{ color: primaryColor }} className=\"text-xs underline inline-block\">\n                      Visit &rarr;\n                    </SafeLink>\n                  )}\n                  {p.repoUrl && (\n                    <SafeLink href={p.repoUrl} className=\"text-xs text-neutral-400 underline inline-block\">\n                      Code &rarr;\n                    </SafeLink>\n                  )}\n                </div>\n              </div>\n              <p className={`text-xs mt-1 ${isDark ? \"text-neutral-400\" : \"text-neutral-600\"}`}>{p.description}</p>\n              {p.tags && p.tags.length > 0 && (\n                <div className=\"flex flex-wrap gap-1.5 pt-2\">\n                  {p.tags.map((t) => (\n                    <span key={t} className=\"text-[10px] text-neutral-400 font-mono\">#{t}</span>\n                  ))}\n                </div>\n              )}\n            </div>\n          ))}\n        </div>\n      </section>\n    ) : null,\n\n    experience: experience.length > 0 ? (\n      <section key=\"experience\" id=\"experience\" className=\"space-y-6\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Experience</h2>\n        <div className=\"space-y-4\">\n          {experience.map((e, i) => (\n            <div key={i} className={`border-b pb-4 ${isDark ? \"border-neutral-800\" : \"border-neutral-200\"}`}>\n              <div className=\"flex justify-between items-baseline text-sm\">\n                <span className=\"font-medium\">{e.title}</span>\n                <span className=\"text-xs text-neutral-400\">{e.startDate} - {e.current ? \"Present\" : e.endDate}</span>\n              </div>\n              <p className=\"text-xs font-mono mt-0.5\" style={{ color: primaryColor }}>{e.company}</p>\n              {e.description && <p className={`text-xs mt-1 ${isDark ? \"text-neutral-400\" : \"text-neutral-600\"}`}>{e.description}</p>}\n            </div>\n          ))}\n        </div>\n      </section>\n    ) : null,\n\n    education: education.length > 0 ? (\n      <section key=\"education\" id=\"education\" className=\"space-y-6\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Education</h2>\n        <div className=\"space-y-4\">\n          {education.map((edu, i) => (\n            <div key={i} className={`border-b pb-4 ${isDark ? \"border-neutral-800\" : \"border-neutral-200\"}`}>\n              <div className=\"flex justify-between items-baseline text-sm\">\n                <span className=\"font-medium\">{edu.degree}</span>\n                <span className=\"text-xs text-neutral-400\">{edu.startDate} - {edu.endDate || \"Present\"}</span>\n              </div>\n              <p className=\"text-xs font-mono mt-0.5\" style={{ color: primaryColor }}>{edu.institution}</p>\n            </div>\n          ))}\n        </div>\n      </section>\n    ) : null,\n\n    certifications: certifications.length > 0 ? (\n      <section key=\"certifications\" id=\"certifications\" className=\"space-y-4\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Certifications</h2>\n        <div className=\"space-y-2\">\n          {certifications.map((c, i) => (\n            <div key={i} className=\"flex justify-between text-xs\">\n              <span className=\"font-medium\">{c.name}</span>\n              <span className=\"text-neutral-400\">{c.issuer}</span>\n            </div>\n          ))}\n        </div>\n      </section>\n    ) : null,\n\n    contact: (\n      <section key=\"contact\" id=\"contact\" className=\"space-y-3 pt-4\">\n        <h2 className=\"text-xs font-mono uppercase tracking-widest text-neutral-400\">Get In Touch</h2>\n        <div className=\"flex flex-wrap gap-4 text-xs font-medium\">\n          {profile.email && (\n            <a href={`mailto:${profile.email}`} className=\"underline\" style={{ color: primaryColor }}>\n              {profile.email} &rarr;\n            </a>\n          )}\n          {profile.phone && (\n            <a href={`tel:${profile.phone}`} className=\"underline text-neutral-500\">\n              {profile.phone} &rarr;\n            </a>\n          )}\n        </div>\n      </section>\n    ),\n  };\n\n  return (\n    <div className={`min-h-screen font-sans transition-colors ${isDark ? \"bg-[#0a0a0a] text-neutral-100\" : \"bg-[#fafafa] text-[#171717]\"}`}>\n      <header className={`sticky top-0 z-20 backdrop-blur-md border-b transition-colors ${isDark ? \"bg-[#0a0a0a]/80 border-neutral-800\" : \"bg-white/80 border-neutral-200\"}`}>\n        <div className=\"max-w-2xl mx-auto px-6 h-14 flex items-center justify-between text-xs\">\n          <a href=\"#hero\" className=\"font-medium truncate hover:opacity-80 transition-opacity\">{fullName}</a>\n          <nav className=\"flex items-center gap-4 text-neutral-500\">\n            {profile.bio && <a href=\"#about\" className=\"hover:text-neutral-900 dark:hover:text-white transition-colors\">About</a>}\n            {projects.length > 0 && <a href=\"#projects\" className=\"hover:text-neutral-900 dark:hover:text-white transition-colors\">Work</a>}\n            {skills.length > 0 && <a href=\"#skills\" className=\"hover:text-neutral-900 dark:hover:text-white transition-colors\">Skills</a>}\n            {experience.length > 0 && <a href=\"#experience\" className=\"hover:text-neutral-900 dark:hover:text-white transition-colors\">Experience</a>}\n            {profile.email && <a href=\"#contact\" className=\"hover:text-neutral-900 dark:hover:text-white transition-colors\">Contact</a>}\n          </nav>\n        </div>\n      </header>\n\n      <div className=\"max-w-2xl mx-auto px-6 py-12 space-y-12\">\n        {sectionOrder\n          .filter((sec) => !isHidden(sec))\n          .map((sec) => sectionMap[sec])\n          .filter(Boolean)}\n\n        <footer className={`border-t pt-8 flex justify-between items-center text-xs text-neutral-400 ${isDark ? \"border-neutral-800\" : \"border-neutral-200\"}`}>\n          <span>© {new Date().getFullYear()} {fullName}</span>\n          <button onClick={scrollToTop} className=\"hover:underline flex items-center gap-1\" style={{ color: primaryColor }}>\n            <span>Top</span>\n            <ArrowUp className=\"h-3 w-3\" />\n          </button>\n        </footer>\n      </div>\n    </div>\n  );\n}\n";
 }
 
 function getBrandIconJsx() {
@@ -6271,6 +6912,125 @@ export function normalizeAvatarUrl(rawUrl) {
     url = url.replace("dl=0", "raw=1");
   }
   return url;
+}
+`;
+}
+
+function getThemeWrapperJsx() {
+  return `import React from "react";
+
+const FONT_MAP = {
+  Inter: "font-sans",
+  Geist: "font-sans",
+  Roboto: "font-sans",
+  Merriweather: "font-serif",
+  Playfair: "font-serif",
+  JetBrains: "font-mono",
+  Fira: "font-mono",
+  Newsreader: "font-serif",
+  Anton: "font-sans",
+};
+
+const FONT_FAMILY_RAW = {
+  Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  Geist: "'Geist Variable', 'Inter', sans-serif",
+  Roboto: "'Roboto', 'Inter', sans-serif",
+  Merriweather: "'Merriweather', Georgia, serif",
+  Playfair: "'Playfair Display', Georgia, serif",
+  JetBrains: "'JetBrains Mono', 'Fira Code', monospace",
+  Fira: "'Fira Code', 'JetBrains Mono', monospace",
+  Newsreader: "'Newsreader', Georgia, serif",
+  Anton: "'Anton', Impact, 'Arial Black', sans-serif",
+};
+
+export function ThemeWrapper({ design = {}, className = "", children }) {
+  const theme = design.theme || "system";
+  const primaryColor = design.primaryColor || "#2563eb";
+  const fontFamilyKey = design.fontFamily || "Inter";
+  const fontClass = FONT_MAP[fontFamilyKey] || "font-sans";
+  const resolvedFontFamily = FONT_FAMILY_RAW[fontFamilyKey] || FONT_FAMILY_RAW.Inter;
+
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+
+  const style = {
+    fontFamily: resolvedFontFamily,
+    "--portfolio-primary": primaryColor,
+    "--portfolio-primary-glow": \`\${primaryColor}40\`,
+    "--primary": primaryColor,
+    "--primary-glow": \`\${primaryColor}33\`,
+  };
+
+  const bgEffect = design.backgroundEffect || "default";
+
+  return (
+    <div
+      data-theme={isDark ? "dark" : "light"}
+      data-font={fontFamilyKey}
+      data-bg-effect={bgEffect}
+      className={\`portfolio-theme-root min-h-screen relative transition-colors duration-200 \${
+        isDark ? "dark bg-neutral-950 text-neutral-100" : "light bg-neutral-50 text-neutral-900"
+      } \${fontClass} \${className}\`}
+      style={style}
+    >
+      {bgEffect === "mesh" && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 opacity-40 mix-blend-screen overflow-hidden"
+          aria-hidden="true"
+        >
+          <div
+            className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full blur-[120px]"
+            style={{ backgroundColor: \`\${primaryColor}25\` }}
+          />
+          <div
+            className="absolute top-[40%] -right-[15%] w-[50vw] h-[50vw] rounded-full blur-[140px]"
+            style={{ backgroundColor: \`\${primaryColor}1a\` }}
+          />
+        </div>
+      )}
+
+      {bgEffect === "grid" && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 opacity-25"
+          aria-hidden="true"
+          style={{
+            backgroundImage: \`linear-gradient(\${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} 1px, transparent 1px), linear-gradient(90deg, \${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} 1px, transparent 1px)\`,
+            backgroundSize: "32px 32px",
+          }}
+        />
+      )}
+
+      {bgEffect === "dots" && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 opacity-30"
+          aria-hidden="true"
+          style={{
+            backgroundImage: \`radial-gradient(\${isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"} 1px, transparent 1px)\`,
+            backgroundSize: "20px 20px",
+          }}
+        />
+      )}
+
+      {bgEffect === "aurora" && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 opacity-35 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div
+            className="absolute -top-[30%] left-[20%] w-[70vw] h-[45vw] rounded-full blur-[130px]"
+            style={{
+              background: \`radial-gradient(circle, \${primaryColor}33 0%, #ec489922 45%, transparent 70%)\`,
+            }}
+          />
+        </div>
+      )}
+
+      <div className="relative z-[1] min-h-screen">{children}</div>
+    </div>
+  );
 }
 `;
 }
