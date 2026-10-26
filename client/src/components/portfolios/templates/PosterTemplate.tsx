@@ -728,6 +728,7 @@ export function PosterTemplate({
 
       {/* Main Content Sections */}
       <main className="relative z-10">
+        {!sectionOrder.includes("hero") && !isHidden("marquee") && sectionMap.marquee}
         {sectionOrder.map((sectionKey) => {
           if (isHidden(sectionKey)) return null;
 
@@ -738,6 +739,10 @@ export function PosterTemplate({
                 {sectionMap.marquee}
               </div>
             );
+          }
+
+          if (sectionKey === "marquee" && !sectionOrder.includes("hero")) {
+            return null; // Already rendered at top
           }
 
           return sectionMap[sectionKey] || null;
