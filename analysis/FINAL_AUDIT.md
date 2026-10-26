@@ -12,24 +12,25 @@
 
 ## 1. Executive Summary & Verification Matrix
 
-This audit compares the 20 templates discovered in [`COMPLETE_TEMPLATE_INVENTORY.md`](file:///c:/Users/sunil/OneDrive/Desktop/project-resume/AI-Resume-builder/analysis/COMPLETE_TEMPLATE_INVENTORY.md) against the final implementation in the active repository. All findings reflect **actual tested results** rather than intended results.
+This audit compares the 20 supported templates plus the separately blocked `orbit-studio` entry (21 discovered entries total) documented in [`COMPLETE_TEMPLATE_INVENTORY.md`](file:///c:/Users/sunil/OneDrive/Desktop/project-resume/AI-Resume-builder/analysis/COMPLETE_TEMPLATE_INVENTORY.md) against the final implementation in the active repository. All findings reflect **actual tested results** rather than intended results.
 
 ### 1.1 High-Level Audit Findings
 
 | Audit Metric | Ground-Truth Count | Specific Details / Templates |
 | :--- | :---: | :--- |
-| **Total Templates Discovered** | **20** | 16 GitSkins templates discovered in offline mirror + 4 native AI Resume Builder templates. |
-| **Templates Legally Approved for Reuse** | **19** | 4 proprietary/native internal + 2 GitSkins native built-ins + 13 upstream MIT/ISC/author-permission cleared templates. |
+| **Total Discovered Entries** | **21** | 20 supported templates (16 GitSkins + 4 native AI Resume Builder) + 1 separately blocked template (`orbit-studio`). |
+| **Total Supported Templates** | **20** | 16 GitSkins templates discovered in offline mirror + 4 native AI Resume Builder templates. |
+| **Templates Legally Approved for Reuse** | **20** | 4 proprietary/native internal + 3 GitSkins native built-ins (`poster`, `spotlight`, `resume-page`) + 13 upstream MIT/ISC/author-permission cleared templates. |
 | **Templates Successfully Integrated** | **6** | `spotlight`, `poster`, `devport`, `creative`, `developer`, `minimal` (+ 2 backward-compatible aliases: `modern`, `executive`). |
 | **Templates Blocked & Why** | **1** | `orbit-studio` (Abhay Raj): Model asset license unverified; upstream repository excludes model files. Excluded to prevent IP infringement. |
-| **Templates Requiring Refactoring** | **13** | 13 GitSkins templates requiring upstream asset acquisition (.glb models / .splinecode) or kinetic framework adaptation. |
+| **Templates Requiring Refactoring** | **14** | 14 GitSkins templates (7 2D kinetic/editorial/print/telemetry + 7 3D WebGL/R3F) requiring upstream asset acquisition (.glb models / .splinecode) or kinetic framework adaptation. |
 | **Templates with Verified Resume Mapping** | **6** | All 6 integrated templates verified with senior, junior (0 exp), and edge-case sparse resumes via `test-resume-adapters.ts`. |
 | **Templates with Verified Responsive Layout** | **6** | All 6 integrated templates verified across mobile (375px), tablet (768px), and desktop (1280px) viewports via `verify-all-templates.ts`. |
 | **Templates with Verified Standalone Export** | **6** | All 6 integrated templates verified for both Static Website ZIP (HTML/CSS/JS) and React Source ZIP via `verify-publishing-export.js`. |
 
 ---
 
-## 2. Comprehensive 20-Template Comparison & Audit Table
+## 2. Comprehensive Template Comparison & Audit Table (20 Supported + 1 Blocked)
 
 | # | Template ID | Display Name | Source / Author | License Status | Actual Implementation Status | Resume Data Mapping | Responsive Behavior | Standalone Export (Static & React) | Notes / Blockers |
 | :-: | :--- | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :--- |
@@ -159,9 +160,9 @@ All automated suites were executed against the live application and produced 100
 
 ## 6. Remaining Blockers & Phase 2 Roadmap
 
-1. **Remote Upstream Asset Requirement (13 Templates):**
+1. **Remote Upstream Asset Requirement & Refactoring Backlog (14 Templates):**
    - The 7 3D WebGL templates (`ramen-shop`, `portfolio-os`, `buffalo-room`, `folio-2019`, `notebook-room`, `danny-webgl`, `naresh-keyboard`) require downloading remote `.glb` and `.splinecode` assets from their respective upstream GitHub repositories before compilation into the production bundle.
-   - The 6 2D kinetic templates (`motion-studio`, `seyi-editorial`, `sameera-material`, `dat-immersive`, `nahuel-cosmos`, `resume-page`) require Framer Motion or print-canvas adaptation.
+   - The 7 2D kinetic, telemetry, and print templates (`motion-studio`, `oss-maintainer`, `seyi-editorial`, `sameera-material`, `dat-immersive`, `nahuel-cosmos`, `resume-page`) require Framer Motion, GitHub telemetry, or print-canvas adaptation.
 2. **Legal Asset Exclusion (1 Template):**
    - `orbit-studio` (Abhay Raj) remains **blocked** due to missing model licenses in the upstream repository.
 3. **Deployment Status:**

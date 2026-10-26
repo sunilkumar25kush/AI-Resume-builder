@@ -5,7 +5,7 @@
 **Status:** Complete Discovery & Inventory Audit  
 **Author:** AI Product Engineering Team  
 **Date:** October 24, 2026  
-**Related Documents:** [`PRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/PRD.md), [`TRD.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TRD.md), [`APP_FLOW.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/APP_FLOW.md), [`DATABASE_SCHEMA.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/FINAL_AUDIT.md), [`IMPLEMENTATION_ROADMAP.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/IMPLEMENTATION_ROADMAP.md), [`TEMPLATE_DEPENDENCY_MAP.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TEMPLATE_DEPENDENCY_MAP.md)
+**Related Documents:** [`PRD.md`](./PRD.md), [`TRD.md`](./TRD.md), [`APP_FLOW.md`](./APP_FLOW.md), [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md), [`FINAL_AUDIT.md`](./FINAL_AUDIT.md), [`IMPLEMENTATION_ROADMAP.md`](./IMPLEMENTATION_ROADMAP.md), [`TEMPLATE_DEPENDENCY_MAP.md`](./TEMPLATE_DEPENDENCY_MAP.md)
 
 ---
 
@@ -21,9 +21,10 @@ All conclusions are backed by verified source code inspections across production
 
 | Metric Category | Count | Detailed Breakdown |
 | :--- | :---: | :--- |
-| **Total Discovered Templates** | **20** | **16** GitSkins templates + **4** existing AI Resume Builder templates. |
+| **Total Discovered Entries** | **21** | **20** supported templates (**16** GitSkins + **4** existing AI Resume Builder) + **1** separately blocked template (`orbit-studio`). |
+| **Total Supported Templates** | **20** | **16** GitSkins templates + **4** existing AI Resume Builder templates. |
 | **Fully Integrated & Production Verified** | **6** | **4** Native AI Resume Builder (`devport`, `creative`, `developer`, `minimal`) + **2** GitSkins Native (`poster`, `spotlight`). |
-| **Templates Requiring Refactoring / Assets** | **13** | **13** GitSkins templates (6 2D kinetic/editorial + 7 3D WebGL/R3F requiring upstream models or canvas adaptation). |
+| **Templates Requiring Refactoring / Assets** | **14** | **14** GitSkins templates (7 2D kinetic/editorial/print + 7 3D WebGL/R3F requiring upstream models or canvas adaptation). |
 | **Blocked Templates** | **1** | `orbit-studio` (Abhay Raj): Model asset license unverified; upstream repository excludes model files. |
 | **README Templates Disambiguated (Not Web Portfolios)** | **21+** | Markdown profile README templates identified in `readme-template-catalog-DJ_mHdEA.js`. |
 | **Shared Components Disambiguated (Not Templates)** | **9** | `PortfolioRenderer`, `ThemeWrapper`, `SectionContainer`, `AttributionFooter`, `PortfolioGallery`, etc. |
@@ -33,7 +34,7 @@ All conclusions are backed by verified source code inspections across production
 
 ## 2. Master Template Inventory Matrix
 
-The following table provides a comprehensive overview of all 20 discovered templates:
+The following table provides a comprehensive overview of all 20 supported templates plus the separately blocked `orbit-studio` entry (21 discovered entries total):
 
 | # | Proposed ID | Display Name | Source / Author | Type / Engine | Status | Integration Complexity | Upstream License |
 | :-: | :--- | :--- | :--- | :--- | :-: | :-: | :--- |
@@ -529,6 +530,6 @@ For complete clarity, they are inventoried here to prove they are accounted for 
 
 ## 7. Audit Conclusion & Next Steps
 
-1. **Step 1 Deliverable Complete:** All 20 portfolio templates have been discovered, analyzed, and mapped with exact source files, dependencies, content supplies, and reuse statuses.
+1. **Step 1 Deliverable Complete:** All 20 supported portfolio templates plus the separately blocked `orbit-studio` entry (21 discovered entries total) have been analyzed and mapped with exact source files, dependencies, content supplies, and reuse statuses.
 2. **Strict Guidelines Followed:** No application source files modified, no packages installed, no secrets exposed.
-3. **Standing by for Step 2:** Next step is dependency mapping and integration roadmap execution as detailed in [`TEMPLATE_DEPENDENCY_MAP.md`](file:///c:/Users/sunil/OneDrive/Desktop/www.gitskins.com/analysis/TEMPLATE_DEPENDENCY_MAP.md).
+3. **Standing by for Step 2:** Next step is dependency mapping and integration roadmap execution as detailed in [`TEMPLATE_DEPENDENCY_MAP.md`](./TEMPLATE_DEPENDENCY_MAP.md).
