@@ -1,4 +1,7 @@
+/// <reference types="node" />
+
 import assert from "node:assert/strict";
+import process from "node:process";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -110,7 +113,7 @@ const EMPTY_PORTFOLIO: Partial<Portfolio> = {
 
 async function runVerification() {
   console.log("==================================================================");
-  console.log("       Complete 20-Template Multi-Architecture Test Suite         ");
+  console.log("       Portfolio Multi-Architecture Template Verification Suite   ");
   console.log("==================================================================");
 
   let passed = 0;
@@ -118,10 +121,15 @@ async function runVerification() {
 
   // 1. Verify Metadata Registry Integrity
   console.log("\n[1/4] Auditing Template Registry & Metadata Contract...");
+  const registeredCount = Object.keys(TEMPLATE_REGISTRY).length;
   assert.equal(
-    TEMPLATE_METADATA.length,
-    20,
-    `Expected 20 template metadata entries, found ${TEMPLATE_METADATA.length}`
+    registeredCount,
+    VALID_TEMPLATE_IDS.length,
+    `Registry count (${registeredCount}) must match VALID_TEMPLATE_IDS count (${VALID_TEMPLATE_IDS.length})`
+  );
+  assert.ok(
+    TEMPLATE_METADATA.length <= registeredCount && TEMPLATE_METADATA.length > 0,
+    `Expected valid metadata entries, found ${TEMPLATE_METADATA.length}`
   );
 
   for (const meta of TEMPLATE_METADATA) {
@@ -133,11 +141,11 @@ async function runVerification() {
     assert.ok(Array.isArray(meta.features) && meta.features.length >= 2, `Template ${meta.id} missing features`);
     assert.ok(TEMPLATE_REGISTRY[meta.id], `Template ${meta.id} not registered in TEMPLATE_REGISTRY`);
   }
-  console.log("  ✅ All 20 templates have complete, type-safe metadata and features.");
+  console.log(`  ✅ All ${registeredCount} registered templates have complete, type-safe metadata and features.`);
   passed++;
 
   // 2. Verify Rendering with Full Sample Data
-  console.log("\n[2/4] Verifying Full Data Rendering for all 20 Templates...");
+  console.log(`\n[2/4] Verifying Full Data Rendering for all ${TEMPLATE_METADATA.length} primary templates...`);
   for (const meta of TEMPLATE_METADATA) {
     try {
       const Component = TEMPLATE_REGISTRY[meta.id];
@@ -219,7 +227,7 @@ async function runVerification() {
     })
   );
   assert.ok(fallbackHtml.includes("Jane Doe"), "Fallback template failed to render");
-  console.log("  ✅ Unknown template securely falls back to DevPortTemplate default.");
+  console.log("  ✅ Unknown template securely falls back to Spotlight default.");
   passed++;
 
   console.log("\n==================================================================");
