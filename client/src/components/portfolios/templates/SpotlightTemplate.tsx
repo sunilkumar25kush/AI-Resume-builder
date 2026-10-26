@@ -5,7 +5,6 @@ import {
   Award,
   ExternalLink,
   ChevronRight,
-  Star,
   FolderGit2,
 } from "lucide-react";
 
@@ -225,6 +224,7 @@ export function SpotlightTemplate({
   const fullName = profile?.fullName || (showEmpty ? "sunil kumar" : "developer");
   const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile?.headline || (showEmpty ? "HTML and JavaScript developer" : "Full Stack Developer");
+  const contactEmail = profile?.email || "";
   // Extract GitHub handle and avatar
   const githubLink = socialLinks.find(
     (l: PortfolioSocialLink) =>
@@ -232,12 +232,14 @@ export function SpotlightTemplate({
   );
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : "sunilkumar25kush";
+    : (showEmpty ? "sunilkumar25kush" : null);
 
   // Fallback to candidate's github avatar if none uploaded
   const avatarUrl = profile?.avatarUrl
     ? normalizeAvatarUrl(profile.avatarUrl)
-    : `https://avatars.githubusercontent.com/${githubHandle}`;
+    : (githubHandle
+      ? `https://avatars.githubusercontent.com/${githubHandle}`
+      : (showEmpty ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400" : null));
 
   // Smart headline split for clean multi-line display (exact match to screenshot 1)
   const headlineLines = useMemo(() => {
@@ -254,8 +256,8 @@ export function SpotlightTemplate({
   const skillNames = useMemo(() => {
     const list = skills.map((s: PortfolioSkill) => (typeof s === "string" ? s : s.name)).filter(Boolean);
     if (list.length > 0) return list;
-    return ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"];
-  }, [skills]);
+    return showEmpty ? ["HTML", "JavaScript", "TypeScript", "CSS", "Python", "Dockerfile"] : [];
+  }, [skills, showEmpty]);
 
   // Realistic sample projects matching candidate's public repos from screenshots
   const displayProjects = useMemo(() => {
@@ -264,18 +266,19 @@ export function SpotlightTemplate({
         title: p.title,
         description: p.description,
         tags: p.tags || ["JavaScript"],
-        repoUrl: p.repoUrl || `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\s+/g, "-")}`,
+        repoUrl: p.repoUrl || (githubHandle ? `https://github.com/${githubHandle}/${p.title.toLowerCase().replace(/\s+/g, "-")}` : undefined),
         liveUrl: p.liveUrl,
         imageUrl: p.imageUrl,
         featured: p.featured ?? true,
       }));
     }
+    if (!showEmpty) return [];
     return [
       {
         title: "NOTE-PROJECT",
         description: "Full-stack collaborative notes platform with instant Markdown sync and rich text formatting.",
         tags: ["HTML", "JavaScript"],
-        repoUrl: `https://github.com/${githubHandle}/NOTE-PROJECT`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/NOTE-PROJECT`,
         liveUrl: undefined as string | undefined,
         imageUrl: undefined as string | undefined,
         featured: true,
@@ -284,7 +287,7 @@ export function SpotlightTemplate({
         title: "AI-Interviewer",
         description: "Intelligent conversational interview platform simulating technical candidate evaluations.",
         tags: ["JavaScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/AI-Interviewer`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/AI-Interviewer`,
         liveUrl: undefined as string | undefined,
         featured: true,
       },
@@ -292,7 +295,7 @@ export function SpotlightTemplate({
         title: "AI-Resume-builder",
         description: "Next-gen intelligent career document and portfolio generator with ATS optimization.",
         tags: ["TypeScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/AI-Resume-builder`,
         liveUrl: undefined as string | undefined,
         featured: true,
       },
@@ -300,12 +303,12 @@ export function SpotlightTemplate({
         title: "AI-CONTENT-GENERATOR",
         description: "Multi-modal AI content synthesizer for automated technical articles, docs, and assets.",
         tags: ["CSS", "JavaScript"],
-        repoUrl: `https://github.com/${githubHandle}/AI-CONTENT-GENERATOR`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/AI-CONTENT-GENERATOR`,
         liveUrl: undefined as string | undefined,
         featured: true,
       },
     ];
-  }, [projects, githubHandle]);
+  }, [projects, showEmpty, githubHandle]);
 
   // ---------------------------------------------------------------------------
   // 3. EXPERTISE CARDS: 4 CONNECTED NODES (MATCHING SCREENSHOT 3)
@@ -439,14 +442,20 @@ export function SpotlightTemplate({
                   : undefined,
               }}
             >
-              <img
-                src={avatarUrl}
-                alt={fullName}
-                className="w-full h-full object-cover object-top"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={fullName}
+                  className="w-full h-full object-cover object-top"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-black/20 text-white/50 font-['Anton'] text-5xl">
+                  {firstName.slice(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -504,11 +513,17 @@ export function SpotlightTemplate({
               }}
             >
               <div className="w-full h-full rounded-[22px] overflow-hidden bg-black flex items-center justify-center">
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="w-full h-full object-cover object-top"
-                />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={fullName}
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <span className="font-['Anton'] text-6xl text-white/40">
+                    {firstName.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -555,23 +570,18 @@ export function SpotlightTemplate({
               })}
             </div>
 
-            {/* Stats row */}
-            <div
-              className="flex items-center gap-6 pt-4 text-sm font-medium"
-              style={{ color: colors.inkMuted }}
-            >
-              <span>2 followers</span>
-              <span className="flex items-center gap-1.5">
-                <Star className="h-4 w-4" style={{ color: accentColor }} />
-                <span>1 stars</span>
-              </span>
-              {profile?.location && (
-                <span className="flex items-center gap-1.5 ml-auto">
+            {/* Location row */}
+            {profile?.location && (
+              <div
+                className="flex items-center gap-6 pt-4 text-sm font-medium"
+                style={{ color: colors.inkMuted }}
+              >
+                <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" style={{ color: accentColor }} />
                   <span>{profile.location}</span>
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -606,7 +616,9 @@ export function SpotlightTemplate({
             </h2>
 
             <p className="text-base sm:text-lg leading-[1.6]" style={{ color: colors.inkMuted }}>
-              What {firstName.toLowerCase()} spends their time on, from 24 public repositories.
+              {displayProjects.length > 0
+                ? `What ${firstName.toLowerCase()} spends their time on, across ${displayProjects.length} featured project${displayProjects.length === 1 ? "" : "s"}.`
+                : `What ${firstName.toLowerCase()} spends their time on, across engineering and open-source projects.`}
             </p>
           </div>
 
@@ -781,14 +793,16 @@ export function SpotlightTemplate({
               </p>
             </div>
 
-            <SafeLink
-              href={`https://github.com/${githubHandle}?tab=repositories`}
-              className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"
-              style={{ color: accentColor }}
-            >
-              <span>View all GitHub repos</span>
-              <ChevronRight className="h-4 w-4" />
-            </SafeLink>
+            {githubHandle && (
+              <SafeLink
+                href={`https://github.com/${githubHandle}?tab=repositories`}
+                className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"
+                style={{ color: accentColor }}
+              >
+                <span>View all GitHub repos</span>
+                <ChevronRight className="h-4 w-4" />
+              </SafeLink>
+            )}
           </div>
 
           {/* Project Cards Grid */}
@@ -869,11 +883,6 @@ export function SpotlightTemplate({
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tagColor }} />
                       <span>{primaryTag}</span>
                     </div>
-
-                    <span className="flex items-center gap-1 text-xs font-medium" style={{ color: colors.inkMuted }}>
-                      <Star className="h-3.5 w-3.5" style={{ color: accentColor }} />
-                      <span>★ 3</span>
-                    </span>
                   </div>
                 </div>
               );
@@ -1074,21 +1083,34 @@ export function SpotlightTemplate({
             Open to new roles, collaborations and interesting problems.
           </p>
 
-          {/* Direct Action Pills - Only LinkedIn option as requested */}
+          {/* Direct Action Pills */}
           <div className="space-y-3">
-            <SafeLink
-              href="https://www.linkedin.com/in/sunil-kumar-9042aa373/?isSelfProfile=true"
-              className="flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-              aria-label="Connect on LinkedIn (opens in a new tab)"
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 fill-current text-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-                </svg>
-                <span>LinkedIn</span>
-              </div>
-              <span className="group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90">→</span>
-            </SafeLink>
+            {(() => {
+              const linkedinLink = socialLinks.find(
+                (l: PortfolioSocialLink) =>
+                  l.platform?.toLowerCase().includes("linkedin") || l.url?.toLowerCase().includes("linkedin.com")
+              );
+              const contactUrl = linkedinLink?.url || (contactEmail ? `mailto:${contactEmail}` : (githubHandle ? `https://github.com/${githubHandle}` : "#top"));
+              const contactLabel = linkedinLink ? (linkedinLink.label || "LinkedIn") : (contactEmail ? "Email" : "GitHub");
+
+              return (
+                <SafeLink
+                  href={contactUrl}
+                  target={contactUrl.startsWith("mailto:") || contactUrl.startsWith("#") ? undefined : "_blank"}
+                  rel="noopener"
+                  className="flex items-center justify-between w-full px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-black/25 hover:bg-black/40 text-white font-semibold text-sm sm:text-base transition-all duration-200 group shadow-md hover:shadow-xl hover:scale-[1.01] border border-white/10 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  aria-label={`Connect via ${contactLabel}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 fill-current text-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                    </svg>
+                    <span>{contactLabel}</span>
+                  </div>
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-200 font-bold text-white/90">→</span>
+                </SafeLink>
+              );
+            })()}
           </div>
         </div>
       </section>
@@ -1191,6 +1213,10 @@ export function SpotlightTemplate({
           ))}
       </main>
 
+      {/* Semantic Footer */}
+      <footer className="w-full py-8 text-center text-xs opacity-60 font-['Inter']">
+        © {new Date().getFullYear()} {fullName}. All rights reserved.
+      </footer>
 
       {/* Back to Top Floating Button */}
       {showScrollTop && (
