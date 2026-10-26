@@ -125,7 +125,80 @@ export const generatePortfolioFromResume = asyncHandler(async (req, res) => {
 /** Export a portfolio as React Source ZIP or Static Website ZIP */
 export const exportPortfolioById = asyncHandler(async (req, res) => {
   const format = req.query.format === "static" ? "static" : "source";
-  const portfolio = await portfolioService.getPortfolioById(req.user.id, req.params.id);
+  let basePortfolio;
+
+  if (req.params.id === "demo") {
+    basePortfolio = {
+      title: "Demo Developer Portfolio",
+      slug: "demo-developer",
+      profile: {
+        fullName: "Demo Developer",
+        headline: "Full Stack Engineer & Creative Developer",
+        bio: "Explore demo developer's public projects and open-source work.",
+        email: "demo@example.com",
+      },
+      skills: [{ name: "JavaScript" }, { name: "TypeScript" }, { name: "React" }],
+      projects: [{ title: "Demo Project", description: "A high-performance web application.", tags: ["React"] }],
+      design: { template: "spotlight", theme: "dark", primaryColor: "#e3141f" },
+    };
+  } else {
+    const doc = await portfolioService.getPortfolioById(req.user.id, req.params.id);
+    basePortfolio = doc?.toObject ? doc.toObject() : doc;
+  }
+
+  let portfolio = { ...basePortfolio };
+
+  // If live preview modifications are provided in request body, merge them cleanly and deeply
+  if (req.body && typeof req.body === "object") {
+    const rawOverrides = req.body.portfolio || req.body;
+    if (rawOverrides && typeof rawOverrides === "object" && Object.keys(rawOverrides).length > 0) {
+      portfolio = {
+        ...basePortfolio,
+        ...rawOverrides,
+        profile: {
+          ...(basePortfolio.profile || {}),
+          ...(rawOverrides.profile || {}),
+        },
+        design: {
+          ...(basePortfolio.design || {}),
+          ...(rawOverrides.design || {}),
+          sectionOrder: rawOverrides.design?.sectionOrder || basePortfolio.design?.sectionOrder,
+          sectionVisibility: {
+            ...((basePortfolio.design && basePortfolio.design.sectionVisibility) || {}),
+            ...((rawOverrides.design && rawOverrides.design.sectionVisibility) || {}),
+          },
+          layoutOptions: {
+            ...((basePortfolio.design && basePortfolio.design.layoutOptions) || {}),
+            ...((rawOverrides.design && rawOverrides.design.layoutOptions) || {}),
+          },
+          templateSettings: {
+            ...((basePortfolio.design && basePortfolio.design.templateSettings) || {}),
+            ...((rawOverrides.design && rawOverrides.design.templateSettings) || {}),
+          },
+          customLabels: {
+            ...((basePortfolio.design && basePortfolio.design.customLabels) || {}),
+            ...((rawOverrides.design && rawOverrides.design.customLabels) || {}),
+          },
+          customText: {
+            ...((basePortfolio.design && basePortfolio.design.customText) || {}),
+            ...((rawOverrides.design && rawOverrides.design.customText) || {}),
+          },
+        },
+        publication: {
+          ...(basePortfolio.publication || {}),
+          ...(rawOverrides.publication || {}),
+        },
+      };
+
+      // Explicit array overrides if supplied
+      if (Array.isArray(rawOverrides.skills)) portfolio.skills = rawOverrides.skills;
+      if (Array.isArray(rawOverrides.experience)) portfolio.experience = rawOverrides.experience;
+      if (Array.isArray(rawOverrides.education)) portfolio.education = rawOverrides.education;
+      if (Array.isArray(rawOverrides.projects)) portfolio.projects = rawOverrides.projects;
+      if (Array.isArray(rawOverrides.certifications)) portfolio.certifications = rawOverrides.certifications;
+      if (Array.isArray(rawOverrides.socialLinks)) portfolio.socialLinks = rawOverrides.socialLinks;
+    }
+  }
 
   if (format === "static") {
     await portfolioExportService.exportPortfolioAsStaticZip(portfolio, res);
