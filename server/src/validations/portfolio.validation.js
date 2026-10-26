@@ -34,7 +34,8 @@ const experienceSchema = z.object({
   current: z.boolean().optional().default(false),
   description: z.string().trim().max(5000).optional().default(""),
   highlights: z.array(z.string().trim().max(1000)).max(50).optional().default([]),
-});
+  technologies: z.string().trim().max(500).optional().default(""),
+}).passthrough();
 
 const educationSchema = z.object({
   institution: z.string().trim().max(200).optional().default(""),
@@ -42,8 +43,9 @@ const educationSchema = z.object({
   fieldOfStudy: z.string().trim().max(200).optional().default(""),
   startDate: z.string().trim().max(100).optional().default(""),
   endDate: z.string().trim().max(100).optional().default(""),
+  graduationDate: z.string().trim().max(100).optional().default(""),
   grade: z.string().trim().max(50).optional().default(""),
-});
+}).passthrough();
 
 const projectSchema = z.object({
   title: z.string().trim().max(200).optional().default(""),
@@ -51,16 +53,19 @@ const projectSchema = z.object({
   tags: z.array(z.string().trim().max(100)).max(50).optional().default([]),
   liveUrl: z.string().trim().max(1000).optional().default(""),
   repoUrl: z.string().trim().max(1000).optional().default(""),
-  imageUrl: z.string().trim().max(1000).optional().default(""),
+  imageUrl: z.string().trim().max(2000000).optional().default(""),
   featured: z.boolean().optional().default(false),
-});
+  role: z.string().trim().max(200).optional().default(""),
+  highlights: z.array(z.string().trim().max(1000)).max(50).optional().default([]),
+  demoUrl: z.string().trim().max(1000).optional().default(""),
+}).passthrough();
 
 const certificationSchema = z.object({
   name: z.string().trim().max(200).optional().default(""),
   issuer: z.string().trim().max(200).optional().default(""),
   issueDate: z.string().trim().max(100).optional().default(""),
   url: z.string().trim().max(1000).optional().default(""),
-});
+}).passthrough();
 
 export const PORTFOLIO_TEMPLATES = Object.freeze([
   "spotlight",
@@ -74,11 +79,13 @@ export const PORTFOLIO_TEMPLATES = Object.freeze([
 ]);
 
 const designSettingsSchema = z.object({
-  template: z.enum(PORTFOLIO_TEMPLATES).optional().default("devport"),
+  template: z.enum(PORTFOLIO_TEMPLATES).optional().default("spotlight"),
+  templateVersion: z.string().trim().max(50).optional().default("1.0.0"),
   theme: z.enum(["light", "dark", "system"]).optional().default("system"),
   primaryColor: z.string().trim().max(50).optional().default("#2563eb"),
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
   customCss: z.string().trim().max(10000).optional().default(""),
+  backgroundEffect: z.string().trim().max(100).optional().default("default"),
   sectionOrder: z.array(z.string().trim().max(50)).max(20).optional().default([
     "hero",
     "about",
@@ -90,7 +97,11 @@ const designSettingsSchema = z.object({
     "contact",
   ]),
   sectionVisibility: z.record(z.string(), z.boolean()).optional().default({}),
-});
+  layoutOptions: z.record(z.string(), z.any()).optional().default({}),
+  templateSettings: z.record(z.string(), z.any()).optional().default({}),
+  customLabels: z.record(z.string(), z.string()).optional().default({}),
+  customText: z.record(z.string(), z.string()).optional().default({}),
+}).passthrough();
 
 const publicationSchema = z.object({
   isPublic: z.boolean().optional().default(false),
@@ -129,13 +140,19 @@ const profileUpdateSchema = z.object({
 
 const designUpdateSchema = z.object({
   template: z.enum(PORTFOLIO_TEMPLATES).optional(),
+  templateVersion: z.string().trim().max(50).optional(),
   theme: z.enum(["light", "dark", "system"]).optional(),
   primaryColor: z.string().trim().max(50).optional(),
   fontFamily: z.string().trim().max(100).optional(),
   customCss: z.string().trim().max(10000).optional(),
+  backgroundEffect: z.string().trim().max(100).optional(),
   sectionOrder: z.array(z.string().trim().max(50)).max(20).optional(),
   sectionVisibility: z.record(z.string(), z.boolean()).optional(),
-});
+  layoutOptions: z.record(z.string(), z.any()).optional(),
+  templateSettings: z.record(z.string(), z.any()).optional(),
+  customLabels: z.record(z.string(), z.string()).optional(),
+  customText: z.record(z.string(), z.string()).optional(),
+}).passthrough();
 
 const publicationUpdateSchema = z.object({
   isPublic: z.boolean().optional(),
@@ -186,5 +203,19 @@ export const generateFromUploadSchema = z.object({
 
 export const exportPortfolioQuerySchema = z.object({
   format: z.enum(["source", "static"]).optional().default("source"),
+});
+
+export const exportedPortfolioSchema = z.object({
+  title: z.string().trim().max(200).default("Portfolio"),
+  slug: z.string().trim().default(""),
+  profile: profileSchema.default({}),
+  socialLinks: z.array(socialLinkSchema).max(50).default([]),
+  skills: z.array(skillSchema).max(200).default([]),
+  experience: z.array(experienceSchema).max(100).default([]),
+  education: z.array(educationSchema).max(50).default([]),
+  projects: z.array(projectSchema).max(100).default([]),
+  certifications: z.array(certificationSchema).max(50).default([]),
+  design: designSettingsSchema.default({}),
+  publication: publicationSchema.default({}),
 });
 
