@@ -1408,11 +1408,14 @@ html {
   background-color: var(--bg-dark);
   color: var(--text-white);
   line-height: 1.6;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body.devport-theme {
   position: relative;
   overflow-x: hidden;
+  max-width: 100vw;
   min-height: 100vh;
 }
 
@@ -1423,12 +1426,15 @@ body.devport-theme {
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+  max-width: 100vw;
+  max-height: 100vh;
 }
 
 .glow-orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
+  max-width: 100vw;
 }
 
 .orb-1 {
@@ -1481,10 +1487,16 @@ body.devport-theme {
   width: 100%;
   max-width: 1140px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+@media (min-width: 640px) {
+  .navbar-container {
+    padding: 0 24px;
+  }
 }
 
 .brand-group {
@@ -1586,16 +1598,35 @@ body.devport-theme {
   z-index: 10;
   max-width: 1140px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 16px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .devport-main-container {
+    padding: 0 24px;
+  }
 }
 
 .devport-section {
-  padding: 80px 0;
+  padding: 48px 0;
+}
+
+@media (min-width: 640px) {
+  .devport-section {
+    padding: 80px 0;
+  }
 }
 
 /* Hero Section */
 .devport-hero-section {
-  padding: 60px 0 100px;
+  padding: 32px 0 60px;
+}
+
+@media (min-width: 640px) {
+  .devport-hero-section {
+    padding: 60px 0 100px;
+  }
 }
 
 .hero-grid {
@@ -1652,11 +1683,13 @@ body.devport-theme {
 }
 
 .hero-full-name {
-  font-size: 64px;
+  font-size: clamp(34px, 8.5vw, 64px);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: -0.04em;
   margin-bottom: 12px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .typewriter-headline {
@@ -1825,6 +1858,7 @@ body.devport-theme {
 .hero-right {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .orbital-stage {
@@ -1834,6 +1868,7 @@ body.devport-theme {
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
 }
 
 .orbital-aura {
@@ -2375,16 +2410,66 @@ body.devport-theme {
 }
 
 /* Responsive */
-@media (max-width: 860px) {
-  .hero-grid { grid-template-columns: 1fr; text-align: center; }
-  .hero-full-name { font-size: 44px; }
+@media (max-width: 1023px) {
+  .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 36px; }
   .typewriter-headline { justify-content: center; }
   .hero-bio-text { margin-left: auto; margin-right: auto; }
   .core-tech-pills { justify-content: center; }
   .hero-cta-row { justify-content: center; }
   .hero-connect-row { justify-content: center; }
-  .two-col-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
   .devport-nav-pills { display: none; }
+  .projects-cards-grid { grid-template-columns: 1fr; }
+  .two-col-grid { grid-template-columns: 1fr; gap: 24px; }
+  .skills-cards-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  .skills-cards-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .skills-cards-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .projects-cards-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .two-col-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+
+@media (max-width: 639px) {
+  .orbital-stage {
+    width: min(300px, calc(100vw - 32px));
+    height: 340px;
+  }
+  .orbital-avatar-ring {
+    width: 192px;
+    height: 192px;
+  }
+  .floating-stat-card {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .stat-left { bottom: -6px; left: -2px; }
+  .stat-right { bottom: -6px; right: -2px; }
+  .contact-cta-box { padding: 40px 16px; border-radius: 20px; }
+  .hero-cta-row { flex-direction: column; width: 100%; }
+  .hero-cta-row a { width: 100%; justify-content: center; }
+  .exp-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .exp-date { align-self: flex-start; }
+}
+
+@media (max-width: 479px) {
+  .floating-code-card {
+    display: none;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 639px) {
+  .floating-code-card {
+    width: 192px;
+    right: -4px;
+    top: -8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2815,7 +2900,10 @@ body.creative-theme.creative-light .creative-footer {
   background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.15), transparent 50%),
               radial-gradient(circle at 20% 70%, rgba(147, 51, 234, 0.12), transparent 50%);
 }
-.container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: 1140px; margin: 0 auto; padding: 0 16px; width: 100%; }
+@media (min-width: 640px) {
+  .container { padding: 0 24px; }
+}
 .creative-navbar {
   height: 76px;
   background: rgba(11, 15, 25, 0.85);
@@ -2942,10 +3030,21 @@ body.creative-theme.creative-light .creative-footer {
   color: var(--purple) !important;
   font-weight: 700;
 }
-@media (max-width: 768px) {
-  .creative-hero-grid { grid-template-columns: 1fr; text-align: center; }
-  .creative-name { font-size: 40px; }
+@media (max-width: 1023px) {
+  .creative-hero-grid { grid-template-columns: 1fr; text-align: center; gap: 32px; }
+  .creative-hero { padding: 48px 0 40px; }
+}
+@media (max-width: 767px) {
   .creative-nav { display: none; }
+  .creative-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 768px) {
+  .creative-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 639px) {
+  .spotlight-avatar-halo { width: min(240px, 72vw); height: min(240px, 72vw); }
+  .creative-name { font-size: clamp(32px, 8vw, 42px); }
+  .creative-footer-flex { flex-direction: column; gap: 12px; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -3242,8 +3341,13 @@ body.terminal-theme { background: var(--bg-term); color: var(--text-main); font-
 .term-footer { border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); }
 .term-top-btn { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12px; cursor: pointer; }
 .term-top-btn:hover { text-decoration: underline; }
-@media (max-width: 640px) {
+@media (max-width: 639px) {
+  body.terminal-theme { padding: 12px; }
+  .terminal-container { padding: 16px; margin: 16px auto; }
   .term-nav { display: none; }
+  .term-hero-content { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .term-name { font-size: clamp(24px, 7vw, 32px); }
+  .term-footer { flex-direction: column; gap: 8px; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -3558,8 +3662,12 @@ body.minimal-theme { background: var(--min-bg); color: var(--min-text); font-fam
   gap: 4px;
 }
 .min-top-btn:hover { text-decoration: underline; }
-@media (max-width: 600px) {
+@media (max-width: 639px) {
+  body.minimal-theme { padding: 32px 16px; }
   .min-nav-links { gap: 10px; font-size: 12px; flex-wrap: wrap; }
+  .min-name { font-size: clamp(24px, 7vw, 32px); }
+  .min-item-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .min-footer-flex { flex-direction: column; gap: 8px; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -4159,7 +4267,7 @@ return `<!DOCTYPE html>
     </div>
   </nav>
 
-  <main class="w-full">\n    ${renderedSections}\n  </main>
+  <main class="w-full">\n    ${renderedSections}\n  </main>\n\n  <footer class="spotlight-footer">\n    <p>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. All rights reserved.</p>\n  </footer>
 
   <!-- Back to Top Floating Button -->
   <button type="button" id="scrollTopBtn" aria-label="Back to top" class="spotlight-scroll-top">
@@ -5088,6 +5196,16 @@ body.spotlight-body {
 .spotlight-scroll-top:hover { transform: scale(1.1); }
 .spotlight-scroll-top svg { width: 20px; height: 20px; }
 
+/* Footer */
+.spotlight-footer {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 12px;
+  border-top: 1px solid var(--spotlight-border);
+  background-color: var(--spotlight-section-white);
+  color: var(--spotlight-muted);
+}
+
 /* Responsive adjustments */
 @media (max-width: 1023px) {
   .spotlight-hero-container {
@@ -5467,7 +5585,13 @@ body.poster-theme {
 .poster-wrapper {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 24px 16px;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .poster-wrapper {
+    padding: 40px 24px;
+  }
 }
 
 /* Header */
