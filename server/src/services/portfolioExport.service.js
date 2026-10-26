@@ -6098,28 +6098,164 @@ body.poster-theme::before {
   display: block;
   line-height: 1;
 }
-.poster-col-label {
+.poster-fallback-badge {
   font-family: monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.poster-intro {
+  position: relative;
+  z-index: 20;
+  padding: 0 clamp(20px, 5vw, 80px);
+  margin-top: 16px;
+  text-align: left;
+}
+@media (min-width: 1024px) {
+  .poster-intro {
+    position: absolute;
+    left: clamp(20px, 5vw, 80px);
+    bottom: clamp(28px, 7svh, 80px);
+    padding: 0;
+    margin-top: 0;
+  }
+}
+.poster-intro-greeting {
+  margin: 0 0 4px;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: clamp(16px, 1.6vw, 24px);
+  color: var(--ink);
+}
+.poster-first-name {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(56px, 10vw, 170px);
+  line-height: 0.86;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: normal;
+}
+
+.poster-role {
+  position: relative;
+  z-index: 20;
+  max-width: 100%;
+  padding: 0 clamp(20px, 5vw, 80px);
+  margin-top: 24px;
+  text-align: left;
+}
+@media (min-width: 1024px) {
+  .poster-role {
+    position: absolute;
+    right: clamp(20px, 5vw, 80px);
+    bottom: clamp(28px, 9svh, 110px);
+    max-width: min(34ch, 32vw);
+    padding: 0;
+    margin-top: 0;
+  }
+}
+.poster-headline {
+  margin: 0 0 12px;
+  font-family: var(--body);
   font-weight: 800;
-  font-size: 14px;
-  color: var(--poster-accent);
+  font-size: clamp(20px, 2.2vw, 34px);
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  text-transform: uppercase;
+  line-height: 1.05;
 }
-.poster-statement-text {
-  font-size: 24px;
+.poster-hero-skills {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-family: var(--body);
+}
+.poster-hero-skill-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: clamp(14px, 1.15vw, 18px);
+  color: var(--ink-2);
+}
+.poster-bullet {
+  color: var(--ink);
+  font-size: 0.9em;
+}
+.poster-skill-name {
   font-weight: 500;
-  line-height: 1.4;
-  margin-bottom: 24px;
+  color: var(--ink);
 }
-.poster-portrait-wrap {
-  width: 140px;
-  height: 140px;
-  border: 3px solid var(--poster-border);
+.poster-typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--ink);
+  animation: blink 1s steps(2) infinite;
+  vertical-align: middle;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ==========================================================================
+   MARQUEE BAND
+   ========================================================================== */
+.poster-band {
+  position: relative;
+  z-index: 20;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--accent);
+  padding: 18px 0;
+  user-select: none;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+.poster-track {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  width: max-content;
+  font-family: var(--display);
+  font-size: clamp(28px, 3.4vw, 52px);
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: posterMarquee 35s linear infinite;
+  will-change: transform;
+}
+.poster-star {
+  opacity: 0.9;
+}
+.poster-band:hover .poster-track,
+.poster-band:focus-within .poster-track {
+  animation-play-state: paused;
+}
+@keyframes posterMarquee {
+  to { transform: translateX(-50%); }
+}
+
+/* ==========================================================================
+   SELECTED WORK / PROJECTS
+   ========================================================================== */
+.poster-work {
+  position: relative;
+  padding: clamp(80px, 10vw, 140px) 0;
   overflow: hidden;
 }
-.poster-portrait-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.poster-watermark {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Projects */
