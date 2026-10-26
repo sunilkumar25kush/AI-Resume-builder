@@ -5847,45 +5847,26 @@ function generatePosterStaticHtml(data) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <title>${escapeHtml(data.publication.seoTitle || fullName + " - Poster Portfolio")}</title>
-  <meta name="description" content="${escapeHtml(data.publication.seoDescription)}">
+  <title>${escapeHtml(data.publication?.seoTitle || fullName + " - Portfolio")}</title>
+  <meta name="description" content="${escapeHtml(data.publication?.seoDescription || headline)}">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   ${GOOGLE_FONTS_LINK_TAG}
   <link rel="stylesheet" href="assets/style.css">
 </head>
-<body class="poster-theme${isDark ? " poster-dark" : " poster-light"}">
-  <!-- Top Marquee Ticker -->
-  <div class="poster-ticker" aria-hidden="true">
-    <div class="poster-ticker-track">
-      <span>${escapeHtml(marqueeText)} &nbsp;&bull;&nbsp; ${escapeHtml(marqueeText)} &nbsp;&bull;&nbsp; ${escapeHtml(marqueeText)}</span>
-    </div>
-  </div>
-
-  <div class="poster-wrapper">
-    <header class="poster-header">
-      <div class="poster-top-bar">
-        <span class="poster-brand">${escapeHtml(fullName)}</span>
-        <div class="poster-socials-top">${socialLinksHtml}</div>
-      </div>
-      <h1 class="poster-hero-name">${escapeHtml(fullName.toUpperCase())}</h1>
-      <div class="poster-meta-banner">
-        <div class="poster-headline-badge">${escapeHtml(headline.toUpperCase())}</div>
-        <div class="poster-typewriter-box">
-          <span class="poster-typewriter-prefix">SKILLS:</span>
-          <span class="poster-typewriter-text" id="posterTypewriter" data-skills='${escapeHtml(skillsJson)}'></span>
-          <span class="poster-cursor">_</span>
-        </div>
-      </div>
-    </header>
-
+<body class="poster-theme">
+  <div class="poster-template poster-wrapper">
     <main class="poster-main">
       ${renderedSections}
     </main>
 
     <footer class="poster-footer">
-      <span>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}. POSTER EDITORIAL ARCHIVE.</span>
-      <button type="button" class="poster-btn-top" id="scrollTopBtn">TOP &uarr;</button>
+      <span>&copy; ${new Date().getFullYear()} ${escapeHtml(fullName)}</span>
     </footer>
+
+    <!-- Back to top floating button -->
+    <button type="button" id="scrollTopBtn" aria-label="Back to top" class="poster-scroll-top-btn poster-btn-top" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="poster-scroll-icon"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
   </div>
 
   <script src="assets/script.js"></script>
