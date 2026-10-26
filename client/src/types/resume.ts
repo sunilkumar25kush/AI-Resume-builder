@@ -178,6 +178,8 @@ export interface ResumeCustomization {
   showPhoto?: boolean;
   photoShape?: "round" | "rounded" | "square";
   photoSize?: "small" | "medium" | "large";
+  photoUrl?: string;
+  jobTitle?: string;
 }
 
 export interface Resume {

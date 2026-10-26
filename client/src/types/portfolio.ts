@@ -115,14 +115,24 @@ export type PortfolioTemplateId =
   | "modern"
   | "executive";
 
+export interface PortfolioLayoutOptions {
+  projectsLayout?: "grid" | "cards" | "staggered" | "list";
+  skillsLayout?: "badges" | "bars" | "pills" | "categories";
+  heroLayout?: "split" | "centered" | "minimal";
+  [key: string]: unknown;
+}
+
 export interface PortfolioDesignSettings {
   template: PortfolioTemplateId;
   theme: "light" | "dark" | "system";
   primaryColor?: string;
   fontFamily?: string;
   customCss?: string;
+  backgroundEffect?: string;
   sectionOrder?: string[];
   sectionVisibility?: Record<string, boolean>;
+  layoutOptions?: PortfolioLayoutOptions;
+  templateSettings?: Record<string, unknown>;
 }
 
 export interface PortfolioPublication {
