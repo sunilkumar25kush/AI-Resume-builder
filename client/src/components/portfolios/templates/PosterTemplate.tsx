@@ -5,7 +5,6 @@ import {
   Award,
 } from "lucide-react";
 
-import { AttributionFooter } from "@/components/portfolios/common/AttributionFooter";
 import { SafeLink } from "@/components/portfolios/common/SafeLink";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import type { Portfolio, PortfolioSkill, PortfolioSocialLink, PortfolioExperience, PortfolioEducation, PortfolioProject, PortfolioCertification } from "@/types/portfolio";
@@ -61,6 +60,16 @@ export function PosterTemplate({
   const certifications = portfolio.certifications || [];
 
   const accentColor = design?.primaryColor || "#e11d2a";
+  const templateSettings = design?.templateSettings || {};
+  const marqueeCustomText = typeof templateSettings.marqueeText === "string" && templateSettings.marqueeText.trim()
+    ? templateSettings.marqueeText.trim()
+    : "CREATIVE • VISIONARY • ENGINEER • FULLSTACK";
+  const watermarkOpacityClass =
+    templateSettings.watermarkOpacity === "bold"
+      ? "opacity-25"
+      : templateSettings.watermarkOpacity === "hidden"
+      ? "opacity-0"
+      : "opacity-10";
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Derive candidate names & handles
@@ -76,13 +85,13 @@ export function PosterTemplate({
   );
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : "sunilkumar25kush";
+    : (showEmpty ? "sunilkumar25kush" : null);
 
-  // Skills for typewriter in hero
+  // Skills for typewriter in hero derived from skills
   const skillNames = useMemo(() => {
     const list = skills.map((s: PortfolioSkill) => (typeof s === "string" ? s : s.name)).filter(Boolean);
-    return list.length ? list.slice(0, 4) : ["HTML", "JavaScript", "TypeScript", "CSS"];
-  }, [skills]);
+    return list.length ? list.slice(0, 4) : (showEmpty ? ["HTML", "JavaScript", "TypeScript", "CSS"] : []);
+  }, [skills, showEmpty]);
 
   // Typewriter Skills State matching GitSkins exactly
   const [typedSkills, setTypedSkills] = useState<{ text: string; done: boolean }[]>([]);
@@ -121,40 +130,41 @@ export function PosterTemplate({
     }
   }, [activeSkillIdx, currentCharIdx, skillNames]);
 
-  // Fallback demo projects matching GitSkins layout if projects are empty
+  // Fallback demo projects matching GitSkins layout only when showEmpty is true
   const displayProjects: PortfolioProject[] = useMemo(() => {
     if (projects.length > 0) return projects;
+    if (!showEmpty) return [];
     return [
       {
         title: "AI RESUME BUILDER",
         description: "Intelligent career document and portfolio generator with multi-template rendering.",
         tags: ["TypeScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/AI-Resume-builder`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/AI-Resume-builder`,
         featured: true,
       },
       {
         title: "PRACTICE",
         description: "Algorithmic data structures, web systems design, and code sandbox experiments.",
         tags: ["JavaScript", "HTML"],
-        repoUrl: `https://github.com/${githubHandle}/practice`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/practice`,
         featured: false,
       },
       {
         title: "PORTFOLIO01",
         description: "Interactive personal web showcase with custom styling and animations.",
         tags: ["CSS", "HTML"],
-        repoUrl: `https://github.com/${githubHandle}/portfolio01`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/portfolio01`,
         featured: false,
       },
       {
         title: "SKYWATCH",
         description: "Real-time atmospheric telemetry and meteorological visualization dashboard.",
         tags: ["TypeScript", "React"],
-        repoUrl: `https://github.com/${githubHandle}/SkyWatch`,
+        repoUrl: `https://github.com/${githubHandle || "developer"}/SkyWatch`,
         featured: false,
       },
     ];
-  }, [projects, githubHandle]);
+  }, [projects, showEmpty, githubHandle]);
 
   // Card tilts matching GitSkins poster
   const cardTilts = [-1.2, 1, -0.6, 1.4];
@@ -246,38 +256,30 @@ export function PosterTemplate({
     // MARQUEE BAND: Exact Red Ticker with Contributions, Languages, Repos
     // -------------------------------------------------------------------------
     marquee: (
-      <div key="marquee" className="poster-band relative z-20 overflow-hidden bg-[#e11d2a] text-white py-[18px] select-none shadow-md">
+      <div
+        key="marquee"
+        className="poster-band relative z-20 overflow-hidden text-white py-[18px] select-none shadow-md"
+        style={{ backgroundColor: accentColor }}
+      >
         <div
           className="poster-track flex items-center gap-12 w-max font-['Anton'] text-[clamp(28px,3.4vw,52px)] uppercase whitespace-nowrap animate-[marquee_35s_linear_infinite]"
           style={{ willChange: "transform" }}
         >
-          <span>CONTRIBUTIONS <b>260</b></span>
+          <span>{marqueeCustomText}</span>
+          {displayProjects.length > 0 && (
+            <>
+              <span className="opacity-90">✦</span>
+              <span>REPOS <b>{displayProjects.length}</b></span>
+            </>
+          )}
           <span className="opacity-90">✦</span>
-          <span>HTML</span>
-          <span className="opacity-90">✦</span>
-          <span>JAVASCRIPT</span>
-          <span className="opacity-90">✦</span>
-          <span>TYPESCRIPT</span>
-          <span className="opacity-90">✦</span>
-          <span>CSS</span>
-          <span className="opacity-90">✦</span>
-          <span>REPOS <b>{displayProjects.length}</b></span>
-          <span className="opacity-90">✦</span>
-          <span>STARS <b>12</b></span>
-          <span className="opacity-90">✦</span>
-          <span>CONTRIBUTIONS <b>260</b></span>
-          <span className="opacity-90">✦</span>
-          <span>HTML</span>
-          <span className="opacity-90">✦</span>
-          <span>JAVASCRIPT</span>
-          <span className="opacity-90">✦</span>
-          <span>TYPESCRIPT</span>
-          <span className="opacity-90">✦</span>
-          <span>CSS</span>
-          <span className="opacity-90">✦</span>
-          <span>REPOS <b>{displayProjects.length}</b></span>
-          <span className="opacity-90">✦</span>
-          <span>STARS <b>12</b></span>
+          <span>{marqueeCustomText}</span>
+          {displayProjects.length > 0 && (
+            <>
+              <span className="opacity-90">✦</span>
+              <span>REPOS <b>{displayProjects.length}</b></span>
+            </>
+          )}
           <span className="opacity-90">✦</span>
         </div>
       </div>
@@ -286,10 +288,10 @@ export function PosterTemplate({
     // -------------------------------------------------------------------------
     // SELECTED WORK: Staggered Tall Cards (9:14) with Initials Watermark & Glowing Colors
     // -------------------------------------------------------------------------
-    projects: (
+    projects: displayProjects.length > 0 ? (
       <section key="projects" id="work" className="poster-work relative py-[clamp(80px,10vw,140px)] overflow-hidden">
         {/* Giant Ghost "PORTFOLIO" in Background */}
-        <div className="absolute left-1/2 top-10 -translate-x-1/2 z-0 pointer-events-none select-none opacity-10">
+        <div className={`absolute left-1/2 top-10 -translate-x-1/2 z-0 pointer-events-none select-none ${watermarkOpacityClass}`}>
           <p className="poster-word text-[19vw] leading-none uppercase tracking-tight">
             PORTFOLIO
           </p>
@@ -301,7 +303,9 @@ export function PosterTemplate({
             SELECTED <em className="text-[#e11d2a] not-italic">WORK</em>
           </h3>
           <p className="m-0 max-w-[38ch] text-[#4b4b4b] text-sm sm:text-base leading-[1.55] font-['Inter']">
-            Projects pulled straight from github.com/{githubHandle}, built in public.
+            {githubHandle
+              ? `Projects pulled straight from github.com/${githubHandle}, built in public.`
+              : "Featured projects and open source code repositories."}
           </p>
         </div>
 
@@ -316,22 +320,11 @@ export function PosterTemplate({
             const tilt = cardTilts[idx % 4];
             const isStaggerDesktop = (idx % 4 === 1) || (idx % 4 === 3);
             const isStaggerTablet = (idx % 2 === 1);
-            const targetUrl = proj.liveUrl || proj.repoUrl || `https://github.com/${githubHandle}/${encodeURIComponent(proj.title)}`;
+            const targetUrl = proj.liveUrl || proj.repoUrl || (githubHandle ? `https://github.com/${githubHandle}/${encodeURIComponent(proj.title)}` : undefined);
             const initials = (proj.title || "PR").slice(0, 2).toUpperCase();
 
-            return (
-              <SafeLink
-                key={idx}
-                href={targetUrl}
-                target="_blank"
-                rel="noopener"
-                className={`poster-card group relative flex flex-col justify-between aspect-[9/13] sm:aspect-[9/14] p-5 sm:p-[22px] rounded-[18px] overflow-hidden text-white bg-[#151515] shadow-[0_30px_50px_-30px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-2 hover:rotate-0 hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.7)] ${
-                  isStaggerDesktop ? "lg:mt-16" : ""
-                } ${isStaggerTablet ? "sm:mt-10 lg:mt-0" : ""}`}
-                style={{
-                  transform: `rotate(${tilt}deg)`,
-                }}
-              >
+            const cardContent = (
+              <>
                 {/* Glowing Corner Radial Gradient */}
                 <span
                   className="absolute inset-0 z-0 pointer-events-none"
@@ -354,6 +347,20 @@ export function PosterTemplate({
                   </span>
                 </div>
 
+                {/* Project Screenshot / Thumbnail (if available) */}
+                {proj.imageUrl && (
+                  <div className="relative z-10 w-full h-28 rounded-lg overflow-hidden border border-white/20 my-2">
+                    <img
+                      src={proj.imageUrl}
+                      alt={proj.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Card Bottom: Title, Description, Language Meta with dot & star */}
                 <div className="relative z-10 space-y-2.5">
                   <h4 className="m-0 font-['Anton'] font-normal text-[clamp(28px,2.4vw,40px)] leading-[0.95] uppercase text-white overflow-wrap-anywhere group-hover:text-[#e11d2a] transition-colors">
@@ -370,15 +377,44 @@ export function PosterTemplate({
                       />
                       <span>{rawLang}</span>
                     </span>
-                    <span>★ 0</span>
+                    {showEmpty && <span>★ 0</span>}
                   </div>
                 </div>
-              </SafeLink>
+              </>
+            );
+
+            const cardClassName = `poster-card group relative flex flex-col justify-between aspect-[9/13] sm:aspect-[9/14] p-5 sm:p-[22px] rounded-[18px] overflow-hidden text-white bg-[#151515] shadow-[0_30px_50px_-30px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-2 hover:rotate-0 hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.7)] ${
+              isStaggerDesktop ? "lg:mt-16" : ""
+            } ${isStaggerTablet ? "sm:mt-10 lg:mt-0" : ""}`;
+
+            if (targetUrl) {
+              return (
+                <SafeLink
+                  key={idx}
+                  href={targetUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className={cardClassName}
+                  style={{ transform: `rotate(${tilt}deg)` }}
+                >
+                  {cardContent}
+                </SafeLink>
+              );
+            }
+
+            return (
+              <div
+                key={idx}
+                className={cardClassName}
+                style={{ transform: `rotate(${tilt}deg)` }}
+              >
+                {cardContent}
+              </div>
             );
           })}
         </div>
       </section>
-    ),
+    ) : null,
 
     // -------------------------------------------------------------------------
     // ABOUT: Exact GitSkins About Layout (Left: ABOUT ME, Right: Bio, Chips, Link)
@@ -395,18 +431,18 @@ export function PosterTemplate({
         {/* Right: Bio + Chips + GitHub link */}
         <div>
           <p className="m-0 mb-6 font-['Inter'] text-[clamp(18px,1.7vw,26px)] leading-[1.5] text-[#151515]">
-            {profile?.bio || "I build things on GitHub. Here's a look at what I've been working on."}
+            {profile?.bio || (githubHandle ? `I build things on GitHub (${githubHandle}). Here's a look at what I've been working on.` : "I build modern web systems and engineering applications.")}
           </p>
 
           {/* Skill Capsule Chips */}
           <div className="poster-chips flex flex-wrap gap-2 mb-6">
-            {(skills.length > 0 ? skills.slice(0, 10) : [
+            {(skills.length > 0 ? skills.slice(0, 10) : (showEmpty ? [
               { name: "HTML" },
               { name: "JavaScript" },
               { name: "TypeScript" },
               { name: "CSS" },
               { name: "Python" },
-            ]).map((s: PortfolioSkill, sIdx: number) => {
+            ] : [])).map((s: PortfolioSkill, sIdx: number) => {
               const name = typeof s === "string" ? s : s.name;
               return (
                 <span
@@ -427,14 +463,16 @@ export function PosterTemplate({
                 <span>{profile.location}</span>
               </span>
             )}
-            <SafeLink
-              href={`https://github.com/${githubHandle}`}
-              target="_blank"
-              rel="noopener"
-              className="text-[#151515] font-semibold underline underline-offset-4 hover:text-[#e11d2a] transition-colors"
-            >
-              github.com/{githubHandle}
-            </SafeLink>
+            {githubHandle && (
+              <SafeLink
+                href={`https://github.com/${githubHandle}`}
+                target="_blank"
+                rel="noopener"
+                className="text-[#151515] font-semibold underline underline-offset-4 hover:text-[#e11d2a] transition-colors"
+              >
+                github.com/{githubHandle}
+              </SafeLink>
+            )}
           </div>
         </div>
       </section>
@@ -453,7 +491,7 @@ export function PosterTemplate({
             <div key={eIdx} className="py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline">
               <div className="md:col-span-4">
                 <span className="font-mono text-xs font-bold text-[#e11d2a] uppercase">
-                  {exp.startDate || "2021"} — {exp.endDate || (exp.current ? "PRESENT" : "PRESENT")}
+                  {[exp.startDate || (showEmpty ? "2021" : ""), exp.endDate || (exp.current ? "PRESENT" : "")].filter(Boolean).join(" — ") || (showEmpty ? "2021 — PRESENT" : "PRESENT")}
                 </span>
                 <h4 className="font-['Anton'] text-3xl uppercase text-[#151515] mt-1">
                   {exp.company}
@@ -591,8 +629,8 @@ export function PosterTemplate({
         {/* Bottom Right: Red Pill Button "Get in touch →" */}
         <div className="poster-cta-go relative lg:absolute lg:right-[clamp(20px,5vw,80px)] lg:bottom-[clamp(44px,11svh,120px)] z-20 px-5 sm:px-8 lg:px-0 mt-6 lg:mt-0">
           <SafeLink
-            href={contactEmail ? `mailto:${contactEmail}` : `https://github.com/${githubHandle}`}
-            target={contactEmail ? undefined : "_blank"}
+            href={contactEmail ? `mailto:${contactEmail}` : (githubHandle ? `https://github.com/${githubHandle}` : "#hero")}
+            target={contactEmail || !githubHandle ? undefined : "_blank"}
             rel="noopener"
             className="poster-go inline-flex items-center justify-center w-full sm:w-auto gap-2.5 px-7 py-4 rounded-full bg-[#e11d2a] text-white font-['Inter'] font-extrabold text-[17px] shadow-[0_16px_30px_-14px_#e11d2a] hover:-translate-y-1 transition-transform"
           >
@@ -709,13 +747,6 @@ export function PosterTemplate({
       {/* Footer matching GitSkins exactly */}
       <footer className="relative z-10 py-[22px] px-[clamp(20px,5vw,80px)] flex justify-between gap-4 text-[13px] text-[#4b4b4b] border-t border-black/[0.08] font-['Inter']">
         <span>© {new Date().getFullYear()} {fullName}</span>
-        <div className="flex items-center gap-4">
-          <AttributionFooter
-            author="GitSkins"
-            templateName="Poster Brutalist"
-            originalUrl="https://www.gitskins.com/portfolio-templates/poster/"
-          />
-        </div>
       </footer>
 
       {/* Back to Top */}
