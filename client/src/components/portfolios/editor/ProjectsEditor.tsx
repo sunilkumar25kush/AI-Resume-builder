@@ -1,5 +1,17 @@
-import { ChevronDown, ChevronUp, ExternalLink, FolderGit2, Plus, Star, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  FolderGit2,
+  Image as ImageIcon,
+  Plus,
+  Star,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import { BrandIcon } from "@/components/portfolios/common/BrandIcon";
 import { Button } from "@/components/ui/button";
@@ -15,6 +27,7 @@ export interface ProjectsEditorProps {
 
 export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps) {
   const [openIndices, setOpenIndices] = useState<Record<number, boolean>>({ 0: true });
+  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const toggleOpen = (index: number) => {
     setOpenIndices((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -45,6 +58,39 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
 
   const handleRemove = (index: number) => {
     onChange(projects.filter((_, i) => i !== index));
+  };
+
+  const handleImageFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file (PNG, JPG, WebP)");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image file must be under 2 MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        handleUpdate(index, { imageUrl: reader.result });
+        toast.success("Project screenshot loaded!");
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read image file");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleClearImage = (index: number) => {
+    handleUpdate(index, { imageUrl: "" });
+    toast.info("Project screenshot removed");
   };
 
   return (
@@ -121,6 +167,12 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
                           <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 shrink-0">
                             <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                             Featured
+                          </span>
+                        )}
+                        {proj.imageUrl && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shrink-0">
+                            <ImageIcon className="h-2.5 w-2.5" />
+                            Image
                           </span>
                         )}
                       </div>
@@ -209,6 +261,79 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
                           placeholder="https://github.com/user/project"
                           className="h-8 text-xs"
                         />
+                      </div>
+                    </div>
+
+                    {/* Project Image / Screenshot Customization */}
+                    <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850/30 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                          <ImageIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          <span>Project Thumbnail / Screenshot</span>
+                        </Label>
+                        {proj.imageUrl && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearImage(index)}
+                            className="h-6 px-2 text-[11px] text-red-500 hover:text-red-600 gap-1"
+                          >
+                            <X className="h-3 w-3" /> Remove Image
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        {/* Thumbnail Preview */}
+                        <div className="w-20 h-14 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 flex items-center justify-center relative">
+                          {proj.imageUrl ? (
+                            <img
+                              src={proj.imageUrl}
+                              alt={proj.title || "Project Preview"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <FolderGit2 className="h-6 w-6 text-neutral-400" />
+                          )}
+                        </div>
+
+                        {/* Input options: File Upload or Direct URL */}
+                        <div className="flex-1 space-y-2 w-full">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={proj.imageUrl || ""}
+                              onChange={(e) => handleUpdate(index, { imageUrl: e.target.value })}
+                              placeholder="Image URL or upload below (e.g. https://...)"
+                              className="h-8 text-xs font-mono"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRefs.current[index]?.click()}
+                              className="h-8 text-xs shrink-0 gap-1.5"
+                            >
+                              <Upload className="h-3.5 w-3.5" />
+                              <span>Upload</span>
+                            </Button>
+                            <input
+                              type="file"
+                              ref={(el) => {
+                                fileInputRefs.current[index] = el;
+                              }}
+                              accept="image/*"
+                              onChange={(e) => handleImageFileUpload(index, e)}
+                              className="hidden"
+                            />
+                          </div>
+                          <p className="text-[10px] text-neutral-400">
+                            Upload a screenshot from disk (PNG, JPG, WebP &lt; 2 MB) or provide a direct image link.
+                          </p>
+                        </div>
                       </div>
                     </div>
 
