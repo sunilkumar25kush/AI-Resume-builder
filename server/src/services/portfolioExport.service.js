@@ -5747,17 +5747,42 @@ function generatePosterStaticHtml(data) {
     ` : "",
 
     contact: `
-      <!-- Contact Section -->
-      <section class="poster-contact-section" id="contact">
-        <div class="poster-col-label">04 / ${escapeHtml(customLabels.contact || "INQUIRIES")}</div>
-        <div class="poster-contact-content">
-          <h2 class="poster-contact-giant">${escapeHtml(customText.contactHeadline || "LET'S CONNECT")}</h2>
-          <div class="poster-contact-actions">
-            ${email ? `<a href="mailto:${escapeHtml(email)}" class="poster-btn-massive">EMAIL: ${escapeHtml(email)} &rarr;</a>` : ""}
-            ${phone ? `<a href="tel:${escapeHtml(phone)}" class="poster-btn-massive">TEL: ${escapeHtml(phone)} &rarr;</a>` : ""}
+      <!-- READY TO BUILD CTA -->
+      <section id="contact" class="poster-cta">
+        <div class="poster-cta-word-wrap">
+          <p class="poster-word">READY TO</p>
+        </div>
+
+        <div class="poster-portrait-framed poster-cta-portrait">
+          <div class="poster-portrait-inner poster-tilt-pos">
+            ${
+              avatarUrl
+                ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-avatar-img" onerror="this.parentElement.innerHTML='<div class=\\'poster-avatar-fallback\\'><div class=\\'poster-fallback-grid\\'></div><div class=\\'poster-fallback-text\\'><span class=\\'poster-fallback-initials\\'>${escapeHtml(firstName.slice(0, 2).toUpperCase())}</span><p class=\\'poster-fallback-badge\\'>✦ READY TO BUILD</p></div></div>'" />`
+                : `<div class="poster-avatar-fallback">
+                    <div class="poster-fallback-grid"></div>
+                    <div class="poster-fallback-text">
+                      <span class="poster-fallback-initials">${escapeHtml(firstName.slice(0, 2).toUpperCase())}</span>
+                      <p class="poster-fallback-badge">✦ READY TO BUILD</p>
+                    </div>
+                  </div>`
+            }
           </div>
         </div>
-      </section>`,
+
+        <div class="poster-cta-line">
+          <h3 class="poster-cta-text">${contactHeadingTitle}</h3>
+        </div>
+
+        <div class="poster-cta-go">
+          <a href="${contactEmail ? `mailto:${escapeHtml(contactEmail)}` : (githubHandle ? `https://github.com/${escapeHtml(githubHandle)}` : "#hero")}"
+             ${contactEmail || !githubHandle ? "" : 'target="_blank" rel="noopener noreferrer"'}
+             class="poster-go">
+            <span>Get in touch</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </section>
+    `,
   };
 
   const rawOrder = data.design?.sectionOrder || [
