@@ -68,7 +68,7 @@ const projectSchema = new mongoose.Schema(
     tags: { type: [String], default: [] },
     liveUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     repoUrl: { type: String, default: "", trim: true, maxlength: 1000 },
-    imageUrl: { type: String, default: "", trim: true, maxlength: 1000 },
+    imageUrl: { type: String, default: "", trim: true, maxlength: 2000000 },
     featured: { type: Boolean, default: false },
   },
   { _id: false },
@@ -108,11 +108,14 @@ const designSettingsSchema = new mongoose.Schema(
     primaryColor: { type: String, default: "#2563eb", trim: true, maxlength: 50 },
     fontFamily: { type: String, default: "Inter", trim: true, maxlength: 100 },
     customCss: { type: String, default: "", trim: true, maxlength: 10000 },
+    backgroundEffect: { type: String, default: "default", trim: true, maxlength: 100 },
     sectionOrder: {
       type: [String],
       default: ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
     },
     sectionVisibility: { type: mongoose.Schema.Types.Mixed, default: {} },
+    layoutOptions: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    templateSettings: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   },
   { _id: false },
 );
