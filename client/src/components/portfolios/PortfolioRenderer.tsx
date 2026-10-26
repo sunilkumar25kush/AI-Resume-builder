@@ -47,8 +47,8 @@ export function PortfolioRenderer({
     hiddenSections ||
     (portfolio.design?.sectionVisibility
       ? Object.entries(portfolio.design.sectionVisibility)
-          .filter(([, visible]) => visible === false)
-          .map(([key]) => key)
+        .filter(([, visible]) => visible === false)
+        .map(([key]) => key)
       : []);
 
   return (
