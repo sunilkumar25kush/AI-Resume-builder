@@ -1,4 +1,7 @@
+/// <reference types="node" />
+
 import assert from "node:assert/strict";
+import process from "node:process";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -8,10 +11,9 @@ import {
   adaptResumeToPortfolio,
   validateResumeForTemplate,
 } from "../src/components/portfolios/adapters/resumePortfolioAdapter";
-import { TEMPLATE_METADATA } from "../src/components/portfolios/templates/registry";
+import { VALID_TEMPLATE_IDS } from "../src/components/portfolios/templates/registry";
 import { PortfolioRenderer } from "../src/components/portfolios/PortfolioRenderer";
 import type { Resume } from "../src/types/resume";
-import type { PortfolioTemplateId } from "../src/types/portfolio";
 
 // ============================================================================
 // Realistic Sample Resume 1: Senior Full-Stack Cloud Architect
@@ -117,11 +119,11 @@ const REALISTIC_RESUME_1: Partial<Resume> = {
     awards: ["Best Technical Innovation Award 2023"],
     customSections: [],
     hiddenSections: [],
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
   },
   customization: {
     accentColor: "#38bdf8",
     fontFamily: "Geist",
-    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
   },
 };
 
@@ -259,18 +261,25 @@ async function runAdapterTests() {
   // Check highlight parsing from bullet points
   const firstExp = adapted.experience![0];
   assert.ok(firstExp.highlights && firstExp.highlights.length >= 2, "Highlights not extracted from bullets");
+  assert.ok(
+    firstExp.highlights.some((h: string) => h.includes("high-performance")),
+    'Expected highlight text to preserve hyphenated phrase "high-performance"'
+  );
+  assert.ok(
+    firstExp.highlights.includes("Built high-performance stream router processing 4.2M events/sec."),
+    'Expected exact highlight text "Built high-performance stream router processing 4.2M events/sec."'
+  );
   console.log(`  ✅ Successfully normalized: ${adapted.skills!.length} skills, ${adapted.experience!.length} roles, ${adapted.projects!.length} projects, ${adapted.socialLinks!.length} social links.`);
   passed++;
 
   // --------------------------------------------------------------------------
   // TEST 3: Validation & Compatibility Engine for Every Template
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 3] Auditing Template Field Compatibility Across Active Templates...");
-  const uniqueTemplateIds = Array.from(
-    new Set(TEMPLATE_METADATA.map((t) => t.id))
-  ) as PortfolioTemplateId[];
-
-  for (const templateId of uniqueTemplateIds) {
+  // --------------------------------------------------------------------------
+  // TEST 3: Validation & Compatibility Engine for Every Template
+  // --------------------------------------------------------------------------
+  console.log("\n[TEST 3] Auditing Template Field Compatibility Across All Integrated Templates...");
+  for (const templateId of VALID_TEMPLATE_IDS) {
     const report = validateResumeForTemplate(REALISTIC_RESUME_1, templateId);
     assert.ok(report.isCompatible, `Template ${templateId} reported incompatible with valid resume`);
     assert.equal(report.missingRequired.length, 0, `Template ${templateId} had missing required fields`);
@@ -285,73 +294,73 @@ async function runAdapterTests() {
   }
 
   // --------------------------------------------------------------------------
-  // TEST 4: Render Verification Across Active Templates with Resume 1 (Senior)
+  // TEST 4: Render Verification Across All Templates with Resume 1 (Senior)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 4] Rendering Active Templates with Senior Architect Resume...");
-  for (const meta of TEMPLATE_METADATA) {
+  console.log("\n[TEST 4] Rendering All Templates with Senior Architect Resume...");
+  for (const templateId of VALID_TEMPLATE_IDS) {
     const adaptedForTemplate = adaptResumeToPortfolio(REALISTIC_RESUME_1, {
-      template: meta.id,
+      template: templateId,
       theme: "dark",
     });
 
     const html = renderToStaticMarkup(
       React.createElement(PortfolioRenderer, {
         portfolio: adaptedForTemplate,
-        overrideTemplate: meta.id,
+        overrideTemplate: templateId,
         showEmpty: true,
       })
     );
 
-    assert.ok(html.length > 500, `Template ${meta.id} generated insufficient markup`);
-    assert.ok(html.includes("Alex Rivera"), `Template ${meta.id} did not render candidate name`);
-    console.log(`  ✅ [${meta.id}] Rendered Senior Resume cleanly (${html.length} bytes markup)`);
+    assert.ok(html.length > 500, `Template ${templateId} generated insufficient markup`);
+    assert.ok(html.includes("Alex Rivera"), `Template ${templateId} did not render candidate name`);
+    console.log(`  ✅ [${templateId.padEnd(12)}] Rendered Senior Resume cleanly (${html.length} bytes markup)`);
     passed++;
   }
 
   // --------------------------------------------------------------------------
-  // TEST 5: Render Verification Across Active Templates with Resume 2 (Junior/Fresher)
+  // TEST 5: Render Verification Across All Templates with Resume 2 (Junior/Fresher)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 5] Rendering Active Templates with Junior Graduate Resume (0 Experience)...");
-  for (const meta of TEMPLATE_METADATA) {
+  console.log("\n[TEST 5] Rendering All Templates with Junior Graduate Resume (0 Experience)...");
+  for (const templateId of VALID_TEMPLATE_IDS) {
     const adaptedJunior = adaptResumeToPortfolio(REALISTIC_RESUME_2, {
-      template: meta.id,
+      template: templateId,
       theme: "light",
     });
 
     const html = renderToStaticMarkup(
       React.createElement(PortfolioRenderer, {
         portfolio: adaptedJunior,
-        overrideTemplate: meta.id,
+        overrideTemplate: templateId,
         showEmpty: false, // Must not crash even when experience is empty!
       })
     );
 
-    assert.ok(html.length > 500, `Template ${meta.id} generated insufficient markup`);
-    assert.ok(html.includes("Maya Lin"), `Template ${meta.id} did not render graduate name`);
-    console.log(`  ✅ [${meta.id}] Rendered Junior Resume cleanly without crash`);
+    assert.ok(html.length > 500, `Template ${templateId} generated insufficient markup`);
+    assert.ok(html.includes("Maya Lin"), `Template ${templateId} did not render graduate name`);
+    console.log(`  ✅ [${templateId.padEnd(12)}] Rendered Junior Resume cleanly without crash`);
     passed++;
   }
 
   // --------------------------------------------------------------------------
-  // TEST 6: Render Verification Across Active Templates with Resume 3 (Sparse)
+  // TEST 6: Render Verification Across All Templates with Resume 3 (Sparse)
   // --------------------------------------------------------------------------
-  console.log("\n[TEST 6] Rendering Active Templates with Sparse Resume (Edge-Case)...");
-  for (const meta of TEMPLATE_METADATA) {
+  console.log("\n[TEST 6] Rendering All Templates with Sparse Resume (Edge-Case)...");
+  for (const templateId of VALID_TEMPLATE_IDS) {
     const adaptedSparse = adaptResumeToPortfolio(REALISTIC_RESUME_3, {
-      template: meta.id,
+      template: templateId,
     });
 
     const html = renderToStaticMarkup(
       React.createElement(PortfolioRenderer, {
         portfolio: adaptedSparse,
-        overrideTemplate: meta.id,
+        overrideTemplate: templateId,
         showEmpty: false,
       })
     );
 
-    assert.ok(html.length > 200, `Template ${meta.id} generated insufficient markup for sparse resume`);
-    assert.ok(html.includes("Jordan Smith"), `Template ${meta.id} did not render candidate name`);
-    console.log(`  ✅ [${meta.id}] Rendered Sparse Resume cleanly with zero errors`);
+    assert.ok(html.length > 200, `Template ${templateId} generated insufficient markup for sparse resume`);
+    assert.ok(html.includes("Jordan Smith"), `Template ${templateId} did not render candidate name`);
+    console.log(`  ✅ [${templateId.padEnd(12)}] Rendered Sparse Resume cleanly with zero errors`);
     passed++;
   }
 
