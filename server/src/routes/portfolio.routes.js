@@ -58,8 +58,9 @@ router.get("/:id", getPortfolioById);
 router.patch("/:id", validate({ body: updatePortfolioSchema }), updatePortfolioById);
 router.delete("/:id", deletePortfolioById);
 
-// Export endpoints
+// Export endpoints (supports GET for saved DB document, and POST for live preview state)
 router.get("/:id/export", validate({ query: exportPortfolioQuerySchema }), exportPortfolioById);
+router.post("/:id/export", validate({ query: exportPortfolioQuerySchema }), exportPortfolioById);
 
 // Publication state transition endpoints
 router.post("/:id/publish", validate({ body: publishPortfolioSchema.optional() }), publishPortfolioById);
