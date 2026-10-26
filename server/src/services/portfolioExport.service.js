@@ -5879,56 +5879,64 @@ function generatePosterStaticCss(data) {
   const fontFamilyCss = getFontFamilyCss(data.design?.fontFamily);
   const isDark = data.design?.theme === "dark";
 
-  return `/* Poster Bold Editorial Stylesheet */
+  return `/* Poster Brutalist Editorial Stylesheet - GitSkins Layout */
 ${getStaticBackgroundEffectCss(isDark)}
 :root {
   --poster-accent: ${primaryColor};
-  --poster-font: ${fontFamilyCss};
-  --poster-bg: ${isDark ? "#09090b" : "#fdfbf7"};
-  --poster-text: ${isDark ? "#f4f4f5" : "#18181b"};
+  --accent: ${primaryColor};
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --paper: ${isDark ? "#111113" : "#efece6"};
+  --ink: ${isDark ? "#f4f4f5" : "#151515"};
+  --ink-2: ${isDark ? "#a1a1aa" : "#4b4b4b"};
   --poster-border: ${isDark ? "#27272a" : "#18181b"};
   --poster-muted: ${isDark ? "#a1a1aa" : "#52525b"};
+  --display: 'Anton', 'Bebas Neue', Impact, sans-serif;
+  --body: ${fontFamilyCss};
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+
 body.poster-theme {
-  background: var(--poster-bg);
-  color: var(--poster-text);
-  font-family: var(--poster-font);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
   line-height: 1.5;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
 }
 
-/* Ticker Marquee */
-.poster-ticker {
-  background: var(--poster-accent);
-  color: #fff;
-  overflow: hidden;
-  white-space: nowrap;
-  padding: 8px 0;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-}
-.poster-ticker-track {
-  display: inline-block;
-  animation: posterMarquee 25s linear infinite;
-}
-@keyframes posterMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+/* Paper Noise Texture Overlay */
+body.poster-theme::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.poster-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px;
+.poster-template {
+  position: relative;
+  min-height: 100vh;
   width: 100%;
 }
-@media (min-width: 640px) {
-  .poster-wrapper {
-    padding: 40px 24px;
-  }
+.poster-wrapper {
+  width: 100%;
+  position: relative;
+}
+.poster-main {
+  position: relative;
+  z-index: 10;
+}
+
+.poster-template a:focus-visible,
+.poster-template button:focus-visible {
+  outline: 3px solid var(--accent) !important;
+  outline-offset: 3px !important;
 }
 
 /* Header */
