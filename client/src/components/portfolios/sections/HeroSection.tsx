@@ -13,6 +13,8 @@ export interface HeroSectionProps {
   variant?: "minimal" | "developer";
   primaryColor?: string;
   showEmpty?: boolean;
+  terminalPrompt?: string;
+  cursorBlink?: boolean;
 }
 
 export function HeroSection({
@@ -21,6 +23,8 @@ export function HeroSection({
   variant = "minimal",
   primaryColor,
   showEmpty = false,
+  terminalPrompt,
+  cursorBlink = true,
 }: HeroSectionProps) {
   const { fullName, headline, location, avatarUrl, email, phone } = profile;
   const avatarSrc = normalizeAvatarUrl(avatarUrl);
@@ -47,9 +51,19 @@ export function HeroSection({
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col-reverse md:flex-row items-start md:items-center justify-between gap-8">
             <div className="flex-1 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Available for opportunities</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Available for opportunities</span>
+                </div>
+
+                {terminalPrompt && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono bg-black/5 dark:bg-white/5 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400">
+                    <span className="text-emerald-500 font-semibold">{terminalPrompt}</span>
+                    <span>cat career.txt</span>
+                    {cursorBlink && <span className="inline-block w-1.5 h-3.5 bg-emerald-500 animate-pulse" />}
+                  </div>
+                )}
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 font-mono">

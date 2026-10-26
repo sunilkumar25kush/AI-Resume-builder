@@ -46,6 +46,19 @@ export function ProjectsSection({
                 className="group flex flex-col justify-between bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
               >
                 <div className="space-y-3">
+                  {project.imageUrl && (
+                    <div className="w-full h-40 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 mb-3 relative">
+                      <img
+                        src={project.imageUrl}
+                        alt={project.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <div className="flex items-start justify-between gap-4">
                     <h3 className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {project.title}
@@ -120,6 +133,18 @@ export function ProjectsSection({
         <div className="space-y-8">
           {validProjects.map((project, idx) => (
             <div key={`${project.title}-${idx}`} className="space-y-2">
+              {project.imageUrl && (
+                <div className="w-full h-48 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 my-2 relative">
+                  <img
+                    src={project.imageUrl}
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
               <div className="flex items-baseline justify-between gap-4">
                 <h3 className="text-base sm:text-lg font-medium text-neutral-900 dark:text-neutral-100">
                   {project.title}
