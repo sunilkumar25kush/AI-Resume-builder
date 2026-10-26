@@ -5656,10 +5656,95 @@ function generatePosterStaticHtml(data) {
                 )}</span>
                 <h4 class="poster-exp-company">${escapeHtml(exp.company)}</h4>
               </div>
-            </div>
-          `).join("\n")}
+              <div class="poster-exp-col-right">
+                <h5 class="poster-exp-role">${escapeHtml(exp.title)}</h5>
+                ${exp.description ? `<p class="poster-exp-desc">${escapeHtml(exp.description)}</p>` : ""}
+                ${
+                  exp.highlights && exp.highlights.length > 0
+                    ? `<ul class="poster-exp-highlights">
+                        ${exp.highlights.map((h) => `<li><span class="poster-accent-star">✦</span><span>${escapeHtml(h)}</span></li>`).join("\n")}
+                      </ul>`
+                    : ""
+                }
+              </div>
+            </div>`
+            )
+            .join("\n")}
         </div>
-      </section>` : "",
+      </section>
+    ` : "",
+
+    education: (education.length > 0 || certifications.length > 0) ? `
+      <!-- EDUCATION & CERTIFICATIONS -->
+      <section id="education" class="poster-edu-cert-section">
+        <div class="poster-edu-cert-grid">
+          ${
+            education.length > 0
+              ? `<div class="poster-edu-col">
+                  <h3 class="poster-sub-title">EDUCATION</h3>
+                  <div class="poster-retro-cards">
+                    ${education
+                      .map(
+                        (edu) => `
+                      <div class="poster-retro-card">
+                        <span class="poster-retro-date">${escapeHtml(edu.startDate || "")} — ${escapeHtml(edu.endDate || "PRESENT")}</span>
+                        <h4 class="poster-retro-title">${escapeHtml(edu.degree)}</h4>
+                        <p class="poster-retro-sub">${escapeHtml(edu.institution)}</p>
+                      </div>`
+                      )
+                      .join("\n")}
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            certifications.length > 0
+              ? `<div class="poster-cert-col">
+                  <h3 class="poster-sub-title">CERTIFICATIONS</h3>
+                  <div class="poster-retro-cards">
+                    ${certifications
+                      .map(
+                        (cert) => `
+                      <div class="poster-retro-card poster-retro-card-flex">
+                        <div>
+                          <h4 class="poster-retro-title">${escapeHtml(cert.name)}</h4>
+                          ${cert.issuer ? `<p class="poster-retro-sub">${escapeHtml(cert.issuer)}</p>` : ""}
+                        </div>
+                        <svg class="poster-award-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                      </div>`
+                      )
+                      .join("\n")}
+                  </div>
+                </div>`
+              : ""
+          }
+        </div>
+      </section>
+    ` : "",
+
+    certifications: certifications.length > 0 ? `
+      <!-- CERTIFICATIONS SEPARATE -->
+      <section id="certifications" class="poster-edu-cert-section">
+        <div class="poster-cert-col">
+          <h3 class="poster-sub-title">CERTIFICATIONS</h3>
+          <div class="poster-retro-cards">
+            ${certifications
+              .map(
+                (cert) => `
+              <div class="poster-retro-card poster-retro-card-flex">
+                <div>
+                  <h4 class="poster-retro-title">${escapeHtml(cert.name)}</h4>
+                  ${cert.issuer ? `<p class="poster-retro-sub">${escapeHtml(cert.issuer)}</p>` : ""}
+                </div>
+                <svg class="poster-award-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+              </div>`
+              )
+              .join("\n")}
+          </div>
+        </div>
+      </section>
+    ` : "",
 
     contact: `
       <!-- Contact Section -->
