@@ -53,6 +53,10 @@ export function DevPortTemplate({
 
   const primaryColor = portfolio?.design?.primaryColor || "#06b6d4";
   const theme = portfolio?.design?.theme || "system";
+  const templateSettings = portfolio?.design?.templateSettings || {};
+  const showOrbitalRing = templateSettings.orbitalRing !== false;
+  const showFloatingCodeCard = templateSettings.floatingCodeCard !== false;
+  const projectsLayout = portfolio?.design?.layoutOptions?.projectsLayout || "grid";
   const isLight =
     theme === "light" ||
     (theme === "system" &&
@@ -501,59 +505,65 @@ export function DevPortTemplate({
                   </div>
 
                   {/* Orbital Floating Badges */}
-                  <div
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full text-white flex items-center justify-center shadow-lg border-2 animate-bounce"
-                    style={{
-                      backgroundColor: primaryColor,
-                      borderColor: isLight ? "#ffffff" : "#090a16",
-                    }}
-                  >
-                    <Code2 className="h-4 w-4" />
-                  </div>
-                  <div
-                    className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2"
-                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </div>
-                  <div
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2"
-                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </div>
-                  <div
-                    className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2"
-                    style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
-                  >
-                    <Heart className="h-3.5 w-3.5" />
-                  </div>
+                  {showOrbitalRing && (
+                    <>
+                      <div
+                        className="absolute -top-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full text-white flex items-center justify-center shadow-lg border-2 animate-bounce"
+                        style={{
+                          backgroundColor: primaryColor,
+                          borderColor: isLight ? "#ffffff" : "#090a16",
+                        }}
+                      >
+                        <Code2 className="h-4 w-4" />
+                      </div>
+                      <div
+                        className="absolute top-1/3 -right-2 h-7 w-7 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow-lg border-2"
+                        style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </div>
+                      <div
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2"
+                        style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <div
+                        className="absolute top-1/3 -left-2 h-7 w-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg border-2"
+                        style={{ borderColor: isLight ? "#ffffff" : "#090a16" }}
+                      >
+                        <Heart className="h-3.5 w-3.5" />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Floating Glassmorphic Code Card (Top Right) */}
-                <div
-                  className={`absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed hidden xs:block ${
-                    isLight
-                      ? "bg-neutral-900/95 border-neutral-700 text-neutral-200"
-                      : "bg-neutral-900/90 border-white/15 text-neutral-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/10">
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <div className="h-2 w-2 rounded-full bg-amber-500" />
-                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="text-[9px] text-neutral-400 ml-1">developer.js</span>
+                {showFloatingCodeCard && (
+                  <div
+                    className={`absolute -top-4 -right-2 sm:-right-6 z-20 w-48 sm:w-56 p-3 rounded-xl border backdrop-blur-xl shadow-2xl text-[10px] font-mono leading-relaxed hidden xs:block ${
+                      isLight
+                        ? "bg-neutral-900/95 border-neutral-700 text-neutral-200"
+                        : "bg-neutral-900/90 border-white/15 text-neutral-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/10">
+                      <div className="h-2 w-2 rounded-full bg-red-500" />
+                      <div className="h-2 w-2 rounded-full bg-amber-500" />
+                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="text-[9px] text-neutral-400 ml-1">developer.js</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-pink-400">const <span className="text-white">developer</span> = &#123;</p>
+                      <p className="pl-2">
+                        name: <span style={{ color: primaryColor }}>&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,
+                      </p>
+                      <p className="pl-2 truncate">skills: <span className="text-amber-300">[{codeSnippetSkills}]</span>,</p>
+                      <p className="pl-2">hardWorker: <span className="text-emerald-400">true</span></p>
+                      <p className="text-pink-400">&#125;;</p>
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-pink-400">const <span className="text-white">developer</span> = &#123;</p>
-                    <p className="pl-2">
-                      name: <span style={{ color: primaryColor }}>&quot;{fullName ? fullName.split(" ")[0] : "Dev"}&quot;</span>,
-                    </p>
-                    <p className="pl-2 truncate">skills: <span className="text-amber-300">[{codeSnippetSkills}]</span>,</p>
-                    <p className="pl-2">hardWorker: <span className="text-emerald-400">true</span></p>
-                    <p className="text-pink-400">&#125;;</p>
-                  </div>
-                </div>
+                )}
 
                 {/* Floating Stat Card 1: Projects Count (Bottom Left) */}
                 <div
@@ -734,7 +744,7 @@ export function DevPortTemplate({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={projectsLayout === "cards" ? "grid grid-cols-1 gap-6" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
               {projects.map((proj, idx) => (
                 <div
                   key={`${proj.title}-${idx}`}
@@ -745,6 +755,20 @@ export function DevPortTemplate({
                   }`}
                 >
                   <div className="space-y-4">
+                    {/* Project Screenshot / Thumbnail (if available) */}
+                    {proj.imageUrl && (
+                      <div className="w-full h-44 rounded-xl overflow-hidden border border-white/10 relative">
+                        <img
+                          src={proj.imageUrl}
+                          alt={proj.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono" style={{ color: primaryColor }}>
