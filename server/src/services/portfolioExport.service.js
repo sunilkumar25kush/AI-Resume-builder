@@ -6552,78 +6552,193 @@ body.poster-theme::before {
   color: var(--accent);
 }
 
-/* Experience */
-.poster-exp-list {
+/* ==========================================================================
+   WORK EXPERIENCE
+   ========================================================================== */
+.poster-experience {
+  position: relative;
+  padding: 64px clamp(20px, 5vw, 80px) clamp(80px, 10vw, 140px);
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+.poster-exp-title {
+  margin-bottom: 48px;
+}
+.poster-exp-rows {
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+.poster-exp-item {
+  padding: 32px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: baseline;
+}
+@media (min-width: 768px) {
+  .poster-exp-item {
+    grid-template-columns: 4fr 8fr;
+  }
+}
+.poster-exp-date {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: block;
+}
+.poster-exp-company {
+  font-family: var(--display);
+  font-size: 28px;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.poster-exp-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--body);
+}
+.poster-exp-role {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.poster-exp-desc {
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.poster-exp-highlights {
+  list-style: none;
+  padding: 8px 0 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.poster-exp-highlights li {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.poster-accent-star {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   EDUCATION & CERTIFICATIONS
+   ========================================================================== */
+.poster-edu-cert-section {
+  position: relative;
+  padding: 64px clamp(20px, 5vw, 80px) clamp(80px, 10vw, 140px);
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+.poster-edu-cert-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .poster-edu-cert-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.poster-sub-title {
+  font-family: var(--display);
+  font-size: clamp(40px, 5vw, 72px);
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 32px;
+}
+.poster-retro-cards {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
-.poster-exp-row {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 20px;
+.poster-retro-card {
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0px var(--ink);
+  transition: all 0.2s ease;
+  font-family: var(--body);
 }
-.poster-exp-period {
-  font-family: monospace;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--poster-muted);
+.poster-retro-card:hover {
+  box-shadow: 6px 6px 0px var(--ink);
+  transform: translateY(-2px);
 }
-.poster-exp-role {
-  font-size: 18px;
-  font-weight: 800;
-}
-.poster-exp-company {
-  font-size: 14px;
-  color: var(--poster-accent);
-  margin-bottom: 6px;
-}
-.poster-exp-desc {
-  font-size: 14px;
-  color: var(--poster-muted);
-}
-
-/* Contact */
-.poster-contact-giant {
-  font-size: clamp(36px, 8vw, 84px);
-  font-weight: 900;
-  line-height: 0.95;
-  margin-bottom: 24px;
-  letter-spacing: -0.03em;
-}
-.poster-contact-actions {
+.poster-retro-card-flex {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.poster-btn-massive {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--poster-accent);
-  text-decoration: underline;
-}
-
-/* Footer */
-.poster-footer {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding-top: 32px;
+  justify-content: space-between;
+  gap: 16px;
+}
+.poster-retro-date {
   font-family: monospace;
   font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
 }
-.poster-btn-top {
-  background: none;
-  border: 2px solid var(--poster-border);
-  color: var(--poster-text);
-  font-weight: 800;
-  padding: 6px 14px;
-  cursor: pointer;
+.poster-retro-title {
+  font-family: var(--display);
+  font-size: 24px;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.poster-retro-sub {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.poster-award-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-  .poster-statement-section, .poster-projects-section, .poster-exp-section, .poster-contact-section {
-    grid-template-columns: 1fr;
+/* ==========================================================================
+   READY TO BUILD CTA / CONTACT
+   ========================================================================== */
+.poster-cta {
+  position: relative;
+  min-height: auto;
+  overflow: hidden;
+  user-select: none;
+  padding: 64px 0;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 1024px) {
+  .poster-cta {
+    min-height: 92svh;
+    padding: 0;
+    display: block;
+  }
+}
+.poster-cta-word-wrap {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  z-index: 0;
+  pointer-events: none;
+  margin-top: 16px;
+}
+@media (min-width: 1024px) {
+  .poster-cta-word-wrap {
+    position: absolute;
+    left: 50%;
+    top: 6svh;
+    transform: translateX(-50%);
+    margin-top: 0;
   }
   .poster-exp-row { grid-template-columns: 1fr; }
 }
