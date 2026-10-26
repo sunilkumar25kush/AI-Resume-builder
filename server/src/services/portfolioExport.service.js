@@ -6887,6 +6887,7 @@ function generatePosterStaticJs(data) {
   const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const navHeight = 80;
 
+  // Smooth anchor scrolling
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
       const targetId = this.getAttribute('href');
@@ -6904,6 +6905,56 @@ function generatePosterStaticJs(data) {
     });
   });
 
+  // Hero Typewriter matching PosterTemplate.tsx character-by-character
+  const skillsContainer = document.getElementById('posterHeroSkills');
+  if (skillsContainer) {
+    try {
+      const skills = JSON.parse(skillsContainer.getAttribute('data-skills') || '[]');
+      if (skills.length > 0 && !isReduced) {
+        skillsContainer.innerHTML = '';
+        let activeIdx = 0;
+        let charIdx = 0;
+        const typedItems = [];
+
+        function escapeHtml(str) {
+          return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function render() {
+          let html = '';
+          typedItems.forEach(t => {
+            html += '<li class="poster-hero-skill-item"><span class="poster-bullet">✦</span><span class="poster-skill-name">' + escapeHtml(t) + '</span></li>';
+          });
+          if (activeIdx < skills.length) {
+            const currentStr = skills[activeIdx].slice(0, charIdx);
+            html += '<li class="poster-hero-skill-item"><span class="poster-bullet">✦</span><span class="poster-skill-name">' + escapeHtml(currentStr) + '</span><span class="poster-typewriter-cursor"></span></li>';
+          }
+          skillsContainer.innerHTML = html;
+        }
+
+        function typeStep() {
+          if (activeIdx >= skills.length) return;
+          const target = skills[activeIdx];
+          if (charIdx < target.length) {
+            charIdx++;
+            render();
+            setTimeout(typeStep, 38);
+          } else {
+            setTimeout(() => {
+              typedItems.push(target);
+              activeIdx++;
+              charIdx = 0;
+              render();
+              setTimeout(typeStep, 220);
+            }, 220);
+          }
+        }
+        setTimeout(typeStep, 300);
+      }
+    } catch(e) {}
+  }
+
+  // Fallback single-line typewriter
   const typewriterElem = document.getElementById('posterTypewriter');
   if (typewriterElem) {
     try {
@@ -6943,8 +6994,12 @@ function generatePosterStaticJs(data) {
     } catch(e) {}
   }
 
+  // Back to top floating button
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   if (scrollTopBtn) {
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+    }, { passive: true });
     scrollTopBtn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: isReduced ? 'auto' : 'smooth' });
     });
