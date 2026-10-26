@@ -218,18 +218,16 @@ export default function ResumePreviewPage() {
         <button
           type="button"
           onClick={() => setActiveTab("preview")}
-          className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-            activeTab === "preview" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${activeTab === "preview" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+            }`}
         >
           Live A4 Preview
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("content")}
-          className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-            activeTab === "content" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${activeTab === "content" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+            }`}
         >
           Parsed Data Content
         </button>
@@ -266,11 +264,10 @@ export default function ResumePreviewPage() {
                     toast.info(`Auto-fit enabled: ${detectedDensity.replace("density-", "")}`);
                   }
                 }}
-                className={`px-2.5 py-1 rounded-md text-[11.5px] font-medium transition-colors cursor-pointer ${
-                  autoFit
+                className={`px-2.5 py-1 rounded-md text-[11.5px] font-medium transition-colors cursor-pointer ${autoFit
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 {autoFit ? "Auto-Fit: ON" : "Auto-Fit: OFF"}
               </button>
@@ -291,11 +288,10 @@ export default function ResumePreviewPage() {
                     setAutoFit(false);
                     setDensity(opt.id);
                   }}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-all cursor-pointer ${
-                    density === opt.id
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-all cursor-pointer ${density === opt.id
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "bg-muted/60 text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {opt.label}
                 </button>

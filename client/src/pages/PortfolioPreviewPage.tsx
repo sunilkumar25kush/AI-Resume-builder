@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import {
   ArrowLeft,
+  Download,
   Eye,
   EyeOff,
   Globe,
@@ -24,6 +25,11 @@ import type { Portfolio, PortfolioDesignSettings, PortfolioTemplateId } from "@/
 
 const PublishModal = lazy(() =>
   import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
+);
+const PortfolioExportModal = lazy(() =>
+  import("@/components/portfolios/export/PortfolioExportModal").then((m) => ({
+    default: m.PortfolioExportModal,
+  })),
 );
 
 
@@ -133,6 +139,7 @@ export default function PortfolioPreviewPage() {
   const [previewFont, setPreviewFont] = useState<string>("Inter");
   const [saving, setSaving] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [isControlsHidden, setIsControlsHidden] = useState(false);
 
   // Keyboard shortcut listener: Pressing 'h' or 'Escape' toggles preview dock visibility
@@ -399,11 +406,10 @@ export default function PortfolioPreviewPage() {
                     key={f.id}
                     type="button"
                     onClick={() => setPreviewFont(f.id)}
-                    className={`px-1.5 py-0.5 rounded text-[11px] transition-colors ${
-                      previewFont === f.id
+                    className={`px-1.5 py-0.5 rounded text-[11px] transition-colors ${previewFont === f.id
                         ? "bg-neutral-800 text-white font-semibold"
                         : "text-neutral-400 hover:text-neutral-200"
-                    }`}
+                      }`}
                   >
                     {f.label}
                   </button>
@@ -423,6 +429,17 @@ export default function PortfolioPreviewPage() {
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Theme"}
                 </Button>
               )}
+
+              {/* Export Website Button */}
+              <Button
+                size="sm"
+                onClick={() => setExportModalOpen(true)}
+                className="h-8 bg-neutral-800 hover:bg-neutral-700 text-white text-xs px-2.5 border border-neutral-700 gap-1.5"
+                title="Download standalone portfolio website or source code"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export</span>
+              </Button>
 
               {id && id !== "demo" && (
                 <Button
@@ -459,6 +476,17 @@ export default function PortfolioPreviewPage() {
             onOpenChange={setPublishModalOpen}
             portfolio={activePortfolio}
             onSuccess={(updated) => setPortfolio(updated)}
+          />
+        </Suspense>
+      )}
+
+      {/* Export Dialog */}
+      {exportModalOpen && activePreviewPortfolio && (
+        <Suspense fallback={null}>
+          <PortfolioExportModal
+            open={exportModalOpen}
+            onOpenChange={setExportModalOpen}
+            portfolio={activePreviewPortfolio}
           />
         </Suspense>
       )}
