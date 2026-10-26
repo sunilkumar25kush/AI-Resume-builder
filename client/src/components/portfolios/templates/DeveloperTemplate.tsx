@@ -21,6 +21,9 @@ export function DeveloperTemplate({
   const { profile, socialLinks, skills, experience, education, projects, certifications, design } =
     portfolio;
   const primaryColor = design?.primaryColor || "#2563eb";
+  const templateSettings = design?.templateSettings || {};
+  const terminalPrompt = (templateSettings.terminalPrompt as string) || "dev@workstation:~$";
+  const cursorBlink = templateSettings.cursorBlink !== false;
 
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 
@@ -33,6 +36,8 @@ export function DeveloperTemplate({
         variant="developer"
         primaryColor={primaryColor}
         showEmpty={showEmpty}
+        terminalPrompt={terminalPrompt}
+        cursorBlink={cursorBlink}
       />
     ),
     about: (

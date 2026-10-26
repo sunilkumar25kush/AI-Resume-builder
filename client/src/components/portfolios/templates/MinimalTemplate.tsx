@@ -28,6 +28,15 @@ export function MinimalTemplate({
   const { profile, socialLinks, skills, experience, education, projects, certifications, design } =
     portfolio;
   const primaryColor = design?.primaryColor || "#2563eb";
+  const templateSettings = design?.templateSettings || {};
+  const whitespaceDensity = (templateSettings.whitespaceDensity as string) || "normal";
+  const spacingClass =
+    whitespaceDensity === "compact"
+      ? "space-y-4"
+      : whitespaceDensity === "relaxed"
+      ? "space-y-16"
+      : "space-y-8";
+  const editorialSerif = Boolean(templateSettings.editorialSerif);
 
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 
@@ -162,7 +171,7 @@ export function MinimalTemplate({
       </header>
 
       {/* Main sequenced sections */}
-      <main>
+      <main className={`${spacingClass} ${editorialSerif ? "font-serif" : ""}`}>
         {sectionOrder.map((sectionKey) => {
           if (isHidden(sectionKey)) return null;
           return <div id={sectionKey} key={sectionKey}>{sectionMap[sectionKey] || null}</div>;
