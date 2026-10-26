@@ -6476,19 +6476,80 @@ body.poster-theme::before {
 }
 .poster-card-stars {
   font-size: 12px;
-  font-family: monospace;
-  margin-right: 8px;
-  color: var(--poster-accent);
 }
-.poster-proj-actions {
+
+/* ==========================================================================
+   ABOUT ME SECTION
+   ========================================================================== */
+.poster-about {
+  position: relative;
+  padding: 0 clamp(20px, 5vw, 80px) clamp(80px, 10vw, 140px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(28px, 5vw, 80px);
+  align-items: flex-start;
+}
+@media (min-width: 1024px) {
+  .poster-about {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+}
+.poster-about-bio {
+  margin: 0 0 24px;
+  font-family: var(--body);
+  font-size: clamp(18px, 1.7vw, 26px);
+  line-height: 1.5;
+  color: var(--ink);
+}
+.poster-chips {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
 }
-.poster-action-link {
-  font-weight: 700;
+.poster-chip {
+  padding: 8px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 9999px;
+  font-family: var(--body);
+  font-weight: 600;
   font-size: 14px;
-  color: var(--poster-text);
+  color: var(--ink);
+  background: transparent;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.poster-chip:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.poster-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  font-family: var(--body);
+  color: var(--ink-2);
+}
+.poster-fact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.poster-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+.poster-fact-link {
+  color: var(--ink);
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+}
+.poster-fact-link:hover {
+  color: var(--accent);
 }
 
 /* Experience */
