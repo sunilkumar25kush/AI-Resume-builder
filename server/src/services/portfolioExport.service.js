@@ -5500,46 +5500,90 @@ function generatePosterStaticHtml(data) {
     : "BUILD SOMETHING?";
 
   const sectionMap = {
-    about: `
-      <!-- Bio / Statement Section -->
-      <section class="poster-statement-section" id="about">
-        <div class="poster-col-label">01 / ${escapeHtml(customLabels.about || "STATEMENT")}</div>
-        <div class="poster-statement-content">
-          <p class="poster-statement-text">${escapeHtml(bio)}</p>
-          ${avatarUrl ? `
-            <div class="poster-portrait-wrap">
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-portrait-img" />
-            </div>
-          ` : ""}
+    hero: `
+      <!-- HERO -->
+      <header id="hero" class="poster-hero">
+        <div id="top"></div>
+        <div class="poster-giant-word-wrap">
+          <p class="poster-word">PORTFOLIO</p>
         </div>
-      </section>`,
 
-    projects: projects.length ? `
-      <!-- Featured Projects Section -->
-      <section class="poster-projects-section" id="projects">
-        <div class="poster-col-label">02 / ${escapeHtml(customLabels.projects || "SELECTED WORK")}</div>
-        <div class="poster-projects-grid">
-          ${projectsHtml}
+        <div class="poster-portrait-framed">
+          <div class="poster-portrait-inner">
+            ${
+              avatarUrl
+                ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="poster-avatar-img" onerror="this.parentElement.innerHTML='<div class=\\'poster-avatar-fallback\\'><div class=\\'poster-fallback-grid\\'></div><div class=\\'poster-fallback-text\\'><span class=\\'poster-fallback-initials\\'>${escapeHtml(firstName.slice(0, 2).toUpperCase())}</span><p class=\\'poster-fallback-badge\\'>✦ DEVELOPER PRINT</p></div></div>'" />`
+                : `<div class="poster-avatar-fallback">
+                    <div class="poster-fallback-grid"></div>
+                    <div class="poster-fallback-text">
+                      <span class="poster-fallback-initials">${escapeHtml(firstName.slice(0, 2).toUpperCase())}</span>
+                      <p class="poster-fallback-badge">✦ DEVELOPER PRINT</p>
+                    </div>
+                  </div>`
+            }
+          </div>
         </div>
-      </section>` : "",
 
-    skills: skills.length ? `
-      <!-- Skills Section -->
-      <section class="poster-skills-section" id="skills" style="border-bottom: 2px solid var(--poster-border); padding-bottom: 3rem; margin-bottom: 3rem;">
-        <div class="poster-col-label" style="font-family: var(--poster-font); font-weight: 700; font-size: 0.85rem; color: var(--poster-accent); margin-bottom: 1.5rem;">${escapeHtml(customLabels.skills || "SKILLS & CAPABILITIES")}</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-          ${skills.map((s) => `<span style="border: 2px solid var(--poster-border); padding: 0.5rem 1rem; font-family: monospace; font-size: 0.9rem; font-weight: 700;">${escapeHtml(s.name)}</span>`).join("\n")}
+        <div class="poster-intro">
+          <p class="poster-intro-greeting">Hello, I'm</p>
+          <h1 class="poster-first-name">${escapeHtml(firstName)}</h1>
         </div>
-      </section>` : "",
 
-    experience: experience.length ? `
-      <!-- Experience Section -->
-      <section class="poster-exp-section" id="experience">
-        <div class="poster-col-label">03 / ${escapeHtml(customLabels.experience || "TRACK RECORD")}</div>
-        <div class="poster-exp-list">
-          ${experienceHtml}
+        <div class="poster-role">
+          <h2 class="poster-headline">${escapeHtml(headline)}</h2>
+          <ul class="poster-hero-skills" id="posterHeroSkills" data-skills="${escapeHtml(JSON.stringify(heroSkillNames))}">
+            ${heroSkillNames
+              .map(
+                (sk) => `
+              <li class="poster-hero-skill-item">
+                <span class="poster-bullet">✦</span>
+                <span class="poster-skill-name">${escapeHtml(sk)}</span>
+              </li>`
+              )
+              .join("")}
+          </ul>
         </div>
-      </section>` : "",
+      </header>
+    `,
+
+    marquee: `
+      <!-- MARQUEE BAND -->
+      <div class="poster-band">
+        <div class="poster-track">
+          <span>${escapeHtml(marqueeCustomText)}</span>
+          ${displayProjects.length > 0 ? `<span class="poster-star">✦</span><span>REPOS <b>${displayProjects.length}</b></span>` : ""}
+          <span class="poster-star">✦</span>
+          <span>${escapeHtml(marqueeCustomText)}</span>
+          ${displayProjects.length > 0 ? `<span class="poster-star">✦</span><span>REPOS <b>${displayProjects.length}</b></span>` : ""}
+          <span class="poster-star">✦</span>
+        </div>
+      </div>
+    `,
+
+    projects: displayProjects.length > 0 ? `
+      <!-- SELECTED WORK -->
+      <section id="work" class="poster-work">
+        <div id="projects"></div>
+        <div class="poster-watermark ${watermarkOpacityClass}">
+          <p class="poster-word">PORTFOLIO</p>
+        </div>
+
+        <div class="poster-work-header">
+          <h3 class="poster-section-title">${projectsHeaderTitle}</h3>
+          <p class="poster-work-subtitle">
+            ${
+              githubHandle
+                ? `Projects pulled straight from github.com/${escapeHtml(githubHandle)}, built in public.`
+                : "Featured projects and open source code repositories."
+            }
+          </p>
+        </div>
+
+        <div class="poster-cards">
+          ${cardsHtml}
+        </div>
+      </section>
+    ` : "",
 
     education: (data.education && data.education.length) ? `
       <!-- Education Section -->
