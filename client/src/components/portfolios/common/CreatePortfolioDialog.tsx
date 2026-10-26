@@ -39,55 +39,55 @@ export const TEMPLATE_OPTIONS: Array<{
   gradient: string;
   previewNote: string;
 }> = [
-  {
-    id: "spotlight",
-    name: "Spotlight",
-    desc: "Obsidian & crimson aesthetic with avatar halo, dynamic typewriter, connected expertise tree & featured work spotlight",
-    badge: "Spotlight ★",
-    gradient: "from-rose-600 via-red-600 to-neutral-950",
-    previewNote: "Obsidian & Crimson Halo",
-  },
-  {
-    id: "poster",
-    name: "Poster Brutalist",
-    desc: "High-contrast brutalist monochrome typography, giant watermark, infinite marquee ticker & staggered cards",
-    badge: "Brutalist ★",
-    gradient: "from-neutral-900 via-neutral-800 to-black",
-    previewNote: "Brutalist Monochrome",
-  },
-  {
-    id: "devport",
-    name: "DevPort",
-    desc: "Cosmic dark theme, orbital avatar, glowing typewriter & floating code card",
-    badge: "Featured ★",
-    gradient: "from-cyan-500 via-indigo-500 to-pink-500",
-    previewNote: "Cosmic Dark & Orbital Badges",
-  },
-  {
-    id: "creative",
-    name: "Modern 3D",
-    desc: "Midnight indigo theme, 3D avatar halo, electric purple gradient & stats",
-    badge: "Popular ★",
-    gradient: "from-purple-600 via-indigo-600 to-blue-600",
-    previewNote: "Midnight & 3D Avatar Halo",
-  },
-  {
-    id: "developer",
-    name: "Tech / Dev",
-    desc: "Terminal accents, GitHub repository links, and code highlights",
-    badge: "Engineering",
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
-    previewNote: "Terminal & Code Accents",
-  },
-  {
-    id: "minimal",
-    name: "Minimalist",
-    desc: "Typography-focused editorial elegance with generous whitespace",
-    badge: "Editorial",
-    gradient: "from-neutral-700 via-neutral-500 to-neutral-400",
-    previewNote: "Quiet Editorial Whitespace",
-  },
-];
+    {
+      id: "spotlight",
+      name: "Spotlight",
+      desc: "Obsidian & crimson aesthetic with avatar halo, dynamic typewriter, connected expertise tree & featured work spotlight",
+      badge: "Spotlight ★",
+      gradient: "from-rose-600 via-red-600 to-neutral-950",
+      previewNote: "Obsidian & Crimson Halo",
+    },
+    {
+      id: "poster",
+      name: "Poster Brutalist",
+      desc: "High-contrast brutalist monochrome typography, giant watermark, infinite marquee ticker & staggered cards",
+      badge: "Brutalist ★",
+      gradient: "from-neutral-900 via-neutral-800 to-black",
+      previewNote: "Brutalist Monochrome",
+    },
+    {
+      id: "devport",
+      name: "DevPort",
+      desc: "Cosmic dark theme, orbital avatar, glowing typewriter & floating code card",
+      badge: "Featured ★",
+      gradient: "from-cyan-500 via-indigo-500 to-pink-500",
+      previewNote: "Cosmic Dark & Orbital Badges",
+    },
+    {
+      id: "creative",
+      name: "Modern 3D",
+      desc: "Midnight indigo theme, 3D avatar halo, electric purple gradient & stats",
+      badge: "Popular ★",
+      gradient: "from-purple-600 via-indigo-600 to-blue-600",
+      previewNote: "Midnight & 3D Avatar Halo",
+    },
+    {
+      id: "developer",
+      name: "Tech / Dev",
+      desc: "Terminal accents, GitHub repository links, and code highlights",
+      badge: "Engineering",
+      gradient: "from-emerald-500 via-teal-500 to-cyan-500",
+      previewNote: "Terminal & Code Accents",
+    },
+    {
+      id: "minimal",
+      name: "Minimalist",
+      desc: "Typography-focused editorial elegance with generous whitespace",
+      badge: "Editorial",
+      gradient: "from-neutral-700 via-neutral-500 to-neutral-400",
+      previewNote: "Quiet Editorial Whitespace",
+    },
+  ];
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -243,8 +243,8 @@ export default function CreatePortfolioDialog({
                   disabled={submitting}
                   onClick={() => setSourceType("upload")}
                   className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${sourceType === "upload"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border hover:bg-accent/40"
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
@@ -259,8 +259,8 @@ export default function CreatePortfolioDialog({
                   disabled={submitting}
                   onClick={() => setSourceType("resume")}
                   className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${sourceType === "resume"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border hover:bg-accent/40"
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
@@ -275,8 +275,8 @@ export default function CreatePortfolioDialog({
                   disabled={submitting}
                   onClick={() => setSourceType("scratch")}
                   className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition-colors ${sourceType === "scratch"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:bg-accent/40"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border hover:bg-accent/40"
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
@@ -370,8 +370,8 @@ export default function CreatePortfolioDialog({
                       disabled={submitting}
                       onClick={() => setSelectedTemplate(tpl.id)}
                       className={`group relative flex flex-col items-start rounded-xl border p-3 text-left transition-all overflow-hidden ${isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs"
-                          : "border-border hover:border-primary/40 hover:bg-accent/40"
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs"
+                        : "border-border hover:border-primary/40 hover:bg-accent/40"
                         }`}
                     >
                       {/* Gradient Accent Bar */}
