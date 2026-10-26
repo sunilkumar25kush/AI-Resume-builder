@@ -5435,57 +5435,69 @@ function generatePosterStaticHtml(data) {
 
   const cardTilts = [-1.2, 1, -0.6, 1.4];
 
-  const socialLinksHtml = socialLinks
-    .map((s) => {
-      const url = sanitizeUrl(s.url);
-      if (!url) return "";
-      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="poster-social-link">${escapeHtml(s.label || s.platform)}</a>`;
-    })
-    .join(" &bull; ");
+  const customLabels = data.design?.customLabels || {};
 
-  const projectsHtml = projects
-    .map((p, idx) => {
-      const liveUrl = sanitizeUrl(p.liveUrl);
-      const repoUrl = sanitizeUrl(p.repoUrl);
-      const tagsHtml = (p.tags || [])
-        .map((t) => `<span class="poster-tag">#${escapeHtml(t)}</span>`)
+  // Build Project Cards HTML
+  const cardsHtml = displayProjects
+    .map((proj, idx) => {
+      const rawLang = proj.tags?.[0] || "JavaScript";
+      const techKey =
+        Object.keys(LANG_COLORS).find((k) => k.toLowerCase() === rawLang.toLowerCase()) || "JavaScript";
+      const langColor = LANG_COLORS[techKey] || primaryColor;
+      const tilt = cardTilts[idx % 4];
+      const isStaggerDesktop = idx % 4 === 1 || idx % 4 === 3;
+      const isStaggerTablet = idx % 2 === 1;
+      const targetUrl =
+        sanitizeUrl(proj.liveUrl) ||
+        sanitizeUrl(proj.repoUrl) ||
+        (githubHandle ? `https://github.com/${escapeHtml(githubHandle)}/${encodeURIComponent(proj.title)}` : "");
+      const initials = (proj.title || "PR").slice(0, 2).toUpperCase();
+
+      const cardClasses = [
+        "poster-card",
+        isStaggerDesktop ? "poster-stagger-desktop" : "",
+        isStaggerTablet ? "poster-stagger-tablet" : "",
+      ]
+        .filter(Boolean)
         .join(" ");
 
-      return `
-        <article class="poster-project-card">
-          <div class="poster-proj-num">// 0${idx + 1}</div>
-          ${p.imageUrl ? `
-            <div class="poster-proj-img-wrap">
-              <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" class="poster-proj-img" loading="lazy" />
-            </div>
-          ` : ""}
-          <h3 class="poster-proj-title">${escapeHtml(p.title)}</h3>
-          <p class="poster-proj-desc">${escapeHtml(p.description)}</p>
-          ${tagsHtml ? `<div class="poster-proj-tags">${tagsHtml}</div>` : ""}
-          <div class="poster-proj-actions">
-            ${liveUrl ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener noreferrer" class="poster-action-link">Live Project &rarr;</a>` : ""}
-            ${repoUrl ? `<a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" class="poster-action-link">GitHub Source &rarr;</a>` : ""}
+      const innerContent = `
+        <span class="poster-card-glow" style="background: radial-gradient(120% 70% at 20% 0%, ${langColor} 0%, transparent 60%), linear-gradient(160deg, #1b1b1b, #0e0e0e);"></span>
+        <span class="poster-card-watermark">${escapeHtml(initials)}</span>
+        <div class="poster-card-top">
+          <span class="poster-card-num">${String(idx + 1).padStart(2, "0")}</span>
+        </div>
+        ${
+          proj.imageUrl
+            ? `<div class="poster-card-img-wrap"><img src="${escapeHtml(proj.imageUrl)}" alt="${escapeHtml(proj.title)}" class="poster-card-img poster-proj-img" onerror="this.parentElement.style.display='none'" /></div>`
+            : ""
+        }
+        <div class="poster-card-bottom">
+          <h4 class="poster-card-title">${escapeHtml(proj.title)}</h4>
+          <p class="poster-card-desc">${escapeHtml(proj.description || "No description yet.")}</p>
+          <div class="poster-card-meta">
+            <span class="poster-lang-tag">
+              <i class="poster-lang-dot" style="background-color: ${langColor};"></i>
+              <span>${escapeHtml(rawLang)}</span>
+            </span>
           </div>
-        </article>
+        </div>
       `;
+
+      if (targetUrl) {
+        return `<a href="${escapeHtml(targetUrl)}" target="_blank" rel="noopener noreferrer" class="${cardClasses}" style="transform: rotate(${tilt}deg);">${innerContent}</a>`;
+      }
+      return `<div class="${cardClasses}" style="transform: rotate(${tilt}deg);">${innerContent}</div>`;
     })
     .join("\n");
 
-  const experienceHtml = experience
-    .map((e) => `
-      <div class="poster-exp-row">
-        <div class="poster-exp-period">${escapeHtml(e.startDate || "")} &mdash; ${e.current ? "PRESENT" : escapeHtml(e.endDate || "")}</div>
-        <div class="poster-exp-info">
-          <h4 class="poster-exp-role">${escapeHtml(e.title)}</h4>
-          <p class="poster-exp-company">${escapeHtml(e.company)} ${e.location ? `(${escapeHtml(e.location)})` : ""}</p>
-          ${e.description ? `<p class="poster-exp-desc">${escapeHtml(e.description)}</p>` : ""}
-        </div>
-      </div>
-    `)
-    .join("\n");
+  const projectsHeaderTitle = customLabels.projects
+    ? escapeHtml(customLabels.projects)
+    : 'SELECTED <em class="poster-accent-em">WORK</em>';
 
-  const customLabels = data.design?.customLabels || {};
-  const customText = data.design?.customText || {};
+  const contactHeadingTitle = customLabels.contact
+    ? escapeHtml(customLabels.contact)
+    : "BUILD SOMETHING?";
 
   const sectionMap = {
     about: `
