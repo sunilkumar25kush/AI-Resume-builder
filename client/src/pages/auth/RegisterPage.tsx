@@ -8,9 +8,11 @@ import { z } from "zod";
 
 import { getApiErrorMessage } from "@/api/client";
 import { AuthFormCard } from "@/components/auth/AuthFormCard";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GOOGLE_CLIENT_ID } from "@/constants";
 import { useAuthStore } from "@/stores/auth";
 
 const registerSchema = z
@@ -115,6 +117,33 @@ export default function RegisterPage() {
           {submitting ? "Creating account…" : "Create account"}
         </Button>
       </form>
+
+      {GOOGLE_CLIENT_ID ? (
+        <>
+          <div className="flex items-center gap-3" aria-hidden>
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <GoogleButton
+            disabled={submitting}
+            text="signup_with"
+            onCredential={async (credential) => {
+              setSubmitting(true);
+              try {
+                await useAuthStore.getState().googleLogin(credential);
+                toast.success("Signed in with Google");
+                navigate("/", { replace: true });
+              } catch (error) {
+                toast.error(getApiErrorMessage(error));
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          />
+        </>
+      ) : null}
     </AuthFormCard>
   );
 }

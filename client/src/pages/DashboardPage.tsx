@@ -23,12 +23,13 @@ function greeting(): string {
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const firstName = user?.name?.trim() ? user.name.trim().split(/\s+/)[0] : "there";
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          {greeting()}, {user?.name.split(" ")[0]} 👋
+          {greeting()}, {firstName} 👋
         </h1>
         <p className="max-w-2xl text-muted-foreground">
           Your AI-powered resume optimization workspace. Build, parse, and optimize resumes against real job

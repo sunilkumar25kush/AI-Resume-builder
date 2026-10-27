@@ -12,6 +12,7 @@ import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GOOGLE_CLIENT_ID } from "@/constants";
 import { useAuthStore } from "@/stores/auth";
 
 const loginSchema = z.object({
@@ -98,27 +99,31 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">or</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {GOOGLE_CLIENT_ID ? (
+        <>
+          <div className="flex items-center gap-3" aria-hidden>
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
-      <GoogleButton
-        disabled={submitting}
-        onCredential={async (credential) => {
-          setSubmitting(true);
-          try {
-            await useAuthStore.getState().googleLogin(credential);
-            toast.success("Logged in with Google");
-            navigate("/", { replace: true });
-          } catch (error) {
-            toast.error(getApiErrorMessage(error));
-          } finally {
-            setSubmitting(false);
-          }
-        }}
-      />
+          <GoogleButton
+            disabled={submitting}
+            onCredential={async (credential) => {
+              setSubmitting(true);
+              try {
+                await useAuthStore.getState().googleLogin(credential);
+                toast.success("Logged in with Google");
+                navigate("/", { replace: true });
+              } catch (error) {
+                toast.error(getApiErrorMessage(error));
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          />
+        </>
+      ) : null}
     </AuthFormCard>
   );
 }
