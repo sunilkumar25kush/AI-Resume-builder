@@ -18,6 +18,7 @@ import { exportResumePdf } from "@/utils/exportPdfClient";
 import { exportResumeJson } from "@/utils/exportJson";
 import { AvatarAssistant, type AssistantMood } from "@/components/avatar";
 import { useMascot } from "@/hooks/useMascot";
+import { useSmartFormValidation } from "@/features/validation";
 import type { JobDescription, Optimization, Resume } from "@/types";
 
 const STEPS = ["Target", "Resume", "Job Description", "Analysis", "Generate", "Template", "Edit", "Export"];
@@ -127,6 +128,7 @@ export default function ResumeWizardPage() {
   const [downloadingDocx, setDownloadingDocx] = useState(false);
 
   const mascot = useMascot();
+  useSmartFormValidation();
 
   const coach = getWizardCoachMessage(
     step,

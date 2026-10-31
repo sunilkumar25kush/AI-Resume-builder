@@ -9,6 +9,12 @@ export interface SpeechAction {
   variant?: "primary" | "secondary";
 }
 
+export interface SpeechValidationTip {
+  fieldLabel?: string;
+  incorrect?: string;
+  correct?: string;
+}
+
 export interface MascotSpeechBubbleProps {
   text?: string;
   isThinking?: boolean;
@@ -19,6 +25,7 @@ export interface MascotSpeechBubbleProps {
   className?: string;
   typewriter?: boolean;
   autoDismissMs?: number;
+  validationTip?: SpeechValidationTip;
 }
 
 export function MascotSpeechBubble({
@@ -31,6 +38,7 @@ export function MascotSpeechBubble({
   className,
   typewriter = true,
   autoDismissMs,
+  validationTip,
 }: MascotSpeechBubbleProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -153,7 +161,31 @@ export function MascotSpeechBubble({
                 )}
               </div>
 
-              {/* Action Buttons (Reference Screenshot 1) */}
+                              {/* Contextual Validation Examples (Incorrect vs Correct) */}
+                {validationTip && (validationTip.incorrect || validationTip.correct) && (
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5 text-left">
+                    {validationTip.incorrect && (
+                      <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-900/50 text-[11px] font-mono text-rose-700 dark:text-rose-300">
+                        <span className="font-sans font-bold text-rose-500 shrink-0">✕</span>
+                        <div className="min-w-0">
+                          <span className="font-sans text-[10px] uppercase font-semibold text-rose-500 mr-1.5">Incorrect:</span>
+                          <span className="break-all">{validationTip.incorrect}</span>
+                        </div>
+                      </div>
+                    )}
+                    {validationTip.correct && (
+                      <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/50 text-[11px] font-mono text-emerald-700 dark:text-emerald-300">
+                        <span className="font-sans font-bold text-emerald-500 shrink-0">✓</span>
+                        <div className="min-w-0">
+                          <span className="font-sans text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">Correct:</span>
+                          <span className="break-all">{validationTip.correct}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons (Reference Screenshot 1) */}
               {actions && actions.length > 0 && (
                 <div className="mt-2.5 flex flex-wrap gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
                   {actions.map((action, idx) => (

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { GOOGLE_CLIENT_ID } from "@/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useFormValidationObserver } from "@/hooks/useMascotReactions";
+import { useSmartFormValidation } from "@/features/validation";
 
 const registerSchema = z
   .object({
@@ -41,6 +42,7 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
   useFormValidationObserver(errors, { email: "Could you check your email, maybe name@agency.com?" });
+  useSmartFormValidation();
 
   const onSubmit = handleSubmit(async ({ confirmPassword: _confirm, ...values }) => {
     setSubmitting(true);

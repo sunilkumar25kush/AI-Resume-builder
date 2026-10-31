@@ -8,3 +8,4 @@ export type { OnboardingMainStep } from "./useOnboardingState";
 export { MascotTourGuide } from "./MascotTourGuide";
 export type { OnboardingStep } from "./onboardingSteps";
 export { DASHBOARD_ONBOARDING_STEPS } from "./onboardingSteps";
+

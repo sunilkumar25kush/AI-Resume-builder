@@ -11,7 +11,8 @@
     "test:adapters": "npx tsx scripts/test-resume-adapters.ts",
     "test:templates": "npx tsx scripts/verify-all-templates.ts",
     "test:customization": "npx tsx scripts/test-portfolio-customization.ts",
-    "test": "npx tsx scripts/test-resume-adapters.ts && npx tsx scripts/verify-all-templates.ts && npx tsx scripts/test-portfolio-customization.ts"
+    "test": "npx tsx scripts/test-resume-adapters.ts && npx tsx scripts/verify-all-templates.ts && npx tsx scripts/test-portfolio-customization.ts && npx tsx scripts/test-mascot-validation.ts",
+    "test:validation": "npx tsx scripts/test-mascot-validation.ts"
   },
   "dependencies": {
     "@bible-strong/avatar-core": "^0.1.0",

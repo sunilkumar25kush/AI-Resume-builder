@@ -41,6 +41,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { useSmartFormValidation } from "@/features/validation";
 import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { SectionListEditor } from "@/components/resumes/SectionListEditor";
 import {
@@ -430,6 +431,8 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   } = useFieldArray({ control, name: "contact.customLinks" });
 
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+  const editorCardsRef = useRef<HTMLDivElement>(null);
+  useSmartFormValidation({ containerRef: editorCardsRef });
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const user = useAuthStore((s) => s.user);
@@ -841,7 +844,7 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={editorCardsRef} className="flex flex-col gap-6">
       {/* Personal Info & Contact Fields */}
       <Card data-mascot-section="personal-info" className="editor-form-card">
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">

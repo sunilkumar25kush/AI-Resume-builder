@@ -191,6 +191,7 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
           text={state.speechText}
           isThinking={state.isThinking}
           actions={state.speechActions}
+          validationTip={state.validationTip}
           onDismiss={dismissSpeech}
           position={state.coordinates.bubblePlacement ?? (effectiveY < 180 ? "bottom" : "top")}
           align={state.coordinates.bubbleAlign ?? "center"}

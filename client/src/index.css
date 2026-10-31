@@ -808,4 +808,29 @@ html {
   width: var(--rc-photo-size, 85px) !important;
   height: var(--rc-photo-size, 85px) !important;
   object-fit: cover !important;
-}
+}
+
+/* ==========================================================================
+   ResumeBuddy Smart Form Validation Highlighting
+   ========================================================================== */
+.mascot-invalid-field {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.28) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  animation: mascot-invalid-pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes mascot-invalid-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(244, 63, 94, 0.48);
+  }
+}
+
+.mascot-valid-field {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.32) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+}

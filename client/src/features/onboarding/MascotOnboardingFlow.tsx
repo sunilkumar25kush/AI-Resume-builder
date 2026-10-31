@@ -520,3 +520,4 @@ export function MascotOnboardingFlow() {
     </div>
   );
 }
+

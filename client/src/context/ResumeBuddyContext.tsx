@@ -25,7 +25,8 @@ import {
   INTERACTION_MAPPINGS,
   MASCOT_TIMINGS,
 } from "@/config/mascotBehaviors";
-import type { SpeechAction } from "@/components/ResumeBuddy/MascotSpeechBubble";
+import type { SpeechAction, SpeechValidationTip } from "@/components/ResumeBuddy/MascotSpeechBubble";
+export type { SpeechValidationTip } from "@/components/ResumeBuddy/MascotSpeechBubble";
 
 export interface MascotState {
   coordinates: MascotCoordinates;
@@ -39,6 +40,7 @@ export interface MascotState {
   isThinking: boolean;
   speechText?: string;
   speechActions?: SpeechAction[];
+  validationTip?: SpeechValidationTip;
   isVisible: boolean;
   isSleeping: boolean;
   activeSection?: string | null;
@@ -49,6 +51,7 @@ export interface SayOptions {
   mood?: MascotExpression;
   gesture?: MascotHandGesture;
   actions?: SpeechAction[];
+  validationTip?: SpeechValidationTip;
   autoDismissMs?: number;
   snapTarget?: HTMLElement | string;
   targetOptions?: MascotTargetOptions;
@@ -108,6 +111,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const [isThinking, setIsThinking] = useState(false);
   const [speechText, setSpeechText] = useState<string | undefined>(undefined);
   const [speechActions, setSpeechActions] = useState<SpeechAction[] | undefined>(undefined);
+  const [validationTip, setValidationTip] = useState<SpeechValidationTip | undefined>(undefined);
   const [isVisible, setIsVisible] = useState(true);
   const [isSleeping, setIsSleeping] = useState(false);
 
@@ -276,6 +280,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     }
     setSpeechText(undefined);
     setSpeechActions(undefined);
+    setValidationTip(undefined);
     setIsThinking(false);
   }, []);
 
@@ -323,6 +328,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         mood: newMood = "happy",
         gesture = "bounce",
         actions,
+        validationTip: newValidationTip,
         autoDismissMs = MASCOT_TIMINGS.autoDismissDefaultMs,
         snapTarget,
         targetOptions,
@@ -336,6 +342,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
 
       setSpeechText(text);
       setSpeechActions(actions);
+      setValidationTip(newValidationTip);
       setIsThinking(false);
 
       if (autoDismissMs && autoDismissMs > 0 && (!actions || actions.length === 0)) {
@@ -533,6 +540,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       isThinking,
       speechText,
       speechActions,
+      validationTip,
       isVisible,
       isSleeping,
       activeSection,

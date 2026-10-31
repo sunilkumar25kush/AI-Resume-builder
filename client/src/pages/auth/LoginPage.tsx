@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { GOOGLE_CLIENT_ID } from "@/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useFormValidationObserver } from "@/hooks/useMascotReactions";
+import { useSmartFormValidation } from "@/features/validation";
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email address"),
@@ -35,6 +36,7 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
   useFormValidationObserver(errors, { email: "Could you check your email, maybe name@agency.com?" });
+  useSmartFormValidation();
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
