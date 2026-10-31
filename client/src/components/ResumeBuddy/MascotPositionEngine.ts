@@ -12,12 +12,15 @@ export interface MascotCoordinates {
   y: number;
   placement: MascotPlacement;
   targetBearing: "left" | "right" | "above" | "below" | "center";
+  flightDeltaX?: number;
+  flightDeltaY?: number;
 }
 
 export interface MascotTargetOptions {
   placement?: MascotPlacement;
   offsetX?: number;
   offsetY?: number;
+  priority?: "low" | "medium" | "high"; // High priority overrides section tracking
 }
 
 export class MascotPositionEngine {
@@ -25,17 +28,21 @@ export class MascotPositionEngine {
   private mascotHeight: number;
   private padding: number;
   private topbarClearance: number;
+  private lastX: number;
+  private lastY: number;
 
   constructor(
     mascotWidth = 96,
     mascotHeight = 96,
-    padding = 16,
-    topbarClearance = 72,
+    padding = 20,
+    topbarClearance = 76,
   ) {
     this.mascotWidth = mascotWidth;
     this.mascotHeight = mascotHeight;
     this.padding = padding;
     this.topbarClearance = topbarClearance;
+    this.lastX = typeof window !== "undefined" ? window.innerWidth - 120 : 1000;
+    this.lastY = typeof window !== "undefined" ? window.innerHeight - 120 : 600;
   }
 
   public setDimensions(width: number, height: number) {
@@ -47,22 +54,28 @@ export class MascotPositionEngine {
     const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
 
-    const x = Math.max(
-      this.padding,
-      vw - this.mascotWidth - (vw < 640 ? 16 : 28),
-    );
-    // On small screens, clear bottom nav bar (around 80px)
-    const bottomNavHeight = vw < 1024 ? 80 : 28;
-    const y = Math.max(
-      this.topbarClearance,
-      vh - this.mascotHeight - bottomNavHeight,
-    );
+    // Mobile / Tablet responsiveness
+    const isMobile = vw < 640;
+    const isTablet = vw < 1024;
+
+    const rightMargin = isMobile ? 16 : isTablet ? 20 : 28;
+    const bottomMargin = isTablet ? 88 : 28; // Clear bottom nav on mobile/tablet
+
+    const x = Math.max(this.padding, vw - this.mascotWidth - rightMargin);
+    const y = Math.max(this.topbarClearance, vh - this.mascotHeight - bottomMargin);
+
+    const flightDeltaX = x - this.lastX;
+    const flightDeltaY = y - this.lastY;
+    this.lastX = x;
+    this.lastY = y;
 
     return {
       x,
       y,
       placement: "docked",
       targetBearing: "center",
+      flightDeltaX,
+      flightDeltaY,
     };
   }
 
@@ -84,6 +97,13 @@ export class MascotPositionEngine {
 
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const isMobile = vw < 640;
+
+    // On mobile, if element occupies most width, dock to bottom-right or top-right safe zone
+    if (isMobile) {
+      return this.getDockedCoordinates();
+    }
+
     const {
       placement = "right",
       offsetX = 0,
@@ -95,15 +115,14 @@ export class MascotPositionEngine {
     let activePlacement = placement;
     let bearing: MascotCoordinates["targetBearing"] = "center";
 
-    const spacing = 18;
+    const spacing = 22;
 
-    // Calculate initial ideal position
     switch (placement) {
       case "right":
         targetX = rect.right + spacing + offsetX;
         targetY = rect.top + (rect.height / 2) - (this.mascotHeight / 2) + offsetY;
-        bearing = "left"; // target is to the left of mascot
-        // Viewport overflow check: flip to left if overflowing right edge
+        bearing = "left";
+        // If overflowing right viewport edge, flip to left
         if (targetX + this.mascotWidth > vw - this.padding) {
           targetX = rect.left - this.mascotWidth - spacing - offsetX;
           activePlacement = "left";
@@ -114,8 +133,8 @@ export class MascotPositionEngine {
       case "left":
         targetX = rect.left - this.mascotWidth - spacing - offsetX;
         targetY = rect.top + (rect.height / 2) - (this.mascotHeight / 2) + offsetY;
-        bearing = "right"; // target is to the right of mascot
-        // Viewport underflow check: flip to right if overflowing left edge
+        bearing = "right";
+        // If underflowing left viewport edge, flip to right
         if (targetX < this.padding) {
           targetX = rect.right + spacing + offsetX;
           activePlacement = "right";
@@ -146,9 +165,9 @@ export class MascotPositionEngine {
         break;
 
       case "top-right":
-        // Sits hovering slightly on top of the card / metric header
-        targetX = rect.right - (this.mascotWidth * 0.75) + offsetX;
-        targetY = rect.top - (this.mascotHeight * 0.55) + offsetY;
+        // Floating atop the right corner of cards/sections (Ref 5 style)
+        targetX = rect.right - (this.mascotWidth * 0.7) + offsetX;
+        targetY = rect.top - (this.mascotHeight * 0.6) + offsetY;
         bearing = "below";
         break;
 
@@ -163,22 +182,28 @@ export class MascotPositionEngine {
         return this.getDockedCoordinates();
     }
 
-    // Clamp inside viewport
+    // Strict viewport boundaries & safe margins
     const clampedX = Math.min(
       Math.max(this.padding, targetX),
       vw - this.mascotWidth - this.padding,
     );
     const clampedY = Math.min(
       Math.max(this.topbarClearance, targetY),
-      vh - this.mascotHeight - this.padding,
+      vh - this.mascotHeight - (vw < 1024 ? 88 : this.padding),
     );
+
+    const flightDeltaX = clampedX - this.lastX;
+    const flightDeltaY = clampedY - this.lastY;
+    this.lastX = clampedX;
+    this.lastY = clampedY;
 
     return {
       x: clampedX,
       y: clampedY,
       placement: activePlacement,
       targetBearing: bearing,
+      flightDeltaX,
+      flightDeltaY,
     };
   }
 }
-

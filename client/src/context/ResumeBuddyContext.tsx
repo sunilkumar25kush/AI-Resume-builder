@@ -16,11 +16,12 @@ import {
 import { MascotAnimationController } from "@/components/ResumeBuddy/MascotAnimationController";
 import { MascotExpressionController, type MicroExpression } from "@/components/ResumeBuddy/MascotExpressionController";
 import type { MascotGestureType } from "@/components/ResumeBuddy/MascotGestureController";
+import { MascotInteractionController } from "@/components/ResumeBuddy/MascotInteractionController";
 import {
   type MascotMood,
   MASCOT_TIMINGS,
 } from "@/config/mascotBehaviors";
-import type { SpeechAction } from "@/components/ResumeBuddy/SpeechBubble";
+import type { SpeechAction } from "@/components/ResumeBuddy/MascotSpeechBubble";
 
 export interface MascotState {
   coordinates: MascotCoordinates;
@@ -51,6 +52,7 @@ export interface ResumeBuddyContextValue {
   state: MascotState;
   snapTo: (target: HTMLElement | string | null, options?: MascotTargetOptions) => void;
   dock: () => void;
+  reanchor: () => void;
   say: (text: string, options?: SayOptions) => void;
   think: (durationMs?: number, snapTarget?: HTMLElement | string) => void;
   react: (mood: MascotMood, durationMs?: number) => void;
@@ -60,6 +62,15 @@ export interface ResumeBuddyContextValue {
   toggleVisibility: () => void;
   setCharacterId: (id: string) => void;
   wakeUp: () => void;
+  isPanelOpen: boolean;
+  openPanel: () => void;
+  closePanel: () => void;
+  isMinimized: boolean;
+  toggleMinimize: (minimized?: boolean) => void;
+  isDisabled: boolean;
+  setDisabled: (disabled: boolean) => void;
+  isCustomPositioned: boolean;
+  setCustomPosition: (pos: { x: number; y: number } | null) => void;
 }
 
 const ResumeBuddyContext = createContext<ResumeBuddyContextValue | null>(null);
@@ -68,9 +79,11 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const positionEngineRef = useRef<MascotPositionEngine>(new MascotPositionEngine(96, 96));
   const animationControllerRef = useRef<MascotAnimationController>(new MascotAnimationController());
   const expressionControllerRef = useRef<MascotExpressionController>(new MascotExpressionController());
+  const interactionControllerRef = useRef<MascotInteractionController>(new MascotInteractionController());
 
   const currentTargetRef = useRef<HTMLElement | null>(null);
   const currentTargetOptionsRef = useRef<MascotTargetOptions>({});
+  const activeFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const [coordinates, setCoordinates] = useState<MascotCoordinates>(() =>
     positionEngineRef.current.getDockedCoordinates(),
@@ -87,11 +100,22 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isSleeping, setIsSleeping] = useState(false);
 
+  // Interaction states
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(() =>
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("resumebuddy_disabled") === "true"
+      : false,
+  );
+  const [customPosition, setCustomPositionState] = useState<{ x: number; y: number } | null>(null);
+
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Initialize controllers
+  // Initialize listeners
   useEffect(() => {
     animationControllerRef.current.setListener((newSeq, newMood) => {
       setSequence(newSeq);
@@ -101,16 +125,37 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     expressionControllerRef.current.setListener((newExpr) => {
       setExpression(newExpr);
     });
+
+    interactionControllerRef.current.setListener((interState) => {
+      setIsPanelOpen(interState.isPanelOpen);
+      setIsMinimized(interState.isMinimized);
+      setIsDisabled(interState.isDisabled);
+      setCustomPositionState(interState.customDragPosition);
+    });
   }, []);
 
   // Update target coordinates
   const updateTargetPosition = useCallback(() => {
+    // If user has custom drag position, honor it
+    if (customPosition) {
+      setCoordinates((prev) => ({
+        ...prev,
+        x: customPosition.x,
+        y: customPosition.y,
+        flightDeltaX: 0,
+        flightDeltaY: 0,
+      }));
+      return;
+    }
+
+    // Otherwise calculate relative to current target (focused field or active section)
+    const activeTarget = activeFocusedElementRef.current || currentTargetRef.current;
     const coords = positionEngineRef.current.calculateTargetCoordinates(
-      currentTargetRef.current,
+      activeTarget,
       currentTargetOptionsRef.current,
     );
     setCoordinates(coords);
-  }, []);
+  }, [customPosition]);
 
   // Window scroll & resize listeners (passive & throttled via RAF)
   useEffect(() => {
@@ -179,6 +224,10 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       currentTargetRef.current = element;
       currentTargetOptionsRef.current = options;
 
+      // Clear any manual drag offset when programmatically snapped
+      setCustomPositionState(null);
+      interactionControllerRef.current.resetPosition();
+
       const coords = positionEngineRef.current.calculateTargetCoordinates(element, options);
       setCoordinates(coords);
 
@@ -193,11 +242,21 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const dock = useCallback(() => {
     wakeUp();
     currentTargetRef.current = null;
+    activeFocusedElementRef.current = null;
     currentTargetOptionsRef.current = {};
+    setCustomPositionState(null);
+    interactionControllerRef.current.resetPosition();
     const coords = positionEngineRef.current.getDockedCoordinates();
     setCoordinates(coords);
     setActiveGesture("none");
   }, [wakeUp]);
+
+  // Re-anchor to active section
+  const reanchor = useCallback(() => {
+    setCustomPositionState(null);
+    interactionControllerRef.current.resetPosition();
+    updateTargetPosition();
+  }, [updateTargetPosition]);
 
   // Dismiss speech bubble
   const dismissSpeech = useCallback(() => {
@@ -305,6 +364,138 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     setIsVisible((prev) => !prev);
   }, []);
 
+  // Custom position from drag
+  const setCustomPosition = useCallback((pos: { x: number; y: number } | null) => {
+    setCustomPositionState(pos);
+    interactionControllerRef.current.setCustomDragPosition(pos);
+    if (pos) {
+      setCoordinates((prev) => ({
+        ...prev,
+        x: pos.x,
+        y: pos.y,
+        flightDeltaX: 0,
+        flightDeltaY: 0,
+      }));
+    }
+  }, []);
+
+  // Autonomous Section Observer & Navigation Tracking
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let observer: IntersectionObserver | null = null;
+
+    const setupSectionObserver = () => {
+      if (observer) observer.disconnect();
+
+      // Query section landmarks on the page
+      const landmarks = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          "[data-mascot-section], [data-mascot-target], main > section, .editor-form-card, #dashboard-features, #score-ring-card, form",
+        ),
+      );
+
+      if (landmarks.length === 0) return;
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          // If user dragged to custom spot or panel is open, do not auto-override
+          if (customPosition || isPanelOpen) return;
+
+          // Find the most prominent intersecting landmark
+          const intersecting = entries
+            .filter((e) => e.isIntersecting && e.intersectionRatio > 0.25)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+          if (intersecting.length > 0 && !activeFocusedElementRef.current) {
+            const targetEl = intersecting[0].target as HTMLElement;
+            currentTargetRef.current = targetEl;
+            currentTargetOptionsRef.current = { placement: "right" };
+            updateTargetPosition();
+          }
+        },
+        {
+          rootMargin: "-80px 0px -120px 0px",
+          threshold: [0.3, 0.6],
+        },
+      );
+
+      landmarks.forEach((el) => observer?.observe(el));
+    };
+
+    // Initial setup with slight delay for dynamic page hydration
+    const timer = setTimeout(setupSectionObserver, 300);
+
+    // Watch for route / DOM changes
+    const mutationObserver = new MutationObserver(() => {
+      setupSectionObserver();
+    });
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: false,
+    });
+
+    return () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [customPosition, isPanelOpen, updateTargetPosition]);
+
+  // Input Focus Tracking: Follows active form input when user is typing
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")
+      ) {
+        if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+
+        activeFocusedElementRef.current = target;
+        updateTargetPosition();
+
+        if (mood === "idle") {
+          animationControllerRef.current.playMood("listening", 3000);
+        }
+      }
+    };
+
+    const handleFocusOut = () => {
+      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+
+      // Gentle delay before returning to section landmark
+      blurTimerRef.current = setTimeout(() => {
+        activeFocusedElementRef.current = null;
+        updateTargetPosition();
+      }, 700);
+    };
+
+    document.addEventListener("focusin", handleFocusIn, { passive: true });
+    document.addEventListener("focusout", handleFocusOut, { passive: true });
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    };
+  }, [mood, updateTargetPosition]);
+
+  // Route change detection: reset custom position and dock/re-anchor to new page
+  useEffect(() => {
+    const handleNavigation = () => {
+      setCustomPositionState(null);
+      interactionControllerRef.current.resetPosition();
+      currentTargetRef.current = null;
+      activeFocusedElementRef.current = null;
+      updateTargetPosition();
+    };
+
+    window.addEventListener("popstate", handleNavigation);
+    return () => window.removeEventListener("popstate", handleNavigation);
+  }, [updateTargetPosition]);
+
   const value: ResumeBuddyContextValue = {
     state: {
       coordinates,
@@ -323,6 +514,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     },
     snapTo,
     dock,
+    reanchor,
     say,
     think,
     react,
@@ -332,6 +524,15 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     toggleVisibility,
     setCharacterId,
     wakeUp,
+    isPanelOpen,
+    openPanel: () => interactionControllerRef.current.togglePanel(true),
+    closePanel: () => interactionControllerRef.current.togglePanel(false),
+    isMinimized,
+    toggleMinimize: (val) => interactionControllerRef.current.toggleMinimize(val),
+    isDisabled,
+    setDisabled: (val) => interactionControllerRef.current.setDisabled(val),
+    isCustomPositioned: Boolean(customPosition),
+    setCustomPosition,
   };
 
   return (
@@ -348,4 +549,3 @@ export function useResumeBuddy(): ResumeBuddyContextValue {
   }
   return context;
 }
-

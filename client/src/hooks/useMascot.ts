@@ -11,8 +11,17 @@ export function useMascot() {
     pulseExpression: buddy.pulseExpression,
     snapTo: buddy.snapTo,
     dock: buddy.dock,
+    reanchor: buddy.reanchor,
     dismissSpeech: buddy.dismissSpeech,
     toggleVisibility: buddy.toggleVisibility,
+    openAssistant: buddy.openPanel,
+    closeAssistant: buddy.closePanel,
+    isPanelOpen: buddy.isPanelOpen,
+    isMinimized: buddy.isMinimized,
+    toggleMinimize: buddy.toggleMinimize,
+    isDisabled: buddy.isDisabled,
+    setDisabled: buddy.setDisabled,
+    isCustomPositioned: buddy.isCustomPositioned,
     wave: () => buddy.triggerGesture("wave"),
     nod: () => buddy.triggerGesture("nod"),
     shake: () => buddy.triggerGesture("shake"),
@@ -32,4 +41,3 @@ export function useMascot() {
     setCharacter: buddy.setCharacterId,
   };
 }
-

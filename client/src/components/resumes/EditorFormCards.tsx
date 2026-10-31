@@ -335,12 +335,13 @@ function SortableSectionCard({
   return (
     <Card
       ref={setNodeRef}
+      data-mascot-section={sectionKey}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
       }}
       className={cn(
-        "transition-shadow",
+        "editor-form-card transition-shadow",
         hidden && "opacity-60",
         highlighted && "border-emerald-400 ring-1 ring-emerald-300",
         isDragging && "z-20 opacity-70 shadow-xl border-primary"
@@ -842,7 +843,7 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   return (
     <div className="flex flex-col gap-6">
       {/* Personal Info & Contact Fields */}
-      <Card>
+      <Card data-mascot-section="personal-info" className="editor-form-card">
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
           <div>
             <CardTitle className="text-base">Personal Info &amp; Contact</CardTitle>

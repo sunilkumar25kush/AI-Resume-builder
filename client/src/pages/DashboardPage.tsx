@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-3">
+      <section data-mascot-section="welcome" className="flex flex-col gap-3">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
           {greeting()}, {firstName} 👋
         </h1>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
         }}
       />
 
-      <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section id="dashboard-features" data-mascot-section="features" className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {features.map(({ icon: Icon, title, description, stage, to, primary }) => {
           const isLive = stage === "Live";
 

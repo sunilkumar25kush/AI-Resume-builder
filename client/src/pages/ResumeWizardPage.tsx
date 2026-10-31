@@ -307,7 +307,7 @@ export default function ResumeWizardPage() {
         </div>
       </nav>
 
-      <section className="flex flex-col gap-6" aria-live="polite">
+      <section id="wizard-step-content" data-mascot-section="wizard-content" className="flex flex-col gap-6" aria-live="polite">
         <AvatarAssistant
           mode="inline"
           mood={coach.mood}
