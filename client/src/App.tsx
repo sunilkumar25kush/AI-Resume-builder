@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router";
 
 import { Toaster } from "@/components/ui/sonner";
+import { ResumeBuddyProvider } from "@/context/ResumeBuddyContext";
 import { router } from "@/routes";
 import { useAuthStore } from "@/stores/auth";
 import { useNotificationsStore } from "@/stores/notifications";
@@ -30,9 +31,9 @@ export default function App() {
   }, [authStatus]);
 
   return (
-    <>
+    <ResumeBuddyProvider>
       <RouterProvider router={router} />
       <Toaster position="top-center" richColors closeButton />
-    </>
+    </ResumeBuddyProvider>
   );
 }

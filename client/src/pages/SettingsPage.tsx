@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/stores/auth";
 import { usePrefsStore } from "@/stores/prefs";
 import { useThemeStore } from "@/stores/theme";
+import { AvatarSettingsDialog, AvatarView, useAvatarStore } from "@/components/avatar";
 
 const PREF_ROWS: { key: "resumeTips" | "optimizationAlerts" | "productUpdates"; label: string; hint: string }[] = [
   { key: "resumeTips", label: "Resume tips", hint: "Occasional writing and formatting suggestions" },
@@ -21,6 +22,9 @@ export default function SettingsPage() {
   const setTheme = useThemeStore((state) => state.setTheme);
   const { toggle, ...prefs } = usePrefsStore();
   const logout = useAuthStore((state) => state.logout);
+  const assistantEnabled = useAvatarStore((state) => state.enabled);
+  const setAssistantEnabled = useAvatarStore((state) => state.setEnabled);
+  const companionCharacter = useAvatarStore((state) => state.getCharacter());
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
@@ -56,6 +60,59 @@ export default function SettingsPage() {
               <Moon className="h-5 w-5" aria-hidden />
               Dark
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">AI Assistant Companion</CardTitle>
+          <CardDescription>Customize your procedural vector avatar assistant</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <Label htmlFor="assistant-toggle" className="font-medium">
+                Enable Interactive Assistant
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Provides real-time feedback, ATS validation warnings, and onboarding guidance
+              </span>
+            </div>
+            <Switch
+              id="assistant-toggle"
+              checked={assistantEnabled}
+              onCheckedChange={setAssistantEnabled}
+              aria-label="Enable Interactive Assistant"
+            />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/40 overflow-hidden">
+                <AvatarView
+                  definition={companionCharacter.definition}
+                  animation="idle"
+                  size={44}
+                  autoplay={false}
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{companionCharacter.name}</span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {companionCharacter.definition.body.primary.type} companion
+                </span>
+              </div>
+            </div>
+            <AvatarSettingsDialog
+              trigger={
+                <Button variant="outline" size="sm">
+                  Change Avatar
+                </Button>
+              }
+            />
           </div>
         </CardContent>
       </Card>

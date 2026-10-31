@@ -1,5 +1,8 @@
 import { ChevronRight, FilePlus2, FileText, Gauge, Globe, Route, ScanSearch, Wand2, Briefcase } from "lucide-react";
-import { Link } from "react-router";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+import { AvatarAssistant, useAvatarAssistant } from "@/components/avatar";
+import { useMascot } from "@/hooks/useMascot";
 
 import { useAuthStore } from "@/stores/auth";
 
@@ -24,6 +27,24 @@ function greeting(): string {
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const firstName = user?.name?.trim() ? user.name.trim().split(/\s+/)[0] : "there";
+  const navigate = useNavigate();
+  const { welcome } = useAvatarAssistant();
+  const mascot = useMascot();
+
+  useEffect(() => {
+    welcome(`Welcome back, ${firstName}! Ready to build, validate, or optimize your resume today?`);
+    mascot.say(`Welcome back, ${firstName}! Ready to build or optimize your resume today?`, {
+      mood: "happy",
+      gesture: "wave",
+      actions: [
+        {
+          label: "Start AI Wizard →",
+          onClick: () => navigate("/wizard"),
+        },
+      ],
+      autoDismissMs: 7000,
+    });
+  }, [firstName, welcome]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -36,6 +57,17 @@ export default function DashboardPage() {
           descriptions — all in one place.
         </p>
       </section>
+
+      {/* Interactive Avatar Assistant Onboarding Banner */}
+      <AvatarAssistant
+        mode="inline"
+        mood="welcome"
+        message={`Welcome to your AI workspace, ${firstName}! I will validate your resume sections, highlight missing keywords, and verify your ATS scores in real-time.`}
+        action={{
+          label: "Start AI Resume Wizard",
+          onClick: () => navigate("/wizard"),
+        }}
+      />
 
       <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {features.map(({ icon: Icon, title, description, stage, to, primary }) => {
@@ -88,6 +120,7 @@ export default function DashboardPage() {
           );
         })}
       </section>
+
     </div>
   );
 }

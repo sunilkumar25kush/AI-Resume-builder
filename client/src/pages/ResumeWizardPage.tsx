@@ -16,11 +16,96 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { exportResumePdf } from "@/utils/exportPdfClient";
 import { exportResumeJson } from "@/utils/exportJson";
+import { AvatarAssistant, type AssistantMood } from "@/components/avatar";
+import { useMascot } from "@/hooks/useMascot";
 import type { JobDescription, Optimization, Resume } from "@/types";
 
 const STEPS = ["Target", "Resume", "Job Description", "Analysis", "Generate", "Template", "Edit", "Export"];
 const ANALYSIS_STEP = 3;
 const GENERATE_STEP = 4;
+
+function getWizardCoachMessage(
+  step: number,
+  analyzing: boolean,
+  generating: boolean,
+  analysis: Optimization | null,
+  error: string | null
+): { mood: AssistantMood; message: string } {
+  if (error) {
+    return {
+      mood: "warning",
+      message: `Heads up: ${error}. Let's review the required details and retry.`,
+    };
+  }
+  if (analyzing) {
+    return {
+      mood: "thinking",
+      message: "Analyzing job description requirements and checking keyword match score...",
+    };
+  }
+  if (generating) {
+    return {
+      mood: "thinking",
+      message: "Generating tailored accomplishments and high-impact resume bullets...",
+    };
+  }
+
+  switch (step) {
+    case 0:
+      return {
+        mood: "explaining",
+        message: "Step 1: Set your target role and experience tier so the AI tunes keywords precisely.",
+      };
+    case 1:
+      return {
+        mood: "idle",
+        message: "Step 2: Choose an existing resume or upload a PDF/DOCX to extract your background.",
+      };
+    case 2:
+      return {
+        mood: "explaining",
+        message: "Step 3: Paste the target job description to match required skills and keywords.",
+      };
+    case 3:
+      if (analysis) {
+        const ats = analysis.result?.atsScore ?? 0;
+        const match = analysis.result?.matchPercent ?? 0;
+        return {
+          mood: ats >= 75 ? "celebrating" : "happy",
+          message: `ATS Score: ${ats}/100 with a ${match}% job match. Review suggestions below!`,
+        };
+      }
+      return {
+        mood: "thinking",
+        message: "Step 4: Running comparative ATS analysis against the job description.",
+      };
+    case 4:
+      return {
+        mood: "happy",
+        message: "Step 5: Review your tailored resume preview. Ready to select a template or edit.",
+      };
+    case 5:
+      return {
+        mood: "happy",
+        message: "Step 6: Choose a high-converting resume template designed for ATS readability.",
+      };
+    case 6:
+      return {
+        mood: "explaining",
+        message: "Step 7: Customize details, reorder sections, and adjust contact links with live preview.",
+      };
+    case 7:
+      return {
+        mood: "celebrating",
+        message: "Step 8: Fantastic! Your optimized resume is ready for download in PDF or DOCX format.",
+      };
+    default:
+      return {
+        mood: "idle",
+        message: "Let's guide you through building an exceptional resume.",
+      };
+  }
+}
 
 export default function ResumeWizardPage() {
   const navigate = useNavigate();
@@ -40,6 +125,26 @@ export default function ResumeWizardPage() {
   const [designOpen, setDesignOpen] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
+
+  const mascot = useMascot();
+
+  const coach = getWizardCoachMessage(
+    step,
+    analyzing,
+    generating,
+    analysis,
+    analysisError || generationError
+  );
+
+  useEffect(() => {
+    if (coach?.message) {
+      if (analyzing || generating) {
+        mascot.think(4000);
+      } else {
+        mascot.say(coach.message, { mood: coach.mood as any, autoDismissMs: 6500 });
+      }
+    }
+  }, [coach.message, coach.mood, analyzing, generating]);
 
   const runAnalysis = async () => {
     if (!jd || !resume || analyzing) return;
@@ -203,6 +308,11 @@ export default function ResumeWizardPage() {
       </nav>
 
       <section className="flex flex-col gap-6" aria-live="polite">
+        <AvatarAssistant
+          mode="inline"
+          mood={coach.mood}
+          message={coach.message}
+        />
         {step === 0 ? (
           <StepTarget
             targetTitle={targetTitle}

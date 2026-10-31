@@ -6,6 +6,7 @@ import { PageLoader } from "@/components/common/PageLoader";
 import { MobileDrawer } from "@/components/layout/MobileDrawer";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { FloatingMascot } from "@/components/ResumeBuddy";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
@@ -38,6 +39,7 @@ export function AppLayout() {
         {/* BottomNav is a sibling of the layout shell so no ancestor transform can break fixed positioning */}
         <BottomNav />
         <MobileDrawer />
+        <FloatingMascot />
       </div>
     </TooltipProvider>
   );

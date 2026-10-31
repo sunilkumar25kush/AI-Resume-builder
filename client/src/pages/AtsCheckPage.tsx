@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useJdsStore } from "@/stores/jds";
+import { useAvatarAssistant } from "@/components/avatar";
+import { useMascotReactions } from "@/hooks/useMascotReactions";
 import type { Resume } from "@/types";
 
 type JdMode = "saved" | "paste";
@@ -27,6 +29,19 @@ export default function AtsCheckPage() {
   const [jdText, setJdText] = useState("");
   const [report, setReport] = useState<AtsReport | null>(null);
   const [checking, setChecking] = useState(false);
+  const { celebrate, cheer, warn, think } = useAvatarAssistant();
+  const { handleAtsScore } = useMascotReactions();
+
+  const reactToAtsReport = useCallback((rep: AtsReport) => {
+    handleAtsScore(rep.atsScore, "#score-ring-card");
+    if (rep.atsScore >= 80) {
+      celebrate(`Outstanding ATS Score: ${rep.atsScore}/100! Your resume has excellent structure and keyword alignment.`, 8000);
+    } else if (rep.atsScore >= 50) {
+      cheer(`Solid ATS Score: ${rep.atsScore}/100. Review the missing checklist items below to boost it past 80!`, 8000);
+    } else {
+      warn(`Low ATS Score: ${rep.atsScore}/100. Automated screening systems may filter this resume. Let's fix the critical items below.`, 10000);
+    }
+  }, [celebrate, cheer, warn]);
 
   const jds = useJdsStore((state) => state.items);
   const fetchJds = useJdsStore((state) => state.fetch);
@@ -59,6 +74,7 @@ export default function AtsCheckPage() {
       await loadResumes();
       const auto = await atsApi.check({ resumeId: resume._id });
       setReport(auto);
+      reactToAtsReport(auto);
       toast.success("Resume parsed — ATS score ready");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -72,6 +88,7 @@ export default function AtsCheckPage() {
 
   const handleCheck = async () => {
     if (!selectedResumeId) return;
+    think("Scanning resume structure, contact information, and keyword density...");
     setChecking(true);
     try {
       const result = await atsApi.check({
@@ -80,6 +97,7 @@ export default function AtsCheckPage() {
         jdText: jdMode === "paste" ? jdText.trim() : undefined,
       });
       setReport(result);
+      reactToAtsReport(result);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -193,7 +211,7 @@ export default function AtsCheckPage() {
 
       {report ? (
         <section className="grid gap-6 lg:grid-cols-[auto_1fr]">
-          <div className="flex flex-col items-center gap-3">
+          <div id="score-ring-card" className="flex flex-col items-center gap-3">
             <ScoreRing score={report.atsScore} />
             <p className="text-center text-xs text-muted-foreground">Overall ATS score</p>
             <p className="text-center text-xs text-muted-foreground">
