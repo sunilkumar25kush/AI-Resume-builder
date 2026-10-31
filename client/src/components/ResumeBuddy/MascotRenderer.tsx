@@ -1,15 +1,19 @@
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@bible-strong/avatar-react";
 import type { AnimationKey, ExpressionKey } from "@bible-strong/avatar-core";
 import { getAvatarCharacter } from "@/components/avatar/avatarDefinitions";
-import { MASCOT_BEHAVIORS, type MascotMood } from "@/config/mascotBehaviors";
+import { MASCOT_BEHAVIORS, type MascotExpression, type MascotHandGesture } from "@/config/mascotBehaviors";
+import { MascotGestureController } from "./MascotGestureController";
 import { cn } from "@/lib/utils";
 
 export interface MascotRendererProps {
   characterId?: string;
   sequence?: AnimationKey;
   expression?: ExpressionKey;
-  mood?: MascotMood;
+  mood?: MascotExpression;
+  gesture?: MascotHandGesture;
+  targetBearing?: "left" | "right" | "above" | "below" | "center";
   size?: number;
   className?: string;
   isSleeping?: boolean;
@@ -21,6 +25,8 @@ export function MascotRenderer({
   sequence = "idle",
   expression,
   mood = "idle",
+  gesture = "none",
+  targetBearing = "center",
   size = 96,
   className,
   isSleeping = false,
@@ -51,6 +57,7 @@ export function MascotRenderer({
   }, [character, characterId]);
 
   const behaviorConfig = MASCOT_BEHAVIORS[mood] || MASCOT_BEHAVIORS.idle;
+  const gestureAnim = MascotGestureController.getGestureAnimation(gesture, targetBearing);
 
   return (
     <div
@@ -105,6 +112,45 @@ export function MascotRenderer({
         </svg>
       </div>
 
+      {/* Thumbs-Up Floating Badge / Particle */}
+      <AnimatePresence>
+        {gesture === "thumbsUp" && (
+          <motion.div
+            initial={{ scale: 0, y: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.25, 1], y: -26, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 20 }}
+            className="absolute -top-4 right-1 z-30 text-base drop-shadow-md pointer-events-none"
+          >
+            👍
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Directional Pointer Beacon Ring (when pointing) */}
+      <AnimatePresence>
+        {gestureAnim.pointerCue && (
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{
+              scale: [0.8, 1.5, 0.8],
+              opacity: [0.4, 1, 0.4],
+            }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+            className={cn(
+              "absolute z-30 w-4 h-4 rounded-full border-2 border-emerald-400 bg-emerald-400/20 pointer-events-none shadow-sm",
+              gestureAnim.pointerCue === "left" && "-left-5 top-[52%]",
+              gestureAnim.pointerCue === "right" && "-right-5 top-[52%]",
+              gestureAnim.pointerCue === "down" && "bottom-[-10px] left-1/2 -translate-x-1/2",
+            )}
+            style={{
+              filter: "drop-shadow(0 0 8px #67f32d)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Procedural Avatar Core */}
       {!loadError ? (
         <Avatar
@@ -132,25 +178,39 @@ export function MascotRenderer({
         </div>
       )}
 
-      {/* Side stubby nubs / hands matching Kirby & Reference style */}
-      <div
-        className="absolute -left-1 top-[56%] -translate-y-1/2 rounded-full pointer-events-none transition-transform duration-300"
+      {/* Left Hand Nub (Animated by Gesture Controller) */}
+      <motion.div
+        animate={{
+          x: gestureAnim.leftHand.x ?? 0,
+          y: gestureAnim.leftHand.y ?? 0,
+          rotate: gestureAnim.leftHand.rotate ?? -12,
+          scale: gestureAnim.leftHand.scale ?? 1,
+        }}
+        transition={gestureAnim.transition as any}
+        className="absolute -left-1 top-[56%] -translate-y-1/2 rounded-full pointer-events-none"
         style={{
           width: size * 0.2,
           height: size * 0.2,
           backgroundColor: "#54e325",
           boxShadow: "-2px 2px 6px rgba(0,0,0,0.12)",
-          transform: isHovered ? "rotate(-24deg) scale(1.1)" : "rotate(-12deg)",
         }}
       />
-      <div
-        className="absolute -right-1 top-[56%] -translate-y-1/2 rounded-full pointer-events-none transition-transform duration-300"
+
+      {/* Right Hand Nub (Animated by Gesture Controller) */}
+      <motion.div
+        animate={{
+          x: gestureAnim.rightHand.x ?? 0,
+          y: gestureAnim.rightHand.y ?? 0,
+          rotate: gestureAnim.rightHand.rotate ?? 12,
+          scale: gestureAnim.rightHand.scale ?? 1,
+        }}
+        transition={gestureAnim.transition as any}
+        className="absolute -right-1 top-[56%] -translate-y-1/2 rounded-full pointer-events-none"
         style={{
           width: size * 0.2,
           height: size * 0.2,
           backgroundColor: "#54e325",
           boxShadow: "2px 2px 6px rgba(0,0,0,0.12)",
-          transform: isHovered ? "rotate(24deg) scale(1.1)" : "rotate(12deg)",
         }}
       />
     </div>

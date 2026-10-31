@@ -194,3 +194,4 @@ export function MascotSpeechBubble({
 
 // Backward-compatible alias
 export { MascotSpeechBubble as SpeechBubble };
+

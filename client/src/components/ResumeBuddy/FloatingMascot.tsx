@@ -111,6 +111,21 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
   const effectiveX = state.coordinates.x;
   const effectiveY = state.coordinates.y;
 
+  const isCelebrating =
+    state.mood === "celebrating" ||
+    state.mood === "celebrate" ||
+    state.activeGesture === "clap" ||
+    state.activeGesture === "raiseHands";
+  const isExplaining = state.mood === "explaining" || state.activeGesture === "handsExplaining";
+  const hasBubble = Boolean(state.speechText || state.isThinking);
+
+  // Turn toward active content / input
+  const inputTurnY = state.targetBearing === "left" ? -12 : state.targetBearing === "right" ? 12 : 0;
+  const inputTurnX = state.targetBearing === "below" ? 8 : state.targetBearing === "above" ? -8 : 0;
+
+  // Lean toward speech bubble
+  const bubbleLeanX = hasBubble ? (effectiveY < 180 ? 4 : -4) : 0;
+
   return (
     <>
       {/* Interactive Assistant Panel Modal */}
@@ -212,16 +227,22 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
             openPanel();
           }}
           animate={{
-            y: state.isSleeping ? [0, 2, 0] : (gestureAnimation.y ?? [0, -7, 0]),
-            x: gestureAnimation.x ?? 0,
-            rotate: (gestureAnimation.rotate?.[0] ?? 0) + flightTilt,
-            scale: gestureAnimation.scale ?? (isHovered ? 1.05 : 1),
-            rotateX: cursorGaze.rotateX,
-            rotateY: cursorGaze.rotateY,
+            y: state.isSleeping
+              ? [0, 2, 0]
+              : isCelebrating
+              ? [0, -22, 0, -14, 0]
+              : isExplaining
+              ? [0, -4, 0, -4, 0]
+              : (gestureAnimation.body.y ?? [0, -7, 0]),
+            x: gestureAnimation.body.x ?? 0,
+            rotate: (gestureAnimation.body.rotate?.[0] ?? 0) + flightTilt,
+            scale: gestureAnimation.body.scale ?? (isHovered ? 1.05 : 1),
+            rotateX: cursorGaze.rotateX + inputTurnX + bubbleLeanX,
+            rotateY: cursorGaze.rotateY + inputTurnY,
           }}
           transition={{
             y: {
-              duration: state.isSleeping ? 4.5 : 2.8,
+              duration: state.isSleeping ? 4.5 : isCelebrating ? 0.9 : 2.8,
               repeat: gestureAnimation.transition ? 0 : Infinity,
               ease: "easeInOut",
             },
@@ -235,6 +256,8 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
             sequence={state.sequence}
             expression={state.expression}
             mood={state.mood}
+            gesture={state.activeGesture}
+            targetBearing={state.targetBearing}
             size={size}
             isSleeping={state.isSleeping}
             isHovered={isHovered}

@@ -15,10 +15,12 @@ import {
 } from "@/components/ResumeBuddy/MascotPositionEngine";
 import { MascotAnimationController } from "@/components/ResumeBuddy/MascotAnimationController";
 import { MascotExpressionController, type MicroExpression } from "@/components/ResumeBuddy/MascotExpressionController";
-import type { MascotGestureType } from "@/components/ResumeBuddy/MascotGestureController";
 import { MascotInteractionController } from "@/components/ResumeBuddy/MascotInteractionController";
 import {
-  type MascotMood,
+  type MascotExpression,
+  type MascotHandGesture,
+  type MascotInteractionScenario,
+  INTERACTION_MAPPINGS,
   MASCOT_TIMINGS,
 } from "@/config/mascotBehaviors";
 import type { SpeechAction } from "@/components/ResumeBuddy/MascotSpeechBubble";
@@ -28,10 +30,10 @@ export interface MascotState {
   placement: MascotCoordinates["placement"];
   targetBearing: MascotCoordinates["targetBearing"];
   characterId: string;
-  mood: MascotMood;
+  mood: MascotExpression;
   sequence: AnimationKey;
   expression?: ExpressionKey;
-  activeGesture: MascotGestureType;
+  activeGesture: MascotHandGesture;
   isThinking: boolean;
   speechText?: string;
   speechActions?: SpeechAction[];
@@ -40,8 +42,8 @@ export interface MascotState {
 }
 
 export interface SayOptions {
-  mood?: MascotMood;
-  gesture?: MascotGestureType;
+  mood?: MascotExpression;
+  gesture?: MascotHandGesture;
   actions?: SpeechAction[];
   autoDismissMs?: number;
   snapTarget?: HTMLElement | string;
@@ -55,9 +57,11 @@ export interface ResumeBuddyContextValue {
   reanchor: () => void;
   say: (text: string, options?: SayOptions) => void;
   think: (durationMs?: number, snapTarget?: HTMLElement | string) => void;
-  react: (mood: MascotMood, durationMs?: number) => void;
+  react: (mood: MascotExpression, durationMs?: number) => void;
+  playAnimation: (expression: MascotExpression, gesture?: MascotHandGesture, durationMs?: number) => void;
+  triggerInteraction: (scenario: MascotInteractionScenario, snapTarget?: HTMLElement | string) => void;
   pulseExpression: (expr: MicroExpression, durationMs?: number) => void;
-  triggerGesture: (gesture: MascotGestureType) => void;
+  triggerGesture: (gesture: MascotHandGesture) => void;
   dismissSpeech: () => void;
   toggleVisibility: () => void;
   setCharacterId: (id: string) => void;
@@ -90,10 +94,10 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   );
 
   const [characterId, setCharacterId] = useState<string>("buddy");
-  const [mood, setMood] = useState<MascotMood>("idle");
+  const [mood, setMood] = useState<MascotExpression>("idle");
   const [sequence, setSequence] = useState<AnimationKey>("idle");
   const [expression, setExpression] = useState<ExpressionKey | undefined>(undefined);
-  const [activeGesture, setActiveGesture] = useState<MascotGestureType>("none");
+  const [activeGesture, setActiveGesture] = useState<MascotHandGesture>("none");
   const [isThinking, setIsThinking] = useState(false);
   const [speechText, setSpeechText] = useState<string | undefined>(undefined);
   const [speechActions, setSpeechActions] = useState<SpeechAction[] | undefined>(undefined);
@@ -111,15 +115,16 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const [customPosition, setCustomPositionState] = useState<{ x: number; y: number } | null>(null);
 
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize listeners
   useEffect(() => {
-    animationControllerRef.current.setListener((newSeq, newMood) => {
-      setSequence(newSeq);
-      setMood(newMood);
+    animationControllerRef.current.setListener((animState) => {
+      setSequence(animState.sequence);
+      setMood(animState.expression);
+      setExpression(animState.fallbackExpression);
+      setActiveGesture(animState.gesture);
     });
 
     expressionControllerRef.current.setListener((newExpr) => {
@@ -136,7 +141,6 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
 
   // Update target coordinates
   const updateTargetPosition = useCallback(() => {
-    // If user has custom drag position, honor it
     if (customPosition) {
       setCoordinates((prev) => ({
         ...prev,
@@ -148,7 +152,6 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Otherwise calculate relative to current target (focused field or active section)
     const activeTarget = activeFocusedElementRef.current || currentTargetRef.current;
     const coords = positionEngineRef.current.calculateTargetCoordinates(
       activeTarget,
@@ -183,7 +186,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const wakeUp = useCallback(() => {
     if (isSleeping) {
       setIsSleeping(false);
-      animationControllerRef.current.playMood("waking", 1800);
+      animationControllerRef.current.play("happy", "bounce", 1800);
     }
 
     if (sleepTimerRef.current) {
@@ -192,7 +195,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
 
     sleepTimerRef.current = setTimeout(() => {
       setIsSleeping(true);
-      animationControllerRef.current.playMood("sleeping");
+      animationControllerRef.current.play("sleeping", "none");
     }, MASCOT_TIMINGS.sleepInactivityMs);
   }, [isSleeping]);
 
@@ -224,16 +227,11 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       currentTargetRef.current = element;
       currentTargetOptionsRef.current = options;
 
-      // Clear any manual drag offset when programmatically snapped
       setCustomPositionState(null);
       interactionControllerRef.current.resetPosition();
 
       const coords = positionEngineRef.current.calculateTargetCoordinates(element, options);
       setCoordinates(coords);
-
-      if (coords.targetBearing !== "center") {
-        setActiveGesture("tiltTowardTarget");
-      }
     },
     [wakeUp],
   );
@@ -248,7 +246,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     interactionControllerRef.current.resetPosition();
     const coords = positionEngineRef.current.getDockedCoordinates();
     setCoordinates(coords);
-    setActiveGesture("none");
+    animationControllerRef.current.resetToIdle();
   }, [wakeUp]);
 
   // Re-anchor to active section
@@ -269,17 +267,39 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     setIsThinking(false);
   }, []);
 
-  // Trigger simulated gesture
-  const triggerGesture = useCallback((gesture: MascotGestureType) => {
-    setActiveGesture(gesture);
-    if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+  // Play animation with priority & cooldown management
+  const playAnimation = useCallback(
+    (targetExpr: MascotExpression, targetGest: MascotHandGesture = "none", durationMs?: number) => {
+      wakeUp();
+      animationControllerRef.current.play(targetExpr, targetGest, durationMs);
+    },
+    [wakeUp],
+  );
 
-    if (gesture !== "none" && gesture !== "tiltTowardTarget") {
-      gestureTimerRef.current = setTimeout(() => {
-        setActiveGesture(currentTargetRef.current ? "tiltTowardTarget" : "none");
-      }, 1200);
-    }
-  }, []);
+  // Trigger standardized interaction scenario
+  const triggerInteraction = useCallback(
+    (scenario: MascotInteractionScenario, snapTarget?: HTMLElement | string) => {
+      wakeUp();
+      const rule = INTERACTION_MAPPINGS[scenario];
+      if (!rule) return;
+
+      if (snapTarget) {
+        snapTo(snapTarget);
+      }
+
+      animationControllerRef.current.play(rule.expression, rule.gesture, rule.durationMs);
+    },
+    [wakeUp, snapTo],
+  );
+
+  // Trigger gesture directly
+  const triggerGesture = useCallback(
+    (gesture: MascotHandGesture) => {
+      wakeUp();
+      animationControllerRef.current.play(mood, gesture, 1600);
+    },
+    [wakeUp, mood],
+  );
 
   // Speak dialogue
   const say = useCallback(
@@ -288,7 +308,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       dismissSpeech();
 
       const {
-        mood: newMood,
+        mood: newMood = "happy",
         gesture = "bounce",
         actions,
         autoDismissMs = MASCOT_TIMINGS.autoDismissDefaultMs,
@@ -300,13 +320,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         snapTo(snapTarget, targetOptions);
       }
 
-      if (newMood) {
-        animationControllerRef.current.playMood(newMood);
-      }
-
-      if (gesture) {
-        triggerGesture(gesture);
-      }
+      animationControllerRef.current.play(newMood, gesture, autoDismissMs || 4000);
 
       setSpeechText(text);
       setSpeechActions(actions);
@@ -318,7 +332,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         }, autoDismissMs);
       }
     },
-    [wakeUp, dismissSpeech, snapTo, triggerGesture],
+    [wakeUp, dismissSpeech, snapTo],
   );
 
   // Think state with 3 pulsating dots
@@ -331,7 +345,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         snapTo(snapTarget);
       }
 
-      animationControllerRef.current.playMood("thinking", durationMs);
+      animationControllerRef.current.play("thinking", "handOnChin", durationMs);
       setIsThinking(true);
 
       if (durationMs > 0) {
@@ -345,9 +359,9 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
 
   // Mood reaction
   const react = useCallback(
-    (targetMood: MascotMood, durationMs?: number) => {
+    (targetMood: MascotExpression, durationMs?: number) => {
       wakeUp();
-      animationControllerRef.current.playMood(targetMood, durationMs);
+      animationControllerRef.current.play(targetMood, "none", durationMs);
     },
     [wakeUp],
   );
@@ -364,7 +378,6 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     setIsVisible((prev) => !prev);
   }, []);
 
-  // Custom position from drag
   const setCustomPosition = useCallback((pos: { x: number; y: number } | null) => {
     setCustomPositionState(pos);
     interactionControllerRef.current.setCustomDragPosition(pos);
@@ -379,7 +392,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Autonomous Section Observer & Navigation Tracking
+  // Autonomous Section Observer
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -388,7 +401,6 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     const setupSectionObserver = () => {
       if (observer) observer.disconnect();
 
-      // Query section landmarks on the page
       const landmarks = Array.from(
         document.querySelectorAll<HTMLElement>(
           "[data-mascot-section], [data-mascot-target], main > section, .editor-form-card, #dashboard-features, #score-ring-card, form",
@@ -399,10 +411,8 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
 
       observer = new IntersectionObserver(
         (entries) => {
-          // If user dragged to custom spot or panel is open, do not auto-override
           if (customPosition || isPanelOpen) return;
 
-          // Find the most prominent intersecting landmark
           const intersecting = entries
             .filter((e) => e.isIntersecting && e.intersectionRatio > 0.25)
             .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
@@ -423,10 +433,8 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       landmarks.forEach((el) => observer?.observe(el));
     };
 
-    // Initial setup with slight delay for dynamic page hydration
     const timer = setTimeout(setupSectionObserver, 300);
 
-    // Watch for route / DOM changes
     const mutationObserver = new MutationObserver(() => {
       setupSectionObserver();
     });
@@ -443,7 +451,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     };
   }, [customPosition, isPanelOpen, updateTargetPosition]);
 
-  // Input Focus Tracking: Follows active form input when user is typing
+  // Input Focus Tracking: Follows active form input with 'enterInfo' (thinking + handOnChin)
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement | null;
@@ -456,19 +464,17 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         activeFocusedElementRef.current = target;
         updateTargetPosition();
 
-        if (mood === "idle") {
-          animationControllerRef.current.playMood("listening", 3000);
-        }
+        triggerInteraction("enterInfo");
       }
     };
 
     const handleFocusOut = () => {
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
 
-      // Gentle delay before returning to section landmark
       blurTimerRef.current = setTimeout(() => {
         activeFocusedElementRef.current = null;
         updateTargetPosition();
+        animationControllerRef.current.resetToIdle();
       }, 700);
     };
 
@@ -480,9 +486,9 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("focusout", handleFocusOut);
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
     };
-  }, [mood, updateTargetPosition]);
+  }, [triggerInteraction, updateTargetPosition]);
 
-  // Route change detection: reset custom position and dock/re-anchor to new page
+  // Route change detection: reset custom position and welcome/re-anchor
   useEffect(() => {
     const handleNavigation = () => {
       setCustomPositionState(null);
@@ -518,6 +524,8 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     say,
     think,
     react,
+    playAnimation,
+    triggerInteraction,
     pulseExpression,
     triggerGesture,
     dismissSpeech,

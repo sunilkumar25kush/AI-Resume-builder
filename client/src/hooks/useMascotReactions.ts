@@ -3,12 +3,12 @@ import type { FieldErrors } from "react-hook-form";
 import { useResumeBuddy } from "@/context/ResumeBuddyContext";
 
 export function useMascotReactions() {
-  const { snapTo, say, react, triggerGesture } = useResumeBuddy();
+  const { snapTo, say, playAnimation, triggerInteraction } = useResumeBuddy();
   const lastErrorRef = useRef<string | null>(null);
 
   /**
    * Automatically reacts to React Hook Form errors by moving next to the
-   * invalid field with a helpful tip (matching Reference Screenshot 4)
+   * invalid field with exact expression and gesture (confused + pointAtInput, or warning + pointDown)
    */
   const handleFormErrors = (
     errors: FieldErrors,
@@ -37,12 +37,61 @@ export function useMascotReactions() {
       document.querySelector(`[data-field="${firstField}"]`);
 
     snapTo(targetEl as HTMLElement | null, { placement: "right" });
-    triggerGesture("shake");
-    say(errorMessage, {
-      mood: "warning",
-      gesture: "tiltTowardTarget",
-      autoDismissMs: 7000,
+
+    // User ignores required field vs invalid info
+    const isRequired =
+      errorMessage.toLowerCase().includes("required") ||
+      errorMessage.toLowerCase().includes("missing");
+
+    if (isRequired) {
+      triggerInteraction("missingField");
+      say(errorMessage, {
+        mood: "warning",
+        gesture: "pointDown",
+        autoDismissMs: 6500,
+      });
+    } else {
+      triggerInteraction("invalidInfo");
+      say(errorMessage, {
+        mood: "confused",
+        gesture: "pointAtInput",
+        autoDismissMs: 6500,
+      });
+    }
+  };
+
+  /**
+   * Called when a section is saved or completed
+   * Expression: celebrating, Gesture: clap
+   */
+  const handleSectionComplete = (sectionName?: string) => {
+    triggerInteraction("completeSection");
+    say(sectionName ? `${sectionName} saved and verified!` : "Section saved successfully!", {
+      mood: "celebrating",
+      gesture: "clap",
+      autoDismissMs: 4000,
     });
+  };
+
+  /**
+   * Called when full onboarding or resume generation is complete
+   * Expression: excited, Gesture: raiseHands
+   */
+  const handleOnboardingComplete = () => {
+    triggerInteraction("completeOnboarding");
+    say("Congratulations! Your resume is ready and fully optimized!", {
+      mood: "excited",
+      gesture: "raiseHands",
+      autoDismissMs: 6000,
+    });
+  };
+
+  /**
+   * Called when user enters valid information
+   * Expression: happy, Gesture: thumbsUp
+   */
+  const handleValidField = () => {
+    triggerInteraction("validInfo");
   };
 
   /**
@@ -51,26 +100,26 @@ export function useMascotReactions() {
   const handleAtsScore = (score: number, targetElement?: HTMLElement | string) => {
     if (score >= 80) {
       if (targetElement) snapTo(targetElement, { placement: "top-right" });
-      react("celebrate", 6000);
-      triggerGesture("bounce");
+      playAnimation("celebrating", "clap", 6000);
       say(`Outstanding! ${score}% ATS score. Your resume is primed for top recruiter filters!`, {
-        mood: "celebrate",
-        gesture: "bounce",
+        mood: "celebrating",
+        gesture: "clap",
         autoDismissMs: 8000,
       });
     } else if (score >= 60) {
       if (targetElement) snapTo(targetElement, { placement: "right" });
-      react("happy", 4000);
+      playAnimation("happy", "thumbsUp", 4000);
       say(`Good progress (${score}%). A few targeted keyword additions will push this over 80%!`, {
         mood: "happy",
-        gesture: "nod",
+        gesture: "thumbsUp",
+        autoDismissMs: 6000,
       });
     } else {
       if (targetElement) snapTo(targetElement, { placement: "right" });
-      react("confused", 5000);
+      playAnimation("confused", "pointAtInput", 5000);
       say(`Your ATS match is currently ${score}%. Let's review the missing keywords to pass the screening.`, {
         mood: "confused",
-        gesture: "tiltTowardTarget",
+        gesture: "pointAtInput",
         autoDismissMs: 8000,
       });
     }
@@ -78,6 +127,9 @@ export function useMascotReactions() {
 
   return {
     handleFormErrors,
+    handleSectionComplete,
+    handleOnboardingComplete,
+    handleValidField,
     handleAtsScore,
   };
 }
@@ -97,4 +149,3 @@ export function useFormValidationObserver(
     }
   }, [errors]);
 }
-

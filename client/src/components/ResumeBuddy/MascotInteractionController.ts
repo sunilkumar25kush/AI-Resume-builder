@@ -91,3 +91,4 @@ export class MascotInteractionController {
     this.onStateChange?.(this.state);
   }
 }
+
