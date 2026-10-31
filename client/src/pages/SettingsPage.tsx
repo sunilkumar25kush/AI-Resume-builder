@@ -1,5 +1,6 @@
-import { Link } from "react-router";
-import { KeyRound, LogOut, Moon, Sun } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { KeyRound, LogOut, Moon, Sun, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,9 @@ const PREF_ROWS: { key: "resumeTips" | "optimizationAlerts" | "productUpdates"; 
 ];
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
   const { toggle, ...prefs } = usePrefsStore();
@@ -113,6 +117,44 @@ export default function SettingsPage() {
                 </Button>
               }
             />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">Onboarding Tour</span>
+              <span className="text-xs text-muted-foreground">
+                Replay the guided platform tour and feature walkthrough
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (typeof localStorage !== "undefined") {
+                  localStorage.removeItem("arb_onboarding_completed");
+                  localStorage.setItem("arb_onboarding_step", "1");
+                }
+                if (user) {
+                  try {
+                    await updateProfile({
+                      name: user.name,
+                      onboardingCompleted: false,
+                      onboardingStep: 1,
+                    });
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }
+                toast.success("Restarting onboarding tour...");
+                navigate("/");
+              }}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Restart Tour
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -21,10 +21,14 @@ export interface User {
   contactOrder?: string[];
   customLinks?: UserCustomLink[];
   autoPopulateResume?: boolean;
+  onboardingCompleted?: boolean;
+  onboardingStep?: number;
   createdAt: string;
 }
 
 export interface UpdateProfileInput {
+  onboardingCompleted?: boolean;
+  onboardingStep?: number;
   name: string;
   email?: string;
   phone?: string;

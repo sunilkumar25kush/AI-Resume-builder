@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { AvatarAssistant, useAvatarAssistant } from "@/components/avatar";
 import { useMascot } from "@/hooks/useMascot";
+import { MascotOnboardingFlow } from "@/features/onboarding";
 
 import { useAuthStore } from "@/stores/auth";
 
@@ -109,18 +110,23 @@ export default function DashboardPage() {
             ? `${baseClass} border-primary/40 bg-primary/5 ring-1 ring-primary/20 hover:border-primary hover:bg-primary/10 col-span-full sm:col-span-2 xl:col-span-2`
             : `${baseClass} bg-card hover:border-primary/50`;
 
+          const featureId = `feature-card-${title.toLowerCase().replace(/\s+/g, "-")}`;
+          const featureData = title.toLowerCase().replace(/\s+/g, "-");
+
           return to ? (
-            <Link key={title} to={to} className={className}>
+            <Link key={title} id={featureId} data-onboarding-feature={featureData} to={to} className={className}>
               {content}
             </Link>
           ) : (
-            <article key={title} className={className}>
+            <article key={title} id={featureId} data-onboarding-feature={featureData} className={className}>
               {content}
             </article>
           );
         })}
       </section>
 
+      {/* First-time Mascot Guided Onboarding */}
+      <MascotOnboardingFlow />
     </div>
   );
 }
