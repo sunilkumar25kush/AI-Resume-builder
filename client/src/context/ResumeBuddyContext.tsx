@@ -16,6 +16,8 @@ import {
 import { MascotAnimationController } from "@/components/ResumeBuddy/MascotAnimationController";
 import { MascotExpressionController, type MicroExpression } from "@/components/ResumeBuddy/MascotExpressionController";
 import { MascotInteractionController } from "@/components/ResumeBuddy/MascotInteractionController";
+import { MascotScrollManager } from "@/components/ResumeBuddy/MascotScrollManager";
+import { getPageMascotConfig } from "@/config/mascotPageAnchors";
 import {
   type MascotExpression,
   type MascotHandGesture,
@@ -39,6 +41,8 @@ export interface MascotState {
   speechActions?: SpeechAction[];
   isVisible: boolean;
   isSleeping: boolean;
+  activeSection?: string | null;
+  isModalOpen?: boolean;
 }
 
 export interface SayOptions {
@@ -75,6 +79,9 @@ export interface ResumeBuddyContextValue {
   setDisabled: (disabled: boolean) => void;
   isCustomPositioned: boolean;
   setCustomPosition: (pos: { x: number; y: number } | null) => void;
+  handleRouteChange: (pathname: string) => void;
+  activeSection: string | null;
+  isModalOpen: boolean;
 }
 
 const ResumeBuddyContext = createContext<ResumeBuddyContextValue | null>(null);
@@ -113,6 +120,11 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       : false,
   );
   const [customPosition, setCustomPositionState] = useState<{ x: number; y: number } | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const scrollManagerRef = useRef<MascotScrollManager | null>(null);
+  const lastGreetedRouteRef = useRef<string>("");
 
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -392,64 +404,74 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Autonomous Section Observer
+  // Centralized Mascot Scroll & Intersection Manager
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let observer: IntersectionObserver | null = null;
+    const manager = new MascotScrollManager(
+      positionEngineRef.current,
+      (target, options, sectionKey) => {
+        if (customPosition || isPanelOpen) return;
+        if (activeFocusedElementRef.current) return;
 
-    const setupSectionObserver = () => {
-      if (observer) observer.disconnect();
+        if (sectionKey) {
+          setActiveSection(sectionKey);
+        }
 
-      const landmarks = Array.from(
-        document.querySelectorAll<HTMLElement>(
-          "[data-mascot-section], [data-mascot-target], main > section, .editor-form-card, #dashboard-features, #score-ring-card, form",
-        ),
-      );
+        currentTargetRef.current = target;
+        if (options) {
+          currentTargetOptionsRef.current = options;
+        }
 
-      if (landmarks.length === 0) return;
+        const coords = positionEngineRef.current.calculateTargetCoordinates(
+          target,
+          currentTargetOptionsRef.current,
+        );
+        setCoordinates(coords);
+      },
+      (modalOpen) => {
+        setIsModalOpen(modalOpen);
+        setCoordinates((prev) => ({
+          ...prev,
+          isModalYielding: modalOpen,
+        }));
+      },
+    );
 
-      observer = new IntersectionObserver(
-        (entries) => {
-          if (customPosition || isPanelOpen) return;
+    scrollManagerRef.current = manager;
 
-          const intersecting = entries
-            .filter((e) => e.isIntersecting && e.intersectionRatio > 0.25)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-          if (intersecting.length > 0 && !activeFocusedElementRef.current) {
-            const targetEl = intersecting[0].target as HTMLElement;
-            currentTargetRef.current = targetEl;
-            currentTargetOptionsRef.current = { placement: "right" };
-            updateTargetPosition();
-          }
-        },
-        {
-          rootMargin: "-80px 0px -120px 0px",
-          threshold: [0.3, 0.6],
-        },
-      );
-
-      landmarks.forEach((el) => observer?.observe(el));
-    };
-
-    const timer = setTimeout(setupSectionObserver, 300);
-
-    const mutationObserver = new MutationObserver(() => {
-      setupSectionObserver();
-    });
-
-    mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: false,
-    });
+    // Trigger initial scan for current path
+    if (window.location.pathname) {
+      manager.handleRouteChange(window.location.pathname);
+    }
 
     return () => {
-      clearTimeout(timer);
-      observer?.disconnect();
-      mutationObserver.disconnect();
+      manager.destroy();
+      scrollManagerRef.current = null;
     };
-  }, [customPosition, isPanelOpen, updateTargetPosition]);
+  }, [customPosition, isPanelOpen]);
+
+  // Route change handler: resets overrides and updates page landmark tracking
+  const handleRouteChange = useCallback((pathname: string) => {
+    wakeUp();
+    setCustomPositionState(null);
+    interactionControllerRef.current.resetPosition();
+    currentTargetRef.current = null;
+    activeFocusedElementRef.current = null;
+
+    scrollManagerRef.current?.handleRouteChange(pathname);
+
+    // Initial greeting if configured for this route and not already greeted
+    const pageConfig = getPageMascotConfig(pathname);
+    if (pageConfig?.greeting && lastGreetedRouteRef.current !== pathname) {
+      lastGreetedRouteRef.current = pathname;
+      say(pageConfig.greeting.text, {
+        mood: pageConfig.greeting.mood,
+        gesture: pageConfig.greeting.gesture,
+        autoDismissMs: pageConfig.greeting.autoDismissMs,
+      });
+    }
+  }, [wakeUp, say]);
 
   // Input Focus Tracking: Follows active form input with 'enterInfo' (thinking + handOnChin)
   useEffect(() => {
@@ -488,19 +510,15 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     };
   }, [triggerInteraction, updateTargetPosition]);
 
-  // Route change detection: reset custom position and welcome/re-anchor
+  // Popstate navigation detection
   useEffect(() => {
     const handleNavigation = () => {
-      setCustomPositionState(null);
-      interactionControllerRef.current.resetPosition();
-      currentTargetRef.current = null;
-      activeFocusedElementRef.current = null;
-      updateTargetPosition();
+      handleRouteChange(window.location.pathname);
     };
 
     window.addEventListener("popstate", handleNavigation);
     return () => window.removeEventListener("popstate", handleNavigation);
-  }, [updateTargetPosition]);
+  }, [handleRouteChange]);
 
   const value: ResumeBuddyContextValue = {
     state: {
@@ -517,6 +535,8 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       speechActions,
       isVisible,
       isSleeping,
+      activeSection,
+      isModalOpen,
     },
     snapTo,
     dock,
@@ -541,6 +561,9 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     setDisabled: (val) => interactionControllerRef.current.setDisabled(val),
     isCustomPositioned: Boolean(customPosition),
     setCustomPosition,
+    handleRouteChange,
+    activeSection,
+    isModalOpen,
   };
 
   return (

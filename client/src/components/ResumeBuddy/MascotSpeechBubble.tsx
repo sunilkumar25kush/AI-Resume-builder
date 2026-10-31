@@ -15,6 +15,7 @@ export interface MascotSpeechBubbleProps {
   actions?: SpeechAction[];
   onDismiss?: () => void;
   position?: "top" | "bottom" | "left" | "right";
+  align?: "left" | "right" | "center";
   className?: string;
   typewriter?: boolean;
   autoDismissMs?: number;
@@ -26,6 +27,7 @@ export function MascotSpeechBubble({
   actions = [],
   onDismiss,
   position = "top",
+  align = "center",
   className,
   typewriter = true,
   autoDismissMs,
@@ -100,7 +102,10 @@ export function MascotSpeechBubble({
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         className={cn(
-          "absolute pointer-events-auto z-50 flex flex-col items-center",
+          "absolute pointer-events-auto z-50 flex flex-col",
+          align === "right" && "items-end right-0",
+          align === "left" && "items-start left-0",
+          align === "center" && "items-center left-1/2 -translate-x-1/2",
           position === "top" && "bottom-full mb-3",
           position === "bottom" && "top-full mt-3",
           position === "left" && "right-full mr-3 top-1/2 -translate-y-1/2",
@@ -173,7 +178,12 @@ export function MascotSpeechBubble({
 
         {/* 3 Thought Dots Connecting Bubble to Antenna Tip */}
         {position === "top" && (
-          <div className="flex flex-col items-center -space-y-0.5 mt-0.5 pointer-events-none">
+          <div
+            className={cn(
+              "flex flex-col -space-y-0.5 mt-0.5 pointer-events-none",
+              align === "right" ? "items-end pr-10" : align === "left" ? "items-start pl-10" : "items-center",
+            )}
+          >
             <div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
             <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
             <div className="w-1 h-1 rounded-full bg-emerald-400" />
@@ -181,7 +191,12 @@ export function MascotSpeechBubble({
         )}
 
         {position === "bottom" && (
-          <div className="flex flex-col-reverse items-center -space-y-0.5 mb-0.5 pointer-events-none">
+          <div
+            className={cn(
+              "flex flex-col-reverse -space-y-0.5 mb-0.5 pointer-events-none",
+              align === "right" ? "items-end pr-10" : align === "left" ? "items-start pl-10" : "items-center",
+            )}
+          >
             <div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
             <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
             <div className="w-1 h-1 rounded-full bg-emerald-400" />

@@ -33,7 +33,7 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground">Appearance, preferences and account</p>
       </div>
 
-      <Card>
+      <Card data-mascot-section="settings-appearance">
         <CardHeader>
           <CardTitle className="text-base">Appearance</CardTitle>
           <CardDescription>Choose how the app looks on this device</CardDescription>
@@ -64,7 +64,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-mascot-section="settings-companion">
         <CardHeader>
           <CardTitle className="text-base">AI Assistant Companion</CardTitle>
           <CardDescription>Customize your procedural vector avatar assistant</CardDescription>

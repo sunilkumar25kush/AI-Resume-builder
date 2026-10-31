@@ -119,7 +119,7 @@ export default function AtsCheckPage() {
       </section>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Card>
+        <Card data-mascot-section="resume-select">
           <CardHeader>
             <CardTitle>Step 1 — Resume</CardTitle>
           </CardHeader>
@@ -149,7 +149,7 @@ export default function AtsCheckPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-mascot-section="jd-input">
           <CardHeader>
             <CardTitle>Step 2 — Job Description (optional)</CardTitle>
           </CardHeader>
@@ -227,7 +227,7 @@ export default function AtsCheckPage() {
 
           <div className="flex flex-col gap-6">
             {report.missingSkills.length > 0 ? (
-              <Card>
+              <Card data-mascot-section="ats-missing-skills">
                 <CardHeader>
                   <CardTitle>Missing skills (JD se)</CardTitle>
                 </CardHeader>
@@ -241,7 +241,7 @@ export default function AtsCheckPage() {
               </Card>
             ) : null}
 
-            <Card>
+            <Card data-mascot-section="ats-checklist">
               <CardHeader>
                 <CardTitle>Checklist</CardTitle>
               </CardHeader>

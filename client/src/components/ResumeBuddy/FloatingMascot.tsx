@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useDragControls } from "framer-motion";
+import { useLocation } from "react-router";
 import { Minimize2, EyeOff, Sparkles } from "lucide-react";
 import { MascotRenderer } from "./MascotRenderer";
 import { MascotSpeechBubble } from "./MascotSpeechBubble";
@@ -14,6 +15,7 @@ export interface FloatingMascotProps {
 }
 
 export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
+  const location = useLocation();
   const {
     state,
     dock,
@@ -27,7 +29,13 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
     isDisabled,
     setDisabled,
     setCustomPosition,
+    handleRouteChange,
   } = useResumeBuddy();
+
+  // Route-aware synchronization: notify MascotScrollManager of route change
+  useEffect(() => {
+    handleRouteChange(location.pathname);
+  }, [location.pathname, handleRouteChange]);
 
   const [isHovered, setIsHovered] = useState(false);
   const [cursorGaze, setCursorGaze] = useState<{ rotateX: number; rotateY: number }>({ rotateX: 0, rotateY: 0 });
@@ -125,6 +133,7 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
 
   // Lean toward speech bubble
   const bubbleLeanX = hasBubble ? (effectiveY < 180 ? 4 : -4) : 0;
+  const isYielding = Boolean(state.coordinates.isModalYielding || state.isModalOpen);
 
   return (
     <>
@@ -150,13 +159,13 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
         animate={{
           x: effectiveX,
           y: effectiveY,
-          opacity: 1,
-          scale: 1,
+          opacity: isYielding ? 0.22 : 1,
+          scale: isYielding ? 0.88 : 1,
         }}
         transition={{
           type: "spring",
-          damping: 24,
-          stiffness: 220,
+          damping: 26,
+          stiffness: 200,
           mass: 0.85,
         }}
         onMouseEnter={() => {
@@ -168,6 +177,7 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
           "fixed top-0 left-0 z-[9999] flex flex-col items-center justify-center cursor-pointer select-none",
+          isYielding && "pointer-events-none",
           className,
         )}
         style={{
@@ -182,7 +192,8 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
           isThinking={state.isThinking}
           actions={state.speechActions}
           onDismiss={dismissSpeech}
-          position={effectiveY < 180 ? "bottom" : "top"}
+          position={state.coordinates.bubblePlacement ?? (effectiveY < 180 ? "bottom" : "top")}
+          align={state.coordinates.bubbleAlign ?? "center"}
         />
 
         {/* Hover Quick Badges (Dock & Minimize & Re-anchor) */}

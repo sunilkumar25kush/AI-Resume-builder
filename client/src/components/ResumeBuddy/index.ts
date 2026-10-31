@@ -6,6 +6,7 @@ export { MascotAnimationController } from "./MascotAnimationController";
 export { MascotGestureController } from "./MascotGestureController";
 export { MascotExpressionController } from "./MascotExpressionController";
 export { MascotInteractionController } from "./MascotInteractionController";
+export { MascotScrollManager } from "./MascotScrollManager";
 export { MascotAssistantPanel } from "./MascotAssistantPanel";
 
 export type { MascotCoordinates, MascotPlacement, MascotTargetOptions } from "./MascotPositionEngine";

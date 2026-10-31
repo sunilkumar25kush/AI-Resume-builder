@@ -23,6 +23,9 @@ export function useMascot() {
     isDisabled: buddy.isDisabled,
     setDisabled: buddy.setDisabled,
     isCustomPositioned: buddy.isCustomPositioned,
+    handleRouteChange: buddy.handleRouteChange,
+    activeSection: buddy.activeSection,
+    isModalOpen: buddy.isModalOpen,
 
     // High-level Priority & Scenario API
     playAnimation: (expression: MascotExpression, gesture: MascotHandGesture = "none", durationMs?: number) =>

@@ -236,7 +236,7 @@ export default function ResumePreviewPage() {
       {activeTab === "preview" ? (
         <div className="space-y-6">
           {/* Template Selector with Thumbnails and Theme Tweaks */}
-          <Card>
+          <Card data-mascot-section="template-picker">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Choose Template</CardTitle>
             </CardHeader>
@@ -251,7 +251,7 @@ export default function ResumePreviewPage() {
           </Card>
 
           {/* Auto-Fit to Page Density Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border bg-card text-xs shadow-2xs">
+          <div data-mascot-section="density-controls" className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border bg-card text-xs shadow-2xs">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-foreground">Auto-Fit Page Density:</span>
               <button
@@ -310,7 +310,7 @@ export default function ResumePreviewPage() {
           </div>
 
           {/* Scaled True A4 Live Preview */}
-          <div className="rounded-xl border bg-muted/30 p-4 sm:p-8 flex justify-center overflow-hidden">
+          <div data-mascot-section="resume-preview" className="rounded-xl border bg-muted/30 p-4 sm:p-8 flex justify-center overflow-hidden">
             <div className="w-full max-w-[840px] overflow-hidden">
               <ResumePreview
                 data={resume.parsedData}

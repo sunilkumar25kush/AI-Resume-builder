@@ -68,7 +68,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form data-mascot-section="auth" onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="name">Full name</Label>
           <Input id="name" placeholder="Your name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />
