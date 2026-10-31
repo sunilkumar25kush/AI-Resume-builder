@@ -23,6 +23,4 @@ export const updateProfileSchema = z.object({
     .optional()
     .default([]),
   autoPopulateResume: z.boolean().optional().default(true),
-  onboardingCompleted: z.boolean().optional(),
-  onboardingStep: z.number().int().min(1).max(10).optional(),
 });

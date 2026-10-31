@@ -30,7 +30,6 @@ import { PortfolioEditorHeader } from "@/components/portfolios/editor/PortfolioE
 import { ProfileEditor } from "@/components/portfolios/editor/ProfileEditor";
 import { ProjectsEditor } from "@/components/portfolios/editor/ProjectsEditor";
 import { ReviewBanner } from "@/components/portfolios/editor/ReviewBanner";
-import { useMascotAiSuggestions } from "@/features/ai-suggestions";
 import { SectionOrderControls } from "@/components/portfolios/editor/SectionOrderControls";
 import { SkillsEditor } from "@/components/portfolios/editor/SkillsEditor";
 import { SocialLinksEditor } from "@/components/portfolios/editor/SocialLinksEditor";
@@ -86,10 +85,6 @@ export default function PortfolioEditorPage() {
   const debounceTimerRef = useRef<number | undefined>(undefined);
   const pendingPayloadRef = useRef<Partial<Portfolio> | null>(null);
   const isInitialLoadRef = useRef(true);
-  useMascotAiSuggestions({
-    targetRole: portfolio?.profile?.headline,
-    activeSection: activeTab,
-  });
 
   // Load portfolio on mount
   useEffect(() => {

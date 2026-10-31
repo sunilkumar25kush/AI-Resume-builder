@@ -27,8 +27,6 @@ async function updateProfile(userId, data) {
   if (data.contactOrder !== undefined) user.contactOrder = data.contactOrder;
   if (data.customLinks !== undefined) user.customLinks = data.customLinks;
   if (data.autoPopulateResume !== undefined) user.autoPopulateResume = Boolean(data.autoPopulateResume);
-  if (data.onboardingCompleted !== undefined) user.onboardingCompleted = Boolean(data.onboardingCompleted);
-  if (data.onboardingStep !== undefined) user.onboardingStep = Number(data.onboardingStep);
 
   await user.save();
   return user.toSafeJSON();

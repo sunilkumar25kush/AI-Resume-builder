@@ -18,9 +18,6 @@ import { CustomizationStudio } from "@/components/resumes/customization/Customiz
 import { editSchema, toApiPayload, toFormValues, toParsedData, type EditFormValues } from "@/components/resumes/editorForm";
 import { DEFAULT_CUSTOMIZATION, getDefaultCustomizationForTemplate } from "@/utils/customization";
 import { exportResumePdf } from "@/utils/exportPdfClient";
-import { useAvatarAssistant, useFormValidationMood } from "@/components/avatar";
-import { useMascot } from "@/hooks/useMascot";
-import { useFormValidationObserver } from "@/hooks/useMascotReactions";
 import { Button } from "@/components/ui/button";
 
 const VersionDrawer = lazy(() =>
@@ -98,15 +95,6 @@ export default function ResumeEditorPage() {
   // never serialize (or save) an empty form over the real data.
   const formReady = resume !== null && typeof values.skillsText === "string";
 
-  const { cheer, warn } = useAvatarAssistant();
-  const mascot = useMascot();
-  useFormValidationObserver(form.formState.errors);
-  useFormValidationMood(
-    form.formState.errors,
-    form.formState.isSubmitting,
-    form.formState.isDirty
-  );
-
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -154,16 +142,11 @@ export default function ResumeEditorPage() {
       await resumesApi.update(resume._id, payload);
       lastSavedRef.current = serialized;
       pendingRef.current = false;
-      if (version === versionRef.current) {
-        setSaveState("saved");
-        cheer("Changes saved to cloud!", 2500);
-        mascot.react("happy", 2500);
-      }
+      if (version === versionRef.current) setSaveState("saved");
     } catch (error) {
       if (version === versionRef.current) {
         pendingRef.current = false;
         setSaveState("error");
-        warn("Failed to auto-save changes. Check your network.", 5000);
         toast.error(getApiErrorMessage(error));
       }
     }

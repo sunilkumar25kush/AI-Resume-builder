@@ -14,8 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GOOGLE_CLIENT_ID } from "@/constants";
 import { useAuthStore } from "@/stores/auth";
-import { useFormValidationObserver } from "@/hooks/useMascotReactions";
-import { useSmartFormValidation } from "@/features/validation";
 
 const registerSchema = z
   .object({
@@ -41,8 +39,6 @@ export default function RegisterPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
-  useFormValidationObserver(errors, { email: "Could you check your email, maybe name@agency.com?" });
-  useSmartFormValidation();
 
   const onSubmit = handleSubmit(async ({ confirmPassword: _confirm, ...values }) => {
     setSubmitting(true);
@@ -70,7 +66,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <form data-mascot-section="auth" onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="name">Full name</Label>
           <Input id="name" placeholder="Your name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />

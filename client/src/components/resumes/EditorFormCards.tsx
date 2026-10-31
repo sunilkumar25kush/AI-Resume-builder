@@ -41,8 +41,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { useSmartFormValidation } from "@/features/validation";
-import { useMascotAiSuggestions } from "@/features/ai-suggestions";
 import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { SectionListEditor } from "@/components/resumes/SectionListEditor";
 import {
@@ -337,13 +335,12 @@ function SortableSectionCard({
   return (
     <Card
       ref={setNodeRef}
-      data-mascot-section={sectionKey}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
       }}
       className={cn(
-        "editor-form-card transition-shadow",
+        "transition-shadow",
         hidden && "opacity-60",
         highlighted && "border-emerald-400 ring-1 ring-emerald-300",
         isDragging && "z-20 opacity-70 shadow-xl border-primary"
@@ -432,25 +429,9 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   } = useFieldArray({ control, name: "contact.customLinks" });
 
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
-  const editorCardsRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const user = useAuthStore((s) => s.user);
 
-  useSmartFormValidation({ containerRef: editorCardsRef });
-  useMascotAiSuggestions({
-    containerRef: editorCardsRef,
-    targetRole: getValues("title") || user?.targetJobTitle,
-    onApplyField: (fieldName, appliedVal) => {
-      if (fieldName === "skillsText") {
-        const formattedSkills = Array.isArray(appliedVal) ? appliedVal.join("\n") : appliedVal;
-        setValue("skillsText", formattedSkills, { shouldDirty: true });
-      } else {
-        const stringVal = Array.isArray(appliedVal) ? appliedVal.join("\n") : appliedVal;
-        setValue(fieldName as any, stringVal, { shouldDirty: true });
-      }
-      toast.success("AI suggestion applied to resume");
-    },
-  });
+  const user = useAuthStore((s) => s.user);
 
   // Watch photo URL for preview
   const watchedPhotoUrl = useWatch({ control, name: "photoUrl" });
@@ -859,9 +840,9 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
   };
 
   return (
-    <div ref={editorCardsRef} className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       {/* Personal Info & Contact Fields */}
-      <Card data-mascot-section="personal-info" className="editor-form-card">
+      <Card>
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
           <div>
             <CardTitle className="text-base">Personal Info &amp; Contact</CardTitle>

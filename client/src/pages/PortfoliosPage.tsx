@@ -134,7 +134,7 @@ export default function PortfoliosPage() {
       )}
 
       {/* Grid of existing portfolios */}
-      <section data-mascot-section="portfolios-grid">
+      <section>
         {loading && items.length === 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (

@@ -32,8 +32,6 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     autoPopulateResume: { type: Boolean, default: true },
-    onboardingCompleted: { type: Boolean, default: false },
-    onboardingStep: { type: Number, default: 1 },
     passwordResetToken: { type: String, select: false, index: { sparse: true } },
     passwordResetExpires: { type: Date, select: false },
   },
@@ -64,8 +62,6 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     contactOrder: this.contactOrder || [],
     customLinks: this.customLinks || [],
     autoPopulateResume: this.autoPopulateResume ?? true,
-    onboardingCompleted: Boolean(this.onboardingCompleted),
-    onboardingStep: this.onboardingStep || 1,
     createdAt: this.createdAt,
   };
 };

@@ -1,9 +1,5 @@
 import { ChevronRight, FilePlus2, FileText, Gauge, Globe, Route, ScanSearch, Wand2, Briefcase } from "lucide-react";
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router";
-import { AvatarAssistant, useAvatarAssistant } from "@/components/avatar";
-import { useMascot } from "@/hooks/useMascot";
-import { MascotOnboardingFlow } from "@/features/onboarding";
+import { Link } from "react-router";
 
 import { useAuthStore } from "@/stores/auth";
 
@@ -28,28 +24,10 @@ function greeting(): string {
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const firstName = user?.name?.trim() ? user.name.trim().split(/\s+/)[0] : "there";
-  const navigate = useNavigate();
-  const { welcome } = useAvatarAssistant();
-  const mascot = useMascot();
-
-  useEffect(() => {
-    welcome(`Welcome back, ${firstName}! Ready to build, validate, or optimize your resume today?`);
-    mascot.say(`Welcome back, ${firstName}! Ready to build or optimize your resume today?`, {
-      mood: "happy",
-      gesture: "wave",
-      actions: [
-        {
-          label: "Start AI Wizard →",
-          onClick: () => navigate("/wizard"),
-        },
-      ],
-      autoDismissMs: 7000,
-    });
-  }, [firstName, welcome]);
 
   return (
     <div className="flex flex-col gap-8">
-      <section data-mascot-section="welcome" className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
           {greeting()}, {firstName} 👋
         </h1>
@@ -59,18 +37,7 @@ export default function DashboardPage() {
         </p>
       </section>
 
-      {/* Interactive Avatar Assistant Onboarding Banner */}
-      <AvatarAssistant
-        mode="inline"
-        mood="welcome"
-        message={`Welcome to your AI workspace, ${firstName}! I will validate your resume sections, highlight missing keywords, and verify your ATS scores in real-time.`}
-        action={{
-          label: "Start AI Resume Wizard",
-          onClick: () => navigate("/wizard"),
-        }}
-      />
-
-      <section id="dashboard-features" data-mascot-section="features" className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {features.map(({ icon: Icon, title, description, stage, to, primary }) => {
           const isLive = stage === "Live";
 
@@ -110,23 +77,17 @@ export default function DashboardPage() {
             ? `${baseClass} border-primary/40 bg-primary/5 ring-1 ring-primary/20 hover:border-primary hover:bg-primary/10 col-span-full sm:col-span-2 xl:col-span-2`
             : `${baseClass} bg-card hover:border-primary/50`;
 
-          const featureId = `feature-card-${title.toLowerCase().replace(/\s+/g, "-")}`;
-          const featureData = title.toLowerCase().replace(/\s+/g, "-");
-
           return to ? (
-            <Link key={title} id={featureId} data-onboarding-feature={featureData} to={to} className={className}>
+            <Link key={title} to={to} className={className}>
               {content}
             </Link>
           ) : (
-            <article key={title} id={featureId} data-onboarding-feature={featureData} className={className}>
+            <article key={title} className={className}>
               {content}
             </article>
           );
         })}
       </section>
-
-      {/* First-time Mascot Guided Onboarding */}
-      <MascotOnboardingFlow />
     </div>
   );
 }

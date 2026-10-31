@@ -2,7 +2,6 @@ import { Outlet } from "react-router";
 import { Sparkles } from "lucide-react";
 
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { FloatingMascot } from "@/components/ResumeBuddy";
 import { APP_NAME } from "@/constants";
 
 /** Centered, card-based shell for authentication pages. */
@@ -21,7 +20,6 @@ export function AuthLayout() {
       <main className="w-full max-w-md">
         <Outlet />
       </main>
-      <FloatingMascot />
     </div>
   );
 }
