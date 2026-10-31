@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 
 import { useSmartFormValidation } from "@/features/validation";
+import { useMascotAiSuggestions } from "@/features/ai-suggestions";
 import { AiAssistMenu } from "@/components/resumes/AiAssistMenu";
 import { SectionListEditor } from "@/components/resumes/SectionListEditor";
 import {
@@ -432,10 +433,24 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
 
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
   const editorCardsRef = useRef<HTMLDivElement>(null);
-  useSmartFormValidation({ containerRef: editorCardsRef });
   const photoInputRef = useRef<HTMLInputElement>(null);
-
   const user = useAuthStore((s) => s.user);
+
+  useSmartFormValidation({ containerRef: editorCardsRef });
+  useMascotAiSuggestions({
+    containerRef: editorCardsRef,
+    targetRole: getValues("title") || user?.targetJobTitle,
+    onApplyField: (fieldName, appliedVal) => {
+      if (fieldName === "skillsText") {
+        const formattedSkills = Array.isArray(appliedVal) ? appliedVal.join("\n") : appliedVal;
+        setValue("skillsText", formattedSkills, { shouldDirty: true });
+      } else {
+        const stringVal = Array.isArray(appliedVal) ? appliedVal.join("\n") : appliedVal;
+        setValue(fieldName as any, stringVal, { shouldDirty: true });
+      }
+      toast.success("AI suggestion applied to resume");
+    },
+  });
 
   // Watch photo URL for preview
   const watchedPhotoUrl = useWatch({ control, name: "photoUrl" });

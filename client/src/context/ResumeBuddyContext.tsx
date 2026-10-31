@@ -25,8 +25,8 @@ import {
   INTERACTION_MAPPINGS,
   MASCOT_TIMINGS,
 } from "@/config/mascotBehaviors";
-import type { SpeechAction, SpeechValidationTip } from "@/components/ResumeBuddy/MascotSpeechBubble";
-export type { SpeechValidationTip } from "@/components/ResumeBuddy/MascotSpeechBubble";
+import type { SpeechAction, SpeechValidationTip, MascotAiSuggestion } from "@/components/ResumeBuddy/MascotSpeechBubble";
+export type { SpeechValidationTip, MascotAiSuggestion } from "@/components/ResumeBuddy/MascotSpeechBubble";
 
 export interface MascotState {
   coordinates: MascotCoordinates;
@@ -41,6 +41,7 @@ export interface MascotState {
   speechText?: string;
   speechActions?: SpeechAction[];
   validationTip?: SpeechValidationTip;
+  aiSuggestion?: MascotAiSuggestion;
   isVisible: boolean;
   isSleeping: boolean;
   activeSection?: string | null;
@@ -52,6 +53,7 @@ export interface SayOptions {
   gesture?: MascotHandGesture;
   actions?: SpeechAction[];
   validationTip?: SpeechValidationTip;
+  aiSuggestion?: MascotAiSuggestion;
   autoDismissMs?: number;
   snapTarget?: HTMLElement | string;
   targetOptions?: MascotTargetOptions;
@@ -112,6 +114,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
   const [speechText, setSpeechText] = useState<string | undefined>(undefined);
   const [speechActions, setSpeechActions] = useState<SpeechAction[] | undefined>(undefined);
   const [validationTip, setValidationTip] = useState<SpeechValidationTip | undefined>(undefined);
+  const [aiSuggestion, setAiSuggestion] = useState<MascotAiSuggestion | undefined>(undefined);
   const [isVisible, setIsVisible] = useState(true);
   const [isSleeping, setIsSleeping] = useState(false);
 
@@ -281,6 +284,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
     setSpeechText(undefined);
     setSpeechActions(undefined);
     setValidationTip(undefined);
+    setAiSuggestion(undefined);
     setIsThinking(false);
   }, []);
 
@@ -329,6 +333,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
         gesture = "bounce",
         actions,
         validationTip: newValidationTip,
+        aiSuggestion: newAiSuggestion,
         autoDismissMs = MASCOT_TIMINGS.autoDismissDefaultMs,
         snapTarget,
         targetOptions,
@@ -343,6 +348,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       setSpeechText(text);
       setSpeechActions(actions);
       setValidationTip(newValidationTip);
+      setAiSuggestion(newAiSuggestion);
       setIsThinking(false);
 
       if (autoDismissMs && autoDismissMs > 0 && (!actions || actions.length === 0)) {
@@ -541,6 +547,7 @@ export function ResumeBuddyProvider({ children }: { children: ReactNode }) {
       speechText,
       speechActions,
       validationTip,
+      aiSuggestion,
       isVisible,
       isSleeping,
       activeSection,

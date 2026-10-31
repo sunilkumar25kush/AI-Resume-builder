@@ -19,6 +19,7 @@ import { exportResumeJson } from "@/utils/exportJson";
 import { AvatarAssistant, type AssistantMood } from "@/components/avatar";
 import { useMascot } from "@/hooks/useMascot";
 import { useSmartFormValidation } from "@/features/validation";
+import { useMascotAiSuggestions } from "@/features/ai-suggestions";
 import type { JobDescription, Optimization, Resume } from "@/types";
 
 const STEPS = ["Target", "Resume", "Job Description", "Analysis", "Generate", "Template", "Edit", "Export"];
@@ -129,6 +130,12 @@ export default function ResumeWizardPage() {
 
   const mascot = useMascot();
   useSmartFormValidation();
+  useMascotAiSuggestions({
+    targetRole: targetTitle,
+    onApplyField: (field, val) => {
+      if (field === "targetTitle" && typeof val === "string") setTargetTitle(val);
+    },
+  });
 
   const coach = getWizardCoachMessage(
     step,
