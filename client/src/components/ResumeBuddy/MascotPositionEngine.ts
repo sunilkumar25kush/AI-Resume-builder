@@ -148,9 +148,12 @@ export class MascotPositionEngine {
       return { ...docked, isModalYielding: isModalActive };
     }
 
-    const targetEl = target instanceof HTMLElement ? target : null;
-    const rect: DOMRect =
-      target instanceof HTMLElement ? target.getBoundingClientRect() : target;
+    const isHtmlEl = typeof HTMLElement !== "undefined" && target instanceof HTMLElement;
+    const hasGetBoundingClientRect = typeof (target as any)?.getBoundingClientRect === "function";
+    const targetEl = isHtmlEl ? target : null;
+    const rect: DOMRect = hasGetBoundingClientRect
+      ? (target as any).getBoundingClientRect()
+      : (target as DOMRect);
 
     // If target has zero dimensions or is completely offscreen
     if (rect.width === 0 && rect.height === 0) {

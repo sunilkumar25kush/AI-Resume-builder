@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -30,6 +31,16 @@ export function MascotAssistantPanel({ isOpen, onClose }: MascotAssistantPanelPr
     triggerGesture,
   } = useResumeBuddy();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
 
   const quickMoods: MascotMood[] = ["celebrate", "happy", "thinking", "curious", "playful", "proud"];
@@ -52,6 +63,9 @@ export function MascotAssistantPanel({ isOpen, onClose }: MascotAssistantPanelPr
           animate={{ x: 0, opacity: 1, scale: 1 }}
           exit={{ x: 340, opacity: 0, scale: 0.95 }}
           transition={{ type: "spring", damping: 25, stiffness: 280 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="ResumeBuddy Assistant Panel"
           className={cn(
             "relative w-full max-w-sm rounded-3xl p-5 shadow-2xl pointer-events-auto border",
             "bg-white/95 dark:bg-slate-900/95 border-emerald-500/20 dark:border-emerald-500/30 text-slate-900 dark:text-slate-100",

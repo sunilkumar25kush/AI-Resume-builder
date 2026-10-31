@@ -141,19 +141,26 @@ export const PAGE_MASCOT_CONFIGS: PageMascotAnchorConfig[] = [
     },
   },
 
-  // 5. Resume Preview & Export
+  // 5. Resume Preview & Management
   {
     name: "resume-preview",
-    match: (path) => /^\/resumes\/[^/]+$/.test(path),
-    defaultSelector: '[data-mascot-section="template-picker"], [data-mascot-section="resume-preview"]',
+    match: (path) => path === "/resumes" || /^\/resumes\/[^/]+$/.test(path),
+    defaultSelector: '[data-mascot-section="template-picker"], [data-mascot-section="resume-preview"], [data-mascot-section="resumes-list"]',
     sectionSelectors: [
       '[data-mascot-section="header-actions"]',
       '[data-mascot-section="template-picker"]',
       '[data-mascot-section="density-controls"]',
       '[data-mascot-section="resume-preview"]',
+      '[data-mascot-section="resumes-list"]',
       '#score-ring-card',
     ],
     preferredPlacement: "top-right",
+    greeting: {
+      text: "Viewing your resumes! Pick a template or export whenever you're ready.",
+      mood: "happy",
+      gesture: "waveHello",
+      autoDismissMs: 5000,
+    },
   },
 
   // 6. ATS Checker

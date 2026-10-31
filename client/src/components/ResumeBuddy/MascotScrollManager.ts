@@ -15,7 +15,7 @@ export type ModalStateCallback = (isOpen: boolean) => void;
 /**
  * Centralized, route-aware, scroll-aware position and landmark manager for ResumeBuddy.
  * Handles nested scroll containers, IntersectionObserver section tracking,
- * hysteresis deadbands, and modal lifecycle.
+ * hysteresis deadbands, orientation changes, and modal lifecycle.
  */
 export class MascotScrollManager {
   private positionEngine: MascotPositionEngine;
@@ -44,30 +44,34 @@ export class MascotScrollManager {
   }
 
   /**
-   * Global listeners: window resize and nested container scroll (captured at window)
+   * Throttled scroll, resize, and orientation handler using requestAnimationFrame
+   */
+  private handleScrollOrResize = () => {
+    if (this.isDestroyed) return;
+    if (this.rafId !== null) return;
+
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null;
+      if (this.currentTargetElement) {
+        this.onPositionUpdate(
+          this.currentTargetElement,
+          { placement: this.currentConfig?.preferredPlacement ?? "top-right" },
+          this.currentActiveSection ?? undefined,
+        );
+      }
+    });
+  };
+
+  /**
+   * Global listeners: window resize, orientationchange, and nested container scroll
    */
   private initGlobalListeners() {
     if (typeof window === "undefined") return;
 
-    const handleScrollOrResize = () => {
-      if (this.isDestroyed) return;
-      if (this.rafId !== null) return;
-
-      this.rafId = requestAnimationFrame(() => {
-        this.rafId = null;
-        if (this.currentTargetElement) {
-          this.onPositionUpdate(
-            this.currentTargetElement,
-            { placement: this.currentConfig?.preferredPlacement ?? "top-right" },
-            this.currentActiveSection ?? undefined,
-          );
-        }
-      });
-    };
-
-    // Note: `capture: true` captures scroll events dispatched on nested scroll containers (.overflow-y-auto, etc.)
-    window.addEventListener("scroll", handleScrollOrResize, { capture: true, passive: true });
-    window.addEventListener("resize", handleScrollOrResize, { passive: true });
+    // `capture: true` captures scroll events dispatched on nested scroll containers
+    window.addEventListener("scroll", this.handleScrollOrResize, { capture: true, passive: true });
+    window.addEventListener("resize", this.handleScrollOrResize, { passive: true });
+    window.addEventListener("orientationchange", this.handleScrollOrResize, { passive: true });
 
     // MutationObserver to detect opening/closing of Radix modals / dialogs and dynamic landmarks
     this.mutationObserver = new MutationObserver((mutations) => {
@@ -86,98 +90,89 @@ export class MascotScrollManager {
       this.onModalChange?.(dialogFound);
     });
 
-    this.mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-state", "class", "role"],
-    });
+    if (typeof document !== "undefined" && document.body) {
+      this.mutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-state", "class", "role"],
+      });
+    }
   }
 
   /**
    * Handle route transition: update page config and refresh landmark observers
    */
   public handleRouteChange(pathname: string) {
-    if (this.isDestroyed || this.currentPathname === pathname) return;
+    if (this.isDestroyed) return;
 
     this.currentPathname = pathname;
     this.currentConfig = getPageMascotConfig(pathname);
     this.currentActiveSection = null;
     this.currentTargetElement = null;
 
+    // Small delay to allow DOM nodes of newly routed page to mount
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-
-    // Initial scan with quick delays to allow React DOM mounting
-    this.scheduleLandmarkScan(60);
-    this.scheduleLandmarkScan(300);
+    this.debounceTimer = setTimeout(() => {
+      if (this.isDestroyed) return;
+      this.setupLandmarkObservers();
+    }, 150);
   }
 
-  private scheduleLandmarkScan(delayMs: number) {
-    setTimeout(() => {
-      if (this.isDestroyed) return;
-      this.refreshLandmarks();
-    }, delayMs);
+  public getCurrentPathname(): string {
+    return this.currentPathname;
   }
 
   /**
-   * Re-queries all section landmarks on the page and observes them with IntersectionObserver
+   * Build IntersectionObserver for active section landmarks
    */
-  public refreshLandmarks() {
-    if (typeof document === "undefined" || this.isDestroyed) return;
+  public setupLandmarkObservers() {
+    if (this.isDestroyed || typeof document === "undefined") return;
 
-    if (this.intersectionObserver) {
-      this.intersectionObserver.disconnect();
-      this.intersectionObserver = null;
-    }
+    this.intersectionObserver?.disconnect();
 
-    // Build landmark query list from route config + generic standard attributes
-    const selectors = new Set<string>([
+    const selectors = this.currentConfig?.sectionSelectors || [
       "[data-mascot-section]",
       "[data-mascot-target]",
-      ".editor-form-card",
-      "main > section",
+      "section",
       "form",
-    ]);
+      "main",
+    ];
 
-    if (this.currentConfig) {
-      this.currentConfig.sectionSelectors.forEach((sel) => selectors.add(sel));
-      if (this.currentConfig.defaultSelector) {
-        selectors.add(this.currentConfig.defaultSelector);
+    const elements: HTMLElement[] = [];
+    selectors.forEach((sel: string) => {
+      try {
+        const found = document.querySelectorAll<HTMLElement>(sel);
+        found.forEach((el) => {
+          if (!elements.includes(el)) elements.push(el);
+        });
+      } catch {
+        // Safe query selector
       }
-    }
-
-    const queryStr = Array.from(selectors).join(", ");
-    const elements = Array.from(document.querySelectorAll<HTMLElement>(queryStr)).filter(
-      (el) => el.offsetParent !== null, // Only visible elements
-    );
+    });
 
     if (elements.length === 0) {
-      // If no landmarks on page, dock safely
-      this.onPositionUpdate(null);
+      this.onPositionUpdate(null, { placement: "docked" });
       return;
     }
 
-    // Set up IntersectionObserver with viewport threshold
     this.intersectionObserver = new IntersectionObserver(
       (entries) => {
         if (this.isDestroyed) return;
 
-        // Find the most visible/relevant section closest to viewport center
         let bestEntry: IntersectionObserverEntry | null = null;
-        let highestScore = -1;
+        let highestScore = -Infinity;
 
-        const vh = window.innerHeight;
-        const viewportCenter = vh / 2;
+        const viewportCenter = typeof window !== "undefined" ? window.innerHeight / 2 : 400;
 
         for (const entry of entries) {
-          if (!entry.isIntersecting || entry.intersectionRatio < 0.15) continue;
+          if (!entry.isIntersecting) continue;
 
           const rect = entry.boundingClientRect;
           const elementCenter = rect.top + rect.height / 2;
-          const distanceFromCenter = Math.abs(elementCenter - viewportCenter);
-          const distanceScore = Math.max(0, 1 - distanceFromCenter / vh);
+          const distToCenter = Math.abs(viewportCenter - elementCenter);
+          const distanceScore = Math.max(0, 1 - distToCenter / (viewportCenter * 1.5));
 
-          // Weight intersection ratio and screen focus
           const score = entry.intersectionRatio * 0.4 + distanceScore * 0.6;
           if (score > highestScore) {
             highestScore = score;
@@ -232,12 +227,19 @@ export class MascotScrollManager {
   }
 
   /**
-   * Cleanup all observers, listeners, and timers
+   * Cleanup all observers, listeners, and timers to prevent memory leaks
    */
   public destroy() {
     this.isDestroyed = true;
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
+
+    if (typeof window !== "undefined") {
+      window.removeEventListener("scroll", this.handleScrollOrResize, true);
+      window.removeEventListener("resize", this.handleScrollOrResize);
+      window.removeEventListener("orientationchange", this.handleScrollOrResize);
+    }
+
     this.intersectionObserver?.disconnect();
     this.mutationObserver?.disconnect();
   }

@@ -17,3 +17,4 @@ export {
   AI_SUGGESTION_PROMPTS,
   type AiPromptScenario,
 } from "./aiTriggers";
+

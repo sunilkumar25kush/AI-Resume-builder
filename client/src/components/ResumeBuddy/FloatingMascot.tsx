@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { motion, useDragControls } from "framer-motion";
+import { motion, useDragControls, useReducedMotion } from "framer-motion";
 import { useLocation } from "react-router";
 import { Minimize2, EyeOff, Sparkles } from "lucide-react";
 import { MascotRenderer } from "./MascotRenderer";
@@ -41,6 +41,7 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
   const [cursorGaze, setCursorGaze] = useState<{ rotateX: number; rotateY: number }>({ rotateX: 0, rotateY: 0 });
   const mascotRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
+  const shouldReduceMotion = useReducedMotion();
 
   // Subtle cursor gaze tracking when hovering nearby (< 250px)
   useEffect(() => {
@@ -175,8 +176,18 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
           }
         }}
         onMouseLeave={() => setIsHovered(false)}
+        tabIndex={0}
+        role="region"
+        aria-label="ResumeBuddy AI Assistant. Press Enter to open panel."
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            triggerGesture("bounce");
+            openPanel();
+          }
+        }}
         className={cn(
-          "fixed top-0 left-0 z-[9999] flex flex-col items-center justify-center cursor-pointer select-none",
+          "fixed top-0 left-0 z-[9999] flex flex-col items-center justify-center cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:rounded-full",
           isYielding && "pointer-events-none",
           className,
         )}
@@ -240,26 +251,28 @@ export function FloatingMascot({ className, size = 96 }: FloatingMascotProps) {
             openPanel();
           }}
           animate={{
-            y: state.isSleeping
+            y: shouldReduceMotion
+              ? 0
+              : state.isSleeping
               ? [0, 2, 0]
               : isCelebrating
               ? [0, -22, 0, -14, 0]
               : isExplaining
               ? [0, -4, 0, -4, 0]
               : (gestureAnimation.body.y ?? [0, -7, 0]),
-            x: gestureAnimation.body.x ?? 0,
-            rotate: (gestureAnimation.body.rotate?.[0] ?? 0) + flightTilt,
+            x: shouldReduceMotion ? 0 : (gestureAnimation.body.x ?? 0),
+            rotate: shouldReduceMotion ? 0 : ((gestureAnimation.body.rotate?.[0] ?? 0) + flightTilt),
             scale: gestureAnimation.body.scale ?? (isHovered ? 1.05 : 1),
-            rotateX: cursorGaze.rotateX + inputTurnX + bubbleLeanX,
-            rotateY: cursorGaze.rotateY + inputTurnY,
+            rotateX: shouldReduceMotion ? 0 : (cursorGaze.rotateX + inputTurnX + bubbleLeanX),
+            rotateY: shouldReduceMotion ? 0 : (cursorGaze.rotateY + inputTurnY),
           }}
           transition={{
             y: {
-              duration: state.isSleeping ? 4.5 : isCelebrating ? 0.9 : 2.8,
-              repeat: gestureAnimation.transition ? 0 : Infinity,
+              duration: shouldReduceMotion ? 0.05 : state.isSleeping ? 4.5 : isCelebrating ? 0.9 : 2.8,
+              repeat: shouldReduceMotion || gestureAnimation.transition ? 0 : Infinity,
               ease: "easeInOut",
             },
-            rotate: { duration: 0.4 },
+            rotate: { duration: shouldReduceMotion ? 0.05 : 0.4 },
             scale: { duration: 0.2 },
           }}
           className="w-full h-full flex items-center justify-center active:scale-95 transition-transform"

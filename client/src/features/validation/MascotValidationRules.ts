@@ -62,12 +62,12 @@ export function validateEmail(value: string, fieldId = "email"): MascotValidatio
     return {
       fieldId,
       fieldLabel: "Email",
-      message: "Could you check your email address? It looks like it's missing the '@' symbol or domain.",
+      message: "Could you check your email, maybe name@agency.com?",
       mood: "confused",
       gesture: "pointAtInput",
       tip: {
         fieldLabel: "Email",
-        incorrect: "sunil123gmail.com",
+        incorrect: trimmed || "sunil123gmail.com",
         correct: "sunil123@gmail.com",
       },
     };

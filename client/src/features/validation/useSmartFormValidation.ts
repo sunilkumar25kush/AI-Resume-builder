@@ -39,6 +39,7 @@ export function useSmartFormValidation(options: SmartValidationOptions = {}) {
       // Mark the DOM element with error pulse ring
       targetEl.classList.remove("mascot-valid-field");
       targetEl.classList.add("mascot-invalid-field");
+      targetEl.setAttribute("aria-invalid", "true");
       invalidFieldsRef.current.add(fieldKey);
 
       // Prevent redundant speech spam if already displaying this exact error
@@ -102,6 +103,7 @@ export function useSmartFormValidation(options: SmartValidationOptions = {}) {
 
       // Swap styling to success green ring
       targetEl.classList.remove("mascot-invalid-field");
+      targetEl.removeAttribute("aria-invalid");
       targetEl.classList.add("mascot-valid-field");
 
       if (validTimerRef.current) {

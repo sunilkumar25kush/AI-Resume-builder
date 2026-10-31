@@ -84,9 +84,9 @@ export function MascotSpeechBubble({
       return;
     }
 
-    setIsTyping(true);
     let currentIndex = 0;
     setDisplayedText("");
+    setIsTyping(true);
 
     const interval = setInterval(() => {
       currentIndex += 1;
@@ -101,14 +101,13 @@ export function MascotSpeechBubble({
     return () => clearInterval(interval);
   }, [text, isThinking, typewriter]);
 
-  // Auto-dismissal with pause on hover
+  // Auto-dismiss management
   useEffect(() => {
     if (dismissTimerRef.current) {
       clearTimeout(dismissTimerRef.current);
       dismissTimerRef.current = null;
     }
 
-    // Do not auto-dismiss if user is interacting with an AI suggestion or actions
     if (
       !autoDismissMs ||
       autoDismissMs <= 0 ||
@@ -148,60 +147,64 @@ export function MascotSpeechBubble({
           align === "right" && "items-end right-0",
           align === "left" && "items-start left-0",
           align === "center" && "items-center left-1/2 -translate-x-1/2",
-          position === "top" && "bottom-full mb-3",
-          position === "bottom" && "top-full mt-3",
+          position === "top" && "bottom-full mb-2.5",
+          position === "bottom" && "top-full mt-2.5",
           position === "left" && "right-full mr-3 top-1/2 -translate-y-1/2",
           position === "right" && "left-full ml-3 top-1/2 -translate-y-1/2",
           className,
         )}
       >
-        {/* Main Thought / Speech Bubble Shell */}
+        {/* Main Thought / Speech Bubble Shell matching user reference screenshots */}
         <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
           className={cn(
-            "relative rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md transition-all duration-200 border",
-            "bg-white/95 dark:bg-slate-900/95 border-emerald-500/20 dark:border-emerald-500/30 text-slate-900 dark:text-slate-100",
+            "relative rounded-[24px] px-4 py-3 transition-all duration-200 border",
+            // Pastel pale lime-cream background with dark forest-green text
+            "bg-[#edf8d8] dark:bg-[#182614] border-[#cdeaa3] dark:border-emerald-600/40 text-[#17270f] dark:text-[#edf9dd]",
             "max-w-[290px] sm:max-w-[360px]",
-            isThinking && "rounded-3xl px-5 py-3.5",
+            isThinking && "rounded-full px-4 py-2",
           )}
           style={{
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 0 14px rgba(84, 227, 37, 0.15)",
+            boxShadow: "0 12px 30px -4px rgba(0, 0, 0, 0.15), 0 0 16px rgba(84, 227, 37, 0.16)",
           }}
         >
-          {/* Dismiss button */}
+          {/* Subtle Close button in top-right corner */}
           {onDismiss && !isThinking && (
             <button
               onClick={onDismiss}
-              className="absolute -top-2 -right-2 p-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors"
+              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#edf8d8] dark:bg-[#182614] hover:bg-[#deeebe] dark:hover:bg-[#22351c] text-[#17270f] dark:text-[#edf9dd] shadow-sm border border-[#cdeaa3] dark:border-emerald-600/40 flex items-center justify-center transition-colors"
               aria-label="Dismiss message"
             >
               <X className="w-3 h-3" />
             </button>
           )}
 
-          {/* Thinking Dots (Reference Screenshots 2 & 5) */}
+          {/* Thinking Dots (Reference Screenshot 2) */}
           {isThinking ? (
-            <div className="flex items-center gap-1.5 py-1 px-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="flex items-center gap-1.5 py-0.5 px-1">
+              <span className="w-2 h-2 rounded-full bg-[#54e325] animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#54e325] animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#54e325] animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           ) : (
             <>
-              {/* Typewriter message text */}
+              {/* Typewriter message text matching Reference Screenshot 3 */}
               {displayedText && (
-                <div className="text-[13px] leading-relaxed font-medium">
+                <div className="text-[13.5px] leading-relaxed font-medium">
                   {displayedText}
                   {isTyping && (
-                    <span className="inline-block w-1.5 h-3 ml-0.5 bg-emerald-500 animate-pulse align-middle" />
+                    <span className="inline-block w-1.5 h-3 ml-0.5 bg-[#54e325] animate-pulse align-middle" />
                   )}
                 </div>
               )}
 
-              {/* Contextual Validation Examples (Incorrect vs Correct) */}
+              {/* Contextual Validation Examples (Incorrect vs Correct) matching Reference Screenshot 4 */}
               {validationTip && (validationTip.incorrect || validationTip.correct) && (
-                <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5 text-left">
+                <div className="mt-2.5 pt-2 border-t border-[#cdeaa3]/70 dark:border-emerald-800/60 space-y-1.5 text-left">
                   {validationTip.incorrect && (
-                    <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-900/50 text-[11px] font-mono text-rose-700 dark:text-rose-300">
+                    <div className="flex items-start gap-1.5 px-2 py-1 rounded-lg bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-900/50 text-[11px] font-mono text-rose-700 dark:text-rose-300">
                       <span className="font-sans font-bold text-rose-500 shrink-0">✕</span>
                       <div className="min-w-0">
                         <span className="font-sans text-[10px] uppercase font-semibold text-rose-500 mr-1.5">Incorrect:</span>
@@ -210,7 +213,7 @@ export function MascotSpeechBubble({
                     </div>
                   )}
                   {validationTip.correct && (
-                    <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/50 text-[11px] font-mono text-emerald-700 dark:text-emerald-300">
+                    <div className="flex items-start gap-1.5 px-2 py-1 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/50 text-[11px] font-mono text-emerald-700 dark:text-emerald-300">
                       <span className="font-sans font-bold text-emerald-500 shrink-0">✓</span>
                       <div className="min-w-0">
                         <span className="font-sans text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">Correct:</span>
@@ -223,114 +226,118 @@ export function MascotSpeechBubble({
 
               {/* AI Contextual Suggestions */}
               {aiSuggestion && (
-                <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-2 text-left">
+                <div className="mt-2.5 pt-2 border-t border-[#cdeaa3]/70 dark:border-emerald-800/60 space-y-2 text-left">
                   {/* Header Title with Edit Toggle */}
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
                     <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span>{aiSuggestion.title || "AI Suggestions:"}</span>
                     </span>
                     {aiSuggestion.onEdit && (
                       <button
                         type="button"
                         onClick={() => setIsEditingCustom(!isEditingCustom)}
-                        className="text-[10px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 flex items-center gap-1 transition-colors"
+                        className="text-[10px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 flex items-center gap-1 transition-colors"
                       >
                         <Pencil className="w-2.5 h-2.5" />
-                        {isEditingCustom ? "Preview" : "Edit"}
+                        <span>{isEditingCustom ? "Cancel" : "Edit"}</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Tag List for Skills (Example 1: HTML5, CSS3, JavaScript (ES6+)) */}
-                  {aiSuggestion.items && aiSuggestion.items.length > 0 && !isEditingCustom && (
-                    <div className="flex flex-wrap gap-1.5 my-1.5">
+                  {/* Suggestion Content */}
+                  {isEditingCustom ? (
+                    <div className="space-y-1.5">
+                      <textarea
+                        value={customText}
+                        onChange={(e) => setCustomText(e.target.value)}
+                        rows={3}
+                        className="w-full text-xs p-2 rounded-lg border border-[#cdeaa3] dark:border-emerald-800 bg-white/90 dark:bg-slate-900/90 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none font-sans"
+                        placeholder="Customize AI suggestion..."
+                      />
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            aiSuggestion.onEdit?.(customText);
+                            aiSuggestion.onAccept?.(customText);
+                            setIsEditingCustom(false);
+                            onDismiss?.();
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[#161616] text-white dark:bg-emerald-500 dark:text-slate-950 hover:opacity-90 active:scale-95 transition-all"
+                        >
+                          Apply Custom
+                        </button>
+                      </div>
+                    </div>
+                  ) : aiSuggestion.items && aiSuggestion.items.length > 0 ? (
+                    /* Structured Skill Pills */
+                    <div className="flex flex-wrap gap-1.5 py-1">
                       {aiSuggestion.items.map((item, idx) => (
                         <span
                           key={idx}
-                          className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 shadow-xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#def2bd] dark:bg-emerald-950/80 border border-[#c5e694] dark:border-emerald-700/60 text-[#17270f] dark:text-emerald-200 text-xs font-semibold shadow-xs"
                         >
-                          <span className="text-emerald-500 mr-1 font-bold">+</span> {item}
+                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>{item}</span>
                         </span>
                       ))}
                     </div>
+                  ) : (
+                    /* Text Block suggestion */
+                    <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-[#cdeaa3] dark:border-emerald-800/40 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans shadow-xs">
+                      {aiSuggestion.suggestedText}
+                    </div>
                   )}
 
-                  {/* Suggestion Text Box or Inline Editor */}
-                  {aiSuggestion.suggestedText && !aiSuggestion.items && (
-                    <>
-                      {isEditingCustom ? (
-                        <textarea
-                          rows={3}
-                          value={customText}
-                          onChange={(e) => setCustomText(e.target.value)}
-                          className="w-full text-xs p-2 rounded-md border border-emerald-400 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                      ) : (
-                        <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/40 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
-                          {aiSuggestion.suggestedText}
-                        </div>
+                  {/* AI Actions: Accept, Edit, Reject */}
+                  {!isEditingCustom && (
+                    <div className="flex items-center justify-end gap-1.5 pt-1">
+                      {aiSuggestion.onReject && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            aiSuggestion.onReject?.();
+                            onDismiss?.();
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-medium rounded-full bg-white/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition active:scale-95 border border-[#cdeaa3] dark:border-slate-700"
+                        >
+                          Dismiss
+                        </button>
                       )}
-                    </>
+                      {aiSuggestion.onAccept && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const valToApply = aiSuggestion.items && aiSuggestion.items.length > 0
+                              ? aiSuggestion.items
+                              : aiSuggestion.suggestedText;
+                            aiSuggestion.onAccept?.(valToApply);
+                            onDismiss?.();
+                          }}
+                          className="px-3 py-1 text-[11px] font-semibold rounded-full bg-[#161616] hover:bg-[#282828] text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 shadow-sm active:scale-95 transition-all flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Accept</span>
+                        </button>
+                      )}
+                    </div>
                   )}
-
-                  {/* Action Buttons: Accept / Edit / Dismiss */}
-                  <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-                    {aiSuggestion.onReject && (
-                      <button
-                        type="button"
-                        onClick={aiSuggestion.onReject}
-                        className="text-xs font-medium px-2.5 py-1 rounded-full text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        Dismiss
-                      </button>
-                    )}
-
-                    {aiSuggestion.onEdit && !isEditingCustom && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsEditingCustom(true);
-                          setCustomText(aiSuggestion.suggestedText || "");
-                        }}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"
-                      >
-                        <Pencil className="w-3 h-3" />
-                        Edit
-                      </button>
-                    )}
-
-                    {aiSuggestion.onAccept && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const appliedVal = isEditingCustom
-                            ? customText
-                            : (aiSuggestion.items ?? aiSuggestion.suggestedText ?? "");
-                          aiSuggestion.onAccept?.(appliedVal);
-                        }}
-                        className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm hover:shadow transition-all flex items-center gap-1 active:scale-95"
-                      >
-                        <Check className="w-3 h-3 stroke-[2.5]" />
-                        Accept
-                      </button>
-                    )}
-                  </div>
                 </div>
               )}
 
-              {/* Standard Speech Actions (if no aiSuggestion) */}
+              {/* Action Buttons matching Reference Screenshot 1 (solid dark pill button e.g. 'Okay, add my email') */}
               {!aiSuggestion && actions && actions.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                <div className="mt-2.5 flex flex-wrap gap-2 pt-1">
                   {actions.map((action, idx) => (
                     <button
                       key={idx}
                       onClick={action.onClick}
                       className={cn(
-                        "text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150 active:scale-95",
+                        "text-xs font-semibold px-4 py-2 rounded-full transition-all duration-150 active:scale-95 shadow-sm",
                         action.variant === "secondary"
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                          : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm hover:shadow",
+                          ? "bg-white/80 dark:bg-slate-800 text-[#17270f] dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border border-[#cdeaa3] dark:border-slate-700"
+                          : "bg-[#161616] hover:bg-[#282828] text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950",
                       )}
                     >
                       {action.label}
@@ -342,17 +349,20 @@ export function MascotSpeechBubble({
           )}
         </div>
 
-        {/* 3 Thought Dots Connecting Bubble to Antenna Tip */}
+        {/* 3 Connected Thought Circles matching user reference screenshots */}
         {position === "top" && (
           <div
             className={cn(
               "flex flex-col -space-y-0.5 mt-0.5 pointer-events-none",
-              align === "right" ? "items-end pr-10" : align === "left" ? "items-start pl-10" : "items-center",
+              align === "right" ? "items-end pr-8" : align === "left" ? "items-start pl-8" : "items-center",
             )}
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
-            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
-            <div className="w-1 h-1 rounded-full bg-emerald-400" />
+            {/* Top / largest dot near speech bubble */}
+            <div className="w-2.5 h-2.5 rounded-full bg-[#edf8d8] dark:bg-[#182614] border border-[#cdeaa3] dark:border-emerald-600/40 shadow-xs" />
+            {/* Middle dot */}
+            <div className="w-1.5 h-1.5 rounded-full bg-[#edf8d8] dark:bg-[#182614] border border-[#cdeaa3] dark:border-emerald-600/40 shadow-xs" />
+            {/* Smallest dot near antenna bulb */}
+            <div className="w-1 h-1 rounded-full bg-[#54e325]" />
           </div>
         )}
 
@@ -360,12 +370,15 @@ export function MascotSpeechBubble({
           <div
             className={cn(
               "flex flex-col-reverse -space-y-0.5 mb-0.5 pointer-events-none",
-              align === "right" ? "items-end pr-10" : align === "left" ? "items-start pl-10" : "items-center",
+              align === "right" ? "items-end pr-8" : align === "left" ? "items-start pl-8" : "items-center",
             )}
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
-            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm" />
-            <div className="w-1 h-1 rounded-full bg-emerald-400" />
+            {/* Largest dot near speech bubble */}
+            <div className="w-2.5 h-2.5 rounded-full bg-[#edf8d8] dark:bg-[#182614] border border-[#cdeaa3] dark:border-emerald-600/40 shadow-xs" />
+            {/* Middle dot */}
+            <div className="w-1.5 h-1.5 rounded-full bg-[#edf8d8] dark:bg-[#182614] border border-[#cdeaa3] dark:border-emerald-600/40 shadow-xs" />
+            {/* Smallest dot near antenna bulb */}
+            <div className="w-1 h-1 rounded-full bg-[#54e325]" />
           </div>
         )}
       </motion.div>
