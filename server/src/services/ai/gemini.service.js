@@ -33,7 +33,7 @@ class GeminiService {
   constructor() {
     this.apiKey = env.GEMINI_API_KEY;
     this.model = env.GEMINI_MODEL;
-    this.timeoutMs = 60_000;
+    this.timeoutMs = 35_000;
   }
 
   isConfigured() {
@@ -54,6 +54,8 @@ class GeminiService {
       );
     }
 
+    const effectiveTimeout = timeoutMs ?? this.timeoutMs;
+
     return withRetry(
       async (attempt, signal) => {
         try {
@@ -66,6 +68,8 @@ class GeminiService {
               generationConfig: {
                 temperature,
                 ...(json ? { responseMimeType: "application/json" } : {}),
+                // Disable thinking budget for speed and to prevent 502 gateway timeouts
+                ...(this.model.includes("2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
               },
             }),
             signal,
@@ -100,7 +104,10 @@ class GeminiService {
 
           const data = await res.json();
           const candidate = data?.candidates?.[0];
-          const text = candidate?.content?.parts?.[0]?.text;
+          const parts = candidate?.content?.parts || [];
+          // Filter out internal thought blocks so we always get the actual generated text
+          const textParts = parts.filter((p) => typeof p.text === "string" && !p.thought);
+          const text = textParts.length > 0 ? textParts.map((p) => p.text).join("") : (parts[0]?.text ?? "");
           if (typeof text !== "string" || !text.trim()) {
             const reason = candidate?.finishReason || data?.promptFeedback?.blockReason || "empty";
             console.warn(`[ai] Gemini returned empty text (finishReason: ${reason})`);
@@ -110,7 +117,7 @@ class GeminiService {
         } catch (error) {
           if (error?.name === "AbortError" || signal?.aborted) {
             throw new AiError(
-              `Gemini request timed out after ${Math.round((timeoutMs ?? this.timeoutMs) / 1000)}s`,
+              `Gemini request timed out after ${Math.round(effectiveTimeout / 1000)}s`,
               "AI_TIMEOUT",
             );
           }
@@ -120,7 +127,7 @@ class GeminiService {
           throw error;
         }
       },
-      { attempts: 2, timeoutMs: timeoutMs ?? this.timeoutMs },
+      { attempts: 2, timeoutMs: effectiveTimeout, totalTimeoutMs: 50_000 },
     );
   }
 
@@ -166,7 +173,7 @@ class GeminiService {
   /** Rewrite an existing resume against a job description. */
   generateResume({ resume, jd }) {
     return this.generateJson(buildGenerationPrompt({ resume, jd }), {
-      timeoutMs: 75_000,
+      timeoutMs: 40_000,
       temperature: 0.3,
     });
   }
@@ -174,7 +181,7 @@ class GeminiService {
   /** Build a fresh resume from a JD alone (Workflow 1 — no existing resume). */
   analyzeJd({ jd, targetTitle, experienceLevel }) {
     return this.generateJson(buildJdOnlyPrompt({ jd, targetTitle, experienceLevel }), {
-      timeoutMs: 75_000,
+      timeoutMs: 40_000,
       temperature: 0.3,
     });
   }
@@ -182,7 +189,7 @@ class GeminiService {
   /** ATS optimization report for a resume + JD pair. */
   optimizeResume({ resume, jd }) {
     return this.generateJson(buildOptimizePrompt({ resume, jd }), {
-      timeoutMs: 75_000,
+      timeoutMs: 40_000,
       temperature: 0.2,
     });
   }
@@ -190,7 +197,7 @@ class GeminiService {
   /** Editor-time "what else should I add?" suggestions. */
   generateSuggestions({ resume, jd }) {
     return this.generateJson(buildSuggestPrompt({ resume, jd }), {
-      timeoutMs: 75_000,
+      timeoutMs: 40_000,
       temperature: 0.4,
     });
   }
@@ -199,15 +206,15 @@ class GeminiService {
   async assistSection({ section, action, content }) {
     const prompt = buildAssistPrompt({ section, action, content });
     if (section === "summary") {
-      return this.generate(prompt, { timeoutMs: 60_000, temperature: 0.6 });
+      return this.generate(prompt, { timeoutMs: 35_000, temperature: 0.6 });
     }
-    return this.generateJson(prompt, { timeoutMs: 60_000, temperature: 0.5 });
+    return this.generateJson(prompt, { timeoutMs: 35_000, temperature: 0.5 });
   }
 
   /** Extract structured portfolio draft content from raw resume text. */
   extractPortfolioFromResume({ resumeText }) {
     return this.generateJson(buildPortfolioExtractionPrompt({ resumeText }), {
-      timeoutMs: 75_000,
+      timeoutMs: 40_000,
       temperature: 0.1,
     });
   }

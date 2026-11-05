@@ -145,9 +145,9 @@ export function StepAnalysis({
         {result.summary ? <p className="text-sm leading-relaxed text-muted-foreground">{result.summary}</p> : null}
       </section>
 
-      <ChipGroup label="Missing skills" chips={result.missingSkills} tone="red" />
-      <ChipGroup label="Matched skills" chips={result.matchedSkills} tone="green" />
-      {result.missingSkills.length === 0 && result.matchedSkills.length > 0 ? (
+      <ChipGroup label="Missing skills" chips={result.missingSkills || []} tone="red" />
+      <ChipGroup label="Matched skills" chips={result.matchedSkills || []} tone="green" />
+      {(result.missingSkills?.length ?? 0) === 0 && (result.matchedSkills?.length ?? 0) > 0 ? (
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
           No missing skills detected — great coverage!
@@ -215,7 +215,7 @@ export function StepGenerate({
               <div>
                 <h3 className="text-base font-semibold text-foreground">AI Resume Ready!</h3>
                 <p className="text-xs text-muted-foreground">
-                  Optimized for {targetTitle || jd.title || "your target role"} · {generated.parsedData.skills.length} skills included
+                  Optimized for {targetTitle || jd.title || "your target role"} · {generated.parsedData?.skills?.length ?? 0} skills included
                 </p>
               </div>
             </div>
@@ -289,7 +289,7 @@ export function StepGenerate({
               <div>
                 <p className="text-sm font-semibold">Matched Job</p>
                 <p className="text-sm text-muted-foreground">
-                  {jd.title || jd.fileName || "JD"} · {jd.skills.length} required skills
+                  {jd.title || jd.fileName || "JD"} · {jd.skills?.length ?? 0} required skills
                 </p>
               </div>
               <Badge variant="outline">{resume ? "Optimized existing" : "Built fresh"}</Badge>
@@ -333,7 +333,7 @@ export function StepGenerate({
             <div>
               <p className="text-sm font-semibold">Job description</p>
               <p className="text-sm text-muted-foreground">
-                {jd.title || jd.fileName || "JD"} · {jd.skills.length} skills
+                {jd.title || jd.fileName || "JD"} · {jd.skills?.length ?? 0} skills
               </p>
             </div>
             <Badge variant="outline">{resume ? "Optimize existing" : "Build fresh"}</Badge>

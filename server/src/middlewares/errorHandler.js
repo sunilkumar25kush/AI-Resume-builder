@@ -3,6 +3,7 @@ import multer from "multer";
 import { env } from "../config/env.js";
 import { HTTP_STATUS } from "../constants/index.js";
 import { ApiError } from "../utils/ApiError.js";
+import { AiError } from "../services/ai/base.js";
 
 /** Central error handler — single place for logging + client response. */
 // eslint-disable-next-line no-unused-vars
@@ -28,9 +29,12 @@ export function errorHandler(err, req, res, next) {
     return next(err);
   }
 
+  const isOperational = err instanceof ApiError || err instanceof AiError || err.isOperational;
+  const message = isOperational ? err.message : (statusCode >= 500 ? "Internal server error" : err.message);
+
   return res.status(statusCode).json({
     success: false,
-    message: statusCode >= 500 ? "Internal server error" : err.message,
+    message,
     details: err.details,
     ...(env.NODE_ENV === "development" && statusCode >= 500 ? { stack: err.stack } : {}),
   });

@@ -208,7 +208,7 @@ export default function AtsCheckPage() {
           </div>
 
           <div className="flex flex-col gap-6">
-            {report.missingSkills.length > 0 ? (
+            {(report.missingSkills?.length ?? 0) > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Missing skills (JD se)</CardTitle>

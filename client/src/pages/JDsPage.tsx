@@ -154,7 +154,7 @@ export default function JDsPage() {
                   >
                     <span className="w-full truncate font-medium">{jd.title || jd.fileName || "Untitled role"}</span>
                     <span className="text-xs text-muted-foreground">
-                      {[jd.company, formatDate(jd.createdAt)].filter(Boolean).join(" · ")} · {jd.skills.length} skills
+                      {[jd.company, formatDate(jd.createdAt)].filter(Boolean).join(" · ")} · {jd.skills?.length ?? 0} skills
                     </span>
                   </button>
                   <Button

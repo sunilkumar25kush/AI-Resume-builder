@@ -48,7 +48,7 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
             <AlertTriangle className="h-4 w-4" aria-hidden />
             Missing skills
           </h3>
-          {result.missingSkills.length > 0 ? (
+          {(result.missingSkills?.length ?? 0) > 0 ? (
             <div className="flex flex-wrap gap-2">
               {result.missingSkills.map((skill) => (
                 <Badge key={skill} variant="destructive">
@@ -86,7 +86,7 @@ function ResultCard({ optimization }: { optimization: Optimization }) {
           </section>
         ) : null}
 
-        {result.matchedSkills.length > 0 ? (
+        {(result.matchedSkills?.length ?? 0) > 0 ? (
           <section className="flex flex-col gap-2">
             <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               <CheckCircle2 className="h-4 w-4" aria-hidden />

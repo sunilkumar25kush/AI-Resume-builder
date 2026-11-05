@@ -28,7 +28,7 @@ export function JDSections({ jd }: JDSectionsProps) {
         </p>
       ) : null}
 
-      {jd.skills.length > 0 ? (
+      {(jd.skills?.length ?? 0) > 0 ? (
         <Section title="Skills" icon={Briefcase}>
           <div className="flex flex-wrap gap-2">
             {jd.skills.map((skill) => (
@@ -40,7 +40,7 @@ export function JDSections({ jd }: JDSectionsProps) {
         </Section>
       ) : null}
 
-      {jd.preferredSkills.length > 0 ? (
+      {(jd.preferredSkills?.length ?? 0) > 0 ? (
         <Section title="Preferred skills" icon={Heart}>
           <div className="flex flex-wrap gap-2">
             {jd.preferredSkills.map((skill) => (
@@ -90,7 +90,7 @@ export function JDSections({ jd }: JDSectionsProps) {
         </Section>
       ) : null}
 
-      {jd.softSkills.length > 0 ? (
+      {(jd.softSkills?.length ?? 0) > 0 ? (
         <Section title="Soft skills" icon={Target}>
           <div className="flex flex-wrap gap-2">
             {jd.softSkills.map((skill) => (
@@ -102,7 +102,7 @@ export function JDSections({ jd }: JDSectionsProps) {
         </Section>
       ) : null}
 
-      {jd.industryKeywords.length > 0 ? (
+      {(jd.industryKeywords?.length ?? 0) > 0 ? (
         <Section title="Industry keywords" icon={Tags}>
           <div className="flex flex-wrap gap-2">
             {jd.industryKeywords.map((keyword) => (

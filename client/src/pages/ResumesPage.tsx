@@ -102,7 +102,7 @@ export default function ResumesPage() {
                   >
                     <span className="w-full truncate font-medium">{resume.fileName}</span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDate(resume.createdAt)} · {formatBytes(resume.fileSize)} · {resume.parsedData.skills.length} skills
+                      {formatDate(resume.createdAt)} · {formatBytes(resume.fileSize)} · {resume.parsedData?.skills?.length ?? 0} skills
                     </span>
                   </button>
                   <Button

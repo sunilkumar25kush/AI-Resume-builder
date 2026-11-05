@@ -22,5 +22,6 @@ export class AiError extends Error {
       AI_UNAVAILABLE: 503,
     };
     this.statusCode = STATUS_MAP[code] ?? 500;
+    this.isOperational = true;
   }
 }

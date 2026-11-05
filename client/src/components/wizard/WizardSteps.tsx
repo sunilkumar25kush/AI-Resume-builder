@@ -159,7 +159,7 @@ export function StepResume({
               <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{resume.fileName}</p>
-                <p className="text-xs text-muted-foreground">Parsed — {resume.parsedData.skills.length} skills extracted</p>
+                <p className="text-xs text-muted-foreground">Parsed — {resume.parsedData?.skills?.length ?? 0} skills extracted</p>
               </div>
               <Button type="button" variant="ghost" size="icon" aria-label="Remove resume" onClick={() => setResume(null)}>
                 <X className="h-4 w-4" aria-hidden />
@@ -239,7 +239,7 @@ export function StepJd({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{jd.title || jd.fileName || "Job description"}</p>
             <p className="text-xs text-muted-foreground">
-              {jd.skills.length} skills · {jd.responsibilities.length} responsibilities · {jd.atsKeywords.length} ATS keywords
+              {jd.skills?.length ?? 0} skills · {jd.responsibilities?.length ?? 0} responsibilities · {jd.atsKeywords?.length ?? 0} ATS keywords
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" aria-label="Remove job description" onClick={() => setJd(null)}>

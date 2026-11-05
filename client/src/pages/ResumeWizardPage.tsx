@@ -251,7 +251,7 @@ export default function ResumeWizardPage() {
                     <div>
                       <h2 className="text-lg font-semibold text-foreground">Download Your Generated Resume</h2>
                       <p className="text-sm text-muted-foreground">
-                        {generated.fileName} · Template: {generated.template} · {generated.parsedData.skills.length} skills
+                        {generated.fileName} · Template: {generated.template} · {generated.parsedData?.skills?.length ?? 0} skills
                       </p>
                     </div>
                     <Badge variant="outline" className="border-primary/30 text-primary">
