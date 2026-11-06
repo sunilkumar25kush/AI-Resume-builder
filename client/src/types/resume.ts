@@ -155,6 +155,9 @@ export interface ResumeCustomization {
 
   // 6. Colors (FlowCV Color targets & checkboxes)
   accentColor?: string;
+  nameColor?: string;
+  titleColor?: string;
+  headingColor?: string;
   colorTarget?: "page" | "header" | "border";
   textColor?: string;
   backgroundColor?: string;

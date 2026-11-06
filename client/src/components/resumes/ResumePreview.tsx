@@ -60,9 +60,11 @@ export function ResumePreview({
     [tplDef.defaultTheme, theme, customization]
   );
 
+  const isCustomized = Boolean(customization && Object.keys(customization).length > 0);
+
   const customCssVariables = useMemo(
-    () => getCustomizationCssVariables(customization, activeTheme.accentColor),
-    [customization, activeTheme.accentColor]
+    () => (isCustomized ? getCustomizationCssVariables(customization, activeTheme.accentColor) : undefined),
+    [isCustomized, customization, activeTheme.accentColor]
   );
 
   // Measure container and content to compute pixel-perfect scale
@@ -169,7 +171,7 @@ export function ResumePreview({
       >
         <div
           ref={contentRef}
-          className={`shadow-lg print:shadow-none ${density} resume-custom-container ${getCustomizationClassNames(customization)}`}
+          className={`shadow-lg print:shadow-none ${density} ${isCustomized ? `resume-custom-container ${getCustomizationClassNames(customization)}` : ""}`}
           style={customCssVariables}
         >
           <TemplateComponent data={data} theme={activeTheme} customization={customization} />

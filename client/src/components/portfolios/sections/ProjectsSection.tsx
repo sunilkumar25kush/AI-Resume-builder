@@ -60,7 +60,7 @@ export function ProjectsSection({
                   )}
 
                   <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 transition-colors">
                       {project.title}
                     </h3>
 
@@ -97,7 +97,8 @@ export function ProjectsSection({
                     {project.liveUrl && (
                       <SafeLink
                         href={project.liveUrl}
-                        className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                        className="inline-flex items-center gap-1.5 hover:underline font-medium"
+                        style={{ color: _primaryColor || "var(--portfolio-primary, currentColor)" }}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         <span>Live Demo</span>

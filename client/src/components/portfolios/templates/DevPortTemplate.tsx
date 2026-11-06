@@ -183,7 +183,10 @@ export function DevPortTemplate({
         />
         <div className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-600/15 blur-[160px]" />
         <div className="absolute top-[60%] left-[-10%] h-[550px] w-[550px] rounded-full bg-pink-500/10 blur-[140px]" />
-        <div className="absolute bottom-[-10%] right-[10%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+        <div
+          className="absolute bottom-[-10%] right-[10%] h-[500px] w-[500px] rounded-full blur-[140px]"
+          style={{ backgroundColor: `${primaryColor}18` }}
+        />
       </div>
 
       {/* Floating Glassmorphic Top Navigation Bar */}
@@ -224,7 +227,7 @@ export function DevPortTemplate({
             <div>
               <div
                 className={`font-bold text-sm tracking-tight transition-colors flex items-center gap-1.5 ${
-                  isLight ? "text-neutral-900 group-hover:text-blue-600" : "text-white group-hover:text-cyan-400"
+                  isLight ? "text-neutral-900" : "text-white group-hover:text-cyan-400"
                 }`}
               >
                 <span>{fullName || "DevPort"}</span>
@@ -895,7 +898,7 @@ export function DevPortTemplate({
                   )}
 
                   {exp.highlights && exp.highlights.length > 0 && (
-                    <ul className={`space-y-1.5 text-xs pl-4 list-disc font-light ${isLight ? "text-neutral-600 marker:text-blue-600" : "text-neutral-400 marker:text-cyan-400"}`}>
+                    <ul className={`space-y-1.5 text-xs pl-4 list-disc font-light ${isLight ? "text-neutral-600" : "text-neutral-400 marker:text-cyan-400"}`}>
                       {exp.highlights.map((h, hIdx) => (
                         <li key={hIdx}>{h}</li>
                       ))}

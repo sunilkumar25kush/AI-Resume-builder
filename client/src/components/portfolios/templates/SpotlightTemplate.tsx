@@ -28,32 +28,6 @@ export interface SpotlightTemplateProps {
   previewMode?: "desktop" | "tablet" | "mobile";
 }
 
-// GitSkins exact language dot colors
-const LANG_COLORS: Record<string, string> = {
-  JavaScript: "#f1e05a",
-  TypeScript: "#3178c6",
-  Python: "#3572A5",
-  Go: "#00ADD8",
-  Rust: "#dea584",
-  Ruby: "#701516",
-  Java: "#b07219",
-  "C++": "#f34b7d",
-  C: "#555555",
-  "C#": "#178600",
-  PHP: "#4F5D95",
-  Swift: "#F05138",
-  Kotlin: "#A97BFF",
-  Dart: "#00B4AB",
-  HTML: "#e34c26",
-  CSS: "#663399",
-  Shell: "#89e051",
-  Vue: "#41b883",
-  Svelte: "#ff3e00",
-  React: "#61dafb",
-  "Node.js": "#339933",
-  Dockerfile: "#384d54",
-};
-
 // Font family map supporting the typography customization settings
 const FONT_FAMILY_MAP: Record<string, string> = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -549,7 +523,7 @@ export function SpotlightTemplate({
             {/* Language/Tech Badges with Dots */}
             <div className="flex flex-wrap gap-2.5 pt-2">
               {skillNames.slice(0, 8).map((skillName: string, idx: number) => {
-                const dotColor = LANG_COLORS[skillName] || accentColor;
+                const dotColor = accentColor;
                 return (
                   <span
                     key={idx}
@@ -809,7 +783,7 @@ export function SpotlightTemplate({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {displayProjects.map((project, idx) => {
               const primaryTag = project.tags?.[0] || "Code";
-              const tagColor = LANG_COLORS[primaryTag] || accentColor;
+              const tagColor = accentColor;
 
               return (
                 <div

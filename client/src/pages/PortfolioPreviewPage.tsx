@@ -107,6 +107,22 @@ const DEFAULT_DEMO_PORTFOLIO: Portfolio = {
       liveUrl: "https://github.com/sunilkumar25kush",
       featured: true,
     },
+    {
+      title: "AI-Interviewer",
+      description: "Automated technical mock interview platform with real-time feedback and speech recognition.",
+      tags: ["Python", "FastAPI", "Next.js", "WebRTC"],
+      repoUrl: "https://github.com/sunilkumar25kush/AI-Interviewer",
+      liveUrl: "https://github.com/sunilkumar25kush",
+      featured: true,
+    },
+    {
+      title: "Realtime Code Judge",
+      description: "Isolated Docker container execution sandbox evaluating untrusted code submissions across multiple languages.",
+      tags: ["Go", "Docker", "Redis", "React"],
+      repoUrl: "https://github.com/sunilkumar25kush/code-judge",
+      liveUrl: "https://github.com/sunilkumar25kush",
+      featured: true,
+    },
   ],
   design: {
     template: "spotlight",
@@ -239,6 +255,19 @@ export default function PortfolioPreviewPage() {
 
   const handleTemplateChange = (newTemplate: PortfolioTemplateId) => {
     setPreviewTemplate(newTemplate);
+    const templateColors: Record<string, string> = {
+      spotlight: "#e3141f",
+      poster: "#e11d2a",
+      devport: "#06b6d4",
+      creative: "#8b5cf6",
+      modern: "#8b5cf6",
+      developer: "#f59e0b",
+      minimal: "#10b981",
+      executive: "#10b981",
+    };
+    if (templateColors[newTemplate]) {
+      setPreviewColor(templateColors[newTemplate]);
+    }
     const newParams = new URLSearchParams(searchParams);
     newParams.set("template", newTemplate);
     setSearchParams(newParams, { replace: true });

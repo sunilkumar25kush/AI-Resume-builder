@@ -60,7 +60,8 @@ export function CertificationsSection({
                   {cert.url && (
                     <SafeLink
                       href={cert.url}
-                      className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="inline-flex items-center gap-1 hover:underline"
+                      style={{ color: _primaryColor || "var(--portfolio-primary, currentColor)" }}
                     >
                       Verify <ExternalLink className="h-3 w-3" />
                     </SafeLink>

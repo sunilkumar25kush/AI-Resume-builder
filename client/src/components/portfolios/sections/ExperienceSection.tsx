@@ -46,7 +46,10 @@ export function ExperienceSection({
               return (
                 <div key={`${exp.company}-${idx}`} className="relative group">
                   {/* Timeline dot */}
-                  <div className="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-950 border-2 border-neutral-400 dark:border-neutral-600 group-hover:border-blue-500 transition-colors" />
+                  <div
+                    className="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-950 border-2 border-neutral-400 dark:border-neutral-600 transition-colors"
+                    style={{ borderColor: _primaryColor || undefined }}
+                  />
 
                   <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

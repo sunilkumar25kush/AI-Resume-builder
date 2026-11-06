@@ -434,14 +434,18 @@ export function getDefaultDesignSettings(
 
   const defaultColor =
     templateId === "spotlight"
-      ? "#e11d48"
+      ? "#e3141f"
       : templateId === "poster"
       ? "#e11d2a"
       : templateId === "devport"
       ? "#06b6d4"
       : templateId === "creative" || templateId === "modern"
-      ? "#9333ea"
-      : "#2563eb";
+      ? "#8b5cf6"
+      : templateId === "developer"
+      ? "#f59e0b"
+      : templateId === "minimal" || templateId === "executive"
+      ? "#10b981"
+      : "#e3141f";
 
   return {
     template: templateId,

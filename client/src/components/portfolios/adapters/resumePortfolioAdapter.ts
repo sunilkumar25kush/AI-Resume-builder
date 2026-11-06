@@ -503,7 +503,21 @@ export function adaptResumeToPortfolio(
 
   const selectedTemplate = options.template || "devport";
   const selectedTheme = options.theme || "system";
-  const primaryColor = options.primaryColor || (customization.accentColor as string) || "#2563eb";
+  const templateColorMap: Record<string, string> = {
+    spotlight: "#e3141f",
+    poster: "#e11d2a",
+    devport: "#06b6d4",
+    creative: "#8b5cf6",
+    modern: "#8b5cf6",
+    developer: "#f59e0b",
+    minimal: "#10b981",
+    executive: "#10b981",
+  };
+  const primaryColor =
+    options.primaryColor ||
+    (customization.accentColor as string) ||
+    templateColorMap[selectedTemplate] ||
+    "#06b6d4";
   const fontFamily = options.fontFamily || (customization.fontFamily as string) || "Inter";
 
   const design: PortfolioDesignSettings = {

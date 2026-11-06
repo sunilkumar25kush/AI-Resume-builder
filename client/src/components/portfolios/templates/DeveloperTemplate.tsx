@@ -20,7 +20,7 @@ export function DeveloperTemplate({
 }: PortfolioTemplateProps) {
   const { profile, socialLinks, skills, experience, education, projects, certifications, design } =
     portfolio;
-  const primaryColor = design?.primaryColor || "#2563eb";
+  const primaryColor = design?.primaryColor || "#F59E0B";
   const templateSettings = design?.templateSettings || {};
   const terminalPrompt = (templateSettings.terminalPrompt as string) || "dev@workstation:~$";
   const cursorBlink = templateSettings.cursorBlink !== false;
@@ -139,27 +139,27 @@ export function DeveloperTemplate({
 
           <nav className="hidden sm:flex items-center gap-5 text-xs font-mono text-neutral-600 dark:text-neutral-400">
             {profile?.bio && (
-              <a href="#about" className="hover:text-blue-500 transition-colors">
+              <a href="#about" className="hover:text-amber-500 transition-colors">
                 .about()
               </a>
             )}
             {skills && skills.length > 0 && (
-              <a href="#skills" className="hover:text-blue-500 transition-colors">
+              <a href="#skills" className="hover:text-amber-500 transition-colors">
                 .skills()
               </a>
             )}
             {projects && projects.length > 0 && (
-              <a href="#projects" className="hover:text-blue-500 transition-colors">
+              <a href="#projects" className="hover:text-amber-500 transition-colors">
                 .projects()
               </a>
             )}
             {experience && experience.length > 0 && (
-              <a href="#experience" className="hover:text-blue-500 transition-colors">
+              <a href="#experience" className="hover:text-amber-500 transition-colors">
                 .experience()
               </a>
             )}
             {profile?.email && (
-              <a href="#contact" className="hover:text-blue-500 transition-colors">
+              <a href="#contact" className="hover:text-amber-500 transition-colors">
                 .contact()
               </a>
             )}

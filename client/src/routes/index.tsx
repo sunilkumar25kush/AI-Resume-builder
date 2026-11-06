@@ -2,10 +2,13 @@
 import { lazy } from "react";
 import { createBrowserRouter } from "react-router";
 
+import { PageLoader } from "@/components/common/PageLoader";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { GuestOnlyRoute, ProtectedRoute } from "@/routes/ProtectedRoute";
+import { useAuthStore } from "@/stores/auth";
 
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
@@ -32,7 +35,32 @@ const PortfolioPreviewPage = lazy(() => import("@/pages/PortfolioPreviewPage"));
 const PortfolioEditorPage = lazy(() => import("@/pages/PortfolioEditorPage"));
 const PublicPortfolioPage = lazy(() => import("@/pages/PublicPortfolioPage"));
 
+function RootGate() {
+  const status = useAuthStore((state) => state.status);
+  if (status === "loading") return <PageLoader />;
+  if (status === "guest") return <LandingPage />;
+  return (
+    <ProtectedRoute>
+      <AppLayout />
+    </ProtectedRoute>
+  );
+}
+
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootGate />,
+    children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
+    ],
+  },
+  {
+    path: "/landing",
+    element: <LandingPage />,
+  },
   {
     path: "/p/:slug",
     element: <PublicPortfolioPage />,
@@ -61,7 +89,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       {
-        path: "/",
+        path: "/dashboard",
         element: <DashboardPage />,
       },
       {

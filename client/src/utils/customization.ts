@@ -42,7 +42,7 @@ export const DEFAULT_CUSTOMIZATION: ResumeCustomization = {
   fontFamily: "Alegreya",
 
   // 6. Colors (FlowCV Color targets & checkboxes)
-  accentColor: "#4F46E5",
+  accentColor: undefined,
   colorTarget: "page",
   textColor: "#111827",
   backgroundColor: "#FFFFFF",
@@ -112,6 +112,10 @@ export const BACKGROUND_COLORS = [
  * Generate CSS variable object from customization state for real-time live preview
  */
 export function getCustomizationCssVariables(customization?: ResumeCustomization, templateAccent?: string) {
+  if (!customization || Object.keys(customization).length === 0) {
+    return {} as React.CSSProperties;
+  }
+
   const c = { ...DEFAULT_CUSTOMIZATION, ...customization };
 
   const bodyFontObj = FONT_OPTIONS.find((f) => f.id === (c.bodyFont || c.fontFamily)) || FONT_OPTIONS[0];
@@ -137,10 +141,10 @@ export function getCustomizationCssVariables(customization?: ResumeCustomization
     "[++]": "24px",
   };
 
-  const activeAccent = c.accentColor || templateAccent || "#4F46E5";
+  const activeAccent = customization.accentColor || templateAccent;
   const targets = c.accentTargets || DEFAULT_CUSTOMIZATION.accentTargets || {};
 
-  return {
+  const vars: Record<string, string> = {
     "--rc-font-family": bodyFontObj.font,
     "--rc-name-font-family": nameFontObj.font,
     "--rc-font-size": baseFontVal,
@@ -155,20 +159,30 @@ export function getCustomizationCssVariables(customization?: ResumeCustomization
     "--rc-section-gap": sectionGapMap[c.spaceElements || "[0]"] || "18px",
     "--rc-entry-gap": entryGapMap[c.spaceElements || "[0]"] || "13px",
     "--rc-heading-transform": c.headingCapitalization || c.headingStyle || "uppercase",
-    "--rc-accent-color": activeAccent,
-    "--rc-text-color": c.textColor || "#111827",
-    "--rc-bg-color": c.backgroundColor || "#FFFFFF",
-    "--rc-name-color": targets.name !== false ? activeAccent : (c.textColor || "#111827"),
-    "--rc-title-color": targets.jobTitle ? activeAccent : "#4B5563",
-    "--rc-heading-color": targets.headings !== false ? activeAccent : (c.textColor || "#111827"),
-    "--rc-heading-line-color": targets.headingsLine !== false ? activeAccent : "#E5E7EB",
-    "--rc-bullet-color": targets.dots ? activeAccent : "currentColor",
-    "--rc-date-color": targets.dates ? activeAccent : "#6B7280",
-    "--rc-entry-subtitle-color": targets.entrySubtitle ? activeAccent : "#374151",
     "--rc-photo-display": c.showPhoto ? "block" : "none",
     "--rc-photo-radius": c.photoShape === "round" ? "9999px" : c.photoShape === "rounded" ? "12px" : "2px",
     "--rc-photo-size": c.photoSize === "small" ? "65px" : c.photoSize === "large" ? "110px" : "85px",
-  } as React.CSSProperties;
+  };
+
+  // Only inject accent overrides if the user set a custom accent OR if template defines an accent
+  if (activeAccent) {
+    vars["--rc-accent-color"] = activeAccent;
+    if (targets.name !== false) vars["--rc-name-color"] = activeAccent;
+    if (targets.jobTitle) vars["--rc-title-color"] = activeAccent;
+    if (targets.headings !== false) vars["--rc-heading-color"] = activeAccent;
+    if (targets.headingsLine !== false) vars["--rc-heading-line-color"] = activeAccent;
+    if (targets.dots) vars["--rc-bullet-color"] = activeAccent;
+    if (targets.dates) vars["--rc-date-color"] = activeAccent;
+    if (targets.entrySubtitle) vars["--rc-entry-subtitle-color"] = activeAccent;
+  }
+
+  if (customization.nameColor) vars["--rc-name-color"] = customization.nameColor;
+  if (customization.titleColor) vars["--rc-title-color"] = customization.titleColor;
+  if (customization.headingColor) vars["--rc-heading-color"] = customization.headingColor;
+  if (customization.textColor) vars["--rc-text-color"] = customization.textColor;
+  if (customization.backgroundColor) vars["--rc-bg-color"] = customization.backgroundColor;
+
+  return vars as React.CSSProperties;
 }
 
 /**

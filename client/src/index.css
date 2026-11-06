@@ -444,7 +444,7 @@ html {
 .resume-custom-container [data-slot="candidate-name"] {
   font-family: var(--rc-name-font-family, var(--rc-font-family, inherit)) !important;
   font-size: var(--rc-name-size, 24pt) !important;
-  color: var(--rc-name-color, #111827) !important;
+  color: var(--rc-name-color, inherit) !important;
   line-height: 1.15 !important;
 }
 
@@ -455,7 +455,7 @@ html {
 .resume-custom-container .candidate-title,
 .resume-custom-container [data-slot="candidate-title"] {
   font-size: var(--rc-title-size, 15.5pt) !important;
-  color: var(--rc-title-color, #4B5563) !important;
+  color: var(--rc-title-color, inherit) !important;
 }
 
 /* Section Headings */
@@ -464,26 +464,26 @@ html {
 .resume-custom-container [data-slot="section-title"] {
   font-size: var(--rc-heading-size, 15.5pt) !important;
   text-transform: var(--rc-heading-transform, uppercase) !important;
-  color: var(--rc-heading-color, #111827) !important;
+  color: var(--rc-heading-color, inherit) !important;
 }
 
 /* Heading Style 1: Line */
 .resume-custom-container.heading-style-line h2 {
-  border-bottom: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-bottom: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   padding-bottom: 3px !important;
 }
 
 /* Heading Style 2: Box */
 .resume-custom-container.heading-style-box h2 {
-  border: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border: 1.5px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   padding: 3px 10px !important;
   display: inline-block !important;
 }
 
 /* Heading Style 3: Double Line */
 .resume-custom-container.heading-style-double h2 {
-  border-top: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
-  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-top: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
+  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   padding: 3px 0 !important;
 }
 
@@ -497,31 +497,31 @@ html {
 .resume-custom-container.heading-style-split h2::after {
   content: "" !important;
   flex: 1 1 0% !important;
-  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-bottom: 1px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   margin: 0 10px !important;
 }
 
 /* Heading Style 5: Left Bar */
 .resume-custom-container.heading-style-left-bar h2 {
-  border-left: 4px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-left: 4px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   padding-left: 8px !important;
 }
 
 /* Heading Style 6: Thick Line */
 .resume-custom-container.heading-style-thick-line h2 {
-  border-bottom: 3px solid var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  border-bottom: 3px solid var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   padding-bottom: 3px !important;
 }
 
 /* Heading Style 7: Colored Line */
 .resume-custom-container.heading-style-colored-line h2 {
-  border-bottom: 2px solid var(--rc-accent-color, #4F46E5) !important;
+  border-bottom: 2px solid var(--rc-accent-color, currentColor) !important;
   padding-bottom: 3px !important;
 }
 
 /* Heading Style 8: Wave */
 .resume-custom-container.heading-style-wave h2 {
-  text-decoration: underline wavy var(--rc-heading-line-color, var(--rc-accent-color, #4F46E5)) !important;
+  text-decoration: underline wavy var(--rc-heading-line-color, var(--rc-accent-color, currentColor)) !important;
   text-underline-offset: 4px !important;
 }
 

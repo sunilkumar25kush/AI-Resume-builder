@@ -133,7 +133,10 @@ export function ModernCreativeTemplate({
             style={{ backgroundColor: `${primaryColor}22` }}
           />
           <div className="absolute top-[40%] left-[-5%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[170px]" />
-          <div className="absolute bottom-[5%] right-[20%] h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+          <div
+            className="absolute bottom-[5%] right-[20%] h-[500px] w-[500px] rounded-full blur-[140px]"
+            style={{ backgroundColor: `${primaryColor}18` }}
+          />
         </div>
       )}
 

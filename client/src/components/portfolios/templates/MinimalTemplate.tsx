@@ -27,7 +27,7 @@ export function MinimalTemplate({
 }: PortfolioTemplateProps) {
   const { profile, socialLinks, skills, experience, education, projects, certifications, design } =
     portfolio;
-  const primaryColor = design?.primaryColor || "#2563eb";
+  const primaryColor = design?.primaryColor || "#10B981";
   const templateSettings = design?.templateSettings || {};
   const whitespaceDensity = (templateSettings.whitespaceDensity as string) || "normal";
   const spacingClass =

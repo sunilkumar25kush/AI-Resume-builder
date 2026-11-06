@@ -27,6 +27,17 @@ const FONT_FAMILY_RAW: Record<string, string> = {
   Fira: "'Fira Code', 'JetBrains Mono', monospace",
 };
 
+const TEMPLATE_DEFAULT_PRIMARY: Record<string, string> = {
+  spotlight: "#e3141f",
+  poster: "#e11d2a",
+  devport: "#06b6d4",
+  creative: "#8b5cf6",
+  modern: "#8b5cf6",
+  developer: "#f59e0b",
+  minimal: "#10b981",
+  executive: "#10b981",
+};
+
 /**
  * Wraps portfolio rendering with isolated design variables (theme, primary color, font family).
  * Does not pollute global document styles.
@@ -37,7 +48,8 @@ export function ThemeWrapper({
   children,
 }: ThemeWrapperProps) {
   const theme = design.theme || "system";
-  const primaryColor = design.primaryColor || "#2563eb";
+  const templateDefault = design.template ? TEMPLATE_DEFAULT_PRIMARY[design.template] : undefined;
+  const primaryColor = design.primaryColor || templateDefault || "#e3141f";
   const fontFamilyKey = design.fontFamily || "Inter";
   const fontClass = FONT_MAP[fontFamilyKey] || "font-sans";
   const resolvedFontFamily = FONT_FAMILY_RAW[fontFamilyKey] || FONT_FAMILY_RAW.Inter;

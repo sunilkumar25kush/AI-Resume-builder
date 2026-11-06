@@ -17,33 +17,6 @@ export interface PosterTemplateProps {
   previewMode?: "desktop" | "tablet" | "mobile";
 }
 
-// GitSkins exact technology accent colors for the corner radial glow
-const LANG_COLORS: Record<string, string> = {
-  JavaScript: "#f1e05a",
-  TypeScript: "#3178c6",
-  Python: "#3572A5",
-  Go: "#00ADD8",
-  Rust: "#dea584",
-  Ruby: "#701516",
-  Java: "#b07219",
-  "C++": "#f34b7d",
-  C: "#555555",
-  "C#": "#178600",
-  PHP: "#4F5D95",
-  Swift: "#F05138",
-  Kotlin: "#A97BFF",
-  Dart: "#00B4AB",
-  HTML: "#e34c26",
-  CSS: "#663399",
-  Shell: "#89e051",
-  Vue: "#41b883",
-  Svelte: "#ff3e00",
-  React: "#61dafb",
-  "Node.js": "#339933",
-  Tailwind: "#38bdf8",
-  TailwindCSS: "#38bdf8",
-};
-
 export function PosterTemplate({
   portfolio,
   showEmpty = false,
@@ -312,11 +285,10 @@ export function PosterTemplate({
         {/* Cards Grid: 4 columns on desktop, 2 on tablet, staggered */}
         <div className="poster-cards relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[clamp(14px,1.6vw,24px)] px-[clamp(20px,5vw,80px)]">
           {displayProjects.map((proj: PortfolioProject, idx: number) => {
-            const rawLang = proj.tags?.[0] || "JavaScript";
-            const techKey = Object.keys(LANG_COLORS).find(
-              (k) => k.toLowerCase() === rawLang.toLowerCase()
-            ) || "JavaScript";
-            const langColor = LANG_COLORS[techKey] || "#e11d2a";
+            const rawLang = proj.tags?.[0] || "Code";
+            // Always use the template's signature accentColor (#e11d2a by default, or design.primaryColor)
+            // Never default cards to GitHub language blue/cyan!
+            const cardAccent = accentColor || "#e11d2a";
             const tilt = cardTilts[idx % 4];
             const isStaggerDesktop = (idx % 4 === 1) || (idx % 4 === 3);
             const isStaggerTablet = (idx % 2 === 1);
@@ -329,7 +301,7 @@ export function PosterTemplate({
                 <span
                   className="absolute inset-0 z-0 pointer-events-none"
                   style={{
-                    background: `radial-gradient(120% 70% at 20% 0%, ${langColor} 0%, transparent 60%), linear-gradient(160deg, #1b1b1b, #0e0e0e)`,
+                    background: `radial-gradient(120% 70% at 20% 0%, ${cardAccent} 0%, transparent 60%), linear-gradient(160deg, #1b1b1b, #0e0e0e)`,
                   }}
                 />
 
@@ -373,7 +345,7 @@ export function PosterTemplate({
                     <span className="flex items-center">
                       <i
                         className="inline-block w-[9px] h-[9px] mr-1.5 rounded-full"
-                        style={{ backgroundColor: langColor }}
+                        style={{ backgroundColor: cardAccent }}
                       />
                       <span>{rawLang}</span>
                     </span>

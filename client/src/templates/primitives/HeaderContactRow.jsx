@@ -3,7 +3,7 @@ import { Icon } from "./Icon";
 
 export function HeaderContactRow({
   personal = {},
-  className = "flex flex-wrap items-center justify-center gap-x-2 gap-y-1",
+  className = "",
   itemClassName = "",
   linkClassName = "hover:underline",
   defaultSeparator = "•",
@@ -76,7 +76,7 @@ export function HeaderContactRow({
       : null,
   };
 
-  const order = personal.contactOrder || ["email", "phone", "location", "linkedin", "github", "website"];
+  const order = personal.contactOrder || ["location", "phone", "email", "linkedin", "github", "website"];
   const items = order.map((key) => contactMap[key]).filter(Boolean);
 
   if (Array.isArray(personal.customLinks)) {
@@ -94,35 +94,33 @@ export function HeaderContactRow({
   if (items.length === 0) return null;
 
   return (
-    <div className={`header-contact-row ${className}`}>
+    <div className={`header-contact-row flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 max-w-full text-center leading-normal ${className}`}>
       {items.map((item, idx) => (
-        <React.Fragment key={idx}>
+        <span key={idx} className="header-contact-item inline-flex items-center gap-1.5 shrink-0 max-w-full">
           {idx > 0 && (
             <span
-              className="header-sep-symbol select-none px-1"
+              className="header-sep-symbol select-none px-1 text-neutral-400 font-normal shrink-0"
               aria-hidden="true"
             >
               {defaultSeparator}
             </span>
           )}
-          <span className="header-contact-item inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span className="header-contact-icon shrink-0 inline-flex items-center" aria-hidden="true">
-              <Icon name={item.type} size={iconSize} />
-            </span>
-            {item.href ? (
-              <a
-                href={item.href}
-                target={item.type === "email" || item.type === "phone" ? undefined : "_blank"}
-                rel="noopener noreferrer"
-                className={`transition-colors ${linkClassName}`}
-              >
-                <span className={itemClassName}>{item.text}</span>
-              </a>
-            ) : (
-              <span className={itemClassName}>{item.text}</span>
-            )}
+          <span className="header-contact-icon shrink-0 inline-flex items-center text-neutral-500" aria-hidden="true">
+            <Icon name={item.type} size={iconSize} />
           </span>
-        </React.Fragment>
+          {item.href ? (
+            <a
+              href={item.href}
+              target={item.type === "email" || item.type === "phone" ? undefined : "_blank"}
+              rel="noopener noreferrer"
+              className={`transition-colors truncate max-w-[280px] sm:max-w-none ${linkClassName}`}
+            >
+              <span className={itemClassName}>{item.text}</span>
+            </a>
+          ) : (
+            <span className={`truncate max-w-[280px] sm:max-w-none ${itemClassName}`}>{item.text}</span>
+          )}
+        </span>
       ))}
     </div>
   );

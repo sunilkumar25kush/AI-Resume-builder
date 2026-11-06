@@ -4,16 +4,16 @@
     "title": "Full Stack Engineer & Tech Lead",
     "email": "sunilkumar25@navgurukul.org",
     "phone": "+91 98765 43210",
-    "location": "Sarita Vihar, New Delhi, India",
+    "location": "New Delhi, India",
     "linkedin": "https://linkedin.com/in/sunilkumar",
     "github": "https://github.com/sunilkumar25kush",
     "website": "https://sunilkumar.dev",
     "portfolio": "https://sunilkumar.dev/portfolio",
-    "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    "photoUrl": "https://avatars.githubusercontent.com/sunilkumar25kush",
     "availability": "Immediate",
     "dob": "1998-05-14"
   },
-  "summary": "Accomplished Full Stack Software Engineer with **5+ years of production experience** architecting high-throughput distributed systems and responsive user interfaces. Proven track record leading agile engineering squads, slashing API latency by **40%**, and shipping scalable MERN & cloud-native architectures that support **100k+ monthly active users**.",
+  "summary": "Full Stack Engineer with **5+ years of experience** architecting high-throughput distributed systems and responsive web applications. Proven track record slashing API latency by **40%** and scaling MERN & cloud-native platforms to **100k+ monthly users**.",
   "experience": [
     {
       "role": "Senior Full Stack Engineer",
@@ -22,10 +22,9 @@
       "startDate": "2023",
       "endDate": "Present",
       "bullets": [
-        "Architected and deployed an AI-assisted learning platform supporting **15,000+ underserved students** across 8 state campuses using **React**, **Node.js**, and **PostgreSQL**.",
-        "Refactored monolithic Express microservices with redis caching layers, decreasing p99 server response times by **38%** under peak exam load.",
-        "Mentored a cross-functional team of **12 software apprentices** through rigorous code reviews, automated CI/CD pipelines, and clean architecture workshops.",
-        "Engineered real-time collaboration features leveraging **WebSockets** and **WebRTC**, maintaining **99.95% uptime** across global deployments."
+        "Architected an AI-assisted learning platform supporting **15,000+ students** using **React**, **Node.js**, and **PostgreSQL**.",
+        "Refactored monolithic Express microservices with Redis caching, decreasing p99 server response times by **38%**.",
+        "Engineered real-time collaboration features leveraging **WebSockets**, maintaining **99.95% uptime**."
       ]
     },
     {
@@ -35,20 +34,8 @@
       "startDate": "2021",
       "endDate": "2023",
       "bullets": [
-        "Developed enterprise workflow analytics dashboards with **Next.js**, **Tailwind CSS**, and **GraphQL**, boosting user task completion rates by **24%**.",
-        "Spearheaded multi-tenant authentication migrations with **OAuth2**, **JWT**, and granular RBAC security policies.",
-        "Optimized client-side bundle size by **45%** through aggressive dynamic code splitting, tree shaking, and modern asset compression pipelines."
-      ]
-    },
-    {
-      "role": "Frontend Software Developer",
-      "company": "AppCraft Studio",
-      "location": "Remote",
-      "startDate": "2019",
-      "endDate": "2021",
-      "bullets": [
-        "Implemented pixel-perfect design systems across **14 production client applications** adhering to strict **WCAG 2.1 AA accessibility** criteria.",
-        "Authored reusable component libraries in **TypeScript** and **Tailwind CSS**, reducing frontend sprint cycle durations by **30%**."
+        "Developed workflow analytics dashboards with **Next.js**, **Tailwind CSS**, and **GraphQL**, boosting user completion by **24%**.",
+        "Spearheaded multi-tenant authentication migrations with **OAuth2** and **JWT**, enforcing granular RBAC security policies."
       ]
     }
   ],
@@ -61,57 +48,47 @@
       "endDate": "2019",
       "grade": "First Class Honours (8.6 CGPA)",
       "details": [
-        "Specialization in Distributed Systems, Data Structures, and Relational Database Systems.",
-        "Recipient of Dean's Merit Scholarship for Academic Excellence (2018)."
+        "Specialization in Distributed Systems and Relational Database Systems."
       ]
     }
   ],
   "projects": [
     {
-      "name": "AI Resume & Career Optimizer",
-      "techStack": ["React 19", "Node.js", "Express", "Tailwind CSS", "Gemini AI", "MongoDB"],
+      "name": "AI Resume & Portfolio Engine",
+      "techStack": ["React 19", "Node.js", "Express", "Tailwind CSS", "Gemini AI"],
       "links": [
-        { "label": "GitHub", "url": "https://github.com/sunilkumar25kush/AI-Resume-builder" },
-        { "label": "Live Demo", "url": "https://resume.sunilkumar.dev" }
+        { "label": "GitHub", "url": "https://github.com/sunilkumar25kush/AI-Resume-builder" }
       ],
       "date": "2024",
       "bullets": [
-        "Designed an end-to-end ATS resume generator powered by **Google Gemini 2.5 Flash**, rendering pixel-accurate A4 vector PDFs in real time.",
-        "Engineered job description keyword extraction algorithms achieving **95% semantic match accuracy** using custom tokenizers."
+        "Designed an end-to-end ATS resume generator rendering pixel-accurate A4 vector PDFs in real time."
       ]
     },
     {
-      "name": "Realtime Distributed Code Judge",
+      "name": "Realtime Code Judge",
       "techStack": ["Go", "Docker", "Node.js", "Redis Streams", "React"],
       "links": [
         { "label": "GitHub", "url": "https://github.com/sunilkumar25kush/code-judge" }
       ],
       "date": "2023",
       "bullets": [
-        "Constructed an isolated Docker container execution sandbox running untrusted user submissions across 6 programming languages in under **250ms**."
+        "Constructed an isolated Docker execution sandbox evaluating untrusted code submissions in under **250ms**."
       ]
     }
   ],
   "skills": [
     {
       "category": "Frontend",
-      "items": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux Toolkit", "HTML5/CSS3", "Vite"]
+      "items": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux Toolkit", "Vite"]
     },
     {
       "category": "Backend",
-      "items": ["Node.js", "Express.js", "Python", "REST APIs", "GraphQL", "WebSockets", "Microservices"]
+      "items": ["Node.js", "Express.js", "Python", "REST APIs", "GraphQL", "WebSockets"]
     },
     {
       "category": "Database & Cloud",
-      "items": ["MongoDB Atlas", "PostgreSQL", "Redis", "Docker", "AWS (S3/EC2)", "Git", "CI/CD"]
+      "items": ["MongoDB Atlas", "PostgreSQL", "Redis", "Docker", "AWS (S3/EC2)", "Git"]
     }
-  ],
-  "coursework": [
-    "Advanced Algorithms",
-    "Distributed Systems",
-    "Database Management Systems",
-    "Software Architecture",
-    "Computer Networks"
   ],
   "certifications": [
     {
@@ -119,30 +96,10 @@
       "issuer": "Amazon Web Services",
       "date": "2023",
       "url": "https://aws.amazon.com/certification/"
-    },
-    {
-      "name": "Oracle Certified Professional: Java SE 11 Developer",
-      "issuer": "Oracle",
-      "date": "2021",
-      "url": "https://education.oracle.com"
     }
   ],
   "languages": [
-    { "name": "English", "level": "Fluent / Professional" },
+    { "name": "English", "level": "Fluent" },
     { "name": "Hindi", "level": "Native" }
-  ],
-  "references": [
-    {
-      "name": "Dr. Rajesh Sharma",
-      "position": "Director of Technology, NavGurukul Foundation",
-      "phone": "+91 98111 22334",
-      "email": "rajesh@navgurukul.org"
-    },
-    {
-      "name": "Priya Venkataraman",
-      "position": "Lead Engineering Manager, InnoTech",
-      "phone": "+91 97222 33445",
-      "email": "priya.v@innotech.example.com"
-    }
   ]
 }
