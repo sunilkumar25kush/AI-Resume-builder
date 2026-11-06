@@ -69,6 +69,7 @@ const projectSchema = new mongoose.Schema(
     liveUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     repoUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     imageUrl: { type: String, default: "", trim: true, maxlength: 2000000 },
+    images: { type: [String], default: [] },
     featured: { type: Boolean, default: false },
   },
   { _id: false },

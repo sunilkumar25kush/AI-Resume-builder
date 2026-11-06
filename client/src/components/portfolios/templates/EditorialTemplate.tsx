@@ -20,6 +20,9 @@ import type {
 } from "@/types/portfolio";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { TechIcon } from "@/components/portfolios/common/TechIcon";
+import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
+import HalftoneReveal from "@/components/portfolios/animations/HalftoneReveal";
+import SwarmCursor from "@/components/portfolios/animations/SwarmCursor";
 
 export interface EditorialTemplateProps {
   portfolio: Partial<Portfolio>;
@@ -27,6 +30,39 @@ export interface EditorialTemplateProps {
   sectionOrder?: string[];
   hiddenSections?: string[];
   previewMode?: "desktop" | "tablet" | "mobile";
+}
+
+function SafeProjectImage({
+  src,
+  alt,
+  className = "",
+  fallbackText = "Project Showcase",
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  fallbackText?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div className={`w-full h-full bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex flex-col items-center justify-center p-4 text-center select-none ${className}`}>
+        <FolderGit2 className="h-7 w-7 text-white/50 mb-1.5" />
+        <span className="font-['Bebas_Neue',sans-serif] text-sm tracking-wider opacity-90">{fallbackText}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className={className}
+      loading="lazy"
+    />
+  );
 }
 
 function SafeLink({
@@ -98,28 +134,28 @@ export function EditorialTemplate({
   const colors = useMemo(() => {
     if (isDarkMode) {
       return {
-        paper: "#140A0C",
-        paperCard: "#1D1013",
-        paperBorder: "rgba(255, 255, 255, 0.08)",
-        ink: "#FAF5EF",
-        inkMuted: "#B8AAA8",
+        paper: "#120F17",
+        paperCard: "#1D1518",
+        paperBorder: "rgba(255, 255, 255, 0.12)",
+        ink: "#FFFFFF",
+        inkMuted: "#CBD5E1",
         crimsonBg: primaryColor,
         crimsonText: "#FFFFFF",
-        cardBg: "#221316",
-        badgeBg: "rgba(255, 255, 255, 0.06)",
-        badgeText: "#FAF5EF",
+        cardBg: "#1F1417",
+        badgeBg: "rgba(255, 255, 255, 0.08)",
+        badgeText: "#FFFFFF",
       };
     }
     return {
-      paper: "#FAF5EF",
+      paper: "#FDFBF7",
       paperCard: "#FFFFFF",
-      paperBorder: "rgba(139, 21, 27, 0.12)",
-      ink: "#1C1818",
-      inkMuted: "#6B5E5E",
+      paperBorder: "rgba(15, 23, 42, 0.12)",
+      ink: "#0F172A",
+      inkMuted: "#334155",
       crimsonBg: primaryColor,
       crimsonText: "#FFFFFF",
-      cardBg: "#FAF5EF",
-      badgeBg: "rgba(139, 21, 27, 0.08)",
+      cardBg: "#FFFFFF",
+      badgeBg: "rgba(15, 23, 42, 0.05)",
       badgeText: primaryColor,
     };
   }, [isDarkMode, primaryColor]);
@@ -142,7 +178,8 @@ export function EditorialTemplate({
 
   // Fallback Skills (deduplicated, high-profile technologies)
   const displaySkills: PortfolioSkill[] = useMemo(() => {
-    if (skills && skills.length > 0) return skills;
+    const cleaned = normalizeSkills(skills);
+    if (cleaned && cleaned.length > 0) return cleaned;
     return [
       { name: "React", category: "Languages & Frontend", level: "expert" },
       { name: "TypeScript", category: "Languages & Frontend", level: "expert" },
@@ -370,90 +407,98 @@ export function EditorialTemplate({
   // ---------------------------------------------------------------------------
   const sectionMap: Record<string, React.ReactNode> = {
     // -------------------------------------------------------------------------
-    // SLIDE 01: HERO COVER (Deep Crimson, Script "Creative", Giant "PORTFOLIO", Portrait)
+    // SLIDE 01: HERO COVER with SwarmCursor & HalftoneReveal Hero Animation
     // -------------------------------------------------------------------------
     hero: (
       <section
         key="hero"
         id="hero"
-        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-6 sm:p-12 text-white select-none transition-all duration-300"
+        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl text-white select-none transition-all duration-300"
         style={{ backgroundColor: primaryColor }}
       >
-        {/* Subtle Linen Background Texture */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/30 pointer-events-none" />
-        <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_4px)] pointer-events-none" />
-        {/* Animated light sweep + drifting glow orbs */}
-        <div className="ed-sheen absolute inset-0 pointer-events-none" />
-        <div className="ed-orb ed-orb-a absolute pointer-events-none" />
-        <div className="ed-orb ed-orb-b absolute pointer-events-none" />
+        <SwarmCursor
+          count={800}
+          size={2.6}
+          spread={90}
+          swirl={0.6}
+          clickEffect="burst"
+          color="rgba(255, 255, 255, 0.75)"
+          className="w-full h-full p-6 sm:p-12 flex flex-col justify-between relative"
+        >
+          {/* Subtle Linen Background Texture */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/30 pointer-events-none" />
+          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_4px)] pointer-events-none" />
+          {/* Animated light sweep + drifting glow orbs */}
+          <div className="ed-sheen absolute inset-0 pointer-events-none" />
+          <div className="ed-orb ed-orb-a absolute pointer-events-none" />
+          <div className="ed-orb ed-orb-b absolute pointer-events-none" />
 
-        {/* Top Eyebrow: Script "Creative" */}
-        <div className="relative z-10 w-full text-center pt-2">
-          <span className="font-['Caveat',cursive] text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF]">
-            Creative
-          </span>
-        </div>
+          {/* Top Eyebrow: Script "Creative" */}
+          <div className="relative z-20 w-full text-center pt-2">
+            <span className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF]">
+              Creative
+            </span>
+          </div>
 
-        {/* Center: Giant Condensed "PORTFOLIO" with overlapping Cutout Portrait */}
-        <div className="relative z-10 my-auto w-full flex items-center justify-center">
-          {/* Giant Word — staggered letter reveal + counter-parallax */}
-          <h1
-            aria-label="Portfolio"
-            className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
-          >
-            {"PORTFOLIO".split("").map((ch, i) => (
-              <span
-                key={i}
-                aria-hidden="true"
-                className="ed-letter"
-                style={{ animationDelay: `${120 + i * 70}ms` }}
-              >
-                {ch}
-              </span>
-            ))}
-          </h1>
+          {/* Center: Giant Condensed "PORTFOLIO" with interactive HalftoneReveal portrait */}
+          <div className="relative z-20 my-auto w-full flex items-center justify-center">
+            {/* Giant Word */}
+            <h1
+              aria-label="Portfolio"
+              className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
+            >
+              {"PORTFOLIO".split("").map((ch, i) => (
+                <span
+                  key={i}
+                  aria-hidden="true"
+                  className="ed-letter"
+                  style={{ animationDelay: `${120 + i * 70}ms` }}
+                >
+                  {ch}
+                </span>
+              ))}
+            </h1>
 
-          {/* Overlapping Cutout Portrait in Center */}
-          <div className="ed-hero-portrait absolute inset-x-0 bottom-[-15%] sm:bottom-[-20%] flex justify-center pointer-events-none z-20">
-            <div className="ed-float relative w-[min(54vw,280px)] sm:w-[min(32vw,360px)] aspect-[3/4] flex items-end justify-center">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="w-full h-full object-contain filter drop-shadow-[0_20px_35px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500"
+            {/* Overlapping Halftone Portrait with Interactive Halftone Reveal */}
+            <div className="ed-hero-portrait absolute inset-x-0 bottom-[-15%] sm:bottom-[-20%] flex justify-center z-30 pointer-events-auto">
+              <div className="ed-float relative w-[min(54vw,280px)] sm:w-[min(32vw,360px)] aspect-[3/4] flex items-end justify-center rounded-t-full overflow-hidden shadow-2xl border-2 border-white/30 bg-[#120f17]">
+                <HalftoneReveal
+                  src={
+                    avatarUrl ||
+                    "https://images.unsplash.com/photo-1693250707557-a846a014b321?q=80&w=1400&auto=format&fit=crop"
+                  }
+                  mode="mono"
+                  shape="dot"
+                  cellSize={6}
+                  angle={45}
+                  inkColor="#f4f1ea"
+                  paperColor="#120f17"
+                  revealRadius={160}
+                  className="w-full h-full"
                 />
-              ) : (
-                <div className="w-full h-full rounded-t-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center p-6 text-center shadow-2xl">
-                  <span className="font-['Bebas_Neue',sans-serif] text-7xl text-white">
-                    {firstName.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="font-['Caveat',cursive] text-2xl text-white/80 mt-2">
-                    {headline}
-                  </span>
-                </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
-        <div className="relative z-20 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
-          <span className="font-medium tracking-widest uppercase text-white/90">
-            {fullName}
-          </span>
-          <div className="flex items-center gap-3">
-            <a
-              href="#about"
-              className="px-4 py-1.5 rounded-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 transition-transform active:scale-95 text-xs shadow-md"
-              style={{ color: primaryColor }}
-            >
-              Explore Deck ↓
-            </a>
+          {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
+          <div className="relative z-20 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
+            <span className="font-bold tracking-widest uppercase text-white/95">
+              {fullName}
+            </span>
+            <div className="flex items-center gap-3">
+              <a
+                href="#about"
+                className="px-5 py-2 rounded-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 transition-all hover:scale-105 active:scale-95 text-xs shadow-lg"
+                style={{ color: primaryColor }}
+              >
+                Explore Deck ↓
+              </a>
+            </div>
+            <span className="font-bold tracking-widest uppercase text-white/95 text-right">
+              {headline}
+            </span>
           </div>
-          <span className="font-medium tracking-widest uppercase text-white/90 text-right">
-            {headline}
-          </span>
-        </div>
+        </SwarmCursor>
       </section>
     ),
 
@@ -535,10 +580,13 @@ export function EditorialTemplate({
 
             {/* Core Expertise Bullet List with Red Dots */}
             <div className="pt-2">
-              <h4 className="font-bold text-xs uppercase tracking-wider mb-2.5 text-[#1C1818] dark:text-[#FAF5EF]">
+              <h4
+                className="font-bold text-xs uppercase tracking-wider mb-2.5"
+                style={{ color: colors.ink }}
+              >
                 Core Expertise:
               </h4>
-              <ul className="space-y-1.5 text-xs sm:text-sm font-medium">
+              <ul className="space-y-1.5 text-xs sm:text-sm font-medium" style={{ color: colors.ink }}>
                 {displaySkills.slice(0, 4).map((sk, idx) => (
                   <li key={idx} className="flex items-center gap-2.5">
                     <span
@@ -554,12 +602,15 @@ export function EditorialTemplate({
         </div>
 
         {/* Bottom Location & Social Pill */}
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span className="flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5" style={{ color: primaryColor }} />
             <span>{location || "Available Worldwide"}</span>
           </span>
-          <span className="opacity-60">{headline}</span>
+          <span className="font-semibold">{headline}</span>
         </div>
       </section>
     ),
@@ -626,10 +677,16 @@ export function EditorialTemplate({
             {displayExp[activeExpIdx] && (
               <>
                 <div>
-                  <h3 className="font-bold text-lg sm:text-xl text-neutral-900 dark:text-neutral-100">
+                  <h3
+                    className="font-bold text-lg sm:text-xl"
+                    style={{ color: colors.ink }}
+                  >
                     {displayExp[activeExpIdx].title}
                   </h3>
-                  <p className="font-mono text-xs font-medium opacity-75">
+                  <p
+                    className="font-mono text-xs font-semibold mt-0.5"
+                    style={{ color: colors.inkMuted }}
+                  >
                     {displayExp[activeExpIdx].company} • {displayExp[activeExpIdx].startDate} —{" "}
                     {displayExp[activeExpIdx].current ? "Present" : displayExp[activeExpIdx].endDate}
                   </p>
@@ -640,7 +697,7 @@ export function EditorialTemplate({
                 </p>
 
                 {displayExp[activeExpIdx].highlights && (
-                  <ul className="space-y-1.5 text-xs sm:text-sm font-medium pt-1">
+                  <ul className="space-y-1.5 text-xs sm:text-sm font-medium pt-1" style={{ color: colors.ink }}>
                     {displayExp[activeExpIdx].highlights.map((h, hIdx) => (
                       <li key={hIdx} className="flex items-start gap-2.5">
                         <span
@@ -676,9 +733,12 @@ export function EditorialTemplate({
         </div>
 
         {/* Bottom Footer Note */}
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span>End-to-End Delivery Experience</span>
-          <span className="opacity-60">Selected Work History</span>
+          <span className="opacity-80">Selected Work History</span>
         </div>
       </section>
     ),
@@ -754,7 +814,7 @@ export function EditorialTemplate({
                     style={{
                       borderColor: primaryColor,
                       color: primaryColor,
-                      backgroundColor: "rgba(139, 21, 27, 0.05)",
+                      backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(15, 23, 42, 0.04)",
                     }}
                   >
                     ( {edu.startDate || "2021"} — {edu.endDate || "Present"} )
@@ -769,13 +829,16 @@ export function EditorialTemplate({
                   {edu.degree} {edu.fieldOfStudy ? `in ${edu.fieldOfStudy}` : ""}
                 </h3>
 
-                {/* Institution & Description */}
-                <p className="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-200 m-0">
+                {/* Institution & Description with 100% High Contrast */}
+                <p
+                  className="font-mono text-xs sm:text-sm font-bold tracking-wide m-0"
+                  style={{ color: colors.ink }}
+                >
                   {edu.institution}
                 </p>
                 {edu.description && (
                   <p
-                    className="text-xs leading-relaxed max-w-[48ch]"
+                    className="text-xs sm:text-sm leading-relaxed max-w-[50ch] mt-1 font-medium"
                     style={{ color: colors.inkMuted }}
                   >
                     {edu.description}
@@ -787,9 +850,12 @@ export function EditorialTemplate({
         </div>
 
         {/* Bottom Note */}
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span>Continuous Learning & Certification</span>
-          <span className="opacity-60">Academic Credentials</span>
+          <span className="font-semibold">Academic Credentials</span>
         </div>
       </section>
     ),
@@ -889,7 +955,7 @@ export function EditorialTemplate({
                   </h3>
                 </div>
 
-                <h4 className="font-bold text-lg text-[#1C1818] dark:text-[#FAF5EF]">
+                <h4 className="font-bold text-lg" style={{ color: colors.ink }}>
                   {displayProjects[0].title}
                 </h4>
 
@@ -943,25 +1009,32 @@ export function EditorialTemplate({
               {/* Right Column: 2x2 Collage Grid matching Slide 06 */}
               <div className="md:col-span-7 grid grid-cols-2 gap-3 h-[min(65vw,420px)] sm:h-[400px]">
                 <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <img
+                  <SafeProjectImage
                     src={
                       displayProjects[0].imageUrl ||
-                      "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=600&auto=format&fit=crop&q=80"
+                      displayProjects[0].images?.[0] ||
+                      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
                     }
                     alt="Mockup 1"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <img
-                    src="https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=600&auto=format&fit=crop&q=80"
+                  <SafeProjectImage
+                    src={
+                      displayProjects[0].images?.[1] ||
+                      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80"
+                    }
                     alt="Mockup 2"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <img
-                    src="https://images.unsplash.com/photo-1542744094-3a31727560fa?w=600&auto=format&fit=crop&q=80"
+                  <SafeProjectImage
+                    src={
+                      displayProjects[0].images?.[2] ||
+                      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
+                    }
                     alt="Mockup 3"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
@@ -991,9 +1064,10 @@ export function EditorialTemplate({
             {/* Top: 3 Side-by-Side Image Cards matching Slide 07 */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full h-[220px] sm:h-[260px]">
               <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <img
+                <SafeProjectImage
                   src={
                     displayProjects[1].imageUrl ||
+                    displayProjects[1].images?.[0] ||
                     "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=600&auto=format&fit=crop&q=80"
                   }
                   alt="P2 - 1"
@@ -1001,15 +1075,21 @@ export function EditorialTemplate({
                 />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <img
-                  src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80"
+                <SafeProjectImage
+                  src={
+                    displayProjects[1].images?.[1] ||
+                    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80"
+                  }
                   alt="P2 - 2"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <img
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
+                <SafeProjectImage
+                  src={
+                    displayProjects[1].images?.[2] ||
+                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
+                  }
                   alt="P2 - 3"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />
@@ -1031,7 +1111,7 @@ export function EditorialTemplate({
                 >
                   PROJECT
                 </h3>
-                <h4 className="font-bold text-base text-[#1C1818] dark:text-[#FAF5EF] mt-1">
+                <h4 className="font-bold text-base mt-1" style={{ color: colors.ink }}>
                   {displayProjects[1].title}
                 </h4>
               </div>
@@ -1079,8 +1159,11 @@ export function EditorialTemplate({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center h-full">
               {/* Left Column: Texture / Collage */}
               <div className="md:col-span-4 rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[320px]">
-                <img
-                  src="https://images.unsplash.com/photo-1542744094-3a31727560fa?w=600&auto=format&fit=crop&q=80"
+                <SafeProjectImage
+                  src={
+                    displayProjects[2].images?.[1] ||
+                    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
+                  }
                   alt="Process Collage"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />
@@ -1100,7 +1183,7 @@ export function EditorialTemplate({
                 >
                   PROJECT
                 </h3>
-                <h4 className="font-bold text-base text-[#1C1818] dark:text-[#FAF5EF]">
+                <h4 className="font-bold text-base" style={{ color: colors.ink }}>
                   {displayProjects[2].title}
                 </h4>
                 <p className="text-xs sm:text-sm leading-relaxed" style={{ color: colors.inkMuted }}>
@@ -1121,9 +1204,10 @@ export function EditorialTemplate({
               {/* Right Column: Stacked Image Cards */}
               <div className="md:col-span-4 space-y-3">
                 <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[155px]">
-                  <img
+                  <SafeProjectImage
                     src={
                       displayProjects[2].imageUrl ||
+                      displayProjects[2].images?.[0] ||
                       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"
                     }
                     alt="P3 - 1"
@@ -1131,8 +1215,11 @@ export function EditorialTemplate({
                   />
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[155px]">
-                  <img
-                    src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format&fit=crop&q=80"
+                  <SafeProjectImage
+                    src={
+                      displayProjects[2].images?.[2] ||
+                      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format&fit=crop&q=80"
+                    }
                     alt="P3 - 2"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
@@ -1286,29 +1373,34 @@ export function EditorialTemplate({
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border"
                     style={{
-                      backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(139, 21, 27, 0.06)",
-                      borderColor: "rgba(139, 21, 27, 0.15)",
-                      color: primaryColor,
+                      backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(15, 23, 42, 0.04)",
+                      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.1)",
                     }}
                   >
-                    <TechIcon name={typeof sk === "string" ? sk : sk.name} size={16} />
+                    <TechIcon name={typeof sk === "string" ? sk : sk.name} size={18} />
                   </div>
-                  <span className="font-bold text-sm sm:text-base truncate text-[#1C1818] dark:text-[#FAF5EF]">
+                  <span
+                    className="font-bold text-sm sm:text-base truncate"
+                    style={{ color: colors.ink }}
+                  >
                     {typeof sk === "string" ? sk : sk.name}
                   </span>
                 </div>
                 <span
                   className="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0 border"
                   style={{
-                    backgroundColor: "rgba(139, 21, 27, 0.06)",
-                    borderColor: "rgba(139, 21, 27, 0.12)",
-                    color: primaryColor,
+                    backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(15, 23, 42, 0.04)",
+                    borderColor: isDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.12)",
+                    color: colors.inkMuted,
                   }}
                 >
                   {typeof sk === "string" ? "Skill" : sk.category || "Skill"}
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+              <div
+                className="h-1.5 w-full rounded-full overflow-hidden"
+                style={{ backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.08)" }}
+              >
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
@@ -1326,9 +1418,12 @@ export function EditorialTemplate({
           ))}
         </div>
 
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span>Continuous Skill Validation</span>
-          <span className="opacity-60">{displaySkills.length} Technologies Mastered</span>
+          <span className="opacity-80">{displaySkills.length} Technologies Mastered</span>
         </div>
       </section>
     ),
@@ -1405,9 +1500,12 @@ export function EditorialTemplate({
         </div>
 
         {/* Bottom Note */}
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span>Client Testimonials & Feedback</span>
-          <span className="opacity-60">100% Satisfaction Rate</span>
+          <span className="opacity-80">100% Satisfaction Rate</span>
         </div>
       </section>
     ),

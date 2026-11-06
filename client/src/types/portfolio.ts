@@ -91,6 +91,8 @@ export interface PortfolioProject {
   repoUrl?: string;
   /** Showcase screenshot or thumbnail image URL */
   imageUrl?: string;
+  /** Additional showcase screenshots / collage images */
+  images?: string[];
   /** Whether this project is pinned in featured spotlight sections */
   featured?: boolean;
 }

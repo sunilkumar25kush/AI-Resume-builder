@@ -77,7 +77,14 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        handleUpdate(index, { imageUrl: reader.result });
+        const result = reader.result;
+        // If primary imageUrl is empty, set it, otherwise add to images array
+        if (!projects[index]?.imageUrl) {
+          handleUpdate(index, { imageUrl: result });
+        } else {
+          const gallery = projects[index]?.images || [];
+          handleUpdate(index, { images: [...gallery, result] });
+        }
         toast.success("Project screenshot loaded!");
       }
     };
@@ -91,6 +98,11 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
   const handleClearImage = (index: number) => {
     handleUpdate(index, { imageUrl: "" });
     toast.info("Project screenshot removed");
+  };
+
+  const handleRemoveGalleryImage = (projIndex: number, imgIndex: number) => {
+    const gallery = projects[projIndex]?.images || [];
+    handleUpdate(projIndex, { images: gallery.filter((_, i) => i !== imgIndex) });
   };
 
   return (
@@ -333,6 +345,33 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
                           <p className="text-[10px] text-neutral-400">
                             Upload a screenshot from disk (PNG, JPG, WebP &lt; 2 MB) or provide a direct image link.
                           </p>
+
+                          {/* Additional gallery screenshots for collage/editorial slides */}
+                          {proj.images && proj.images.length > 0 && (
+                            <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-1.5">
+                              <span className="text-[11px] font-medium text-neutral-500 block">
+                                Additional Gallery Screenshots ({proj.images.length})
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {proj.images.map((imgUrl, gIdx) => (
+                                  <div
+                                    key={gIdx}
+                                    className="relative w-16 h-12 rounded-md border border-neutral-300 dark:border-neutral-700 overflow-hidden group"
+                                  >
+                                    <img src={imgUrl} alt={`Screenshot ${gIdx + 1}`} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveGalleryImage(index, gIdx)}
+                                      className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Remove"
+                                    >
+                                      <X className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
