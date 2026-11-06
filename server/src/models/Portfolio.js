@@ -97,6 +97,7 @@ const designSettingsSchema = new mongoose.Schema(
         "minimal",
         "modern",
         "executive",
+        "editorial",
       ],
       default: "spotlight",
     },

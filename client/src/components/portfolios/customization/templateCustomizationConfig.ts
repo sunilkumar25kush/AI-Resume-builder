@@ -404,6 +404,47 @@ export const TEMPLATE_CAPABILITIES: Record<PortfolioTemplateId, TemplateCustomiz
       },
     ],
   },
+
+  editorial: {
+    templateId: "editorial",
+    name: "Crimson Editorial",
+    supportsThemeToggle: true,
+    supportedThemes: ["light", "dark", "system"],
+    supportsColorAccent: true,
+    supportsTypography: true,
+    supportedFonts: ["Inter", "Roboto", "Merriweather", "Playfair", "Geist"],
+    supportedBackgroundEffects: [
+      { id: "default", label: "Editorial Linen", description: "Rich crimson with warm editorial paper texture" },
+      { id: "clean", label: "Pure Clean", description: "Solid background colors without paper texture" },
+    ],
+    supportedLayoutOptions: {
+      projectsLayout: ["cards", "grid", "list"],
+      skillsLayout: ["pills", "badges", "categories"],
+    },
+    templateSettings: [
+      {
+        key: "scriptAccents",
+        label: "Handwritten Script Accents",
+        description: "Display elegant cursive titles ('Creative', 'My', 'Sample')",
+        type: "boolean",
+        defaultValue: true,
+      },
+      {
+        key: "archBackdrop",
+        label: "Geometric Arch Backdrop",
+        description: "Display signature crimson arch backdrop behind education portrait",
+        type: "boolean",
+        defaultValue: true,
+      },
+      {
+        key: "polaroids",
+        label: "Polaroid Project Snapshots",
+        description: "Display floating polaroid photo frames on project transition covers",
+        type: "boolean",
+        defaultValue: true,
+      },
+    ],
+  },
 };
 
 /** Hex color validation regex: #rgb, #rgba, #rrggbb, #rrggbbaa */
@@ -445,6 +486,8 @@ export function getDefaultDesignSettings(
       ? "#f59e0b"
       : templateId === "minimal" || templateId === "executive"
       ? "#10b981"
+      : templateId === "editorial"
+      ? "#8B151B"
       : "#e3141f";
 
   return {

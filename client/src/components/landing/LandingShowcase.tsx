@@ -224,6 +224,20 @@ const templates: TemplateCard[] = [
     primaryColor: "#F59E0B",
     theme: "dark",
   },
+  {
+    id: "editorial",
+    name: "Crimson Editorial",
+    category: "portfolio",
+    badge: "PREMIUM ★",
+    isPremium: true,
+    desc: "Magazine presentation deck with signature crimson & linen aesthetic, cursive script accents, cutout portrait arches, and slide showcases.",
+    previewUrl: "/portfolio-templates/editorial",
+    accentColor: "#8B151B",
+    accent: "Crimson Deck",
+    portfolioTemplateId: "editorial",
+    primaryColor: "#8B151B",
+    theme: "light",
+  },
 
   // 6 Real Resume Templates (Exact matches to TemplatePicker T3, T1, T4, T8, T2, T5)
   {

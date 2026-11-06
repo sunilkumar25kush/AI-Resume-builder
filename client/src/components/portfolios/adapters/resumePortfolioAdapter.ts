@@ -171,22 +171,93 @@ export const TEMPLATE_FIELD_CONTRACTS: Record<PortfolioTemplateId, TemplateField
     optionalFields: ["education", "certifications"],
     specialFeatures: ["Alias for minimal"],
   },
+  editorial: {
+    id: "editorial",
+    name: "Crimson Editorial",
+    requiredFields: ["profile.fullName"],
+    supportedFields: [
+      "profile.fullName",
+      "profile.headline",
+      "profile.bio",
+      "profile.avatarUrl",
+      "profile.location",
+      "profile.email",
+      "profile.phone",
+      "socialLinks",
+      "skills",
+      "experience",
+      "education",
+      "projects",
+      "certifications",
+    ],
+    optionalFields: ["education", "certifications", "profile.phone"],
+    specialFeatures: [
+      "Magazine Deck Spreads",
+      "Handwritten Script Accents",
+      "Cutout Portrait Halos",
+      "Crimson & Warm Linen Aesthetic",
+      "Polaroid Showcase Cards",
+    ],
+  },
 };
 
+// Micro-skills or sub-syntax items that clutter tech stacks and duplicate core tools
+const TRIVIAL_SKILL_PATTERNS = [
+  /^dom\s*manipulation$/i,
+  /^async[\s/]*await$/i,
+  /^css\s*flexbox$/i,
+  /^css\s*grid$/i,
+  /^flexbox$/i,
+  /^grid\s*layout$/i,
+  /^responsive\s*(web\s*)?design$/i,
+  /^cross[- ]browser/i,
+  /^semantic\s*html$/i,
+  /^rest(ful)?\s*api(\s*development|\s*integration)?$/i,
+  /^api\s*integration$/i,
+  /^state\s*management$/i,
+  /^json$/i,
+  /^ajax$/i,
+  /^debugging$/i,
+  /^clean\s*code$/i,
+  /^code\s*review$/i,
+  /^problem\s*solving$/i,
+];
+
+function cleanSkillName(raw: string): string {
+  const trimmed = raw.trim();
+  if (/^javascript\s*(\(es6\+\)|\(es6\))?$/i.test(trimmed) || /^js$/i.test(trimmed)) return "JavaScript";
+  if (/^typescript$/i.test(trimmed) || /^ts$/i.test(trimmed)) return "TypeScript";
+  if (/^react(\.js|js)?$/i.test(trimmed)) return "React";
+  if (/^next(\.js|js)?$/i.test(trimmed)) return "Next.js";
+  if (/^node(\.js|js)?$/i.test(trimmed)) return "Node.js";
+  if (/^express(\.js|js)?$/i.test(trimmed)) return "Express.js";
+  if (/^html5?$/i.test(trimmed)) return "HTML5";
+  if (/^css3?$/i.test(trimmed)) return "CSS3";
+  if (/^tailwind(\s*css)?$/i.test(trimmed)) return "Tailwind CSS";
+  if (/^mongo(\s*db)?$/i.test(trimmed)) return "MongoDB";
+  if (/^postgres(ql)?$/i.test(trimmed)) return "PostgreSQL";
+  return trimmed;
+}
+
+function isTrivialSkill(name: string): boolean {
+  return TRIVIAL_SKILL_PATTERNS.some((pat) => pat.test(name.trim()));
+}
+
 /**
- * Normalizes any skill input (string, object, categorized map) into structured PortfolioSkill items.
+ * Normalizes any skill input (string, object, categorized map) into structured, deduplicated PortfolioSkill items.
  */
 export function normalizeSkills(rawSkills: unknown): PortfolioSkill[] {
   if (!rawSkills) return [];
 
+  const rawList: PortfolioSkill[] = [];
+
   // 1. Array of strings or objects
   if (Array.isArray(rawSkills)) {
-    const list: PortfolioSkill[] = [];
     for (const item of rawSkills) {
       if (typeof item === "string") {
         const trimmed = item.trim();
         if (trimmed) {
-          list.push({ name: trimmed, category: "Core Technologies", level: "intermediate" });
+          rawList.push({ name: trimmed, category: "Core Technologies", level: "intermediate" });
         }
       } else if (typeof item === "object" && item !== null) {
         const s = item as { name?: string; category?: string; level?: string };
@@ -194,7 +265,7 @@ export function normalizeSkills(rawSkills: unknown): PortfolioSkill[] {
           const level: PortfolioSkill["level"] = ["beginner", "intermediate", "advanced", "expert"].includes(s.level || "")
             ? (s.level as PortfolioSkill["level"])
             : "intermediate";
-          list.push({
+          rawList.push({
             name: s.name.trim(),
             category: s.category?.trim() || "Core Technologies",
             level,
@@ -202,17 +273,13 @@ export function normalizeSkills(rawSkills: unknown): PortfolioSkill[] {
         }
       }
     }
-    return list;
-  }
-
-  // 2. Object with categories as keys: { "Frontend": ["React", "CSS"], "Backend": ["Node"] }
-  if (typeof rawSkills === "object" && rawSkills !== null) {
-    const list: PortfolioSkill[] = [];
+  } else if (typeof rawSkills === "object" && rawSkills !== null) {
+    // 2. Object with categories as keys: { "Frontend": ["React", "CSS"], "Backend": ["Node"] }
     for (const [category, skills] of Object.entries(rawSkills)) {
       if (Array.isArray(skills)) {
         for (const name of skills) {
           if (typeof name === "string" && name.trim()) {
-            list.push({
+            rawList.push({
               name: name.trim(),
               category: category.trim() || "Core Technologies",
               level: "intermediate",
@@ -222,7 +289,7 @@ export function normalizeSkills(rawSkills: unknown): PortfolioSkill[] {
       } else if (typeof skills === "string" && skills.trim()) {
         const split = skills.split(/[,•|]+/).map((s) => s.trim()).filter(Boolean);
         for (const name of split) {
-          list.push({
+          rawList.push({
             name,
             category: category.trim() || "Core Technologies",
             level: "intermediate",
@@ -230,10 +297,33 @@ export function normalizeSkills(rawSkills: unknown): PortfolioSkill[] {
         }
       }
     }
-    return list;
   }
 
-  return [];
+  if (rawList.length === 0) return [];
+
+  // Deduplicate and filter trivial micro-syntax items
+  const seen = new Set<string>();
+  const filteredList: PortfolioSkill[] = [];
+
+  for (const sk of rawList) {
+    const cleaned = cleanSkillName(sk.name);
+    const key = cleaned.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!key || seen.has(key)) continue;
+
+    // Filter out trivial micro-skills unless list is tiny
+    if (rawList.length > 5 && isTrivialSkill(sk.name)) {
+      continue;
+    }
+
+    seen.add(key);
+    filteredList.push({
+      ...sk,
+      name: cleaned,
+    });
+  }
+
+  // Fallback to raw list if overly filtered
+  return filteredList.length > 0 ? filteredList : rawList;
 }
 
 /**
@@ -306,12 +396,13 @@ export function normalizeEducation(rawEdu: unknown) {
     .map((ed) => {
       const item = ed as Record<string, unknown>;
       return {
-        institution: String(item.institution || "").trim(),
-        degree: String(item.degree || "").trim(),
-        fieldOfStudy: String(item.fieldOfStudy || "").trim(),
-        startDate: String(item.startDate || "").trim(),
+        institution: String(item.institution || item.school || item.university || item.college || "").trim(),
+        degree: String(item.degree || item.course || item.title || "").trim(),
+        fieldOfStudy: String(item.fieldOfStudy || item.major || item.stream || "").trim(),
+        startDate: String(item.startDate || item.year || "").trim(),
         endDate: String(item.endDate || "").trim(),
-        grade: String(item.grade || "").trim(),
+        grade: String(item.grade || item.gpa || item.score || "").trim(),
+        description: String(item.description || item.details || "").trim(),
       };
     })
     .filter((ed) => ed.institution.length > 0 || ed.degree.length > 0);
@@ -512,6 +603,7 @@ export function adaptResumeToPortfolio(
     developer: "#f59e0b",
     minimal: "#10b981",
     executive: "#10b981",
+    editorial: "#8B151B",
   };
   const primaryColor =
     options.primaryColor ||

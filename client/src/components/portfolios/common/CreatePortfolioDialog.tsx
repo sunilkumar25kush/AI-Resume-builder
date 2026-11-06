@@ -89,6 +89,14 @@ export const TEMPLATE_OPTIONS: Array<{
       gradient: "from-neutral-700 via-neutral-500 to-neutral-400",
       previewNote: "Quiet Editorial Whitespace",
     },
+    {
+      id: "editorial",
+      name: "Crimson Editorial",
+      desc: "Magazine presentation deck with crimson linen palette, handwritten script accents, cutout portrait arches & polaroids",
+      badge: "Editorial ★",
+      gradient: "from-red-800 via-rose-900 to-amber-950",
+      previewNote: "Crimson & Linen Deck Spreads",
+    },
   ];
 
 function formatBytes(bytes: number): string {

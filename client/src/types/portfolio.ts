@@ -73,6 +73,8 @@ export interface PortfolioEducation {
   endDate?: string;
   /** GPA or academic honors */
   grade?: string;
+  /** Description or academic highlights */
+  description?: string;
 }
 
 /** Featured portfolio project or open-source repository */
@@ -113,7 +115,8 @@ export type PortfolioTemplateId =
   | "developer"
   | "minimal"
   | "modern"
-  | "executive";
+  | "executive"
+  | "editorial";
 
 export interface PortfolioLayoutOptions {
   projectsLayout?: "grid" | "cards" | "staggered" | "list";

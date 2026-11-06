@@ -264,6 +264,7 @@ export default function PortfolioPreviewPage() {
       developer: "#f59e0b",
       minimal: "#10b981",
       executive: "#10b981",
+      editorial: "#8B151B",
     };
     if (templateColors[newTemplate]) {
       setPreviewColor(templateColors[newTemplate]);

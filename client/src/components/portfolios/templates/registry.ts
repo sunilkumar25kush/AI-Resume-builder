@@ -7,6 +7,7 @@ import type { PortfolioTemplateProps } from "@/components/portfolios/templates/M
 import { ModernCreativeTemplate } from "@/components/portfolios/templates/ModernCreativeTemplate";
 import { PosterTemplate } from "@/components/portfolios/templates/PosterTemplate";
 import { SpotlightTemplate } from "@/components/portfolios/templates/SpotlightTemplate";
+import { EditorialTemplate } from "@/components/portfolios/templates/EditorialTemplate";
 import type { PortfolioTemplateId } from "@/types/portfolio";
 
 export type TemplateCategory = "all" | "creative" | "technical" | "minimal";
@@ -34,6 +35,7 @@ export const TEMPLATE_REGISTRY: Record<PortfolioTemplateId, ComponentType<Portfo
   developer: DeveloperTemplate,
   minimal: MinimalTemplate,
   executive: MinimalTemplate,
+  editorial: EditorialTemplate as unknown as ComponentType<PortfolioTemplateProps>,
 };
 
 export const TEMPLATE_METADATA: TemplateDefinition[] = [
@@ -93,7 +95,18 @@ export const TEMPLATE_METADATA: TemplateDefinition[] = [
     idealFor: "Executives, Designers, Product Managers, Writers",
     category: "minimal",
     features: ["Minimalist Executive", "Refined Whitespace", "Single-Column Reading", "Zero Distraction"],
-    badge: "Editorial",
+    badge: "Minimal",
+  },
+  {
+    id: "editorial",
+    name: "Crimson Editorial",
+    description: "High-fashion presentation deck with signature crimson & linen aesthetic, cursive script accents, cutout portrait arches, and slide showcases.",
+    idealFor: "Creative Directors, Designers, Tech Leads, Strategists, Visual Thinkers",
+    category: "creative",
+    features: ["Magazine Deck Spreads", "Handwritten Cursive Accents", "Cutout Geometric Arch", "Polaroid Showcase", "Client Quotes Grid"],
+    badge: "Editorial ★",
+    author: "GitSkins Native",
+    license: "MIT",
   },
 ];
 
@@ -108,6 +121,7 @@ export const VALID_TEMPLATE_IDS = [
   "developer",
   "minimal",
   "executive",
+  "editorial",
 ] as const;
 
 /**
