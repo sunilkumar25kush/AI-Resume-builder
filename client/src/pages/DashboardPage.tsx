@@ -5,8 +5,8 @@ import { useAuthStore } from "@/stores/auth";
 
 const features = [
   { icon: Route, title: "AI Resume Wizard", description: "8-step guided flow: target → resume → JD → analysis → generate → template → edit → export.", stage: "Live", to: "/wizard", primary: true },
-  { icon: Gauge, title: "ATS Checker", description: "Koi bhi resume check karo — instant ATS score aur fix checklist.", stage: "Live", to: "/ats-check" },
-  { icon: FilePlus2, title: "Scratch Builder", description: "Bina JD ke — template chuno aur apne details se resume banao.", stage: "Live", to: "/build" },
+  { icon: Gauge, title: "ATS Checker", description: "Audit any resume — instant ATS score and actionable fix checklist.", stage: "Live", to: "/ats-check" },
+  { icon: FilePlus2, title: "Scratch Builder", description: "Start from scratch — select a template and enter your details directly.", stage: "Live", to: "/build" },
   { icon: FileText, title: "Resume Builder", description: "Upload, parse, edit with templates and live preview.", stage: "Live", to: "/resumes" },
   { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Live", to: "/jds" },
   { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Live", to: "/optimize" },

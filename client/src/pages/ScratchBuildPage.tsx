@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ResumeTemplate } from "@/types";
 
-/** Scratch Builder — template choose karo, blank resume banao, editor mein details bharo. */
+/** Scratch Builder — choose a template, create a blank resume, and fill in details in the editor. */
 export default function ScratchBuildPage() {
   const navigate = useNavigate();
   const [template, setTemplate] = useState<ResumeTemplate>("classic");
@@ -20,7 +20,7 @@ export default function ScratchBuildPage() {
     setCreating(true);
     try {
       const resume = await resumesApi.createBlank(template);
-      toast.success("Blank resume ready — ab details bharke khatam karo");
+      toast.success("Blank resume ready — customize your details in the editor");
       navigate(`/resumes/${resume._id}/edit`);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -36,13 +36,13 @@ export default function ScratchBuildPage() {
           Scratch Builder
         </h1>
         <p className="max-w-2xl text-muted-foreground">
-          Bina JD ke naye resume ki shuruaat — template chuno, blank resume bane, apne details editor mein bharo.
+          Start a fresh resume from scratch — select a template and customize your details directly in the editor.
         </p>
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 1 — Template choose karo</CardTitle>
+          <CardTitle>Step 1 — Choose a Template</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <TemplatePicker value={template} onChange={setTemplate} />
@@ -50,7 +50,7 @@ export default function ScratchBuildPage() {
           <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <p>
-              Aapka <strong>naam, target job role, contact info aur links</strong> aapki profile se automatically prefill ho jayenge.
+              Your <strong>name, target role, contact info, and links</strong> will be automatically prefilled from your profile.
             </p>
           </div>
 

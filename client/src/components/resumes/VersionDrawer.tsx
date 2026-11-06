@@ -35,26 +35,30 @@ function VersionRow({
   onDuplicate: () => void;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-lg border p-3">
-      <span className="w-12 shrink-0 rounded-md bg-muted px-2 py-1 text-center text-xs font-semibold text-muted-foreground">
-        v{version.version}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{getTemplate(version.template).name}</p>
-        <p className="truncate text-xs text-muted-foreground">{formatDate(version.createdAt)}</p>
+    <li className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-lg border p-3">
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-center text-xs font-semibold text-muted-foreground">
+          v{version.version}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{getTemplate(version.template).name}</p>
+          <p className="truncate text-xs text-muted-foreground">{formatDate(version.createdAt)}</p>
+        </div>
       </div>
-      <Button type="button" variant="ghost" size="sm" onClick={onCompare} aria-label={`Compare version ${version.version}`}>
-        <GitCompareArrows className="mr-1.5 h-4 w-4" aria-hidden />
-        Compare
-      </Button>
-      <Button type="button" variant="ghost" size="sm" className="text-primary" onClick={onRestore} aria-label={`Restore version ${version.version}`}>
-        <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
-        Restore
-      </Button>
-      <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={onDuplicate} aria-label={`Duplicate version ${version.version}`}>
-        <Copy className="mr-1.5 h-4 w-4" aria-hidden />
-        Duplicate
-      </Button>
+      <div className="flex items-center gap-1 sm:gap-1.5 self-end sm:self-auto shrink-0 flex-wrap">
+        <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={onCompare} aria-label={`Compare version ${version.version}`}>
+          <GitCompareArrows className="mr-1 h-3.5 w-3.5" aria-hidden />
+          <span>Compare</span>
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary" onClick={onRestore} aria-label={`Restore version ${version.version}`}>
+          <RotateCcw className="mr-1 h-3.5 w-3.5" aria-hidden />
+          <span>Restore</span>
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground" onClick={onDuplicate} aria-label={`Duplicate version ${version.version}`}>
+          <Copy className="mr-1 h-3.5 w-3.5" aria-hidden />
+          <span>Duplicate</span>
+        </Button>
+      </div>
     </li>
   );
 }
@@ -119,7 +123,7 @@ export function VersionDrawer({ resume, open, onOpenChange, onRestored }: Versio
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-4 sm:max-w-2xl">
+      <SheetContent className="flex w-full max-w-full sm:max-w-2xl flex-col gap-4 p-4 sm:p-6">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <History className="h-4 w-4 text-primary" aria-hidden />

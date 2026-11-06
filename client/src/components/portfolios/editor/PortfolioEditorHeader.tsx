@@ -32,9 +32,9 @@ export function PortfolioEditorHeader({
 }: PortfolioEditorHeaderProps) {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Back & Title */}
-        <div className="flex items-center gap-3 min-w-0 flex-1 max-w-xl">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 max-w-xl">
           <Button asChild variant="ghost" size="icon" className="shrink-0 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
             <Link to="/portfolios" title="Back to Portfolios">
               <ArrowLeft className="h-5 w-5" />
@@ -45,11 +45,11 @@ export function PortfolioEditorHeader({
             <Input
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              placeholder="Portfolio Title (e.g. Alex Mercer Portfolio)"
-              className="h-8 font-semibold text-base sm:text-lg border-transparent hover:border-neutral-300 dark:hover:border-neutral-750 focus:border-neutral-400 bg-transparent px-2 -ml-2 rounded-md shadow-none focus-visible:ring-1"
+              placeholder="Portfolio Title"
+              className="h-8 font-semibold text-sm sm:text-lg border-transparent hover:border-neutral-300 dark:hover:border-neutral-750 focus:border-neutral-400 bg-transparent px-2 -ml-2 rounded-md shadow-none focus-visible:ring-1 truncate"
             />
             {portfolioSlug && (
-              <span className="text-[11px] text-neutral-400 font-mono px-0.5 truncate">
+              <span className="text-[10px] sm:text-[11px] text-neutral-400 font-mono px-0.5 truncate">
                 slug: /{portfolioSlug} {isPublic && "• Published"}
               </span>
             )}
@@ -57,31 +57,31 @@ export function PortfolioEditorHeader({
         </div>
 
         {/* Right: Autosave Status & Actions */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Status Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-xs font-medium">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-xs font-medium">
             {saveState === "saving" && (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
-                <span className="text-blue-600 dark:text-blue-400">Saving...</span>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500 shrink-0" />
+                <span className="text-blue-600 dark:text-blue-400 hidden sm:inline">Saving...</span>
               </>
             )}
             {saveState === "saved" && (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                 <span className="text-emerald-600 dark:text-emerald-400 hidden sm:inline">Saved</span>
               </>
             )}
             {saveState === "unsaved" && (
               <>
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-amber-600 dark:text-amber-400 hidden sm:inline">Unsaved edits</span>
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                <span className="text-amber-600 dark:text-amber-400 hidden sm:inline">Unsaved</span>
               </>
             )}
             {saveState === "error" && (
               <>
-                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                <span className="text-red-600 dark:text-red-400">Save failed</span>
+                <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                <span className="text-red-600 dark:text-red-400 hidden sm:inline">Save failed</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -100,14 +100,15 @@ export function PortfolioEditorHeader({
             size="sm"
             onClick={onSaveNow}
             disabled={saveState === "saving" || saveState === "saved"}
-            className="text-xs gap-1.5"
+            className="text-xs gap-1 sm:gap-1.5 px-2.5 sm:px-3"
+            title="Save changes"
           >
             {saveState === "saving" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
             ) : (
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-3.5 w-3.5 shrink-0" />
             )}
-            <span>Save Now</span>
+            <span className="hidden sm:inline">Save</span>
           </Button>
 
           {/* Publish / Publication Settings CTA */}
@@ -117,14 +118,15 @@ export function PortfolioEditorHeader({
               variant={isPublic ? "outline" : "default"}
               size="sm"
               onClick={onPublishClick}
-              className={`text-xs gap-1.5 ${
+              className={`text-xs gap-1 sm:gap-1.5 px-2.5 sm:px-3 ${
                 isPublic
                   ? "border-emerald-300 dark:border-emerald-850 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                   : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
               }`}
+              title={isPublic ? "Portfolio is published" : "Publish portfolio"}
             >
-              <Globe className="h-3.5 w-3.5" />
-              <span>{isPublic ? "Published" : "Publish"}</span>
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{isPublic ? "Published" : "Publish"}</span>
             </Button>
           )}
 
@@ -135,30 +137,30 @@ export function PortfolioEditorHeader({
               variant="outline"
               size="sm"
               onClick={onExportClick}
-              className="text-xs gap-1.5"
+              className="text-xs gap-1 sm:gap-1.5 px-2.5 sm:px-3"
               title="Export portfolio as React source or static website"
             >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export</span>
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden md:inline">Export</span>
             </Button>
           )}
 
           {/* View Website CTA */}
-
           <Button
             asChild
             variant="default"
             size="sm"
-            className="text-xs gap-1.5 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100"
+            className="text-xs gap-1 sm:gap-1.5 px-2.5 sm:px-3 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100"
+            title={isPublic ? "View Live Site" : "Preview Site"}
           >
             <Link
               to={isPublic && portfolioSlug ? `/p/${portfolioSlug}` : `/portfolios/${portfolioId}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Globe className="h-3.5 w-3.5" />
-              <span>{isPublic ? "View Live Site" : "Preview Site"}</span>
-              <ExternalLink className="h-3 w-3 opacity-60" />
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{isPublic ? "Live" : "Preview"}</span>
+              <ExternalLink className="h-3 w-3 opacity-60 shrink-0" />
             </Link>
           </Button>
         </div>

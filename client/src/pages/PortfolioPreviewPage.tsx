@@ -340,16 +340,16 @@ export default function PortfolioPreviewPage() {
       ) : (
         <aside
           aria-label="Portfolio Preview Controls"
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl pointer-events-auto transition-all duration-300"
+          className="fixed bottom-2 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-5xl pointer-events-auto transition-all duration-300"
         >
-          <div className="bg-neutral-950/92 backdrop-blur-xl border border-neutral-800 text-white rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="bg-neutral-950/92 backdrop-blur-xl border border-neutral-800 text-white rounded-2xl p-2 sm:px-4 sm:py-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs max-h-[70vh] overflow-y-auto">
             {/* Left: Navigation & Portfolio Info */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
               <Button
                 asChild
                 size="sm"
                 variant="ghost"
-                className="text-neutral-300 hover:text-white hover:bg-neutral-800/80 h-8 px-2.5 gap-1.5"
+                className="text-neutral-300 hover:text-white hover:bg-neutral-800/80 h-8 px-2 sm:px-2.5 gap-1 sm:gap-1.5"
               >
                 <Link to="/portfolios">
                   <ArrowLeft className="h-4 w-4" />
@@ -362,7 +362,7 @@ export default function PortfolioPreviewPage() {
                   asChild
                   size="sm"
                   variant="outline"
-                  className="h-8 border-neutral-700 bg-neutral-900 text-neutral-200 hover:text-white hover:bg-neutral-800 text-xs px-2.5 gap-1.5"
+                  className="h-8 border-neutral-700 bg-neutral-900 text-neutral-200 hover:text-white hover:bg-neutral-800 text-xs px-2 sm:px-2.5 gap-1.5"
                 >
                   <Link to={`/portfolios/${id}/edit`}>
                     <Pencil className="h-3.5 w-3.5" />
@@ -373,7 +373,7 @@ export default function PortfolioPreviewPage() {
 
               <div className="h-4 w-px bg-neutral-800 hidden sm:block" />
 
-              <span className="text-xs font-medium text-neutral-200 truncate max-w-[140px] sm:max-w-[200px]">
+              <span className="text-xs font-medium text-neutral-200 truncate max-w-[100px] sm:max-w-[200px]">
                 {activePortfolio.profile.fullName || activePortfolio.title}
               </span>
 
@@ -386,14 +386,14 @@ export default function PortfolioPreviewPage() {
             </div>
 
             {/* Center: Live Template Switcher (All 20 Templates) */}
-            <div className="flex items-center flex-wrap gap-2 text-xs">
-              <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1">
-                <Sparkles className="h-3.5 w-3.5 text-rose-500" />
-                <span className="text-[11px] font-medium text-neutral-400">Template:</span>
+            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 text-xs">
+              <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 rounded-lg px-2 sm:px-2.5 py-1 max-w-[170px] sm:max-w-none">
+                <Sparkles className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                <span className="text-[11px] font-medium text-neutral-400 hidden sm:inline">Template:</span>
                 <select
                   value={previewTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value as PortfolioTemplateId)}
-                  className="bg-transparent text-white font-medium text-xs focus:outline-hidden cursor-pointer"
+                  className="bg-transparent text-white font-medium text-xs focus:outline-hidden cursor-pointer max-w-[110px] sm:max-w-[180px] truncate"
                 >
                   {TEMPLATE_METADATA.map((tpl) => (
                     <option key={tpl.id} value={tpl.id} className="bg-neutral-900 text-white py-1">
@@ -432,15 +432,15 @@ export default function PortfolioPreviewPage() {
             </div>
 
             {/* Right: Actions & Collapse */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {id && id !== "demo" && (
                 <Button
                   size="sm"
                   onClick={handleSaveDesign}
                   disabled={saving}
-                  className="h-8 bg-neutral-800 hover:bg-neutral-700 text-white text-xs px-2.5 border border-neutral-700"
+                  className="h-8 bg-neutral-800 hover:bg-neutral-700 text-white text-xs px-2 sm:px-2.5 border border-neutral-700"
                 >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Theme"}
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
                 </Button>
               )}
 
@@ -448,21 +448,21 @@ export default function PortfolioPreviewPage() {
               <Button
                 size="sm"
                 onClick={() => setExportModalOpen(true)}
-                className="h-8 bg-neutral-800 hover:bg-neutral-700 text-white text-xs px-2.5 border border-neutral-700 gap-1.5"
+                className="h-8 bg-neutral-800 hover:bg-neutral-700 text-white text-xs px-2 sm:px-2.5 border border-neutral-700 gap-1 sm:gap-1.5"
                 title="Download standalone portfolio website or source code"
               >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export</span>
+                <Download className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
 
               {id && id !== "demo" && (
                 <Button
                   size="sm"
                   onClick={() => setPublishModalOpen(true)}
-                  className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 gap-1.5 font-medium shadow-xs"
+                  className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2 sm:px-3 gap-1 sm:gap-1.5 font-medium shadow-xs"
                 >
-                  <Globe className="h-3.5 w-3.5" />
-                  <span>{activePortfolio.status === "published" ? "Live Settings" : "Publish"}</span>
+                  <Globe className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">{activePortfolio.status === "published" ? "Live Settings" : "Publish"}</span>
                 </Button>
               )}
 

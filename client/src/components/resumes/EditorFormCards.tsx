@@ -1096,8 +1096,8 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
 
       {/* Reorder All Sections Dialog */}
       <Dialog open={reorderDialogOpen} onOpenChange={setReorderDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[min(92dvh,600px)] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-5 pb-3 border-b shrink-0 bg-background/95">
             <DialogTitle className="flex items-center gap-2 text-base">
               <ArrowUpDown className="h-4 w-4 text-primary" />
               Arrange Resume Sections
@@ -1107,58 +1107,60 @@ export function EditorFormCards({ aiChanges = [] }: { aiChanges?: AiChange[] }) 
             </DialogDescription>
           </DialogHeader>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleSectionDragEnd}
-          >
-            <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-1.5 py-2">
-                {sectionOrder.map((key, idx) => {
-                  const meta = SECTION_META[key] || { title: key, icon: Layers };
-                  const Icon = meta.icon;
-                  return (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-2.5 shadow-2xs hover:border-neutral-300 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                          {idx + 1}
-                        </span>
-                        <Icon className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium text-neutral-900">{meta.title}</span>
+          <div className="flex-1 overflow-y-auto px-5 py-3 min-h-0">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSectionDragEnd}
+            >
+              <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-1.5 py-1">
+                  {sectionOrder.map((key, idx) => {
+                    const meta = SECTION_META[key] || { title: key, icon: Layers };
+                    const Icon = meta.icon;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between rounded-lg border border-neutral-200 dark:border-neutral-800 bg-card p-2.5 shadow-2xs hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                            {idx + 1}
+                          </span>
+                          <Icon className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">{meta.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={idx === 0}
+                            onClick={() => moveSection(idx, "up")}
+                            className="h-7 w-7 text-neutral-500"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={idx === sectionOrder.length - 1}
+                            onClick={() => moveSection(idx, "down")}
+                            className="h-7 w-7 text-neutral-500"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={idx === 0}
-                          onClick={() => moveSection(idx, "up")}
-                          className="h-7 w-7 text-neutral-500"
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={idx === sectionOrder.length - 1}
-                          onClick={() => moveSection(idx, "down")}
-                          className="h-7 w-7 text-neutral-500"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </SortableContext>
-          </DndContext>
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
 
-          <DialogFooter className="flex items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter className="p-4 border-t bg-muted/40 shrink-0 flex items-center justify-between gap-2">
             <Button type="button" variant="outline" size="sm" onClick={resetSectionOrder} className="text-xs gap-1">
               <RotateCcw className="h-3.5 w-3.5" />
               Reset Order

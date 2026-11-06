@@ -169,7 +169,7 @@ export default function ResumePreviewPage() {
             <span className="truncate">{resume.fileName}</span>
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <Button
             variant="default"
             size="sm"
@@ -252,7 +252,7 @@ export default function ResumePreviewPage() {
 
           {/* Auto-Fit to Page Density Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border bg-card text-xs shadow-2xs">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="font-semibold text-foreground">Auto-Fit Page Density:</span>
               <button
                 type="button"

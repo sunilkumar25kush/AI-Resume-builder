@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
+  ExternalLink,
+  Eye,
   FileText,
   Loader2,
   Sparkles,
@@ -209,8 +211,8 @@ export default function CreatePortfolioDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-xl max-h-[min(92dvh,820px)] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-5 pb-3 border-b shrink-0 bg-background/95">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" aria-hidden />
               Generate Portfolio Website
@@ -220,7 +222,7 @@ export default function CreatePortfolioDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 py-2">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
             {/* Title Input */}
             <div className="space-y-1.5">
               <Label htmlFor="portfolio-title">Portfolio Title</Label>
@@ -237,7 +239,7 @@ export default function CreatePortfolioDialog({
             {/* Source Selection */}
             <div className="space-y-1.5">
               <Label>Source Option</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   disabled={submitting}
@@ -248,8 +250,8 @@ export default function CreatePortfolioDialog({
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <UploadCloud className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Upload File
+                    <UploadCloud className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden />
+                    <span>Upload File</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">PDF or DOCX</span>
                 </button>
@@ -264,8 +266,8 @@ export default function CreatePortfolioDialog({
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <FileText className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Saved Resume
+                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden />
+                    <span>Saved Resume</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">From account</span>
                 </button>
@@ -280,8 +282,8 @@ export default function CreatePortfolioDialog({
                     }`}
                 >
                   <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    Start Blank
+                    <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden />
+                    <span>Start Blank</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">Empty draft</span>
                 </button>
@@ -360,7 +362,7 @@ export default function CreatePortfolioDialog({
                   {selectedTemplate === "devport" ? "DevPort Cosmic" : selectedTemplate === "creative" ? "Modern 3D" : selectedTemplate}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[240px] overflow-y-auto pr-1">
                 {TEMPLATE_OPTIONS.map((tpl) => {
                   const isSelected = selectedTemplate === tpl.id;
                   return (
@@ -377,9 +379,9 @@ export default function CreatePortfolioDialog({
                       {/* Gradient Accent Bar */}
                       <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${tpl.gradient} mb-2.5 opacity-90 group-hover:opacity-100 transition-opacity`} />
 
-                      <div className="flex w-full items-center justify-between text-xs font-bold">
+                      <div className="flex w-full items-center justify-between text-xs font-bold gap-2">
                         <span className="truncate">{tpl.name}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-medium ${isSelected ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${isSelected ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
                           }`}>
                           {tpl.badge}
                         </span>
@@ -389,20 +391,22 @@ export default function CreatePortfolioDialog({
                         {tpl.desc}
                       </p>
 
-                      <div className="mt-2 w-full flex items-center justify-between text-[10px] font-mono text-muted-foreground/80">
-                        <div className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
-                          <span>{tpl.previewNote}</span>
+                      <div className="mt-2.5 w-full flex items-center justify-between text-[11px] gap-2 pt-1.5 border-t border-border/40">
+                        <div className="flex items-center gap-1 min-w-0 truncate text-[10px] font-mono text-muted-foreground/80">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                          <span className="truncate">{tpl.previewNote}</span>
                         </div>
                         <a
                           href={`/portfolio-templates/${tpl.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="hover:text-primary hover:underline flex items-center gap-0.5 text-[10px] font-sans font-medium text-primary/80 transition-colors ml-auto"
-                          title={`Preview full-page ${tpl.name} template`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/25 shadow-2xs transition-all duration-150 shrink-0 hover:scale-105 active:scale-95"
+                          title={`Live full-screen preview of ${tpl.name} template`}
                         >
-                          Preview ↗
+                          <Eye className="h-3 w-3" />
+                          <span>Live Preview</span>
+                          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
                         </a>
                       </div>
                     </button>
@@ -425,11 +429,11 @@ export default function CreatePortfolioDialog({
             )}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <DialogFooter className="p-4 border-t bg-muted/40 shrink-0 gap-2 sm:gap-2 flex flex-col sm:flex-row items-center justify-end -mx-0 -mb-0 rounded-b-xl">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleCreateSubmit} disabled={submitting}>
+            <Button onClick={handleCreateSubmit} disabled={submitting} className="w-full sm:w-auto">
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />

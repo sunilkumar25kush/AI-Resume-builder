@@ -341,7 +341,7 @@ export function ModernCreativeTemplate({
 
             {/* Right Column: 3D Avatar Frame with Camera badge & Floating Experience Card */}
             <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
-              <div className="relative w-[300px] sm:w-[380px] h-[340px] sm:h-[400px] flex items-center justify-center">
+              <div className="relative w-[min(300px,calc(100vw-3rem))] sm:w-[380px] h-[340px] sm:h-[400px] flex items-center justify-center">
                 {/* Ambient aura */}
                 <div
                   className="absolute inset-2 rounded-full blur-3xl opacity-20"

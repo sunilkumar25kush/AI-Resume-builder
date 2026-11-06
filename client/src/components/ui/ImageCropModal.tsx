@@ -84,8 +84,8 @@ export function ImageCropModal({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && !isSaving && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
-        <DialogHeader className="p-5 pb-3">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0 max-h-[min(94dvh,680px)] flex flex-col">
+        <DialogHeader className="p-4 sm:p-5 pb-2 sm:pb-3 shrink-0">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {description}
@@ -93,7 +93,7 @@ export function ImageCropModal({
         </DialogHeader>
 
         {/* Cropper Viewport */}
-        <div className="relative w-full h-72 sm:h-80 bg-neutral-950 select-none">
+        <div className="relative w-full h-56 sm:h-72 min-h-48 flex-1 bg-neutral-950 select-none">
           {imageSrc ? (
             <Cropper
               image={imageSrc}

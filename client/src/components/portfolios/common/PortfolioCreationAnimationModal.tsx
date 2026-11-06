@@ -142,7 +142,7 @@ export function PortfolioCreationAnimationModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative z-10 w-full max-w-lg rounded-3xl border border-white/15 bg-[#0e1022]/95 p-6 sm:p-8 text-white shadow-[0_0_60px_rgba(6,182,212,0.25)] backdrop-blur-2xl"
+          className="relative z-10 w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-white/15 bg-[#0e1022]/95 p-5 sm:p-8 text-white shadow-[0_0_60px_rgba(6,182,212,0.25)] backdrop-blur-2xl"
           role="dialog"
           aria-modal="true"
         >

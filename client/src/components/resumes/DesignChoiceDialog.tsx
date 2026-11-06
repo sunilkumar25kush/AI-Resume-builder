@@ -68,9 +68,9 @@ export function DesignChoiceDialog({
       open={resume !== null}
       onOpenChange={(open) => !open && !applying && onOpenChange(false)}
     >
-      <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-[95vw] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl shadow-2xl border bg-card">
+      <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-[96vw] max-h-[min(92dvh,820px)] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl shadow-2xl border bg-card">
         {/* Sticky Dialog Header */}
-        <DialogHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm shrink-0 flex flex-row items-center justify-between gap-4">
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background/95 backdrop-blur-sm shrink-0 flex flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
               <Sparkles className="h-5 w-5" aria-hidden />

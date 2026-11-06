@@ -381,7 +381,7 @@ export default function ResumeEditorPage() {
                 AI added {resume.aiChanges.length} improvement{resume.aiChanges.length === 1 ? "" : "s"} — green highlights show what changed
               </p>
               <p className="text-xs text-emerald-700/80">
-                Edit karte hi highlight hat jata hai. Aap kisi bhi AI addition ko change ya remove kar sakte ho — yeh sirf suggestions hain.
+                Editing clears the highlight. You can modify or remove any AI additions anytime — all suggestions are optional.
               </p>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAiBannerDismissed(true)}>

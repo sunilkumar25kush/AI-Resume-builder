@@ -97,7 +97,7 @@ export default function PortfoliosPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -216,8 +216,8 @@ export default function PortfoliosPage() {
                     <span className="truncate font-mono">/p/{portfolio.slug}</span>
                   </div>
 
-                  <div className="flex items-center justify-between border-t pt-3">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <Button
                         asChild
                         variant="default"

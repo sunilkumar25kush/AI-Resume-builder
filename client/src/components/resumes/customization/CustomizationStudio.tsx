@@ -417,7 +417,7 @@ export function CustomizationStudio({
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Bullet Style
                 </span>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {[
                     { id: "dot", label: "• Dot" },
                     { id: "dash", label: "– Dash" },
@@ -457,7 +457,7 @@ export function CustomizationStudio({
               {/* Style Icons (8 Options from FlowCV) */}
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Style</span>
-                <div className="grid grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {[
                     {
                       id: "line",

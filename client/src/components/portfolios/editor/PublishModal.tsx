@@ -132,8 +132,8 @@ export function PublishModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-xl max-h-[min(92dvh,820px)] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="p-5 pb-3 border-b shrink-0 bg-background/95">
           <div className="flex items-center justify-between gap-2 pr-6">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Globe className="h-5 w-5 text-primary" />
@@ -141,7 +141,7 @@ export function PublishModal({
             </DialogTitle>
             <Badge
               variant={isPublished ? "default" : "secondary"}
-              className="text-[11px] font-semibold tracking-wide uppercase"
+              className="text-[11px] font-semibold tracking-wide uppercase shrink-0"
             >
               {isPublished ? "Live • Public" : "Draft • Private"}
             </Badge>
@@ -153,181 +153,186 @@ export function PublishModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Live URL Card */}
-        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-              Public Web Address
-            </span>
-            {isPublished && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live Online
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
+          {/* Live URL Card */}
+          <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                Public Web Address
               </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs font-mono text-neutral-800 dark:text-neutral-200 truncate select-all">
-              {publicUrl}
+              {isPublished && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Online
+                </span>
+              )}
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleCopyLink}
-              className={`gap-1.5 text-xs shrink-0 transition-all duration-200 ${
-                copied
-                  ? "border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "hover:border-neutral-300 dark:hover:border-neutral-700"
-              }`}
-              title="Copy public link"
-              aria-label={copied ? "Link copied to clipboard" : "Copy public link"}
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 animate-in zoom-in-75 duration-150" />
-              ) : (
-                <Copy className="h-3.5 w-3.5 text-neutral-500" />
-              )}
-              <span className="font-medium">{copied ? "Copied!" : "Copy Link"}</span>
-            </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex-1 min-w-0 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs font-mono text-neutral-800 dark:text-neutral-200 truncate select-all">
+                {publicUrl}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className={`flex-1 sm:flex-none gap-1.5 text-xs shrink-0 transition-all duration-200 ${
+                    copied
+                      ? "border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "hover:border-neutral-300 dark:hover:border-neutral-700"
+                  }`}
+                  title="Copy public link"
+                  aria-label={copied ? "Link copied to clipboard" : "Copy public link"}
+                >
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 animate-in zoom-in-75 duration-150" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-neutral-500" />
+                  )}
+                  <span className="font-medium">{copied ? "Copied!" : "Copy Link"}</span>
+                </Button>
+
+                {isPublished && (
+                  <Button
+                    asChild
+                    variant="default"
+                    size="sm"
+                    className="flex-1 sm:flex-none gap-1.5 text-xs shrink-0 bg-primary text-primary-foreground"
+                  >
+                    <a href={`/p/${portfolio.slug}`} target="_blank" rel="noopener noreferrer">
+                      <span>Visit</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
             <span className="sr-only" aria-live="polite">
               {copied ? "Public link copied to clipboard" : ""}
             </span>
+          </div>
 
-            {isPublished && (
-              <Button
-                asChild
-                variant="default"
-                size="sm"
-                className="gap-1.5 text-xs shrink-0 bg-primary text-primary-foreground"
-              >
-                <a href={`/p/${portfolio.slug}`} target="_blank" rel="noopener noreferrer">
-                  <span>Visit</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </Button>
+          {/* Form Fields: Slug & SEO */}
+          <div className="space-y-4">
+            {/* Custom Slug Input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="portfolio-slug" className="text-xs font-semibold">
+                Custom URL Slug
+              </Label>
+              <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 focus-within:ring-1 focus-within:ring-primary">
+                <span className="text-xs text-neutral-400 font-mono select-none">/p/</span>
+                <Input
+                  id="portfolio-slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder="your-name-or-role"
+                  className="border-0 bg-transparent px-1 font-mono text-xs shadow-none focus-visible:ring-0"
+                  maxLength={60}
+                  disabled={submitting}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Lowercase letters, numbers, and hyphens only. Must be unique.
+              </p>
+            </div>
+
+            {/* SEO Title */}
+            <div className="space-y-1.5">
+              <Label htmlFor="seo-title" className="text-xs font-semibold">
+                SEO Page Title <span className="text-neutral-400 font-normal">(Optional)</span>
+              </Label>
+              <Input
+                id="seo-title"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder={`${portfolio.profile?.fullName || portfolio.title} — Portfolio`}
+                className="text-xs"
+                maxLength={120}
+                disabled={submitting}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Displayed on browser tabs and Google search snippets.
+              </p>
+            </div>
+
+            {/* SEO Description */}
+            <div className="space-y-1.5">
+              <Label htmlFor="seo-description" className="text-xs font-semibold">
+                SEO Meta Description <span className="text-neutral-400 font-normal">(Optional)</span>
+              </Label>
+              <Textarea
+                id="seo-description"
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                placeholder={
+                  portfolio.profile?.headline
+                    ? `${portfolio.profile.headline}. Explore projects, experience, and skills.`
+                    : "Explore my professional portfolio website."
+                }
+                className="text-xs min-h-[60px] resize-none"
+                maxLength={300}
+                disabled={submitting}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Summary for search engines and social cards (LinkedIn, Twitter).
+              </p>
+            </div>
+
+            {/* Privacy Guarantee Note */}
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-200">
+              <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 leading-relaxed">
+                <p className="font-semibold text-blue-800 dark:text-blue-300">Privacy & Security Guarantee</p>
+                <p className="text-[11px] text-blue-700 dark:text-blue-300/80">
+                  Only approved public portfolio details are served. Your account email, private notes, raw resume uploads, and database user IDs are strictly excluded from public routes.
+                </p>
+              </div>
+            </div>
+
+            {/* Unpublish Confirmation Warning */}
+            {showUnpublishConfirm && (
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">Are you sure you want to unpublish?</p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300/80">
+                    Your portfolio will immediately become private and return a 404 Not Found error to anyone visiting your public link. You can republish at any time.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleUnpublish}
+                      disabled={submitting}
+                      className="h-7 text-xs"
+                    >
+                      {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                      Confirm Unpublish
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowUnpublishConfirm(false)}
+                      disabled={submitting}
+                      className="h-7 text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Form Fields: Slug & SEO */}
-        <div className="space-y-4 py-2">
-          {/* Custom Slug Input */}
-          <div className="space-y-1.5">
-            <Label htmlFor="portfolio-slug" className="text-xs font-semibold">
-              Custom URL Slug
-            </Label>
-            <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 focus-within:ring-1 focus-within:ring-primary">
-              <span className="text-xs text-neutral-400 font-mono select-none">/p/</span>
-              <Input
-                id="portfolio-slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                placeholder="your-name-or-role"
-                className="border-0 bg-transparent px-1 font-mono text-xs shadow-none focus-visible:ring-0"
-                maxLength={60}
-                disabled={submitting}
-              />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Lowercase letters, numbers, and hyphens only. Must be unique.
-            </p>
-          </div>
-
-          {/* SEO Title */}
-          <div className="space-y-1.5">
-            <Label htmlFor="seo-title" className="text-xs font-semibold">
-              SEO Page Title <span className="text-neutral-400 font-normal">(Optional)</span>
-            </Label>
-            <Input
-              id="seo-title"
-              value={seoTitle}
-              onChange={(e) => setSeoTitle(e.target.value)}
-              placeholder={`${portfolio.profile?.fullName || portfolio.title} — Portfolio`}
-              className="text-xs"
-              maxLength={120}
-              disabled={submitting}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Displayed on browser tabs and Google search snippets.
-            </p>
-          </div>
-
-          {/* SEO Description */}
-          <div className="space-y-1.5">
-            <Label htmlFor="seo-description" className="text-xs font-semibold">
-              SEO Meta Description <span className="text-neutral-400 font-normal">(Optional)</span>
-            </Label>
-            <Textarea
-              id="seo-description"
-              value={seoDescription}
-              onChange={(e) => setSeoDescription(e.target.value)}
-              placeholder={
-                portfolio.profile?.headline
-                  ? `${portfolio.profile.headline}. Explore projects, experience, and skills.`
-                  : "Explore my professional portfolio website."
-              }
-              className="text-xs min-h-[60px] resize-none"
-              maxLength={300}
-              disabled={submitting}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Summary for search engines and social cards (LinkedIn, Twitter).
-            </p>
-          </div>
-
-          {/* Privacy Guarantee Note */}
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-200">
-            <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div className="space-y-0.5 leading-relaxed">
-              <p className="font-semibold text-blue-800 dark:text-blue-300">Privacy & Security Guarantee</p>
-              <p className="text-[11px] text-blue-700 dark:text-blue-300/80">
-                Only approved public portfolio details are served. Your account email, private notes, raw resume uploads, and database user IDs are strictly excluded from public routes.
-              </p>
-            </div>
-          </div>
-
-          {/* Unpublish Confirmation Warning */}
-          {showUnpublishConfirm && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-2 flex-1">
-                <p className="font-semibold text-amber-800 dark:text-amber-300">Are you sure you want to unpublish?</p>
-                <p className="text-[11px] text-amber-700 dark:text-amber-300/80">
-                  Your portfolio will immediately become private and return a 404 Not Found error to anyone visiting your public link. You can republish at any time.
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleUnpublish}
-                    disabled={submitting}
-                    className="h-7 text-xs"
-                  >
-                    {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                    Confirm Unpublish
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowUnpublishConfirm(false)}
-                    disabled={submitting}
-                    className="h-7 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-          <div>
+        <DialogFooter className="p-4 border-t bg-muted/40 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2.5 -mx-0 -mb-0 rounded-b-xl">
+          <div className="w-full sm:w-auto">
             {isPublished && !showUnpublishConfirm && (
               <Button
                 type="button"
@@ -335,7 +340,7 @@ export function PublishModal({
                 size="sm"
                 onClick={() => setShowUnpublishConfirm(true)}
                 disabled={submitting}
-                className="text-xs text-destructive hover:bg-destructive/10 gap-1.5"
+                className="text-xs text-destructive hover:bg-destructive/10 gap-1.5 w-full sm:w-auto justify-center"
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span>Unpublish Site</span>
@@ -350,7 +355,7 @@ export function PublishModal({
               size="sm"
               onClick={() => onOpenChange(false)}
               disabled={submitting}
-              className="text-xs"
+              className="text-xs flex-1 sm:flex-none"
             >
               Close
             </Button>
@@ -361,7 +366,7 @@ export function PublishModal({
               size="sm"
               onClick={handlePublishOrRepublish}
               disabled={submitting || showUnpublishConfirm}
-              className="text-xs gap-1.5 bg-primary text-primary-foreground"
+              className="text-xs gap-1.5 bg-primary text-primary-foreground flex-1 sm:flex-none"
             >
               {submitting ? (
                 <>

@@ -40,25 +40,25 @@ export function computeAtsStructureScore(parsedData) {
   const add = (label, ok, hint) => checks.push({ label, ok, hint });
 
   // Contact completeness (ATS can't reach a candidate without these)
-  add("Email present", Boolean(contact.email?.trim()), "Top of resume mein email add karo");
-  add("Phone present", Boolean(contact.phone?.trim()), "Mobile number add karo");
-  add("Location present", Boolean(contact.location?.trim()), "City, State add karo");
+  add("Email present", Boolean(contact.email?.trim()), "Add your email address at the top of your resume");
+  add("Phone present", Boolean(contact.phone?.trim()), "Add your phone number for recruiter contact");
+  add("Location present", Boolean(contact.location?.trim()), "Add your location (City, State / Country)");
 
   // Content sections
-  add("Summary of 15+ words", summaryWords >= 15, "2-3 line professional summary likho (15+ words)");
-  add("5+ skills listed", skills.length >= 5, "Kam se kam 5 skills list karo — ATS keywords yahi se milte hain");
-  add("Experience section", experience.length > 0, "Work experience entry add karo");
+  add("Summary of 15+ words", summaryWords >= 15, "Write a 2-3 sentence professional summary (15+ words)");
+  add("5+ skills listed", skills.length >= 5, "List at least 5 relevant skills to match target ATS keywords");
+  add("Experience section", experience.length > 0, "Add at least one work experience or internship entry");
   add(
     "Dates on every experience",
     experience.length > 0 && experience.every((entry) => entry.startDate || entry.endDate),
-    "Har experience par start/end date honi chahiye",
+    "Include start and end dates for every work experience entry",
   );
-  add("Projects section", projects.length > 0, "2+ projects add karo — freshers ke liye critical");
-  add("Education section", education.length > 0, "Education entry add karo");
+  add("Projects section", projects.length > 0, "Add 2+ projects showcasing your practical technical experience");
+  add("Education section", education.length > 0, "Add your educational qualifications (degree, institution, dates)");
   add(
     "Quantified results (numbers)",
     [...experience, ...projects].some((entry) => /\d/.test(`${entry.description ?? ""} ${entry.achievements ?? ""}`)),
-    "Numbers use karo (e.g. \"40% faster\", \"200 students\") — ATS aur recruiter dono ko pasand",
+    "Include quantified impact metrics (e.g. \"40% faster\", \"200+ users\") for higher ATS ranking",
   );
   add(
     "Action verbs in bullets",
@@ -68,12 +68,12 @@ export function computeAtsStructureScore(parsedData) {
       .toLowerCase()
       .split(/\b/)
       .some((word) => ACTION_VERBS.includes(word)),
-    "Bullets \"Led\", \"Built\", \"Improved\" jaisi strong verbs se shuru karo",
+    "Start bullet points with strong action verbs (e.g. \"Led\", \"Built\", \"Optimized\")",
   );
   add(
     "Certifications or languages",
     certifications.length > 0 || languages.length > 0,
-    "Certifications ya languages section add karo (agar hai toh)",
+    "Add relevant certifications or languages to further distinguish your profile",
   );
 
   // Length sanity (ATS parsers choke on very long resumes)

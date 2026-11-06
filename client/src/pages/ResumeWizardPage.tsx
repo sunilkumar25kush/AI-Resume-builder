@@ -174,7 +174,7 @@ export default function ResumeWizardPage() {
 
       {/* Stepper — full on desktop, progress bar on mobile */}
       <nav aria-label="Wizard steps" className="flex flex-col gap-2">
-        <ol className="hidden items-center gap-1 sm:flex">
+        <ol className="hidden items-center gap-1 md:flex">
           {STEPS.map((label, index) => {
             const done = index < step;
             const active = index === step;
@@ -197,7 +197,7 @@ export default function ResumeWizardPage() {
             );
           })}
         </ol>
-        <div className="sm:hidden">
+        <div className="md:hidden">
           <Progress value={progressPercent} aria-label={`Step ${step + 1} of ${STEPS.length}`} />
         </div>
       </nav>

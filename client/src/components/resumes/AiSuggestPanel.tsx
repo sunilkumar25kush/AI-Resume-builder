@@ -101,7 +101,7 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
       case "add-section":
         // Sections are structural — the user adds them via the form; the
         // suggestion text (detail) shows what to put in it.
-        toast.info(`Section add karo: ${suggestion.value} — ${suggestion.detail || suggestion.reason}`);
+        toast.info(`Add section: ${suggestion.value} — ${suggestion.detail || suggestion.reason}`);
         return;
     }
     setApplied((prev) => new Set(prev).add(index));
@@ -124,7 +124,7 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             AI Suggest
           </CardTitle>
-          <CardDescription>JD se aur kya add kare — ATS score badhane ke liye</CardDescription>
+          <CardDescription>Suggestions from job description to boost your ATS score</CardDescription>
         </div>
         <Button type="button" variant="ghost" size="sm" aria-label={open ? "Collapse AI Suggest" : "Expand AI Suggest"}>
           {open ? "Close" : "Open"}
@@ -167,7 +167,7 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
           ) : (
             <Textarea
               rows={4}
-              placeholder="JD text yahan paste karo…"
+              placeholder="Paste job description text here…"
               value={jdText}
               onChange={(event) => setJdText(event.target.value)}
             />
@@ -175,7 +175,7 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
 
           <Button type="button" onClick={run} disabled={busy || !canRun}>
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
-            {busy ? "AI soch raha hai…" : "Get suggestions"}
+            {busy ? "Analyzing with AI…" : "Get suggestions"}
           </Button>
 
           {suggestions ? (
@@ -198,11 +198,11 @@ export function AiSuggestPanel({ resumeId, onApplied }: AiSuggestPanelProps) {
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{suggestion.detail}</p>
                     ) : null}
                     {suggestion.type === "add-section" ? (
-                      <p className="mt-2 text-xs text-muted-foreground">Section card se manually add karna hoga.</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Please add this section manually from the form below.</p>
                     ) : done ? (
                       <p className="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-700">
                         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                        Added — green highlight mein dikh raha hai
+                        Added — highlighted in green
                       </p>
                     ) : (
                       <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => apply(index)}>

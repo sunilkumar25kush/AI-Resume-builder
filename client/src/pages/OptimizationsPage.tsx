@@ -91,30 +91,30 @@ export default function OptimizationsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <Label htmlFor="resume-select">Resume</Label>
               <Select value={resumeId} onValueChange={(val: string) => { setError(null); setResumeId(val); }}>
-                <SelectTrigger id="resume-select" aria-label="Select resume">
+                <SelectTrigger id="resume-select" aria-label="Select resume" className="w-full min-w-0">
                   <SelectValue placeholder="Choose a resume…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
                   {resumes.map((resume) => (
-                    <SelectItem key={resume._id} value={resume._id}>
+                    <SelectItem key={resume._id} value={resume._id} className="truncate">
                       {resume.fileName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <Label htmlFor="jd-select">Job description</Label>
               <Select value={jdId} onValueChange={(val: string) => { setError(null); setJdId(val); }}>
-                <SelectTrigger id="jd-select" aria-label="Select job description">
+                <SelectTrigger id="jd-select" aria-label="Select job description" className="w-full min-w-0">
                   <SelectValue placeholder="Choose a JD…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
                   {jds.map((jd) => (
-                    <SelectItem key={jd._id} value={jd._id}>
+                    <SelectItem key={jd._id} value={jd._id} className="truncate">
                       {jd.title || jd.fileName || "Untitled role"}
                     </SelectItem>
                   ))}

@@ -461,7 +461,7 @@ export function DevPortTemplate({
 
             {/* Right Column: Orbital Avatar Frame + Floating Code Terminal + Floating Stats */}
             <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
-              <div className="relative w-[300px] sm:w-[360px] h-[340px] sm:h-[400px] flex items-center justify-center">
+              <div className="relative w-[min(300px,calc(100vw-3rem))] sm:w-[360px] h-[340px] sm:h-[400px] flex items-center justify-center">
                 {/* Background Rotating Aura Glow */}
                 <div
                   className="absolute inset-4 rounded-full opacity-25 blur-2xl animate-pulse"
