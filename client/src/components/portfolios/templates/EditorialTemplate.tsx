@@ -21,8 +21,6 @@ import type {
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { TechIcon } from "@/components/portfolios/common/TechIcon";
 import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
-import HalftoneReveal from "@/components/portfolios/animations/HalftoneReveal";
-import SwarmCursor from "@/components/portfolios/animations/SwarmCursor";
 
 export interface EditorialTemplateProps {
   portfolio: Partial<Portfolio>;
@@ -407,98 +405,87 @@ export function EditorialTemplate({
   // ---------------------------------------------------------------------------
   const sectionMap: Record<string, React.ReactNode> = {
     // -------------------------------------------------------------------------
-    // SLIDE 01: HERO COVER with SwarmCursor & HalftoneReveal Hero Animation
+    // SLIDE 01: HERO COVER (Deep Crimson Red, Joanne Alexander Layout)
     // -------------------------------------------------------------------------
     hero: (
       <section
         key="hero"
         id="hero"
-        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl text-white select-none transition-all duration-300"
+        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between text-white select-none transition-all duration-300"
         style={{ backgroundColor: primaryColor }}
       >
-        <SwarmCursor
-          count={800}
-          size={2.6}
-          spread={90}
-          swirl={0.6}
-          clickEffect="burst"
-          color="rgba(255, 255, 255, 0.75)"
-          className="w-full h-full p-6 sm:p-12 flex flex-col justify-between relative"
-        >
-          {/* Subtle Linen Background Texture */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/30 pointer-events-none" />
-          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_4px)] pointer-events-none" />
-          {/* Animated light sweep + drifting glow orbs */}
-          <div className="ed-sheen absolute inset-0 pointer-events-none" />
-          <div className="ed-orb ed-orb-a absolute pointer-events-none" />
-          <div className="ed-orb ed-orb-b absolute pointer-events-none" />
+        {/* Subtle Linen Background Texture */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_4px)] pointer-events-none" />
+        {/* Animated light sweep + drifting glow orbs */}
+        <div className="ed-sheen absolute inset-0 pointer-events-none" />
+        <div className="ed-orb ed-orb-a absolute pointer-events-none" />
+        <div className="ed-orb ed-orb-b absolute pointer-events-none" />
 
-          {/* Top Eyebrow: Script "Creative" */}
-          <div className="relative z-20 w-full text-center pt-2">
-            <span className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF]">
-              Creative
-            </span>
-          </div>
+        {/* Top Eyebrow: Script "Creative" */}
+        <div className="relative z-20 w-full text-center pt-2">
+          <span className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF]">
+            Creative
+          </span>
+        </div>
 
-          {/* Center: Giant Condensed "PORTFOLIO" with interactive HalftoneReveal portrait */}
-          <div className="relative z-20 my-auto w-full flex items-center justify-center">
-            {/* Giant Word */}
-            <h1
-              aria-label="Portfolio"
-              className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
-            >
-              {"PORTFOLIO".split("").map((ch, i) => (
-                <span
-                  key={i}
-                  aria-hidden="true"
-                  className="ed-letter"
-                  style={{ animationDelay: `${120 + i * 70}ms` }}
-                >
-                  {ch}
-                </span>
-              ))}
-            </h1>
-
-            {/* Overlapping Halftone Portrait with Interactive Halftone Reveal */}
-            <div className="ed-hero-portrait absolute inset-x-0 bottom-[-15%] sm:bottom-[-20%] flex justify-center z-30 pointer-events-auto">
-              <div className="ed-float relative w-[min(54vw,280px)] sm:w-[min(32vw,360px)] aspect-[3/4] flex items-end justify-center rounded-t-full overflow-hidden shadow-2xl border-2 border-white/30 bg-[#120f17]">
-                <HalftoneReveal
-                  src={
-                    avatarUrl ||
-                    "https://images.unsplash.com/photo-1693250707557-a846a014b321?q=80&w=1400&auto=format&fit=crop"
-                  }
-                  mode="mono"
-                  shape="dot"
-                  cellSize={6}
-                  angle={45}
-                  inkColor="#f4f1ea"
-                  paperColor="#120f17"
-                  revealRadius={160}
-                  className="w-full h-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
-          <div className="relative z-20 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
-            <span className="font-bold tracking-widest uppercase text-white/95">
-              {fullName}
-            </span>
-            <div className="flex items-center gap-3">
-              <a
-                href="#about"
-                className="px-5 py-2 rounded-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 transition-all hover:scale-105 active:scale-95 text-xs shadow-lg"
-                style={{ color: primaryColor }}
+        {/* Center: Giant Condensed "PORTFOLIO" with overlapping centered portrait cutout */}
+        <div className="relative z-20 my-auto w-full flex items-center justify-center">
+          {/* Giant Word */}
+          <h1
+            aria-label="Portfolio"
+            className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
+          >
+            {"PORTFOLIO".split("").map((ch, i) => (
+              <span
+                key={i}
+                aria-hidden="true"
+                className="ed-letter"
+                style={{ animationDelay: `${120 + i * 70}ms` }}
               >
-                Explore Deck ↓
-              </a>
+                {ch}
+              </span>
+            ))}
+          </h1>
+
+          {/* Overlapping Centered Portrait matching Slide 01 in the reference */}
+          <div className="ed-hero-portrait absolute inset-x-0 bottom-[-15%] sm:bottom-[-20%] flex justify-center z-30 pointer-events-none">
+            <div className="ed-float relative w-[min(54vw,280px)] sm:w-[min(32vw,360px)] aspect-[3/4] flex items-end justify-center">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={fullName}
+                  className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)]"
+                />
+              ) : (
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+                  alt="Editorial Portrait"
+                  className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)]"
+                />
+              )}
             </div>
-            <span className="font-bold tracking-widest uppercase text-white/95 text-right">
-              {headline}
-            </span>
           </div>
-        </SwarmCursor>
+        </div>
+
+        {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
+        <div className="relative z-20 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
+          <span className="font-bold tracking-widest uppercase text-white/95">
+            {fullName}
+          </span>
+          <div className="flex items-center gap-3">
+            <a
+              href="#about"
+              className="px-5 py-2 rounded-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 transition-all hover:scale-105 active:scale-95 text-xs shadow-lg"
+              style={{ color: primaryColor }}
+            >
+              Explore Deck ↓
+            </a>
+          </div>
+          <span className="font-bold tracking-widest uppercase text-white/95 text-right">
+            {headline}
+          </span>
+        </div>
       </section>
     ),
 
