@@ -36,7 +36,22 @@ export const useAuthStore = create<AuthState>()(
       } else {
         set({ user: null, status: "guest" });
       }
-    } catch {
+    } catch (err: unknown) {
+      // If server is waking up (503 / network hiccup during Render cold start), retry once
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const code = (err as { code?: string })?.code;
+      if (status === 503 || code === "ERR_NETWORK") {
+        await new Promise((r) => setTimeout(r, 2000));
+        try {
+          const retryUser = await authApi.me();
+          if (retryUser) {
+            set({ user: retryUser, status: "authenticated" });
+            return;
+          }
+        } catch {
+          // Fall through to guest
+        }
+      }
       set({ user: null, status: "guest" });
     }
   },
@@ -76,7 +91,8 @@ export const useAuthStore = create<AuthState>()(
 }),
     {
       name: "arb-auth",
-      partialize: (state) => ({ user: state.user, status: state.status }),
+      // Never persist status as authenticated in localStorage — always verify via fetchMe on startup
+      partialize: (state) => ({ user: state.user }),
     },
   ),
 );

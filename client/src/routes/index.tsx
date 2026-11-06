@@ -54,143 +54,79 @@ export const router = createBrowserRouter([
     element: <PrintResumePage />,
   },
   {
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: "/",
-        element: (
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        ),
+        element: <DashboardPage />,
       },
       {
         path: "/profile",
-        element: (
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        ),
+        element: <ProfilePage />,
       },
       {
         path: "/settings",
-        element: (
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        ),
+        element: <SettingsPage />,
       },
       {
         path: "/notifications",
-        element: (
-          <ProtectedRoute>
-            <NotificationsPage />
-          </ProtectedRoute>
-        ),
+        element: <NotificationsPage />,
       },
       {
         path: "/wizard",
-        element: (
-          <ProtectedRoute>
-            <ResumeWizardPage />
-          </ProtectedRoute>
-        ),
+        element: <ResumeWizardPage />,
       },
       {
         path: "/ats-check",
-        element: (
-          <ProtectedRoute>
-            <AtsCheckPage />
-          </ProtectedRoute>
-        ),
+        element: <AtsCheckPage />,
       },
       {
         path: "/build",
-        element: (
-          <ProtectedRoute>
-            <ScratchBuildPage />
-          </ProtectedRoute>
-        ),
+        element: <ScratchBuildPage />,
       },
       {
         path: "/resumes",
-        element: (
-          <ProtectedRoute>
-            <ResumesPage />
-          </ProtectedRoute>
-        ),
+        element: <ResumesPage />,
       },
       {
         path: "/resumes/:id",
-        element: (
-          <ProtectedRoute>
-            <ResumePreviewPage />
-          </ProtectedRoute>
-        ),
+        element: <ResumePreviewPage />,
       },
       {
         path: "/resumes/:id/edit",
-        element: (
-          <ProtectedRoute>
-            <ResumeEditorPage />
-          </ProtectedRoute>
-        ),
+        element: <ResumeEditorPage />,
       },
       {
         path: "/jds",
-        element: (
-          <ProtectedRoute>
-            <JDsPage />
-          </ProtectedRoute>
-        ),
+        element: <JDsPage />,
       },
       {
         path: "/jds/:id",
-        element: (
-          <ProtectedRoute>
-            <JDPreviewPage />
-          </ProtectedRoute>
-        ),
+        element: <JDPreviewPage />,
       },
       {
         path: "/jds/:id/edit",
-        element: (
-          <ProtectedRoute>
-            <JDEditPage />
-          </ProtectedRoute>
-        ),
+        element: <JDEditPage />,
       },
       {
         path: "/optimize",
-        element: (
-          <ProtectedRoute>
-            <OptimizationsPage />
-          </ProtectedRoute>
-        ),
+        element: <OptimizationsPage />,
       },
       {
         path: "/optimize/:id",
-        element: (
-          <ProtectedRoute>
-            <OptimizeResultPage />
-          </ProtectedRoute>
-        ),
+        element: <OptimizeResultPage />,
       },
       {
         path: "/portfolios",
-        element: (
-          <ProtectedRoute>
-            <PortfoliosPage />
-          </ProtectedRoute>
-        ),
+        element: <PortfoliosPage />,
       },
       {
         path: "/portfolios/:id/edit",
-        element: (
-          <ProtectedRoute>
-            <PortfolioEditorPage />
-          </ProtectedRoute>
-        ),
+        element: <PortfolioEditorPage />,
       },
       { path: "*", element: <NotFoundPage /> },
     ],

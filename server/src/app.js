@@ -6,6 +6,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
+import mongoose from "mongoose";
 
 import { env } from "./config/env.js";
 import { isDbConnected, getDbError } from "./config/db.js";
@@ -23,8 +24,13 @@ const app = express();
 // Trust reverse proxy (Render, Cloudflare, AWS) so express-rate-limit correctly resolves client IP
 app.set("trust proxy", 1);
 
-// Security headers
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+// Security headers — allow Google popup communication via same-origin-allow-popups
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  }),
+);
 
 // CORS — allow configured client origins + all Vercel deployment URLs (*.vercel.app)
 const configuredOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
@@ -57,14 +63,23 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
 
-// Database availability check — fail fast with 503 instead of hanging for 10s and causing Vite proxy 502
-app.use("/api", (req, res, next) => {
+// Database availability check — wait for in-progress cold start connections instead of rejecting immediately
+app.use("/api", async (req, res, next) => {
   const isAuthMe =
     req.path === "/auth/me" ||
     req.path === "/auth/me/" ||
     req.path === "/users/me" ||
     req.path === "/users/me/";
-  if (req.path === "/health" || isAuthMe || isDbConnected()) return next();
+
+  if (req.path === "/health") return next();
+
+  // If DB is currently connecting (cold start), wait for connection to finish
+  if (mongoose.connection.readyState === 2) {
+    await mongoose.connection.asPromise().catch(() => {});
+  }
+
+  if (isAuthMe || isDbConnected()) return next();
+
   const detail = getDbError() ? ` (${getDbError()})` : "";
   res.status(503).json({
     success: false,

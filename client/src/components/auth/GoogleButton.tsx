@@ -16,6 +16,9 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (response: GoogleCredentialResponse) => void;
+            auto_select?: boolean;
+            cancel_on_tap_outside?: boolean;
+            ux_mode?: "popup" | "redirect";
           }) => void;
           prompt: (listener?: (notification: unknown) => void) => void;
           renderButton: (
@@ -66,6 +69,9 @@ export function GoogleButton({ onCredential, disabled, text = "continue_with" }:
               callbackRef.current(response.credential);
             }
           },
+          ux_mode: "popup",
+          auto_select: false,
+          cancel_on_tap_outside: true,
         });
 
         // Compute width clamped between 200px and 400px (Google GSI API bounds)

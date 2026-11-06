@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
 import { verifyToken } from "../utils/token.js";
@@ -10,6 +11,11 @@ export async function protect(req, res, next) {
     if (!token) throw ApiError.unauthorized("Not authenticated");
 
     const payload = verifyToken(token);
+
+    if (mongoose.connection.readyState === 2) {
+      await mongoose.connection.asPromise().catch(() => {});
+    }
+
     const user = await User.findById(payload.sub);
     if (!user || !user.isActive) throw ApiError.unauthorized("Account unavailable");
 
@@ -28,6 +34,11 @@ export async function optionalProtect(req, res, next) {
     if (!token) return next();
 
     const payload = verifyToken(token);
+
+    if (mongoose.connection.readyState === 2) {
+      await mongoose.connection.asPromise().catch(() => {});
+    }
+
     const user = await User.findById(payload.sub);
     if (user && user.isActive) {
       req.user = user;

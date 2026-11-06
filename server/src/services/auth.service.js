@@ -26,15 +26,25 @@ async function issueAuthPayload(user) {
 }
 
 async function register({ name, email, password }) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const existing = await User.findOne({ email: normalizedEmail }).select("+passwordHash");
+  if (existing) {
+    if (!existing.passwordHash) {
+      // User registered via Google OAuth previously — set their password now so they can log in with password too
+      existing.passwordHash = await hashPassword(password);
+      if (!existing.name && name) existing.name = name;
+      await existing.save();
+      return issueAuthPayload(existing);
+    }
+    throw ApiError.conflict("An account with this email already exists. Please log in instead.");
+  }
+
   let user;
   try {
-    user = await User.create({ name, email, passwordHash: await hashPassword(password) });
+    user = await User.create({ name, email: normalizedEmail, passwordHash: await hashPassword(password) });
   } catch (err) {
     if (err.code === DUP_KEY_CODE) {
-      // Email already registered — return a null sentinel so the caller cannot
-      // enumerate which emails exist (account enumeration / user privacy).
-      // The controller will NOT set an auth cookie for this path.
-      return { user: null, token: null };
+      throw ApiError.conflict("An account with this email already exists. Please log in instead.");
     }
     throw err;
   }
@@ -52,9 +62,14 @@ async function register({ name, email, password }) {
 }
 
 async function login({ email, password }) {
-  const user = await User.findOne({ email }).select("+passwordHash");
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select("+passwordHash");
   if (!user) throw ApiError.unauthorized("Invalid email or password");
   if (!user.isActive) throw ApiError.forbidden("This account has been deactivated");
+
+  if (!user.passwordHash) {
+    throw ApiError.badRequest("This account was created using Google Sign-In. Please sign in with Google or reset your password.");
+  }
 
   const valid = await user.comparePassword(password);
   if (!valid) throw ApiError.unauthorized("Invalid email or password");
@@ -102,33 +117,60 @@ async function resetPassword({ token, password }) {
 }
 
 async function googleAuth({ credential }) {
-  if (!googleClient) throw ApiError.badRequest("Google login is not configured");
+  if (!googleClient) throw ApiError.badRequest("Google login is not configured on this server");
 
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: env.GOOGLE_CLIENT_ID,
-  });
-  const { sub: googleId, email, name, picture } = ticket.getPayload();
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (err) {
+    console.error("[auth] Google ID token verification failed:", err?.message);
+    throw ApiError.unauthorized(`Google verification failed: ${err?.message || "Invalid credential"}`);
+  }
 
-  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+  if (!payload || !payload.email) {
+    throw ApiError.unauthorized("Google token did not contain a valid email address");
+  }
+
+  const { sub: googleId, email, name, picture } = payload;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  let user = await User.findOne({ $or: [{ googleId }, { email: normalizedEmail }] });
   if (!user) {
     try {
       user = await User.create({
-        name: name ?? email.split("@")[0],
-        email,
+        name: name ?? normalizedEmail.split("@")[0],
+        email: normalizedEmail,
         googleId,
         avatar: picture ?? "",
         role: ROLES.USER,
       });
     } catch (err) {
       if (err.code === DUP_KEY_CODE) {
-        // Race: another request created the account first.
-        user = await User.findOne({ email });
+        user = await User.findOne({ email: normalizedEmail });
       } else {
         throw err;
       }
     }
+  } else {
+    // If account was created with email/password, link googleId and avatar if not present
+    let changed = false;
+    if (!user.googleId) {
+      user.googleId = googleId;
+      changed = true;
+    }
+    if (!user.avatar && picture) {
+      user.avatar = picture;
+      changed = true;
+    }
+    if (changed) {
+      await user.save().catch(() => {});
+    }
   }
+
   if (!user.isActive) throw ApiError.forbidden("This account has been deactivated");
   return issueAuthPayload(user);
 }
