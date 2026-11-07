@@ -21,7 +21,8 @@ import type {
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { TechIcon } from "@/components/portfolios/common/TechIcon";
 import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
-import Lanyard from "./Lanyard";
+
+const Lanyard = React.lazy(() => import("./Lanyard"));
 
 export interface EditorialTemplateProps {
   portfolio: Partial<Portfolio>;
@@ -467,26 +468,25 @@ export function EditorialTemplate({
         <div className="ed-orb ed-orb-a absolute pointer-events-none" />
         <div className="ed-orb ed-orb-b absolute pointer-events-none" />
 
-        {/* Top Eyebrow: Script "Creative" + Hanging Lanyard attached directly to "Creative" */}
-        <div className="relative z-30 w-full flex flex-col items-center pt-1">
-          <span className="relative z-30 font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF] leading-none drop-shadow-sm">
-            Creative
-          </span>
-
-          {/* Lanyard Strap ("Rassi") attaches right beneath "Creative" and hangs over "PORTFOLIO" */}
-          <div
-            className="relative z-30 -mt-1 -mb-24 sm:-mb-20"
-            style={{ width: "100%", height: "600px" }}
-          >
+        {/* Hanging 3D Lanyard emerging directly from the top edge of the Hero background */}
+        <div
+          className="absolute inset-x-0 top-0 z-30"
+          style={{ width: "100%", height: "600px" }}
+        >
+          <React.Suspense fallback={null}>
             <Lanyard
-              frontImage={avatarUrl || "/card-front.png"}
-              backImage={avatarUrl || "/card-back.png"}
+              frontImage={
+                avatarUrl ||
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+              }
+              backImage={
+                avatarUrl ||
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+              }
               strapImage="/band.png"
-              name={fullName}
-              subtitle={headline}
-              primaryColor={primaryColor}
+              strapLength={0.62}
             />
-          </div>
+          </React.Suspense>
         </div>
 
         {/* Center Background: Giant Condensed "PORTFOLIO" behind the swinging Lanyard */}
@@ -509,7 +509,7 @@ export function EditorialTemplate({
         </div>
 
         {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
-        <div className="relative z-40 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="relative z-40 mt-auto w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
           <span className="font-bold tracking-widest uppercase text-white/95">
             {fullName}
           </span>

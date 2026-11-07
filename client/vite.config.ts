@@ -47,6 +47,9 @@ export default defineConfig({
             if (id.includes("framer-motion")) {
               return "vendor-motion";
             }
+            if (id.includes("three")) {
+              return "vendor-three";
+            }
             if (id.includes("react-easy-crop")) {
               return "vendor-crop";
             }
