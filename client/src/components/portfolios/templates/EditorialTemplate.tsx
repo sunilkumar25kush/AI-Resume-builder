@@ -21,6 +21,8 @@ import type {
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { TechIcon } from "@/components/portfolios/common/TechIcon";
 import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
+import TechText from "./TechText";
+import FoldText from "./FoldText";
 
 const Lanyard = React.lazy(() => import("./Lanyard"));
 
@@ -489,23 +491,27 @@ export function EditorialTemplate({
           </React.Suspense>
         </div>
 
-        {/* Center Background: Giant Condensed "PORTFOLIO" behind the swinging Lanyard */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-4">
-          <h1
-            aria-label="Portfolio"
-            className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
-          >
-            {"PORTFOLIO".split("").map((ch, i) => (
-              <span
-                key={i}
-                aria-hidden="true"
-                className="ed-letter"
-                style={{ animationDelay: `${120 + i * 70}ms` }}
-              >
-                {ch}
-              </span>
-            ))}
-          </h1>
+        {/* Center Background: Giant Condensed "PORTFOLIO" with React Bits TechText behind the swinging Lanyard */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-2 sm:px-4">
+          <div style={{ width: "100%", height: "480px", position: "relative" }}>
+            <TechText
+              text="PORTFOLIO"
+              fontFamily="'Bebas Neue', 'Anton', sans-serif"
+              fontWeight={600}
+              fontSize={210}
+              letterSpacing={0}
+              color="#FFFFFF"
+              accentColor="#FFFFFF"
+              reveal="letter"
+              dashLength={4}
+              dashGap={2}
+              specks={15}
+              intro="none"
+              introDuration={2}
+              clickKick
+              guides={false}
+            />
+          </div>
         </div>
 
         {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
@@ -549,7 +555,27 @@ export function EditorialTemplate({
             className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
             style={{ color: primaryColor }}
           >
-            ABOUT ME
+            <FoldText
+              text="ABOUT ME"
+              foldStyle="paper"
+              splitBy="char"
+              hinge="top"
+              trigger="scroll"
+              foldAngle={92}
+              duration={0.65}
+              stagger={0.045}
+              staggerFrom="start"
+              ease="power3.out"
+              loopDelay={1.4}
+              hoverRefold={true}
+              refoldRadius={140}
+              refoldAngle={45}
+              perspective={700}
+              creaseShading={0.55}
+              fontSize="clamp(44px, 7vw, 92px)"
+              fontWeight={700}
+              color={primaryColor}
+            />
           </h2>
           <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
             02
@@ -594,7 +620,27 @@ export function EditorialTemplate({
                 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(36px,5.5vw,72px)] leading-[0.9] uppercase tracking-normal m-0 mt-1"
                 style={{ color: primaryColor }}
               >
-                {lastName}
+                <FoldText
+                  text={lastName.toUpperCase()}
+                  foldStyle="paper"
+                  splitBy="char"
+                  hinge="top"
+                  trigger="scroll"
+                  foldAngle={92}
+                  duration={0.65}
+                  stagger={0.045}
+                  staggerFrom="start"
+                  ease="power3.out"
+                  loopDelay={1.4}
+                  hoverRefold={true}
+                  refoldRadius={140}
+                  refoldAngle={45}
+                  perspective={700}
+                  creaseShading={0.55}
+                  fontSize="clamp(36px, 5.5vw, 72px)"
+                  fontWeight={700}
+                  color={primaryColor}
+                />
               </h3>
             </div>
 
@@ -669,7 +715,27 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              EXPERIENCES
+              <FoldText
+                text="EXPERIENCES"
+                foldStyle="paper"
+                splitBy="char"
+                hinge="top"
+                trigger="scroll"
+                foldAngle={92}
+                duration={0.65}
+                stagger={0.045}
+                staggerFrom="start"
+                ease="power3.out"
+                loopDelay={1.4}
+                hoverRefold={true}
+                refoldRadius={140}
+                refoldAngle={45}
+                perspective={700}
+                creaseShading={0.55}
+                fontSize="clamp(44px, 7vw, 92px)"
+                fontWeight={700}
+                color={primaryColor}
+              />
             </h2>
           </div>
           <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
@@ -805,7 +871,27 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              EDUCATION
+              <FoldText
+                text="EDUCATION"
+                foldStyle="paper"
+                splitBy="char"
+                hinge="top"
+                trigger="scroll"
+                foldAngle={92}
+                duration={0.65}
+                stagger={0.045}
+                staggerFrom="start"
+                ease="power3.out"
+                loopDelay={1.4}
+                hoverRefold={true}
+                refoldRadius={140}
+                refoldAngle={45}
+                perspective={700}
+                creaseShading={0.55}
+                fontSize="clamp(44px, 7vw, 92px)"
+                fontWeight={700}
+                color={primaryColor}
+              />
             </h2>
           </div>
           <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
@@ -955,7 +1041,27 @@ export function EditorialTemplate({
             {/* Center Giant Title */}
             <div className="lg:col-span-6 text-center space-y-2">
               <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(64px,13vw,168px)] leading-[0.85] uppercase tracking-normal text-white text-center select-none m-0">
-                PROJECTS
+                <FoldText
+                  text="PROJECTS"
+                  foldStyle="paper"
+                  splitBy="char"
+                  hinge="top"
+                  trigger="scroll"
+                  foldAngle={92}
+                  duration={0.65}
+                  stagger={0.045}
+                  staggerFrom="start"
+                  ease="power3.out"
+                  loopDelay={1.4}
+                  hoverRefold={true}
+                  refoldRadius={140}
+                  refoldAngle={45}
+                  perspective={700}
+                  creaseShading={0.55}
+                  fontSize="clamp(64px, 13vw, 168px)"
+                  fontWeight={700}
+                  color="#FFFFFF"
+                />
               </h2>
               <p className="font-mono text-xs sm:text-sm text-white/90 max-w-md mx-auto">
                 Each numbered badge (#01 – #04) maps directly to your uploaded project photos.
@@ -1031,7 +1137,27 @@ export function EditorialTemplate({
                       className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                       style={{ color: primaryColor }}
                     >
-                      PROJECT
+                      <FoldText
+                        text="PROJECT"
+                        foldStyle="paper"
+                        splitBy="char"
+                        hinge="top"
+                        trigger="scroll"
+                        foldAngle={92}
+                        duration={0.65}
+                        stagger={0.045}
+                        staggerFrom="start"
+                        ease="power3.out"
+                        loopDelay={1.4}
+                        hoverRefold={true}
+                        refoldRadius={140}
+                        refoldAngle={45}
+                        perspective={700}
+                        creaseShading={0.55}
+                        fontSize="clamp(44px, 6.5vw, 84px)"
+                        fontWeight={700}
+                        color={primaryColor}
+                      />
                     </h3>
                   </div>
                   <span
@@ -1240,7 +1366,27 @@ export function EditorialTemplate({
                       className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                       style={{ color: primaryColor }}
                     >
-                      PROJECT
+                      <FoldText
+                        text="PROJECT"
+                        foldStyle="paper"
+                        splitBy="char"
+                        hinge="top"
+                        trigger="scroll"
+                        foldAngle={92}
+                        duration={0.65}
+                        stagger={0.045}
+                        staggerFrom="start"
+                        ease="power3.out"
+                        loopDelay={1.4}
+                        hoverRefold={true}
+                        refoldRadius={140}
+                        refoldAngle={45}
+                        perspective={700}
+                        creaseShading={0.55}
+                        fontSize="clamp(44px, 6.5vw, 84px)"
+                        fontWeight={700}
+                        color={primaryColor}
+                      />
                     </h3>
                   </div>
                   <span
@@ -1347,7 +1493,27 @@ export function EditorialTemplate({
                     className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                     style={{ color: primaryColor }}
                   >
-                    PROJECT
+                    <FoldText
+                      text="PROJECT"
+                      foldStyle="paper"
+                      splitBy="char"
+                      hinge="top"
+                      trigger="scroll"
+                      foldAngle={92}
+                      duration={0.65}
+                      stagger={0.045}
+                      staggerFrom="start"
+                      ease="power3.out"
+                      loopDelay={1.4}
+                      hoverRefold={true}
+                      refoldRadius={140}
+                      refoldAngle={45}
+                      perspective={700}
+                      creaseShading={0.55}
+                      fontSize="clamp(44px, 6.5vw, 84px)"
+                      fontWeight={700}
+                      color={primaryColor}
+                    />
                   </h3>
                   <h4 className="font-bold text-base sm:text-lg" style={{ color: colors.ink }}>
                     {proj.title}
@@ -1442,7 +1608,27 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              CERTIFICATIONS
+              <FoldText
+                text="CERTIFICATIONS"
+                foldStyle="paper"
+                splitBy="char"
+                hinge="top"
+                trigger="scroll"
+                foldAngle={92}
+                duration={0.65}
+                stagger={0.045}
+                staggerFrom="start"
+                ease="power3.out"
+                loopDelay={1.4}
+                hoverRefold={true}
+                refoldRadius={140}
+                refoldAngle={45}
+                perspective={700}
+                creaseShading={0.55}
+                fontSize="clamp(44px, 7vw, 92px)"
+                fontWeight={700}
+                color={primaryColor}
+              />
             </h2>
           </div>
           <span
@@ -1608,7 +1794,27 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              TECHNICAL SKILLS
+              <FoldText
+                text="TECHNICAL SKILLS"
+                foldStyle="paper"
+                splitBy="char"
+                hinge="top"
+                trigger="scroll"
+                foldAngle={92}
+                duration={0.65}
+                stagger={0.045}
+                staggerFrom="start"
+                ease="power3.out"
+                loopDelay={1.4}
+                hoverRefold={true}
+                refoldRadius={140}
+                refoldAngle={45}
+                perspective={700}
+                creaseShading={0.55}
+                fontSize="clamp(44px, 7vw, 92px)"
+                fontWeight={700}
+                color={primaryColor}
+              />
             </h2>
           </div>
           <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
@@ -1714,7 +1920,27 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              CLIENT SAY
+              <FoldText
+                text="CLIENT SAY"
+                foldStyle="paper"
+                splitBy="char"
+                hinge="top"
+                trigger="scroll"
+                foldAngle={92}
+                duration={0.65}
+                stagger={0.045}
+                staggerFrom="start"
+                ease="power3.out"
+                loopDelay={1.4}
+                hoverRefold={true}
+                refoldRadius={140}
+                refoldAngle={45}
+                perspective={700}
+                creaseShading={0.55}
+                fontSize="clamp(44px, 7vw, 92px)"
+                fontWeight={700}
+                color={primaryColor}
+              />
             </h2>
           </div>
           <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
@@ -1812,7 +2038,27 @@ export function EditorialTemplate({
                 let&apos;s Connect
               </p>
               <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(56px,10vw,130px)] leading-[0.85] uppercase tracking-normal m-0 text-white">
-                THANK YOU
+                <FoldText
+                  text="THANK YOU"
+                  foldStyle="paper"
+                  splitBy="char"
+                  hinge="top"
+                  trigger="scroll"
+                  foldAngle={92}
+                  duration={0.65}
+                  stagger={0.045}
+                  staggerFrom="start"
+                  ease="power3.out"
+                  loopDelay={1.4}
+                  hoverRefold={true}
+                  refoldRadius={140}
+                  refoldAngle={45}
+                  perspective={700}
+                  creaseShading={0.55}
+                  fontSize="clamp(56px, 10vw, 130px)"
+                  fontWeight={700}
+                  color="#FFFFFF"
+                />
               </h2>
             </div>
 
@@ -2032,7 +2278,27 @@ export function EditorialTemplate({
                     className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0 capitalize"
                     style={{ color: primaryColor }}
                   >
-                    {sec.replace(/[-_]/g, " ")}
+                    <FoldText
+                      text={sec.replace(/[-_]/g, " ").toUpperCase()}
+                      foldStyle="paper"
+                      splitBy="char"
+                      hinge="top"
+                      trigger="scroll"
+                      foldAngle={92}
+                      duration={0.65}
+                      stagger={0.045}
+                      staggerFrom="start"
+                      ease="power3.out"
+                      loopDelay={1.4}
+                      hoverRefold={true}
+                      refoldRadius={140}
+                      refoldAngle={45}
+                      perspective={700}
+                      creaseShading={0.55}
+                      fontSize="clamp(44px, 7vw, 92px)"
+                      fontWeight={700}
+                      color={primaryColor}
+                    />
                   </h2>
                 </div>
                 <div

@@ -50,6 +50,9 @@ export default defineConfig({
             if (id.includes("three")) {
               return "vendor-three";
             }
+            if (id.includes("gsap")) {
+              return "vendor-gsap";
+            }
             if (id.includes("react-easy-crop")) {
               return "vendor-crop";
             }

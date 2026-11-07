@@ -1368,6 +1368,7 @@ const Lanyard: React.FC<LanyardProps> = ({
       toPointer(event);
       const hit = pickCard();
       if (!hit) return;
+      event.stopPropagation();
       sim.grab = {
         local: hit.point.clone().sub(sim.body.position).applyQuaternion(sim.body.quaternion.clone().invert()),
         rotation: sim.body.quaternion.clone(),
