@@ -21,14 +21,14 @@ All conclusions are backed by verified source code inspections across production
 
 | Metric Category | Count | Detailed Breakdown |
 | :--- | :---: | :--- |
-| **Total Discovered Entries** | **21** | **20** supported templates (**16** GitSkins + **4** existing AI Resume Builder) + **1** separately blocked template (`orbit-studio`). |
-| **Total Supported Templates** | **20** | **16** GitSkins templates + **4** existing AI Resume Builder templates. |
-| **Fully Integrated & Production Verified** | **6** | **4** Native AI Resume Builder (`devport`, `creative`, `developer`, `minimal`) + **2** GitSkins Native (`poster`, `spotlight`). |
-| **Templates Requiring Refactoring / Assets** | **14** | **14** GitSkins templates (7 2D kinetic/editorial/print + 7 3D WebGL/R3F requiring upstream models or canvas adaptation). |
+| **Total Discovered Entries** | **21** | **20** supported catalog templates (**16** GitSkins + **4** existing AI Resume Builder) + **1** separately blocked template (`orbit-studio`). |
+| **Total Supported Templates** | **20** | **16** GitSkins templates + **4** existing AI Resume Builder templates (**7** active primary templates + **2** compatibility aliases `modern`, `executive` registered in `VALID_TEMPLATE_IDS`, plus **13** Phase 2/Future catalog templates). |
+| **Fully Integrated & Production Verified** | **7** | **4** Native AI Resume Builder (`devport`, `creative`, `developer`, `minimal`) + **3** GitSkins Native (`spotlight`, `poster`, `editorial` / `resume-page`), plus **2** aliases (`modern` -> `creative`, `executive` -> `minimal`) = **9** registered server/client IDs. |
+| **Templates Requiring Refactoring / Assets** | **13** | **13** GitSkins templates (**6** 2D kinetic/editorial/material + **7** 3D WebGL/R3F requiring upstream models or canvas adaptation). |
 | **Blocked Templates** | **1** | `orbit-studio` (Abhay Raj): Model asset license unverified; upstream repository excludes model files. |
 | **README Templates Disambiguated (Not Web Portfolios)** | **21+** | Markdown profile README templates identified in `readme-template-catalog-DJ_mHdEA.js`. |
 | **Shared Components Disambiguated (Not Templates)** | **9** | `PortfolioRenderer`, `ThemeWrapper`, `SectionContainer`, `AttributionFooter`, `PortfolioGallery`, etc. |
-| **Unresolved Items / Missing Local Assets** | **12** | Local mirror lacks 3D models (`.glb`) and video previews (`.mp4`) for 12 GitSkins templates (only `ramen-shop` preview exists locally). |
+| **Unresolved Items / Missing Local Assets** | **13** | Local mirror lacks 3D models (`.glb`) and video previews (`.mp4`) for the 13 unbundled GitSkins templates. |
 
 ---
 

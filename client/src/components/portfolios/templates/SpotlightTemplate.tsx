@@ -195,7 +195,7 @@ export function SpotlightTemplate({
   // ---------------------------------------------------------------------------
   // 2. CANDIDATE PROFILE DATA EXTRACTION
   // ---------------------------------------------------------------------------
-  const fullName = profile?.fullName || (showEmpty ? "sunil kumar" : "developer");
+  const fullName = profile?.fullName || (showEmpty ? "Alex Rivera" : "Developer");
   const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile?.headline || (showEmpty ? "HTML and JavaScript developer" : "Full Stack Developer");
   const contactEmail = profile?.email || "";
@@ -206,7 +206,7 @@ export function SpotlightTemplate({
   );
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : (showEmpty ? "sunilkumar25kush" : null);
+    : null;
 
   // Fallback to candidate's github avatar if none uploaded
   const avatarUrl = profile?.avatarUrl
@@ -869,7 +869,7 @@ export function SpotlightTemplate({
     // -------------------------------------------------------------------------
     // EXPERIENCE
     // -------------------------------------------------------------------------
-    experience: (
+    experience: experience.length > 0 ? (
       <section
         key="experience"
         id="experience"
@@ -940,12 +940,12 @@ export function SpotlightTemplate({
           </div>
         </div>
       </section>
-    ),
+    ) : null,
 
     // -------------------------------------------------------------------------
     // EDUCATION & CERTIFICATIONS
     // -------------------------------------------------------------------------
-    education: (
+    education: education.length > 0 ? (
       <section
         key="education"
         id="education"
@@ -982,9 +982,9 @@ export function SpotlightTemplate({
           </div>
         </div>
       </section>
-    ),
+    ) : null,
 
-    certifications: (
+    certifications: certifications.length > 0 ? (
       <section
         key="certifications"
         id="certifications"
@@ -1020,7 +1020,7 @@ export function SpotlightTemplate({
           </div>
         </div>
       </section>
-    ),
+    ) : null,
 
     // -------------------------------------------------------------------------
     // CONTACT: Exact Match to Screenshot 5 (Giant Watermark + Overlapping Red Card)
@@ -1105,6 +1105,8 @@ export function SpotlightTemplate({
     >
       {/* Dynamic Keyframe & Typography Styles */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap');
+
         @keyframes sway {
           0%, 100% {
             transform: rotate(-4deg);

@@ -63,6 +63,50 @@ function SafeProjectImage({
   );
 }
 
+function NumberedProjectFrame({
+  src,
+  alt,
+  slotNumber,
+  slotLabel,
+  primaryColor,
+  className = "",
+}: {
+  src?: string;
+  alt: string;
+  slotNumber: string;
+  slotLabel: string;
+  primaryColor: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`group relative rounded-2xl overflow-hidden shadow-md border-2 border-white bg-neutral-900 ${className}`}
+    >
+      <SafeProjectImage
+        src={src}
+        alt={alt}
+        fallbackText={`Photo ${slotNumber} • ${slotLabel}`}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+      {/* High-contrast numbered badge so users know exact image placement */}
+      <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/25 text-white shadow-lg pointer-events-none">
+        <span
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ backgroundColor: primaryColor }}
+        />
+        <span className="font-mono text-[11px] font-bold tracking-wider">
+          {slotNumber}
+        </span>
+      </div>
+      {/* Subtle bottom slot caption */}
+      <div className="absolute inset-x-0 bottom-0 z-10 px-3 py-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white/95 flex items-center justify-between text-[10px] font-mono pointer-events-none">
+        <span className="truncate font-semibold">{slotLabel}</span>
+        <span className="opacity-80 shrink-0 ml-2">Slot {slotNumber}</span>
+      </div>
+    </div>
+  );
+}
+
 function SafeLink({
   href,
   children,
@@ -115,10 +159,10 @@ export function EditorialTemplate({
   const [activeExpIdx, setActiveExpIdx] = useState(0);
 
   const profile = portfolio?.profile;
-  const skills = portfolio?.skills || [];
-  const experience = portfolio?.experience || [];
-  const education = portfolio?.education || [];
-  const projects = portfolio?.projects || [];
+  const skills = portfolio?.skills;
+  const experience = portfolio?.experience;
+  const education = portfolio?.education;
+  const projects = portfolio?.projects;
   const socialLinks = portfolio?.socialLinks || [];
   const design = portfolio?.design;
 
@@ -648,12 +692,20 @@ export function EditorialTemplate({
                     key={idx}
                     type="button"
                     onClick={() => setActiveExpIdx(idx)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
+                    className="px-3.5 py-1 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer border"
+                    style={
                       activeExpIdx === idx
-                        ? "text-white shadow-xs"
-                        : "bg-black/5 dark:bg-white/5 text-neutral-600 dark:text-neutral-400"
-                    }`}
-                    style={activeExpIdx === idx ? { backgroundColor: primaryColor } : {}}
+                        ? {
+                            backgroundColor: primaryColor,
+                            borderColor: primaryColor,
+                            color: "#FFFFFF",
+                          }
+                        : {
+                            backgroundColor: colors.badgeBg,
+                            borderColor: colors.paperBorder,
+                            color: colors.ink,
+                          }
+                    }
                   >
                     {exp.company}
                   </button>
@@ -854,95 +906,151 @@ export function EditorialTemplate({
       <div key="projects" id="projects" className="space-y-12 w-full">
         {/* Cover Slide (Slide 05) */}
         <section
-          className="editorial-slide relative w-full aspect-[16/10] min-h-[540px] max-h-[780px] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-6 sm:p-12 text-white select-none transition-all duration-300"
+          className="editorial-slide relative w-full min-h-[480px] sm:min-h-[540px] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-6 sm:p-12 text-white select-none transition-all duration-300"
           style={{ backgroundColor: primaryColor }}
         >
           {/* Subtle Texture */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/35 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/15 via-transparent to-black/35 pointer-events-none" />
 
-          {/* Top Script Eyebrow */}
-          <div className="relative z-10 w-full text-left">
-            <span className="font-['Caveat',cursive] text-3xl sm:text-4xl text-[#FAF5EF]">
-              Sample
+          {/* Top Script Eyebrow & Numbered Photo Guide Pill */}
+          <div className="relative z-10 w-full flex flex-wrap items-center justify-between gap-3">
+            <span className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl text-[#FAF5EF]">
+              Featured Showcase
+            </span>
+            <span className="px-3.5 py-1 rounded-full bg-black/25 backdrop-blur-md border border-white/25 font-mono text-[11px] font-semibold tracking-wider text-white">
+              PHOTO SLOTS #01 – #04
             </span>
           </div>
 
-          {/* Center Giant Word: PROJECTS + Floating Polaroids */}
-          <div className="relative z-10 my-auto w-full flex items-center justify-center">
-            {/* Tilted Floating Polaroid 1 on Left */}
-            <div className="hidden lg:block absolute left-8 top-1/2 -translate-y-1/2 -rotate-12 polaroid-card z-20 cursor-pointer animate-[editorialSway_6s_ease-in-out_infinite]">
-              <div className="p-2 pb-5 bg-white rounded-md shadow-2xl w-44">
-                <img
-                  src="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=80"
-                  alt="Snapshot 1"
-                  className="w-full aspect-[4/3] object-cover rounded-xs"
-                />
-                <p className="font-['Caveat',cursive] text-xs text-neutral-800 text-center mt-2 m-0 font-bold">
-                  Prototype Design
-                </p>
+          {/* Center Layout: Balanced Polaroids + Giant Word PROJECTS */}
+          <div className="relative z-10 my-auto py-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left Polaroid (#01 — Project 1 Primary Cover) */}
+            <div className="lg:col-span-3 flex justify-center">
+              <div className="-rotate-6 polaroid-card z-20 cursor-pointer animate-[editorialSway_6s_ease-in-out_infinite]">
+                <div className="relative p-2.5 pb-4 bg-white rounded-xl shadow-2xl w-48 sm:w-52 border border-black/10">
+                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-neutral-900">
+                    <SafeProjectImage
+                      src={
+                        displayProjects[0]?.imageUrl ||
+                        displayProjects[0]?.images?.[0] ||
+                        "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=80"
+                      }
+                      alt={displayProjects[0]?.title || "Project #01"}
+                      fallbackText="Project #01 Cover"
+                      className="w-full h-full object-cover"
+                    />
+                    <span
+                      className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white shadow-md"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      #01
+                    </span>
+                  </div>
+                  <p
+                    className="font-['Caveat',cursive] text-sm text-center mt-2 m-0 font-bold truncate px-1"
+                    style={{ color: "#0F172A" }}
+                  >
+                    {displayProjects[0]?.title || "Prototype Design"}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Giant Title */}
-            <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(64px,16vw,200px)] leading-[0.85] uppercase tracking-normal text-white text-center select-none">
-              PROJECTS
-            </h2>
+            {/* Center Giant Title */}
+            <div className="lg:col-span-6 text-center space-y-2">
+              <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(64px,13vw,168px)] leading-[0.85] uppercase tracking-normal text-white text-center select-none m-0">
+                PROJECTS
+              </h2>
+              <p className="font-mono text-xs sm:text-sm text-white/90 max-w-md mx-auto">
+                Each numbered badge (#01 – #04) maps directly to your uploaded project photos.
+              </p>
+            </div>
 
-            {/* Tilted Floating Polaroid 2 on Right */}
-            <div className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 rotate-12 polaroid-card z-20 cursor-pointer animate-[editorialSwayReverse_7s_ease-in-out_infinite]">
-              <div className="p-2 pb-5 bg-white rounded-md shadow-2xl w-44">
-                <img
-                  src="https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=400&auto=format&fit=crop&q=80"
-                  alt="Snapshot 2"
-                  className="w-full aspect-[4/3] object-cover rounded-xs"
-                />
-                <p className="font-['Caveat',cursive] text-xs text-neutral-800 text-center mt-2 m-0 font-bold">
-                  Design Systems
-                </p>
+            {/* Right Polaroid (#02 — Project 2 Primary Cover or Project 1 Slot #02) */}
+            <div className="lg:col-span-3 flex justify-center">
+              <div className="rotate-6 polaroid-card z-20 cursor-pointer animate-[editorialSwayReverse_7s_ease-in-out_infinite]">
+                <div className="relative p-2.5 pb-4 bg-white rounded-xl shadow-2xl w-48 sm:w-52 border border-black/10">
+                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-neutral-900">
+                    <SafeProjectImage
+                      src={
+                        displayProjects[1]?.imageUrl ||
+                        displayProjects[0]?.images?.[0] ||
+                        "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=400&auto=format&fit=crop&q=80"
+                      }
+                      alt={displayProjects[1]?.title || "Project #02"}
+                      fallbackText="Project #02 Cover"
+                      className="w-full h-full object-cover"
+                    />
+                    <span
+                      className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white shadow-md"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      #02
+                    </span>
+                  </div>
+                  <p
+                    className="font-['Caveat',cursive] text-sm text-center mt-2 m-0 font-bold truncate px-1"
+                    style={{ color: "#0F172A" }}
+                  >
+                    {displayProjects[1]?.title || "Design Systems"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Bottom Note */}
-          <div className="relative z-10 w-full flex items-center justify-between text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif] border-t border-white/20 pt-4">
-            <span className="uppercase tracking-widest text-white/90 font-mono">
+          <div className="relative z-10 w-full flex items-center justify-between text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif] border-t border-white/25 pt-4">
+            <span className="uppercase tracking-widest text-white font-mono font-semibold">
               Selected Showcase
             </span>
-            <span className="font-mono text-white/90">
-              {displayProjects.length} Key Projects
+            <span className="font-mono text-white font-semibold">
+              {displayProjects.length} Key {displayProjects.length === 1 ? "Project" : "Projects"}
             </span>
           </div>
         </section>
 
-        {/* Slide 06: First PROJECT (Split Left Info, Right 2x2 Image Collage) */}
+        {/* Slide 06: First PROJECT (Split Left Info, Right Numbered 2x2 Image Collage #01-#04) */}
         {displayProjects[0] && (
           <section
-            className="editorial-slide relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
+            className="editorial-slide relative w-full min-h-[540px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
             style={{
               backgroundColor: colors.paper,
               borderColor: colors.paperBorder,
               color: colors.ink,
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center h-full">
-              {/* Left Column: Script "First" + Giant red "PROJECT" + Info & Links */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center my-auto">
+              {/* Left Column: Script "First" + Giant "PROJECT" + Info & Links */}
               <div className="md:col-span-5 space-y-4 text-left">
-                <div>
-                  <p
-                    className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
-                    style={{ color: primaryColor }}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
+                      style={{ color: primaryColor }}
+                    >
+                      First
+                    </p>
+                    <h3
+                      className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
+                      style={{ color: primaryColor }}
+                    >
+                      PROJECT
+                    </h3>
+                  </div>
+                  <span
+                    className="px-3 py-1 rounded-full font-mono text-xs font-bold border"
+                    style={{
+                      backgroundColor: colors.badgeBg,
+                      borderColor: colors.paperBorder,
+                      color: primaryColor,
+                    }}
                   >
-                    First
-                  </p>
-                  <h3
-                    className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
-                    style={{ color: primaryColor }}
-                  >
-                    PROJECT
-                  </h3>
+                    PROJECT 01
+                  </span>
                 </div>
 
-                <h4 className="font-bold text-lg" style={{ color: colors.ink }}>
+                <h4 className="font-bold text-lg sm:text-xl" style={{ color: colors.ink }}>
                   {displayProjects[0].title}
                 </h4>
 
@@ -951,12 +1059,12 @@ export function EditorialTemplate({
                 </p>
 
                 {/* Tags */}
-                {displayProjects[0].tags && (
+                {displayProjects[0].tags && displayProjects[0].tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {displayProjects[0].tags.map((t, idx) => (
                       <span
                         key={idx}
-                        className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium border"
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold border"
                         style={{
                           backgroundColor: colors.badgeBg,
                           borderColor: colors.paperBorder,
@@ -970,7 +1078,7 @@ export function EditorialTemplate({
                 )}
 
                 {/* Action Links */}
-                <div className="flex items-center gap-3 pt-3">
+                <div className="flex flex-wrap items-center gap-3 pt-3">
                   {displayProjects[0].liveUrl && (
                     <SafeLink
                       href={displayProjects[0].liveUrl}
@@ -984,121 +1092,173 @@ export function EditorialTemplate({
                   {displayProjects[0].repoUrl && (
                     <SafeLink
                       href={displayProjects[0].repoUrl}
-                      className="px-4 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 font-semibold text-xs flex items-center gap-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+                      className="px-4 py-2 rounded-xl border font-semibold text-xs flex items-center gap-1.5 hover:opacity-80 transition-all"
+                      style={{
+                        borderColor: colors.paperBorder,
+                        backgroundColor: colors.paperCard,
+                        color: colors.ink,
+                      }}
                     >
-                      <FolderGit2 className="h-3.5 w-3.5" />
+                      <FolderGit2 className="h-3.5 w-3.5" style={{ color: primaryColor }} />
                       <span>Code Repo</span>
                     </SafeLink>
                   )}
                 </div>
               </div>
 
-              {/* Right Column: 2x2 Collage Grid matching Slide 06 */}
-              <div className="md:col-span-7 grid grid-cols-2 gap-3 h-[min(65vw,420px)] sm:h-[400px]">
-                <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <SafeProjectImage
-                    src={
-                      displayProjects[0].imageUrl ||
-                      displayProjects[0].images?.[0] ||
-                      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
-                    }
-                    alt="Mockup 1"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              {/* Right Column: Numbered 2x2 Collage Grid (#01, #02, #03, #04) */}
+              <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:h-[410px]">
+                <NumberedProjectFrame
+                  src={
+                    displayProjects[0].imageUrl ||
+                    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
+                  }
+                  alt={`${displayProjects[0].title} - Photo #01`}
+                  slotNumber="#01"
+                  slotLabel="Primary Cover"
+                  primaryColor={primaryColor}
+                  className="h-48 sm:h-full"
+                />
+                <NumberedProjectFrame
+                  src={
+                    displayProjects[0].images?.[0] ||
+                    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80"
+                  }
+                  alt={`${displayProjects[0].title} - Photo #02`}
+                  slotNumber="#02"
+                  slotLabel="Secondary Frame"
+                  primaryColor={primaryColor}
+                  className="h-48 sm:h-full"
+                />
+                <NumberedProjectFrame
+                  src={
+                    displayProjects[0].images?.[1] ||
+                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
+                  }
+                  alt={`${displayProjects[0].title} - Photo #03`}
+                  slotNumber="#03"
+                  slotLabel="Detail Frame"
+                  primaryColor={primaryColor}
+                  className="h-48 sm:h-full"
+                />
+                {displayProjects[0].images?.[2] ? (
+                  <NumberedProjectFrame
+                    src={displayProjects[0].images[2]}
+                    alt={`${displayProjects[0].title} - Photo #04`}
+                    slotNumber="#04"
+                    slotLabel="Bento Highlight"
+                    primaryColor={primaryColor}
+                    className="h-48 sm:h-full"
                   />
-                </div>
-                <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <SafeProjectImage
-                    src={
-                      displayProjects[0].images?.[1] ||
-                      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80"
-                    }
-                    alt="Mockup 2"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white">
-                  <SafeProjectImage
-                    src={
-                      displayProjects[0].images?.[2] ||
-                      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
-                    }
-                    alt="Mockup 3"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="rounded-2xl overflow-hidden shadow-md border-2 border-white bg-neutral-900 flex items-center justify-center p-4 text-center">
-                  <div className="text-white space-y-1">
-                    <Sparkles className="h-6 w-6 mx-auto text-amber-400" />
-                    <p className="font-['Bebas_Neue',sans-serif] text-xl tracking-wider">FEATURED</p>
-                    <p className="text-[11px] font-mono opacity-70">Design Sprint 01</p>
+                ) : (
+                  <div className="relative rounded-2xl overflow-hidden shadow-md border-2 border-white bg-neutral-900 flex flex-col items-center justify-center p-5 text-center h-48 sm:h-full">
+                    <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-lg">
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: primaryColor }}
+                      />
+                      <span className="font-mono text-[11px] font-bold tracking-wider">#04</span>
+                    </div>
+                    <div className="text-white space-y-1.5">
+                      <Sparkles className="h-6 w-6 mx-auto text-amber-400" />
+                      <p className="font-['Bebas_Neue',sans-serif] text-2xl tracking-wider m-0 text-white">
+                        FEATURED
+                      </p>
+                      <p className="text-xs font-mono text-white/85 m-0 truncate max-w-[180px]">
+                        {displayProjects[0].title || "Design Sprint 01"}
+                      </p>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 px-3 py-1.5 bg-black/60 text-white/90 flex items-center justify-between text-[10px] font-mono">
+                      <span>Bento Highlight</span>
+                      <span>Slot #04</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </section>
         )}
 
-        {/* Slide 07: Second PROJECT (Top 3 Image Cards, Bottom Script "Second" + "PROJECT" & Text) */}
+        {/* Slide 07: Second PROJECT (Top 3 Numbered Image Cards #01-#03, Bottom Script "Second" + "PROJECT" & Text) */}
         {displayProjects[1] && (
           <section
-            className="editorial-slide relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
+            className="editorial-slide relative w-full min-h-[540px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between gap-6 border select-none transition-all duration-300"
             style={{
               backgroundColor: colors.paper,
               borderColor: colors.paperBorder,
               color: colors.ink,
             }}
           >
-            {/* Top: 3 Side-by-Side Image Cards matching Slide 07 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full h-[220px] sm:h-[260px]">
-              <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <SafeProjectImage
-                  src={
-                    displayProjects[1].imageUrl ||
-                    displayProjects[1].images?.[0] ||
-                    "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=600&auto=format&fit=crop&q=80"
-                  }
-                  alt="P2 - 1"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <SafeProjectImage
-                  src={
-                    displayProjects[1].images?.[1] ||
-                    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80"
-                  }
-                  alt="P2 - 2"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                <SafeProjectImage
-                  src={
-                    displayProjects[1].images?.[2] ||
-                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
-                  }
-                  alt="P2 - 3"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
+            {/* Top: 3 Side-by-Side Numbered Image Cards (#01, #02, #03) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+              <NumberedProjectFrame
+                src={
+                  displayProjects[1].imageUrl ||
+                  "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=600&auto=format&fit=crop&q=80"
+                }
+                alt={`${displayProjects[1].title} - Photo #01`}
+                slotNumber="#01"
+                slotLabel="Primary Cover"
+                primaryColor={primaryColor}
+                className="h-52 sm:h-[260px]"
+              />
+              <NumberedProjectFrame
+                src={
+                  displayProjects[1].images?.[0] ||
+                  "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80"
+                }
+                alt={`${displayProjects[1].title} - Photo #02`}
+                slotNumber="#02"
+                slotLabel="Secondary Frame"
+                primaryColor={primaryColor}
+                className="h-52 sm:h-[260px]"
+              />
+              <NumberedProjectFrame
+                src={
+                  displayProjects[1].images?.[1] ||
+                  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80"
+                }
+                alt={`${displayProjects[1].title} - Photo #03`}
+                slotNumber="#03"
+                slotLabel="Detail Frame"
+                primaryColor={primaryColor}
+                className="h-52 sm:h-[260px]"
+              />
             </div>
 
             {/* Bottom: Script "Second" + "PROJECT" Left | Description & Links Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end pt-6 border-t border-black/10 dark:border-white/10">
+            <div
+              className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end pt-6 border-t"
+              style={{ borderColor: colors.paperBorder }}
+            >
               <div className="md:col-span-5 text-left">
-                <p
-                  className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
-                  style={{ color: primaryColor }}
-                >
-                  Second
-                </p>
-                <h3
-                  className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
-                  style={{ color: primaryColor }}
-                >
-                  PROJECT
-                </h3>
-                <h4 className="font-bold text-base mt-1" style={{ color: colors.ink }}>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p
+                      className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
+                      style={{ color: primaryColor }}
+                    >
+                      Second
+                    </p>
+                    <h3
+                      className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
+                      style={{ color: primaryColor }}
+                    >
+                      PROJECT
+                    </h3>
+                  </div>
+                  <span
+                    className="px-3 py-1 rounded-full font-mono text-xs font-bold border"
+                    style={{
+                      backgroundColor: colors.badgeBg,
+                      borderColor: colors.paperBorder,
+                      color: primaryColor,
+                    }}
+                  >
+                    PROJECT 02
+                  </span>
+                </div>
+                <h4 className="font-bold text-base sm:text-lg mt-1.5" style={{ color: colors.ink }}>
                   {displayProjects[1].title}
                 </h4>
               </div>
@@ -1107,23 +1267,28 @@ export function EditorialTemplate({
                 <p className="text-xs sm:text-sm leading-relaxed" style={{ color: colors.inkMuted }}>
                   {displayProjects[1].description}
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {displayProjects[1].liveUrl && (
                     <SafeLink
                       href={displayProjects[1].liveUrl}
-                      className="px-4 py-1.5 rounded-full text-white font-semibold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all"
+                      className="px-4 py-2 rounded-full text-white font-semibold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all"
                       style={{ backgroundColor: primaryColor }}
                     >
                       <span>Explore Live</span>
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </SafeLink>
                   )}
                   {displayProjects[1].repoUrl && (
                     <SafeLink
                       href={displayProjects[1].repoUrl}
-                      className="px-4 py-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 font-semibold text-xs flex items-center gap-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+                      className="px-4 py-2 rounded-full border font-semibold text-xs flex items-center gap-1.5 hover:opacity-80 transition-all"
+                      style={{
+                        borderColor: colors.paperBorder,
+                        backgroundColor: colors.paperCard,
+                        color: colors.ink,
+                      }}
                     >
-                      <FolderGit2 className="h-3 w-3" />
+                      <FolderGit2 className="h-3.5 w-3.5" style={{ color: primaryColor }} />
                       <span>Source</span>
                     </SafeLink>
                   )}
@@ -1133,108 +1298,148 @@ export function EditorialTemplate({
           </section>
         )}
 
-        {/* Slide 08: Third PROJECT & Additional Repos */}
-        {displayProjects[2] && (
-          <section
-            className="editorial-slide relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
-            style={{
-              backgroundColor: colors.paper,
-              borderColor: colors.paperBorder,
-              color: colors.ink,
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center h-full">
-              {/* Left Column: Texture / Collage */}
-              <div className="md:col-span-4 rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[320px]">
-                <SafeProjectImage
-                  src={
-                    displayProjects[2].images?.[1] ||
-                    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
-                  }
-                  alt="Process Collage"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-
-              {/* Center Column: Script "Third" + "PROJECT" */}
-              <div className="md:col-span-4 text-center space-y-3 px-2">
-                <p
-                  className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
-                  style={{ color: primaryColor }}
-                >
-                  Third
-                </p>
-                <h3
-                  className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
-                  style={{ color: primaryColor }}
-                >
-                  PROJECT
-                </h3>
-                <h4 className="font-bold text-base" style={{ color: colors.ink }}>
-                  {displayProjects[2].title}
-                </h4>
-                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: colors.inkMuted }}>
-                  {displayProjects[2].description}
-                </p>
-                {displayProjects[2].liveUrl && (
-                  <SafeLink
-                    href={displayProjects[2].liveUrl}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white font-semibold text-xs shadow-md hover:opacity-90 transition-all"
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    <span>View Project</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </SafeLink>
-                )}
-              </div>
-
-              {/* Right Column: Stacked Image Cards */}
-              <div className="md:col-span-4 space-y-3">
-                <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[155px]">
-                  <SafeProjectImage
+        {/* Slide 08: Third PROJECT & Additional Projects */}
+        {displayProjects.slice(2).map((proj, extraIdx) => {
+          const projectNumber = extraIdx + 3;
+          const ordinalLabels = ["Third", "Fourth", "Fifth", "Sixth"];
+          const scriptLabel = ordinalLabels[extraIdx] || `Project #0${projectNumber}`;
+          return (
+            <section
+              key={`proj-${projectNumber}`}
+              className="editorial-slide relative w-full min-h-[540px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
+              style={{
+                backgroundColor: colors.paper,
+                borderColor: colors.paperBorder,
+                color: colors.ink,
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center my-auto">
+                {/* Left Column: Primary Cover (#01) */}
+                <div className="md:col-span-4">
+                  <NumberedProjectFrame
                     src={
-                      displayProjects[2].imageUrl ||
-                      displayProjects[2].images?.[0] ||
+                      proj.imageUrl ||
+                      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80"
+                    }
+                    alt={`${proj.title} - Photo #01`}
+                    slotNumber="#01"
+                    slotLabel="Primary Cover"
+                    primaryColor={primaryColor}
+                    className="h-64 sm:h-[330px]"
+                  />
+                </div>
+
+                {/* Center Column: Script + PROJECT + Description */}
+                <div className="md:col-span-4 text-center space-y-3 px-2">
+                  <span
+                    className="inline-block px-3 py-0.5 rounded-full font-mono text-[11px] font-bold border"
+                    style={{
+                      backgroundColor: colors.badgeBg,
+                      borderColor: colors.paperBorder,
+                      color: primaryColor,
+                    }}
+                  >
+                    PROJECT 0{projectNumber}
+                  </span>
+                  <p
+                    className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl m-0 leading-none"
+                    style={{ color: primaryColor }}
+                  >
+                    {scriptLabel}
+                  </p>
+                  <h3
+                    className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
+                    style={{ color: primaryColor }}
+                  >
+                    PROJECT
+                  </h3>
+                  <h4 className="font-bold text-base sm:text-lg" style={{ color: colors.ink }}>
+                    {proj.title}
+                  </h4>
+                  <p className="text-xs sm:text-sm leading-relaxed" style={{ color: colors.inkMuted }}>
+                    {proj.description}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                    {proj.liveUrl && (
+                      <SafeLink
+                        href={proj.liveUrl}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-semibold text-xs shadow-md hover:opacity-90 transition-all"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        <span>View Project</span>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </SafeLink>
+                    )}
+                    {proj.repoUrl && (
+                      <SafeLink
+                        href={proj.repoUrl}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border font-semibold text-xs hover:opacity-80 transition-all"
+                        style={{
+                          borderColor: colors.paperBorder,
+                          backgroundColor: colors.paperCard,
+                          color: colors.ink,
+                        }}
+                      >
+                        <FolderGit2 className="h-3.5 w-3.5" style={{ color: primaryColor }} />
+                        <span>Source</span>
+                      </SafeLink>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column: Stacked Numbered Image Cards (#02 & #03) */}
+                <div className="md:col-span-4 space-y-3">
+                  <NumberedProjectFrame
+                    src={
+                      proj.images?.[0] ||
                       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"
                     }
-                    alt="P3 - 1"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    alt={`${proj.title} - Photo #02`}
+                    slotNumber="#02"
+                    slotLabel="Secondary Frame"
+                    primaryColor={primaryColor}
+                    className="h-[158px]"
                   />
-                </div>
-                <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white h-[155px]">
-                  <SafeProjectImage
+                  <NumberedProjectFrame
                     src={
-                      displayProjects[2].images?.[2] ||
+                      proj.images?.[1] ||
                       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format&fit=crop&q=80"
                     }
-                    alt="P3 - 2"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    alt={`${proj.title} - Photo #03`}
+                    slotNumber="#03"
+                    slotLabel="Detail Frame"
+                    primaryColor={primaryColor}
+                    className="h-[158px]"
                   />
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })}
       </div>
     ),
 
     // -------------------------------------------------------------------------
-    // CERTIFICATIONS: Editorial Verified Credentials Slide
+    // CERTIFICATIONS: Editorial Verified Credentials Slide (High-Contrast & Balanced Layout)
     // -------------------------------------------------------------------------
     certifications: (
       <section
         key="certifications"
         id="certifications"
-        className="editorial-slide relative w-full aspect-[16/10] min-h-[540px] max-h-[780px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
+        className="editorial-slide relative w-full rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between gap-8 border select-none transition-all duration-300"
         style={{
           backgroundColor: colors.paper,
           borderColor: colors.paperBorder,
           color: colors.ink,
         }}
       >
+        {/* Header Row with High-Contrast Script & Display Typography */}
         <div className="flex items-start justify-between w-full">
           <div>
-            <p className="font-['Caveat',cursive] text-2xl sm:text-3xl text-neutral-800 dark:text-neutral-200 m-0 leading-none">
+            <p
+              className="font-['Caveat',cursive] font-bold text-2xl sm:text-3xl m-0 leading-none"
+              style={{ color: primaryColor }}
+            >
               Verified
             </p>
             <h2
@@ -1244,68 +1449,139 @@ export function EditorialTemplate({
               CERTIFICATIONS
             </h2>
           </div>
-          <span className="font-mono text-xs sm:text-sm font-semibold opacity-60">
+          <span
+            className="font-mono text-xs sm:text-sm font-bold px-3 py-1 rounded-full border"
+            style={{
+              backgroundColor: colors.badgeBg,
+              borderColor: colors.paperBorder,
+              color: colors.ink,
+            }}
+          >
             07
           </span>
         </div>
 
-        {/* Certifications Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-auto">
-          {(portfolio?.certifications || []).length > 0 ? (
-            portfolio.certifications!.map((cert, idx) => (
-              <div
-                key={idx}
-                className="p-5 rounded-2xl border shadow-xs transition-transform hover:-translate-y-1 space-y-2"
-                style={{
-                  backgroundColor: colors.paperCard,
-                  borderColor: colors.paperBorder,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <Award className="h-5 w-5 shrink-0" style={{ color: primaryColor }} />
-                  <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100 line-clamp-2">
-                    {cert.name}
-                  </span>
-                </div>
-                <p className="font-mono text-xs text-neutral-600 dark:text-neutral-400">
-                  {cert.issuer} {cert.issueDate ? `• ${cert.issueDate}` : ""}
-                </p>
-                {cert.url && (
-                  <SafeLink
-                    href={cert.url}
-                    className="inline-flex items-center gap-1 text-xs font-semibold hover:underline pt-1"
-                    style={{ color: primaryColor }}
-                  >
-                    <span>Verify Credential</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </SafeLink>
-                )}
-              </div>
-            ))
-          ) : (
+        {/* Certifications Grid with High-Contrast Text & Balanced Editorial Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 my-auto">
+          {((portfolio?.certifications || []).length > 0
+            ? portfolio.certifications!
+            : [
+                {
+                  name: "AWS Certified Solutions Architect",
+                  issuer: "Amazon Web Services",
+                  issueDate: "2023",
+                  url: "",
+                },
+              ]
+          ).map((cert, idx) => (
             <div
-              className="p-5 rounded-2xl border shadow-xs space-y-2"
+              key={idx}
+              className="p-6 rounded-2xl border shadow-sm transition-transform hover:-translate-y-1 flex flex-col justify-between gap-4"
               style={{
                 backgroundColor: colors.paperCard,
                 borderColor: colors.paperBorder,
               }}
             >
-              <div className="flex items-center gap-2">
-                <Award className="h-5 w-5 shrink-0" style={{ color: primaryColor }} />
-                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                  AWS Certified Solutions Architect
-                </span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: primaryColor,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <span
+                    className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
+                    style={{
+                      backgroundColor: colors.badgeBg,
+                      borderColor: colors.paperBorder,
+                      color: primaryColor,
+                    }}
+                  >
+                    CREDENTIAL #0{idx + 1}
+                  </span>
+                </div>
+
+                <h3
+                  className="font-bold text-base sm:text-lg leading-snug m-0"
+                  style={{ color: colors.ink }}
+                >
+                  {cert.name}
+                </h3>
+
+                <p
+                  className="font-mono text-xs sm:text-sm font-semibold m-0"
+                  style={{ color: colors.inkMuted }}
+                >
+                  {cert.issuer} {cert.issueDate ? `• ${cert.issueDate}` : ""}
+                </p>
               </div>
-              <p className="font-mono text-xs text-neutral-600 dark:text-neutral-400">
-                Amazon Web Services • 2023
-              </p>
+
+              {cert.url ? (
+                <SafeLink
+                  href={cert.url}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline pt-2 border-t"
+                  style={{
+                    color: primaryColor,
+                    borderColor: colors.paperBorder,
+                  }}
+                >
+                  <span>Verify Official Credential</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </SafeLink>
+              ) : (
+                <div
+                  className="pt-2 border-t flex items-center justify-between text-[11px] font-mono font-semibold"
+                  style={{
+                    borderColor: colors.paperBorder,
+                    color: colors.inkMuted,
+                  }}
+                >
+                  <span>Status: Active</span>
+                  <span style={{ color: primaryColor }}>✓ Verified</span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Editorial Summary Card so 1-2 Certifications Fill the Row Cleanly */}
+          {(portfolio?.certifications || []).length <= 2 && (
+            <div
+              className="p-6 rounded-2xl border shadow-sm flex flex-col justify-between gap-4"
+              style={{
+                backgroundColor: primaryColor,
+                borderColor: primaryColor,
+                color: "#FFFFFF",
+              }}
+            >
+              <div className="space-y-2">
+                <span className="inline-block font-mono text-[11px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/20 text-white font-bold">
+                  Industry Validated
+                </span>
+                <h3 className="font-['Bebas_Neue',sans-serif] text-3xl tracking-wide m-0 text-white">
+                  CONTINUOUS EXCELLENCE
+                </h3>
+                <p className="text-xs sm:text-sm text-white/90 leading-relaxed m-0">
+                  Backed by verified technical certifications, hands-on architecture assessments, and modern engineering standards.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[11px] font-mono text-white/90">
+                <span>Accredited Standards</span>
+                <span>100% Verified</span>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+        <div
+          className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+          style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+        >
           <span>Official Industry Credentials</span>
-          <span className="opacity-60">Verified Standards</span>
+          <span className="font-semibold">Verified Standards</span>
         </div>
       </section>
     ),
@@ -1625,19 +1901,19 @@ export function EditorialTemplate({
 
         @keyframes editorialSway {
           0%, 100% {
-            transform: translateY(-50%) rotate(-12deg) translateY(0);
+            transform: rotate(-6deg) translateY(0);
           }
           50% {
-            transform: translateY(-50%) rotate(-10deg) translateY(-8px);
+            transform: rotate(-4deg) translateY(-8px);
           }
         }
 
         @keyframes editorialSwayReverse {
           0%, 100% {
-            transform: translateY(-50%) rotate(12deg) translateY(0);
+            transform: rotate(6deg) translateY(0);
           }
           50% {
-            transform: translateY(-50%) rotate(10deg) translateY(-8px);
+            transform: rotate(4deg) translateY(-8px);
           }
         }
 
@@ -1646,7 +1922,7 @@ export function EditorialTemplate({
         }
 
         .polaroid-card:hover {
-          transform: translateY(-50%) rotate(0deg) scale(1.06) !important;
+          transform: rotate(0deg) scale(1.06) !important;
           box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.45);
           z-index: 30;
         }
@@ -1662,12 +1938,12 @@ export function EditorialTemplate({
         }
       `}</style>
 
-      {/* Floating Presentation Deck Navigation Bar with Bulletproof Contrast */}
-      <header className="sticky top-4 z-40 max-w-4xl mx-auto rounded-full px-5 py-2.5 bg-[#1C1818]/95 backdrop-blur-xl border border-white/15 text-white flex items-center justify-between shadow-2xl relative overflow-hidden">
-        {/* Subtle reading progress meter across the bottom of the floating header */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 pointer-events-none">
+      {/* Floating Presentation Deck Navigation Bar with High-Contrast Pill Layout */}
+      <header className="sticky top-4 z-40 max-w-5xl mx-auto rounded-full px-4 sm:px-6 py-2.5 bg-[#141418]/95 backdrop-blur-xl border border-white/15 text-white flex items-center justify-between gap-3 shadow-2xl relative">
+        {/* Cleanly inset reading progress meter across the bottom of the floating pill */}
+        <div className="absolute bottom-0 left-6 right-6 h-[2.5px] rounded-full bg-white/10 overflow-hidden pointer-events-none">
           <div
-            className="h-full transition-all duration-150 ease-out"
+            className="h-full rounded-full transition-all duration-150 ease-out"
             style={{
               width: `${Math.round(scrollProgress * 100)}%`,
               backgroundColor: primaryColor,
@@ -1675,43 +1951,59 @@ export function EditorialTemplate({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="font-['Caveat',cursive] text-2xl font-bold text-[#F59E0B]">
+        <a href="#hero" className="flex items-center gap-2 shrink-0 pl-1">
+          <span className="font-['Caveat',cursive] text-2xl font-bold text-white">
             {firstName}
           </span>
-          <span className="font-['Bebas_Neue',sans-serif] tracking-widest text-xs opacity-75 text-white">
+          <span
+            className="font-['Bebas_Neue',sans-serif] tracking-widest text-[11px] px-2 py-0.5 rounded-full text-white font-semibold"
+            style={{ backgroundColor: primaryColor }}
+          >
             DECK
           </span>
-        </div>
+        </a>
 
-        {/* Quick Section Anchors */}
-        <nav className="hidden sm:flex items-center gap-5 text-xs font-mono uppercase tracking-wider text-[#FAF5EF]/80">
-          {["hero", "about", "experience", "education", "projects", "skills", "testimonials", "contact"]
+        {/* Quick Section Anchors with High-Contrast Active Pill */}
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-mono tracking-wide overflow-x-auto scrollbar-none py-0.5">
+          {sectionOrder
             .filter((sec) => !isHidden(sec))
-            .map((sec) => (
-              <a
-                key={sec}
-                href={`#${sec}`}
-                className={`transition-colors capitalize ${
-                  activeSection === sec
-                    ? "text-[#F59E0B] font-bold underline underline-offset-4"
-                    : "hover:text-white"
-                }`}
-              >
-                {sec}
-              </a>
-            ))}
+            .map((sec) => {
+              const isActive = activeSection === sec;
+              return (
+                <a
+                  key={sec}
+                  href={`#${sec}`}
+                  className={`px-3 py-1 rounded-full transition-all capitalize whitespace-nowrap ${
+                    isActive
+                      ? "bg-white text-neutral-950 font-bold shadow-xs"
+                      : "text-white/85 hover:text-white hover:bg-white/10 font-medium"
+                  }`}
+                >
+                  {sec}
+                </a>
+              );
+            })}
         </nav>
 
-        {email && (
-          <SafeLink
-            href={`mailto:${email}`}
-            className="px-4 py-1.5 rounded-full text-xs font-semibold shadow-md hover:scale-105 active:scale-95 transition-all font-mono"
-            style={{ backgroundColor: primaryColor, color: "#FFFFFF" }}
-          >
-            Connect
-          </SafeLink>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {email ? (
+            <SafeLink
+              href={`mailto:${email}`}
+              className="px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all font-mono"
+              style={{ backgroundColor: primaryColor, color: "#FFFFFF" }}
+            >
+              Connect
+            </SafeLink>
+          ) : (
+            <a
+              href="#contact"
+              className="px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all font-mono"
+              style={{ backgroundColor: primaryColor, color: "#FFFFFF" }}
+            >
+              Connect
+            </a>
+          )}
+        </div>
       </header>
 
       {/* Render Dynamic Sections Based on User's Customized sectionOrder & hiddenSections */}
@@ -1726,7 +2018,7 @@ export function EditorialTemplate({
               <section
                 key={sec}
                 id={sec}
-                className="editorial-slide relative w-full aspect-[16/10] min-h-[500px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between border select-none transition-all duration-300"
+                className="editorial-slide relative w-full min-h-[420px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between gap-6 border select-none transition-all duration-300"
                 style={{
                   backgroundColor: colors.paper,
                   borderColor: colors.paperBorder,
@@ -1734,7 +2026,10 @@ export function EditorialTemplate({
                 }}
               >
                 <div>
-                  <p className="font-['Caveat',cursive] text-2xl sm:text-3xl text-neutral-800 dark:text-neutral-200 m-0 leading-none">
+                  <p
+                    className="font-['Caveat',cursive] font-bold text-2xl sm:text-3xl m-0 leading-none"
+                    style={{ color: primaryColor }}
+                  >
                     Custom
                   </p>
                   <h2
@@ -1744,14 +2039,23 @@ export function EditorialTemplate({
                     {sec.replace(/[-_]/g, " ")}
                   </h2>
                 </div>
-                <div className="my-auto p-6 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
-                  <p className="text-sm sm:text-base leading-relaxed" style={{ color: colors.inkMuted }}>
+                <div
+                  className="my-auto p-6 rounded-2xl border"
+                  style={{
+                    backgroundColor: colors.paperCard,
+                    borderColor: colors.paperBorder,
+                  }}
+                >
+                  <p className="text-sm sm:text-base leading-relaxed m-0" style={{ color: colors.inkMuted }}>
                     Editorial section for {sec.replace(/[-_]/g, " ")}. Customize your content anytime in the portfolio editor.
                   </p>
                 </div>
-                <div className="w-full flex items-center justify-between text-xs pt-3 border-t border-black/10 dark:border-white/10 font-mono">
+                <div
+                  className="w-full flex items-center justify-between text-xs pt-3 border-t font-mono"
+                  style={{ borderColor: colors.paperBorder, color: colors.inkMuted }}
+                >
                   <span className="capitalize">{sec.replace(/[-_]/g, " ")}</span>
-                  <span className="opacity-60">Custom Section</span>
+                  <span className="font-semibold">Custom Section</span>
                 </div>
               </section>
             );

@@ -1,33 +1,13 @@
 import assert from "node:assert/strict";
+import { PORTFOLIO_TEMPLATES } from "../src/validations/portfolio.validation.js";
 
 const BASE = "http://127.0.0.1:5001/api";
 
-const ALL_TEMPLATES = [
-  "devport",
-  "creative",
-  "developer",
-  "minimal",
-  "oss-maintainer",
-  "motion-studio",
-  "seyi-editorial",
-  "sameera-material",
-  "resume-page",
-  "poster",
-  "spotlight",
-  "dat-immersive",
-  "nahuel-cosmos",
-  "ramen-shop",
-  "danny-webgl",
-  "portfolio-os",
-  "buffalo-room",
-  "folio-2019",
-  "notebook-room",
-  "naresh-keyboard",
-];
+const ALL_TEMPLATES = [...PORTFOLIO_TEMPLATES];
 
 async function run() {
   console.log("==================================================");
-  console.log("   All 20 Templates Backend Validation Suite     ");
+  console.log(`   All ${ALL_TEMPLATES.length} Templates Backend Validation Suite      `);
   console.log("==================================================");
 
   const unique = Date.now();

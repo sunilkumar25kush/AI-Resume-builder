@@ -11,7 +11,9 @@ import * as portfolioExportService from "../services/portfolioExport.service.js"
  */
 export const createPortfolio = asyncHandler(async (req, res) => {
   const portfolio = await portfolioService.createPortfolio(req.user.id, req.validatedBody);
-  console.info(`[portfolio:lifecycle] created id=${portfolio._id || portfolio.id} template=${portfolio.templateId} user=${req.user.id}`);
+  console.info(
+    `[portfolio:lifecycle] created id=${portfolio._id || portfolio.id} template=${portfolio.design?.template || "spotlight"} user=${req.user.id}`,
+  );
   res.status(201).json({ success: true, data: { portfolio } });
 });
 

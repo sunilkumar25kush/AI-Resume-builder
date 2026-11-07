@@ -15,13 +15,22 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/api/client";
 import { portfoliosApi } from "@/api/portfolios";
 import { PortfolioRenderer } from "@/components/portfolios/PortfolioRenderer";
-import { TEMPLATE_METADATA } from "@/components/portfolios/templates/registry";
+import { TEMPLATE_METADATA, VALID_TEMPLATE_IDS } from "@/components/portfolios/templates/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ColorPresetPicker } from "@/components/portfolios/common/ColorPresetPicker";
 import { ThemeModeToggle } from "@/components/portfolios/common/ThemeModeToggle";
+import { useAuthStore } from "@/stores/auth";
 import type { Portfolio, PortfolioDesignSettings, PortfolioTemplateId } from "@/types/portfolio";
+
+function resolveSafeTemplateId(raw?: string | null): PortfolioTemplateId {
+  if (!raw) return "spotlight";
+  const normalized = raw.toLowerCase().trim() as PortfolioTemplateId;
+  return (VALID_TEMPLATE_IDS as readonly string[]).includes(normalized)
+    ? normalized
+    : "spotlight";
+}
 
 const PublishModal = lazy(() =>
   import("@/components/portfolios/editor/PublishModal").then((m) => ({ default: m.PublishModal })),
@@ -140,7 +149,8 @@ const DEFAULT_DEMO_PORTFOLIO: Portfolio = {
 export default function PortfolioPreviewPage() {
   const { id, templateId } = useParams<{ id?: string; templateId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const templateQuery = searchParams.get("template") as PortfolioTemplateId | null;
+  const templateQuery = searchParams.get("template");
+  const authStatus = useAuthStore((state) => state.status);
 
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +158,7 @@ export default function PortfolioPreviewPage() {
 
   // Live design preview overrides
   const [previewTemplate, setPreviewTemplate] = useState<PortfolioDesignSettings["template"]>(
-    templateId ? (templateId as PortfolioTemplateId) : templateQuery || "spotlight",
+    resolveSafeTemplateId(templateId || templateQuery),
   );
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("light");
   const [previewColor, setPreviewColor] = useState<string>("#e3141f");
@@ -182,14 +192,17 @@ export default function PortfolioPreviewPage() {
 
   useEffect(() => {
     let isMounted = true;
+    const initialQueryTemplate = new URLSearchParams(window.location.search).get("template");
 
     async function loadData() {
       const windowOverride = typeof window !== "undefined" && (window as unknown as { __PORTFOLIO_PREVIEW_DATA__?: Portfolio }).__PORTFOLIO_PREVIEW_DATA__;
       if (windowOverride) {
         if (isMounted) {
           setPortfolio(windowOverride);
-          const resolvedTemplate = templateId || templateQuery || windowOverride.design?.template || "spotlight";
-          setPreviewTemplate(resolvedTemplate as PortfolioTemplateId);
+          const resolvedTemplate = resolveSafeTemplateId(
+            templateId || initialQueryTemplate || windowOverride.design?.template,
+          );
+          setPreviewTemplate(resolvedTemplate);
           setPreviewTheme(windowOverride.design?.theme || "light");
           setPreviewColor(windowOverride.design?.primaryColor || "#e3141f");
           setPreviewFont(windowOverride.design?.fontFamily || "Inter");
@@ -205,37 +218,45 @@ export default function PortfolioPreviewPage() {
           const data = await portfoliosApi.get(id);
           if (isMounted) {
             setPortfolio(data);
-            const resolvedTemplate = templateQuery || data.design?.template || "spotlight";
+            const resolvedTemplate = resolveSafeTemplateId(
+              initialQueryTemplate || data.design?.template,
+            );
             setPreviewTemplate(resolvedTemplate);
             setPreviewTheme(data.design?.theme || "light");
             setPreviewColor(data.design?.primaryColor || "#e3141f");
             setPreviewFont(data.design?.fontFamily || "Inter");
           }
         } else if (templateId) {
-          // If viewing /portfolio-templates/:templateId, load user's portfolio or default demo
-          try {
-            const list = await portfoliosApi.list();
-            if (isMounted && list && list.length > 0) {
-              setPortfolio(list[0]);
-              setPreviewTemplate(templateId as PortfolioTemplateId);
-              setPreviewTheme(list[0].design?.theme || "light");
-              setPreviewColor(list[0].design?.primaryColor || "#e3141f");
-              setPreviewFont(list[0].design?.fontFamily || "Inter");
-            } else if (isMounted) {
-              setPortfolio(DEFAULT_DEMO_PORTFOLIO);
-              setPreviewTemplate(templateId as PortfolioTemplateId);
+          const validTemplateId = resolveSafeTemplateId(templateId);
+          // Only fetch user portfolios when authenticated so unauthenticated visitors never trigger 401
+          if (authStatus === "authenticated") {
+            try {
+              const list = await portfoliosApi.list();
+              if (isMounted && list && list.length > 0) {
+                setPortfolio(list[0]);
+                setPreviewTemplate(validTemplateId);
+                setPreviewTheme(list[0].design?.theme || "light");
+                setPreviewColor(list[0].design?.primaryColor || "#e3141f");
+                setPreviewFont(list[0].design?.fontFamily || "Inter");
+              } else if (isMounted) {
+                setPortfolio(DEFAULT_DEMO_PORTFOLIO);
+                setPreviewTemplate(validTemplateId);
+              }
+            } catch {
+              if (isMounted) {
+                setPortfolio(DEFAULT_DEMO_PORTFOLIO);
+                setPreviewTemplate(validTemplateId);
+              }
             }
-          } catch {
-            if (isMounted) {
-              setPortfolio(DEFAULT_DEMO_PORTFOLIO);
-              setPreviewTemplate(templateId as PortfolioTemplateId);
-            }
+          } else if (isMounted) {
+            setPortfolio(DEFAULT_DEMO_PORTFOLIO);
+            setPreviewTemplate(validTemplateId);
           }
         } else {
           // Fallback to default demo
           if (isMounted) {
             setPortfolio(DEFAULT_DEMO_PORTFOLIO);
-            setPreviewTemplate(templateQuery || "spotlight");
+            setPreviewTemplate(resolveSafeTemplateId(initialQueryTemplate));
           }
         }
       } catch (err) {
@@ -251,7 +272,7 @@ export default function PortfolioPreviewPage() {
     return () => {
       isMounted = false;
     };
-  }, [id, templateId, templateQuery]);
+  }, [id, templateId, authStatus]);
 
   const handleTemplateChange = (newTemplate: PortfolioTemplateId) => {
     setPreviewTemplate(newTemplate);

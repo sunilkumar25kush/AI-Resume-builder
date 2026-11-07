@@ -35,6 +35,7 @@ const TEMPLATE_IDS: PortfolioTemplateId[] = [
   "creative",
   "developer",
   "minimal",
+  "editorial",
 ];
 
 let totalTests = 0;
@@ -165,7 +166,7 @@ runTest("Rejects and sanitizes invalid color inputs to template defaults", () =>
   });
   assert.equal(result.isValid, false);
   assert.ok(result.errors.length > 0);
-  assert.equal(result.sanitized.primaryColor, "#e11d48"); // Default for spotlight
+  assert.equal(result.sanitized.primaryColor, "#e3141f"); // Default for spotlight
 });
 
 runTest("Sanitizes unsupported font families to template supported font", () => {
@@ -207,7 +208,7 @@ console.log("\n[TEST 4] Verifying Default Design Preservation for All Templates.
 
 runTest("Preserves exact native default colors and settings for all templates", () => {
   const spotlightDef = getDefaultDesignSettings("spotlight");
-  assert.equal(spotlightDef.primaryColor, "#e11d48");
+  assert.equal(spotlightDef.primaryColor, "#e3141f");
   assert.equal(spotlightDef.templateSettings?.glowHalo, true);
   assert.equal(spotlightDef.templateSettings?.expertiseTree, true);
 
@@ -221,16 +222,19 @@ runTest("Preserves exact native default colors and settings for all templates", 
   assert.equal(devportDef.templateSettings?.floatingCodeCard, true);
 
   const creativeDef = getDefaultDesignSettings("creative");
-  assert.equal(creativeDef.primaryColor, "#9333ea");
+  assert.equal(creativeDef.primaryColor, "#8b5cf6");
   assert.equal(creativeDef.templateSettings?.glassBlur, "medium");
 
   const developerDef = getDefaultDesignSettings("developer");
-  assert.equal(developerDef.primaryColor, "#2563eb");
+  assert.equal(developerDef.primaryColor, "#f59e0b");
   assert.equal(developerDef.templateSettings?.terminalPrompt, "dev@workstation:~$");
 
   const minimalDef = getDefaultDesignSettings("minimal");
-  assert.equal(minimalDef.primaryColor, "#2563eb");
+  assert.equal(minimalDef.primaryColor, "#10b981");
   assert.equal(minimalDef.templateSettings?.whitespaceDensity, "normal");
+
+  const editorialDef = getDefaultDesignSettings("editorial");
+  assert.equal(editorialDef.primaryColor, "#8B151B");
 });
 
 // -----------------------------------------------------------------------------

@@ -113,14 +113,29 @@ const portfolioSchema = new mongoose.Schema(
     design: {
       template: {
         type: String,
-        enum: ["devport", "creative", "developer", "minimal"],
-        default: "devport",
+        enum: [
+          "spotlight",
+          "poster",
+          "devport",
+          "creative",
+          "developer",
+          "minimal",
+          "modern",
+          "executive",
+          "editorial",
+        ],
+        default: "spotlight",
       },
-      theme: { type: String, default: "default" },
-      font: { type: String, default: "Geist" },
+      theme: {
+        type: String,
+        enum: ["light", "dark", "system"],
+        default: "system",
+      },
+      primaryColor: { type: String, default: "#e3141f", trim: true, maxlength: 50 },
+      fontFamily: { type: String, default: "Inter", trim: true, maxlength: 100 },
       sectionOrder: {
         type: [String],
-        default: ["hero", "about", "skills", "projects", "experience", "education", "contact"],
+        default: ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
       },
       sectionVisibility: { type: Map, of: Boolean, default: {} },
       customCss: { type: String, default: "", maxlength: 10000 },
@@ -139,24 +154,33 @@ const portfolioSchema = new mongoose.Schema(
 
 To support GitSkins-inspired templates (3D WebGL scenes, kinetic typography, and open-source telemetry), the following targeted enhancements are proposed:
 
-### 3.1 Template Enum Extension
-Expand `design.template` enum to include the newly integrated templates:
+### 3.1 Canonical Template Enum
+The canonical `design.template` enum enforced across `server/src/models/Portfolio.js`, `server/src/validations/portfolio.validation.js` (`PORTFOLIO_TEMPLATES`), and `client/src/components/portfolios/templates/registry.ts` (`VALID_TEMPLATE_IDS`):
 ```javascript
-// PROPOSED: Updated enum in server/src/models/Portfolio.js
+// CANONICAL: Enforced enum in server/src/models/Portfolio.js
 design: {
   template: {
     type: String,
     enum: [
+      "spotlight",
+      "poster",
       "devport",
       "creative",
       "developer",
       "minimal",
-      "ramen-shop",      // [PROPOSED] 3D WebGL Arcade Diner
-      "motion-studio",   // [PROPOSED] Kinetic Editorial
-      "oss-maintainer",  // [PROPOSED] GitHub Telemetry & Maintainer Profile
+      "modern",
+      "executive",
+      "editorial",
     ],
-    default: "devport",
+    default: "spotlight",
   },
+  theme: {
+    type: String,
+    enum: ["light", "dark", "system"],
+    default: "system",
+  },
+  primaryColor: { type: String, default: "#e3141f", trim: true, maxlength: 50 },
+  fontFamily: { type: String, default: "Inter", trim: true, maxlength: 100 },
   // ...
 }
 ```
@@ -250,9 +274,10 @@ erDiagram
 
 ## 6. Validation Rules & Data Sanitization
 
-* **Slug Format Validation:**
-  - Standard regex: `/^[a-z0-9]+(?:-[a-z0-9]+)*$/`
-  - Min length: 3 characters, Max length: 40 characters.
+* **Canonical Slug Format Validation & Reserved Slugs:**
+  - Standard regex: `/^[a-z0-9]+(?:-[a-z0-9]+)*$/` (lowercase alphanumeric characters with single internal hyphens; no leading or trailing hyphens).
+  - Length bounds: Min length `3` characters, Max length `60` characters.
+  - Canonical reserved slug set (rejected across client and server): `["admin", "api", "auth", "dashboard", "resumes", "portfolios", "login", "register", "settings", "public", "export", "pricing"]`.
 * **XSS Prevention:**
   - All text inputs (`bio`, `description`, `headline`, `title`) are sanitized using string trimming and HTML entity escaping before persisting.
 * **URL Validation:**

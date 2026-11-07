@@ -28,7 +28,7 @@ export interface TemplateCompatibilityReport {
 }
 
 /**
- * Strict, type-safe capability contract for all 20 integrated portfolio templates.
+ * Strict, type-safe capability contract for all registered PortfolioTemplateId entries.
  * Documents exactly which resume fields each template renders and requires.
  */
 export const TEMPLATE_FIELD_CONTRACTS: Record<PortfolioTemplateId, TemplateFieldContract> = {
@@ -482,9 +482,14 @@ export function normalizeSocialLinks(contact: unknown): PortfolioSocialLink[] {
       if (cl && typeof cl === "object") {
         const item = cl as { label?: string; url?: string };
         if (item.url && item.url.trim()) {
-          const label = item.label?.trim() || "Link";
+          const label = (item.label?.trim() || "Link").slice(0, 100);
+          const platform =
+            label
+              .toLowerCase()
+              .replace(/[^a-z0-9_-]/g, "")
+              .slice(0, 50) || "website";
           links.push({
-            platform: label.toLowerCase().replace(/\s+/g, ""),
+            platform,
             label,
             url: item.url.trim().startsWith("http") ? item.url.trim() : `https://${item.url.trim()}`,
           });

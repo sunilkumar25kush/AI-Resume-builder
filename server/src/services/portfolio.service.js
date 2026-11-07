@@ -446,11 +446,11 @@ function transformParsedResumeToPortfolio(parsed = {}) {
     : [];
 
   const experience = (parsed.experience || []).map((e) => {
-    // Extract highlights from achievements or bullet points in description
+    // Extract highlights from achievements or bullet points without splitting hyphenated words
     let highlights = [];
     if (e.achievements) {
       highlights = String(e.achievements)
-        .split(/\n|•|\*|-/)
+        .split(/(?:\r?\n|[•*]|(?:^|\s)-\s+)/)
         .map((s) => s.trim())
         .filter((s) => s.length > 2);
     }
@@ -465,7 +465,7 @@ function transformParsedResumeToPortfolio(parsed = {}) {
       startDate: e.startDate || "",
       endDate: e.endDate || "",
       current: !e.endDate || e.endDate.toLowerCase().includes("present"),
-      description: e.description || e.achievements || "",
+      description: e.description || "",
       highlights,
     };
   });
@@ -548,9 +548,9 @@ function transformParsedResumeToPortfolio(parsed = {}) {
           .filter((c) => c && c.name)
       : [],
     design: {
-      template: "devport",
+      template: "spotlight",
       theme: "system",
-      primaryColor: "#2563eb",
+      primaryColor: "#e3141f",
     },
   };
 }
@@ -679,9 +679,9 @@ function sanitizePortfolioPayload(payload = {}) {
   // Normalize design
   const validThemes = ["light", "dark", "system"];
   safe.design = {
-    template: PORTFOLIO_TEMPLATES.includes(safe.design?.template) ? safe.design.template : "devport",
+    template: PORTFOLIO_TEMPLATES.includes(safe.design?.template) ? safe.design.template : "spotlight",
     theme: validThemes.includes(safe.design?.theme) ? safe.design.theme : "system",
-    primaryColor: safe.design?.primaryColor || "#2563eb",
+    primaryColor: safe.design?.primaryColor || "#e3141f",
     fontFamily: safe.design?.fontFamily || "Inter",
     customCss: safe.design?.customCss || "",
   };

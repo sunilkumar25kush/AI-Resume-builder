@@ -46,7 +46,7 @@ export function PosterTemplate({
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Derive candidate names & handles
-  const fullName = profile?.fullName || (showEmpty ? "Sunil Kumar" : "Developer");
+  const fullName = profile?.fullName || (showEmpty ? "Alex Rivera" : "Developer");
   const firstName = fullName.split(/\s+/).filter((w: string) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile?.headline || (showEmpty ? "JavaScript Developer" : "Software Developer");
   const avatarUrl = profile?.avatarUrl ? normalizeAvatarUrl(profile.avatarUrl) : null;
@@ -58,7 +58,7 @@ export function PosterTemplate({
   );
   const githubHandle = githubLink?.url
     ? githubLink.url.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\/.*$/, "")
-    : (showEmpty ? "sunilkumar25kush" : null);
+    : null;
 
   // Skills for typewriter in hero derived from skills
   const skillNames = useMemo(() => {

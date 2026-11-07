@@ -350,7 +350,7 @@ export function sanitizePortfolioData(portfolio) {
       ? "creative"
       : rawTemplate === "developer"
       ? "developer"
-      : rawTemplate === "minimal" || rawTemplate === "executive"
+      : rawTemplate === "minimal" || rawTemplate === "executive" || rawTemplate === "editorial"
       ? "minimal"
       : "devport";
 
@@ -5333,7 +5333,7 @@ function generateSpotlightStaticJs(data) {
 
 function generatePosterStaticHtml(data) {
   const { profile = {}, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } = data;
-  const fullName = profile.fullName || "Sunil Kumar";
+  const fullName = profile.fullName || "Developer";
   const firstName = fullName.split(/\s+/).filter((w) => !/^the$/i.test(w))[0] || fullName;
   const headline = profile.headline || "Software Developer";
   const location = profile.location || "";

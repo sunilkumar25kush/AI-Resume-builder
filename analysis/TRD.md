@@ -86,7 +86,7 @@ graph TB
 
 ## 2. Recommended Technology Stack (Based on Existing Dependencies)
 
-All proposed features reuse existing packages already installed in `client/package.json` and `server/package.json`:
+All Phase 1 (2D) portfolio features reuse existing packages already installed in `client/package.json` and `server/package.json`, while Phase 2 (3D WebGL templates) introduces optional lazy-loaded Three.js dependencies:
 
 | Layer | Technology | Version | Purpose in Portfolio Builder |
 | :--- | :--- | :---: | :--- |
@@ -96,7 +96,7 @@ All proposed features reuse existing packages already installed in `client/packa
 | **Styling** | `tailwindcss`, `@tailwindcss/vite` | `^4.3.3` | Design tokens, responsive utilities, and dark/light surface styling. |
 | **State Management**| `zustand` | `^5.0.14` | Global state for portfolio drafts and real-time editor updates. |
 | **Animations** | `framer-motion` | `^12.43.0` | Smooth scroll, kinetic layout transitions, and spring animations. |
-| **3D Rendering** | `three` *(to add)* | `^0.170.0` | Canvas engine for 3D arcade worlds (`Ramen Shop`). |
+| **3D Rendering (Phase 2)** | `three` *(planned Phase 2 addition)* | `^0.170.0` | Optional lazy-loaded canvas engine for Phase 2 3D arcade worlds (`Ramen Shop`). |
 | **Drag & Drop** | `@dnd-kit/core`, `@dnd-kit/sortable` | `^6.3.1` | Section reordering in the portfolio editor sidebar. |
 | **Backend Core** | `express` | `^5.2.1` | RESTful route dispatching and public portfolio serving. |
 | **Database** | `mongoose` | `^9.9.1` | Document schema validation, indexing, and MongoDB persistence. |
@@ -246,8 +246,12 @@ export async function createPortfolioFromResume(userId, resumeId) {
     ].filter(link => Boolean(link.url)),
     skills: (resume.skills || []).map(skill => ({
       name: typeof skill === "string" ? skill : skill.name,
-      category: skill.category || "General",
-      level: "advanced",
+      category: (typeof skill === "object" && skill?.category) || "General",
+      level:
+        typeof skill === "object" &&
+        ["beginner", "intermediate", "advanced", "expert"].includes(skill?.level)
+          ? skill.level
+          : "intermediate",
     })),
     projects: (resume.projects || []).map((project, idx) => ({
       title: project.name || project.title || "Project",
@@ -275,11 +279,19 @@ export async function createPortfolioFromResume(userId, resumeId) {
       graduationDate: edu.graduationDate || "",
     })),
     design: {
-      template: "ramen-shop", // Defaults to high-impact template
-      theme: "neon",
-      font: "Space Grotesk",
-      sectionOrder: ["hero", "projects", "skills", "experience", "education", "contact"],
-      sectionVisibility: {},
+      template: "spotlight", // Defaults to canonical Spotlight template
+      theme: "system",
+      primaryColor: "#e3141f",
+      fontFamily: "Inter",
+      sectionOrder: ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
+      sectionVisibility: {
+        about: Boolean(resume.summary),
+        skills: Array.isArray(resume.skills) && resume.skills.length > 0,
+        projects: Array.isArray(resume.projects) && resume.projects.length > 0,
+        experience: Array.isArray(resume.experience) && resume.experience.length > 0,
+        education: Array.isArray(resume.education) && resume.education.length > 0,
+        certifications: Array.isArray(resume.certifications) && resume.certifications.length > 0,
+      },
     },
   });
 
@@ -364,11 +376,11 @@ export async function createPortfolioFromResume(userId, resumeId) {
 
 ## 9. Standalone Static Portfolio Generation (ZIP)
 
-The export engine (`server/src/services/portfolioExport.service.js`) packages:
-* **`index.html`**: Pre-rendered semantic HTML containing user profile content.
-* **`assets/style.css`**: Extracted theme variables and layout styling.
-* **`assets/app.js`**: Lightweight bundle (or CDN script references for Three.js/Spline) allowing the site to run without an active backend.
-* **`README.md`**: Step-by-step instructions for hosting on Vercel, Netlify, or GitHub Pages.
+The export engine (`server/src/services/portfolioExport.service.js`) packages a 100% self-contained, offline-capable archive with zero external CDN runtime script dependencies:
+* **`index.html`**: Pre-rendered semantic HTML containing user profile content and relative asset links (`./assets/style.css`, `./assets/script.js`).
+* **`assets/style.css`**: Self-contained theme variables, layout styling, and system font fallbacks.
+* **`assets/script.js` & `assets/images/*`**: Locally bundled vanilla JS runtime and embedded user images/avatars so the exported site runs completely offline without any external CDN script dependencies or backend connection.
+* **`README.md`**: Step-by-step instructions for local offline preview and hosting on Vercel, Netlify, or GitHub Pages.
 
 ---
 

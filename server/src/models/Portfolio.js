@@ -107,7 +107,7 @@ const designSettingsSchema = new mongoose.Schema(
       enum: ["light", "dark", "system"],
       default: "system",
     },
-    primaryColor: { type: String, default: "#2563eb", trim: true, maxlength: 50 },
+    primaryColor: { type: String, default: "#e3141f", trim: true, maxlength: 50 },
     fontFamily: { type: String, default: "Inter", trim: true, maxlength: 100 },
     customCss: { type: String, default: "", trim: true, maxlength: 10000 },
     backgroundEffect: { type: String, default: "default", trim: true, maxlength: 100 },

@@ -133,7 +133,10 @@ export function getPortfolioTemplate(templateId?: string | null): ComponentType<
   if (!templateId) return SpotlightTemplate;
   const normalized = templateId.toLowerCase().trim() as PortfolioTemplateId;
 
-  if (TEMPLATE_REGISTRY[normalized]) {
+  if (
+    Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, normalized) &&
+    TEMPLATE_REGISTRY[normalized]
+  ) {
     return TEMPLATE_REGISTRY[normalized];
   }
 

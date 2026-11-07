@@ -83,7 +83,7 @@ const designSettingsSchema = z.object({
   template: z.enum(PORTFOLIO_TEMPLATES).optional().default("spotlight"),
   templateVersion: z.string().trim().max(50).optional().default("1.0.0"),
   theme: z.enum(["light", "dark", "system"]).optional().default("system"),
-  primaryColor: z.string().trim().max(50).optional().default("#2563eb"),
+  primaryColor: z.string().trim().max(50).optional().default("#e3141f"),
   fontFamily: z.string().trim().max(100).optional().default("Inter"),
   customCss: z.string().trim().max(10000).optional().default(""),
   backgroundEffect: z.string().trim().max(100).optional().default("default"),

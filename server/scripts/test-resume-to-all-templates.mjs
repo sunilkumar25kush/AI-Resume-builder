@@ -1,29 +1,9 @@
 import assert from "node:assert/strict";
+import { PORTFOLIO_TEMPLATES } from "../src/validations/portfolio.validation.js";
 
 const BASE = "http://127.0.0.1:5001/api";
 
-const ALL_20_TEMPLATES = [
-  "devport",
-  "creative",
-  "developer",
-  "minimal",
-  "oss-maintainer",
-  "motion-studio",
-  "seyi-editorial",
-  "sameera-material",
-  "resume-page",
-  "poster",
-  "spotlight",
-  "dat-immersive",
-  "nahuel-cosmos",
-  "ramen-shop",
-  "danny-webgl",
-  "portfolio-os",
-  "buffalo-room",
-  "folio-2019",
-  "notebook-room",
-  "naresh-keyboard",
-];
+const ALL_20_TEMPLATES = [...PORTFOLIO_TEMPLATES];
 
 async function runResumeToTemplatesTest() {
   console.log("==================================================================");

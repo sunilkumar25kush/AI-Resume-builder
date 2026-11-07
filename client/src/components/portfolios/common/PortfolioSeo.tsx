@@ -72,7 +72,7 @@ export function PortfolioSeo({ portfolio }: PortfolioSeoProps) {
               image: avatarUrl || undefined,
               sameAs: portfolio.socialLinks?.map((l) => l.url).filter(Boolean) || [],
             },
-          }),
+          }).replace(/</g, "\\u003c"),
         }}
       />
     </>

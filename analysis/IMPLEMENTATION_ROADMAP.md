@@ -129,13 +129,13 @@
 * **Objective:** Enable users to publish their portfolio to a unique public URL (`/p/:slug`) with fast edge caching, rate limiting, and friendly 404 handling.
 * **Prerequisites:** Phase 4 complete; public router mounted in Express.
 * **Modules & Files Likely to Change:**
-  - `server/src/routes/portfolio.routes.js` (Public endpoint `GET /public/:slug`)
-  - `server/src/controllers/portfolio.controller.js` (`getPublicPortfolio` handler)
-  - `server/src/middlewares/rateLimiter.middleware.js` (Protect public route from scraping)
+  - `server/src/routes/portfolio.routes.js` (Mounted at `/api/portfolios`, exposing canonical public endpoint `GET /api/portfolios/public/:slug`)
+  - `server/src/controllers/portfolio.controller.js` (`getPublicPortfolioBySlug` handler)
+  - `server/src/middlewares/rateLimiter.js` (Protect public route from scraping)
   - `client/src/pages/PublicPortfolioPage.tsx` (Standalone public view)
-  - `client/src/routes/AppRoutes.tsx` (Register `/p/:slug` route)
+  - `client/src/routes/index.tsx` (Register `/p/:slug` route)
 * **Tasks & Dependencies:**
-  1. Implement `GET /api/portfolios/public/:slug` returning portfolio only if `published === true`.
+  1. Implement `GET /api/portfolios/public/:slug` returning portfolio only if `status === "published"` and `publication.isPublic === true`.
   2. Add slug uniqueness validator with conflict suggestion (`slug-1`, `slug-2`).
   3. Create distraction-free `PublicPortfolioPage.tsx` stripped of dashboard headers/sidebars.
   4. Configure SEO meta tags (title, description, canonical link, OpenGraph tags) per portfolio.
@@ -185,13 +185,13 @@
   - `server/src/utils/sanitizer.js` (Input sanitization rules)
   - `client/vite.config.ts` (Manual chunk splitting for 3D dependencies)
 * **Tasks & Dependencies:**
-  1. Wrap all 3D canvas components in `WebGLErrorBoundary.tsx` displaying a static poster if WebGL crashes or is unsupported.
+  1. Wrap all 3D canvas components in `WebGLErrorBoundary.tsx` to catch synchronous render/initialization errors, and attach an imperative `webglcontextlost` / `webglcontextrestored` DOM event listener directly on the `<canvas>` element to handle asynchronous GPU context loss and trigger the static poster fallback.
   2. Sanitize all user bio and project description inputs with strict HTML escaping.
   3. Configure Vite manual chunks: split `three` into a separate vendor chunk.
-  4. Audit Lighthouse performance: ensure mobile score ≥ 85, desktop score ≥ 95.
+  4. Audit Lighthouse performance: ensure 2D templates achieve ≥ 90 on mobile and ≥ 95 on desktop, and 3D templates achieve ≥ 75 on mobile and ≥ 90 on desktop (aligned with `PRD.md` `NFR-001`).
 * **Risks & Mitigations:**
-  - *Risk:* Three.js crashes on older smartphones without WebGL 2.0.
-  - *Mitigation:* Error boundary catches canvas context loss and seamlessly renders the 2D fallback.
+  - *Risk:* Three.js crashes or loses WebGL context on older smartphones without WebGL 2.0.
+  - *Mitigation:* Feature-detect WebGL 2.0 before mounting, catch synchronous errors with `WebGLErrorBoundary`, and listen for the `webglcontextlost` canvas DOM event (`event.preventDefault()`) to switch cleanly to the 2D static fallback.
 * **Tests & Acceptance Criteria:**
   - Lighthouse audit passes performance and accessibility thresholds.
   - XSS injection attempts in bio or project URLs are neutralized.

@@ -18,5 +18,5 @@ export function slugify(input: string): string {
     .replace(/-+/g, "-") // collapse multiple hyphens
     .replace(/^-+|-+$/g, ""); // strip leading/trailing hyphens
 
-  return clean.slice(0, 60) || "portfolio";
+  return clean.slice(0, 60).replace(/-+$/g, "") || "portfolio";
 }

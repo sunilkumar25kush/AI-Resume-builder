@@ -121,12 +121,12 @@ graph TD
    - Ensures visual consistency across mixed section arrangements.
 
 4. **`AttributionFooter.tsx` (`client/src/components/portfolios/common/AttributionFooter.tsx`)**:
-   - Renders mandatory upstream author credit and repository link in compliance with upstream MIT, ISC, and GitSkins distribution permissions.
+   - Renders mandatory upstream author credit and repository link in compliance with upstream MIT, ISC, and author distribution permissions.
    - Example output:
      ```html
      <footer>Template by <a href="https://github.com/enderh3art/Ramen-Shop">enderh3art</a> · Adapted for AI Resume Builder</footer>
      ```
-   - Can be hidden only if explicitly disabled by the user or on native internal templates (`devport`, `creative`, `minimal`, `developer`, `resume-page`, `poster`).
+   - Cannot be disabled by users on third-party adapted templates (`attribution.status !== "native"`). Omitted only on native internal templates (`devport`, `creative`, `minimal`, `developer`, `resume-page`, `poster`, `spotlight`, `editorial`).
 
 5. **`WebGLErrorBoundary.tsx` (`client/src/components/portfolios/common/WebGLErrorBoundary.tsx`)**:
    - Wraps all 3D canvas components (`RamenShopTemplate`, `PortfolioOSTemplate`, `BuffaloRoomTemplate`).

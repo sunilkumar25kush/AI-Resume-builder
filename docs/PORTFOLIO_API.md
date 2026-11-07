@@ -16,20 +16,38 @@ The Portfolio API manages lifecycle, career content extraction, theme customizat
 - **Auth:** Bearer Token (JWT)
 - **Response:** `200 OK`
   ```json
-  [
-    {
-      "_id": "671...",
-      "title": "Sunil's Portfolio",
-      "slug": "sunil-kumar",
-      "status": "published",
-      "design": {
-        "template": "spotlight",
-        "theme": "light",
-        "primaryColor": "#e3141f"
-      },
-      "updatedAt": "2026-10-25T12:00:00.000Z"
+  {
+    "success": true,
+    "data": {
+      "portfolios": [
+        {
+          "_id": "671ad1a9e4b02a1234567890",
+          "title": "Candidate Portfolio",
+          "slug": "candidate-portfolio",
+          "status": "published",
+          "design": {
+            "template": "spotlight",
+            "theme": "light",
+            "primaryColor": "#e3141f",
+            "fontFamily": "Inter"
+          },
+          "publication": {
+            "isPublic": true,
+            "publishedAt": "2026-10-25T12:00:00.000Z",
+            "seoTitle": "Candidate Portfolio",
+            "seoDescription": "Full Stack Engineer & Creative Developer"
+          },
+          "updatedAt": "2026-10-25T12:00:00.000Z"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 1,
+        "totalPages": 1
+      }
     }
-  ]
+  }
   ```
 
 ### 2. Create Portfolio
@@ -38,9 +56,11 @@ The Portfolio API manages lifecycle, career content extraction, theme customizat
 - **Payload:**
   ```json
   {
-    "title": "Sunil's Portfolio",
-    "resumeId": "optional-resume-id",
-    "template": "spotlight"
+    "title": "Candidate Portfolio",
+    "resumeId": "671ad1a9e4b02a1234567891",
+    "design": {
+      "template": "spotlight"
+    }
   }
   ```
 
@@ -54,12 +74,38 @@ The Portfolio API manages lifecycle, career content extraction, theme customizat
 - **Auth:** Bearer Token (JWT)
 
 ### 5. Update / Autosave Portfolio
-- **Route:** `PUT /api/portfolios/:id`
+- **Route:** `PATCH /api/portfolios/:id`
 - **Auth:** Bearer Token (JWT)
 
 ### 6. Publish Portfolio
 - **Route:** `POST /api/portfolios/:id/publish`
-- **Payload:** `{ "isPublic": true, "slug": "sunilkumar25kush" }`
+- **Payload:**
+  ```json
+  {
+    "slug": "candidate-portfolio",
+    "seoTitle": "Candidate Portfolio",
+    "seoDescription": "Full Stack Engineer & Creative Developer"
+  }
+  ```
+- **Response:** `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "portfolio": {
+        "_id": "671ad1a9e4b02a1234567890",
+        "slug": "candidate-portfolio",
+        "status": "published",
+        "publication": {
+          "isPublic": true,
+          "publishedAt": "2026-10-25T12:00:00.000Z",
+          "seoTitle": "Candidate Portfolio",
+          "seoDescription": "Full Stack Engineer & Creative Developer"
+        }
+      }
+    }
+  }
+  ```
 
 ### 7. Public Fetch by Slug
 - **Route:** `GET /api/portfolios/public/:slug`

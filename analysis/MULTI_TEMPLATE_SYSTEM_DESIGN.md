@@ -296,7 +296,7 @@ export const TEMPLATE_REGISTRY: Record<ValidTemplateId, TemplateDefinition> = {
     renderMode: "interactive",
     accessTier: "free",
     accentColor: "#6ee7b7",
-    previewAsset: { posterUrl: "/portfolio-templates/previews/motion-studio.webp" },
+    previewAsset: { posterUrl: "" }, // Uses CSS gradient poster fallback until local preview asset is bundled
     capabilities: {
       supportsCustomColors: true,
       supportsCustomFonts: true,
@@ -330,7 +330,7 @@ export const TEMPLATE_REGISTRY: Record<ValidTemplateId, TemplateDefinition> = {
     renderMode: "static",
     accessTier: "free",
     accentColor: "#10b981",
-    previewAsset: { posterUrl: "/portfolio-templates/previews/oss-maintainer.webp" },
+    previewAsset: { posterUrl: "" }, // Uses CSS gradient poster fallback until local preview asset is bundled
     capabilities: {
       supportsCustomColors: true,
       supportsCustomFonts: true,
@@ -470,9 +470,12 @@ export const PortfolioRenderer: React.FC<PortfolioTemplateProps> = (props) => {
 
   return (
     <ThemeWrapper
-      accentColor={portfolio?.design?.theme?.accentColor || templateDef.accentColor}
-      fontFamily={portfolio?.design?.font || "Geist"}
-      mode={portfolio?.design?.theme?.mode || "dark"}
+      design={{
+        ...portfolio?.design,
+        primaryColor: portfolio?.design?.primaryColor || templateDef.accentColor,
+        fontFamily: portfolio?.design?.fontFamily || "Inter",
+        theme: portfolio?.design?.theme || "system",
+      }}
     >
       <div className={`portfolio-root template-${templateDef.id}`} data-render-mode={templateDef.renderMode}>
         <WebGLErrorBoundary
@@ -499,7 +502,7 @@ export const PortfolioRenderer: React.FC<PortfolioTemplateProps> = (props) => {
           </Suspense>
         </WebGLErrorBoundary>
 
-        {/* Legal Attribution Footer */}
+        {/* Mandatory Legal Attribution Footer for non-native upstream templates */}
         {templateDef.attribution.status !== "native" && (
           <AttributionFooter attribution={templateDef.attribution} />
         )}

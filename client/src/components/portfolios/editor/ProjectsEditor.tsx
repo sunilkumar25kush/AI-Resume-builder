@@ -27,7 +27,7 @@ export interface ProjectsEditorProps {
 
 export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps) {
   const [openIndices, setOpenIndices] = useState<Record<number, boolean>>({ 0: true });
-  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const toggleOpen = (index: number) => {
     setOpenIndices((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -44,6 +44,7 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
         liveUrl: "",
         repoUrl: "",
         imageUrl: "",
+        images: [],
         featured: false,
       },
     ]);
@@ -60,7 +61,38 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
     onChange(projects.filter((_, i) => i !== index));
   };
 
-  const handleImageFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Numbered photo slots per project:
+   * Slot 0 (#01): proj.imageUrl (Main Cover / Top-Left & Polaroid Banner)
+   * Slot 1 (#02): proj.images[0] (Collage Slot #02 — Top-Right / Middle)
+   * Slot 2 (#03): proj.images[1] (Collage Slot #03 — Bottom-Left / Right)
+   * Slot 3 (#04): proj.images[2] (Collage Slot #04 — Bottom-Right Bento)
+   */
+  const getSlotImageUrl = (proj: PortfolioProject, slotIndex: number): string => {
+    if (slotIndex === 0) return proj.imageUrl || "";
+    return proj.images?.[slotIndex - 1] || "";
+  };
+
+  const setSlotImageUrl = (projIndex: number, slotIndex: number, value: string) => {
+    const proj = projects[projIndex];
+    if (!proj) return;
+    if (slotIndex === 0) {
+      handleUpdate(projIndex, { imageUrl: value });
+      return;
+    }
+    const nextImages = [...(proj.images || [])];
+    while (nextImages.length < slotIndex) {
+      nextImages.push("");
+    }
+    nextImages[slotIndex - 1] = value;
+    handleUpdate(projIndex, { images: nextImages });
+  };
+
+  const handleSlotFileUpload = (
+    projIndex: number,
+    slotIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -77,15 +109,8 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        const result = reader.result;
-        // If primary imageUrl is empty, set it, otherwise add to images array
-        if (!projects[index]?.imageUrl) {
-          handleUpdate(index, { imageUrl: result });
-        } else {
-          const gallery = projects[index]?.images || [];
-          handleUpdate(index, { images: [...gallery, result] });
-        }
-        toast.success("Project screenshot loaded!");
+        setSlotImageUrl(projIndex, slotIndex, reader.result);
+        toast.success(`Photo #0${slotIndex + 1} uploaded!`);
       }
     };
     reader.onerror = () => {
@@ -95,15 +120,37 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
     e.target.value = "";
   };
 
-  const handleClearImage = (index: number) => {
-    handleUpdate(index, { imageUrl: "" });
-    toast.info("Project screenshot removed");
+  const handleClearSlotImage = (projIndex: number, slotIndex: number) => {
+    setSlotImageUrl(projIndex, slotIndex, "");
+    toast.info(`Photo #0${slotIndex + 1} removed`);
   };
 
-  const handleRemoveGalleryImage = (projIndex: number, imgIndex: number) => {
-    const gallery = projects[projIndex]?.images || [];
-    handleUpdate(projIndex, { images: gallery.filter((_, i) => i !== imgIndex) });
-  };
+  const PHOTO_SLOTS = [
+    {
+      slotIndex: 0,
+      badge: "#01",
+      title: "Photo #01 • Primary Cover",
+      placement: "Top-Left Frame & PROJECTS Polaroid Card",
+    },
+    {
+      slotIndex: 1,
+      badge: "#02",
+      title: "Photo #02 • Secondary Frame",
+      placement: "Top-Right Frame (2×2 Grid) / Center Card",
+    },
+    {
+      slotIndex: 2,
+      badge: "#03",
+      title: "Photo #03 • Detail Frame",
+      placement: "Bottom-Left Frame (2×2 Grid) / Right Card",
+    },
+    {
+      slotIndex: 3,
+      badge: "#04",
+      title: "Photo #04 • Bento Highlight",
+      placement: "Bottom-Right Frame (replaces Featured badge card)",
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -276,103 +323,120 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
                       </div>
                     </div>
 
-                    {/* Project Image / Screenshot Customization */}
-                    <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850/30 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                          <ImageIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                          <span>Project Thumbnail / Screenshot</span>
-                        </Label>
-                        {proj.imageUrl && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleClearImage(index)}
-                            className="h-6 px-2 text-[11px] text-red-500 hover:text-red-600 gap-1"
-                          >
-                            <X className="h-3 w-3" /> Remove Image
-                          </Button>
-                        )}
+                    {/* Numbered Project Photos / Gallery Slots (#01 – #04) */}
+                    <div className="p-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850/30 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <Label className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                            <ImageIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>Numbered Project Photo Slots (#01 – #04)</span>
+                          </Label>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            Each slot number (#01–#04) matches the numbered frame badge in your portfolio preview.
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                          PNG / JPG / WebP &lt; 2 MB
+                        </span>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                        {/* Thumbnail Preview */}
-                        <div className="w-20 h-14 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 flex items-center justify-center relative">
-                          {proj.imageUrl ? (
-                            <img
-                              src={proj.imageUrl}
-                              alt={proj.title || "Project Preview"}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                          ) : (
-                            <FolderGit2 className="h-6 w-6 text-neutral-400" />
-                          )}
-                        </div>
-
-                        {/* Input options: File Upload or Direct URL */}
-                        <div className="flex-1 space-y-2 w-full">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={proj.imageUrl || ""}
-                              onChange={(e) => handleUpdate(index, { imageUrl: e.target.value })}
-                              placeholder="Image URL or upload below (e.g. https://...)"
-                              className="h-8 text-xs font-mono"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => fileInputRefs.current[index]?.click()}
-                              className="h-8 text-xs shrink-0 gap-1.5"
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {PHOTO_SLOTS.map((slot) => {
+                          const slotUrl = getSlotImageUrl(proj, slot.slotIndex);
+                          const inputKey = `${index}-${slot.slotIndex}`;
+                          return (
+                            <div
+                              key={slot.slotIndex}
+                              className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700/80 bg-white dark:bg-neutral-900 space-y-2 shadow-2xs"
                             >
-                              <Upload className="h-3.5 w-3.5" />
-                              <span>Upload</span>
-                            </Button>
-                            <input
-                              type="file"
-                              ref={(el) => {
-                                fileInputRefs.current[index] = el;
-                              }}
-                              accept="image/*"
-                              onChange={(e) => handleImageFileUpload(index, e)}
-                              className="hidden"
-                            />
-                          </div>
-                          <p className="text-[10px] text-neutral-400">
-                            Upload a screenshot from disk (PNG, JPG, WebP &lt; 2 MB) or provide a direct image link.
-                          </p>
-
-                          {/* Additional gallery screenshots for collage/editorial slides */}
-                          {proj.images && proj.images.length > 0 && (
-                            <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-1.5">
-                              <span className="text-[11px] font-medium text-neutral-500 block">
-                                Additional Gallery Screenshots ({proj.images.length})
-                              </span>
-                              <div className="flex flex-wrap gap-2">
-                                {proj.images.map((imgUrl, gIdx) => (
-                                  <div
-                                    key={gIdx}
-                                    className="relative w-16 h-12 rounded-md border border-neutral-300 dark:border-neutral-700 overflow-hidden group"
-                                  >
-                                    <img src={imgUrl} alt={`Screenshot ${gIdx + 1}`} className="w-full h-full object-cover" />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveGalleryImage(index, gIdx)}
-                                      className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      title="Remove"
-                                    >
-                                      <X className="h-2.5 w-2.5" />
-                                    </button>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-mono text-[10px] font-bold shrink-0">
+                                    {slot.badge}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                                      {slot.title}
+                                    </p>
+                                    <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+                                      {slot.placement}
+                                    </p>
                                   </div>
-                                ))}
+                                </div>
+                                {slotUrl && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleClearSlotImage(index, slot.slotIndex)}
+                                    className="h-6 px-1.5 text-[10px] text-red-500 hover:text-red-600 shrink-0 gap-0.5"
+                                    title={`Remove ${slot.badge}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                    <span>Clear</span>
+                                  </Button>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2.5">
+                                {/* Slot Thumbnail Preview with Number Badge */}
+                                <div className="w-16 h-12 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 flex items-center justify-center relative">
+                                  {slotUrl ? (
+                                    <img
+                                      src={slotUrl}
+                                      alt={`${proj.title || "Project"} ${slot.badge}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <span className="font-mono text-[11px] font-bold text-neutral-400">
+                                      {slot.badge}
+                                    </span>
+                                  )}
+                                  <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-black/75 text-white font-mono text-[9px] font-bold leading-tight">
+                                    {slot.badge}
+                                  </span>
+                                </div>
+
+                                <div className="flex-1 min-w-0 space-y-1.5">
+                                  <Input
+                                    value={slotUrl}
+                                    onChange={(e) =>
+                                      setSlotImageUrl(index, slot.slotIndex, e.target.value)
+                                    }
+                                    placeholder={`Paste ${slot.badge} image URL or upload...`}
+                                    className="h-7 text-[11px] font-mono"
+                                  />
+                                  <div className="flex items-center gap-1.5">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => fileInputRefs.current[inputKey]?.click()}
+                                      className="h-7 text-[11px] w-full gap-1.5"
+                                    >
+                                      <Upload className="h-3 w-3" />
+                                      <span>{slotUrl ? `Replace ${slot.badge}` : `Upload ${slot.badge}`}</span>
+                                    </Button>
+                                    <input
+                                      type="file"
+                                      ref={(el) => {
+                                        fileInputRefs.current[inputKey] = el;
+                                      }}
+                                      accept="image/*"
+                                      onChange={(e) =>
+                                        handleSlotFileUpload(index, slot.slotIndex, e)
+                                      }
+                                      className="hidden"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          )}
-                        </div>
+                          );
+                        })}
                       </div>
                     </div>
 

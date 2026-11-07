@@ -121,16 +121,40 @@ async function runVerification() {
 
   // 1. Verify Metadata Registry Integrity
   console.log("\n[1/4] Auditing Template Registry & Metadata Contract...");
-  const registeredCount = Object.keys(TEMPLATE_REGISTRY).length;
+  const registeredKeys = Object.keys(TEMPLATE_REGISTRY);
+  const registeredCount = registeredKeys.length;
   assert.equal(
     registeredCount,
     VALID_TEMPLATE_IDS.length,
     `Registry count (${registeredCount}) must match VALID_TEMPLATE_IDS count (${VALID_TEMPLATE_IDS.length})`
   );
-  assert.ok(
-    TEMPLATE_METADATA.length <= registeredCount && TEMPLATE_METADATA.length > 0,
-    `Expected valid metadata entries, found ${TEMPLATE_METADATA.length}`
+  assert.deepEqual(
+    [...registeredKeys].sort(),
+    [...VALID_TEMPLATE_IDS].sort(),
+    "TEMPLATE_REGISTRY keys must exactly match VALID_TEMPLATE_IDS"
   );
+
+  const requiredPrimaryIds = [
+    "spotlight",
+    "poster",
+    "devport",
+    "creative",
+    "developer",
+    "minimal",
+    "editorial",
+  ] as const;
+  const metadataIds = TEMPLATE_METADATA.map((m) => m.id);
+  assert.equal(
+    TEMPLATE_METADATA.length,
+    requiredPrimaryIds.length,
+    `Expected ${requiredPrimaryIds.length} primary metadata entries, found ${TEMPLATE_METADATA.length}`
+  );
+  for (const reqId of requiredPrimaryIds) {
+    assert.ok(
+      metadataIds.includes(reqId),
+      `Required primary template "${reqId}" missing from TEMPLATE_METADATA`
+    );
+  }
 
   for (const meta of TEMPLATE_METADATA) {
     assert.ok(meta.id, "Template missing ID");

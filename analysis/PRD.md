@@ -2,7 +2,7 @@
 ## Portfolio Builder Integration for AI Resume Builder
 
 **Document Version:** 1.0.0  
-**Status:** Approved for Implementation  
+**Status:** Approved Technical & Product Specification  
 **Target Platform:** Web (Desktop & Mobile Responsive)  
 **Author:** AI Product Engineering Team  
 **Last Updated:** October 24, 2026  
@@ -162,7 +162,7 @@ The system executes automated structural transformation from the `Resume` schema
 | `projects[]` | `projects` | Maps `{ title, description, repoUrl, liveUrl, tags }`. |
 | `experience[]` | `experience` | Maps `{ title, company, location, startDate, endDate, description }`. |
 | `education[]` | `education` | Maps `{ degree, institution, fieldOfStudy, graduationDate }`. |
-| N/A | `design.template` | Defaults to `"devport"` (or user selection). |
+| N/A | `design.template` | Defaults to `"spotlight"` (or user selection). |
 | N/A | `slug` | Slugified from `fullName` (`slugify(fullName)`). |
 
 ---
@@ -170,15 +170,15 @@ The system executes automated structural transformation from the `Resume` schema
 ## 7. Template Gallery & Selection Experience
 
 ### 7.1 Template Registry Architecture
-Templates are registered in an immutable allowlist at `client/src/components/portfolios/templates/registry.ts`:
+Templates are registered in an immutable allowlist at `client/src/components/portfolios/templates/registry.ts` (`VALID_TEMPLATE_IDS`):
 
-1. **`devport`** (DevPort): Cosmic dark aesthetics, orbital avatar, glowing typography, and badge grids.
-2. **`creative`** (Modern 3D): Midnight indigo theme with floating glassmorphic cards.
-3. **`developer`** (Terminal): Terminal window headers, command prompts, and monospace typography.
-4. **`minimal`** (Minimalist Executive): High whitespace, refined typography, and single-column elegance.
-5. **`ramen-shop`** *(New)*: Neon 3D arcade diner with Three.js camera interaction and keyboard navigation.
-6. **`motion-studio`** *(New)*: Kinetic editorial layout with smooth horizontal project motion.
-7. **`oss-maintainer`** *(New)*: GitHub-centric maintainer layout with typing headlines, skill icons, and repo telemetry.
+1. **`spotlight`** (Spotlight): Bold red-to-crimson wave hero, hanging sway tablet, connected expertise tree, and giant contact watermark.
+2. **`poster`** (Poster): Brutalist editorial print layout with giant outline typography, tilted project cards, and scrolling marquee band.
+3. **`devport`** (DevPort): Cosmic dark aesthetics, orbital avatar, glowing typography, and badge grids.
+4. **`creative`** / **`modern`** (Modern Creative): Midnight indigo theme with floating glassmorphic cards (`modern` aliases `creative`).
+5. **`developer`** (Terminal): Terminal window headers, command prompts, and monospace typography.
+6. **`minimal`** / **`executive`** / **`editorial`** (Minimalist Executive & Editorial): High whitespace, refined typography, and single-column elegance (`executive` and `editorial` map to the minimal editorial layout).
+7. **Phase 2 Planned Templates**: `ramen-shop` (3D WebGL arcade diner), `motion-studio` (kinetic editorial layout), and `oss-maintainer` (GitHub telemetry profile).
 
 ### 7.2 Selection Interface
 * Integrated directly into the portfolio editor top bar.
@@ -235,8 +235,8 @@ Templates are registered in an immutable allowlist at `client/src/components/por
 
 * **URL Pattern:** `https://yourdomain.com/p/:slug`
 * **Slug Rules:**
-  - 3 to 40 characters: lowercase letters, numbers, and hyphens (`^[a-z0-9-]+$`).
-  - Reserved slugs blocked: `admin`, `api`, `auth`, `dashboard`, `resumes`, `portfolios`, `pricing`, `settings`.
+  - 3 to 60 characters: lowercase letters, numbers, and single internal hyphens (`/^[a-z0-9]+(?:-[a-z0-9]+)*$/`).
+  - Reserved slugs blocked: `admin`, `api`, `auth`, `dashboard`, `resumes`, `portfolios`, `login`, `register`, `settings`, `public`, `export`, `pricing`.
 * **Public Route Implementation:**
   - Frontend: `client/src/pages/PublicPortfolioPage.tsx`.
   - Backend API: `GET /api/portfolios/public/:slug`.
@@ -266,7 +266,7 @@ Templates are registered in an immutable allowlist at `client/src/components/por
 * **Content Sanitization:**
   - All markdown descriptions, biography text, and custom URLs are sanitized using `DOMPurify` / regex checks before rendering to prevent stored XSS attacks.
 * **Third-Party Attribution Compliance:**
-  - Templates adapted from MIT/ISC upstream repositories (`enderh3art/Ramen-Shop`, `HamishMW/portfolio`) automatically display the required attribution footer linking to the author and repository.
+  - Templates adapted from upstream repositories (`HamishMW/portfolio` under MIT, `Danny Garcia` under ISC + Author Permission, and `enderh3art/Ramen-Shop` under direct Author Permission) automatically display a mandatory, non-removable attribution footer linking to the original author and repository.
 
 ---
 
@@ -286,11 +286,12 @@ Templates are registered in an immutable allowlist at `client/src/components/por
 
 ### Phase 1: MVP Scope (Current Implementation)
 * [x] Automatic 1-click resume-to-portfolio content conversion.
-* [x] Full integration of 2 new templates: **Ramen Shop 3D** and **Motion Canvas**.
-* [x] GitSkins GitHub Profile `README.md` generator and export button.
+* [x] Full integration of 7 active 2D templates (`spotlight`, `poster`, `devport`, `creative`, `developer`, `minimal`, `editorial`, plus compatibility aliases `modern`, `executive` = 9 registered template IDs).
 * [x] Dynamic template gallery filter tabs in Portfolios page.
 * [x] Live public hosting at `/p/:slug`.
-* [x] Downloadable standalone ZIP bundle via `archiver`.
+* [x] Downloadable standalone offline ZIP bundle (React source & static HTML/CSS/JS) via `archiver`.
+* [ ] Phase 2 template expansions: **Ramen Shop 3D** (`ramen-shop`), **Motion Canvas** (`motion-studio`), and **Open-Source Maintainer** (`oss-maintainer`).
+* [ ] GitSkins GitHub Profile `README.md` generator and export modal.
 
 ### Phase 2: Future Enhancements (Post-MVP)
 * Custom domain DNS mapping (e.g. `alexkumar.dev` pointing to portfolio).

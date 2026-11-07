@@ -6,6 +6,7 @@ import { env } from "./env.js";
 let lastDbError = null;
 let listenersAttached = false;
 let retryTimeout = null;
+let intentionalDisconnect = false;
 
 // Prefer IPv4 resolution order
 if (dns.setDefaultResultOrder) {
@@ -35,13 +36,22 @@ function attachListeners() {
   });
 
   mongoose.connection.on("disconnected", () => {
+    if (intentionalDisconnect) {
+      console.log("[db] MongoDB disconnected intentionally");
+      return;
+    }
     console.warn("[db] MongoDB disconnected — attempting to reconnect in 5s...");
     scheduleRetry();
   });
 }
 
 function scheduleRetry() {
-  if (retryTimeout || mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+  if (
+    intentionalDisconnect ||
+    retryTimeout ||
+    mongoose.connection.readyState === 1 ||
+    mongoose.connection.readyState === 2
+  ) {
     return;
   }
   retryTimeout = setTimeout(() => {
@@ -60,6 +70,7 @@ export async function connectDB() {
     return;
   }
 
+  intentionalDisconnect = false;
   attachListeners();
 
   try {
@@ -70,9 +81,16 @@ export async function connectDB() {
   } catch (err) {
     lastDbError = err.message;
 
-    // Many local networks/ISPs/routers refuse SRV queries (querySrv ECONNREFUSED).
-    // If that happens, switch Node's DNS resolver to public resolvers (Google / Cloudflare) and retry immediately.
-    if (err.message && (err.message.includes("querySrv") || err.message.includes("ECONNREFUSED"))) {
+    // Many local networks/ISPs/routers refuse SRV queries (querySrv ECONNREFUSED / ETIMEOUT).
+    // Restrict DNS fallback strictly to SRV lookup failures on mongodb+srv:// URIs,
+    // and restore the previous DNS servers if the retry still fails.
+    const isSrvUri = env.MONGO_URI.startsWith("mongodb+srv://");
+    const isSrvLookupFailure =
+      isSrvUri &&
+      (err.syscall === "querySrv" || Boolean(err.message && err.message.includes("querySrv")));
+
+    if (isSrvLookupFailure) {
+      const previousServers = dns.getServers();
       try {
         console.warn("[db] DNS SRV query failed with local resolver. Switching to public DNS (8.8.8.8, 1.1.1.1) and retrying...");
         dns.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -82,6 +100,9 @@ export async function connectDB() {
         lastDbError = null;
         return;
       } catch (retryErr) {
+        try {
+          dns.setServers(previousServers);
+        } catch {}
         lastDbError = retryErr.message;
         scheduleRetry();
         throw retryErr;
@@ -90,6 +111,17 @@ export async function connectDB() {
 
     scheduleRetry();
     throw err;
+  }
+}
+
+export async function disconnectDB() {
+  intentionalDisconnect = true;
+  if (retryTimeout) {
+    clearTimeout(retryTimeout);
+    retryTimeout = null;
+  }
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
   }
 }
 
