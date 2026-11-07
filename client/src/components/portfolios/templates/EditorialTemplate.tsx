@@ -21,6 +21,7 @@ import type {
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { TechIcon } from "@/components/portfolios/common/TechIcon";
 import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
+import Lanyard from "./Lanyard";
 
 export interface EditorialTemplateProps {
   portfolio: Partial<Portfolio>;
@@ -455,7 +456,7 @@ export function EditorialTemplate({
       <section
         key="hero"
         id="hero"
-        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[580px] max-h-[820px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-12 flex flex-col justify-between text-white select-none transition-all duration-300"
+        className="editorial-slide ed-crimson ed-hero relative w-full aspect-[16/10] min-h-[640px] sm:min-h-[680px] max-h-[860px] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-10 flex flex-col justify-between text-white select-none transition-all duration-300"
         style={{ backgroundColor: primaryColor }}
       >
         {/* Subtle Linen Background Texture */}
@@ -466,16 +467,30 @@ export function EditorialTemplate({
         <div className="ed-orb ed-orb-a absolute pointer-events-none" />
         <div className="ed-orb ed-orb-b absolute pointer-events-none" />
 
-        {/* Top Eyebrow: Script "Creative" */}
-        <div className="relative z-20 w-full text-center pt-2">
-          <span className="font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF]">
+        {/* Top Eyebrow: Script "Creative" + Hanging Lanyard attached directly to "Creative" */}
+        <div className="relative z-30 w-full flex flex-col items-center pt-1">
+          <span className="relative z-30 font-['Caveat',cursive] font-bold text-3xl sm:text-4xl lg:text-5xl tracking-wide opacity-95 text-[#FAF5EF] leading-none drop-shadow-sm">
             Creative
           </span>
+
+          {/* Lanyard Strap ("Rassi") attaches right beneath "Creative" and hangs over "PORTFOLIO" */}
+          <div
+            className="relative z-30 -mt-1 -mb-24 sm:-mb-20"
+            style={{ width: "100%", height: "600px" }}
+          >
+            <Lanyard
+              frontImage={avatarUrl || "/card-front.png"}
+              backImage={avatarUrl || "/card-back.png"}
+              strapImage="/band.png"
+              name={fullName}
+              subtitle={headline}
+              primaryColor={primaryColor}
+            />
+          </div>
         </div>
 
-        {/* Center: Giant Condensed "PORTFOLIO" with overlapping centered portrait cutout */}
-        <div className="relative z-20 my-auto w-full flex items-center justify-center">
-          {/* Giant Word */}
+        {/* Center Background: Giant Condensed "PORTFOLIO" behind the swinging Lanyard */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-4">
           <h1
             aria-label="Portfolio"
             className="ed-hero-title font-['Bebas_Neue','Anton',sans-serif] text-[clamp(68px,17vw,220px)] leading-[0.84] uppercase tracking-normal text-white text-center w-full select-none"
@@ -491,29 +506,10 @@ export function EditorialTemplate({
               </span>
             ))}
           </h1>
-
-          {/* Overlapping Centered Portrait matching Slide 01 in the reference */}
-          <div className="ed-hero-portrait absolute inset-x-0 bottom-[-15%] sm:bottom-[-20%] flex justify-center z-30 pointer-events-none">
-            <div className="ed-float relative w-[min(54vw,280px)] sm:w-[min(32vw,360px)] aspect-[3/4] flex items-end justify-center">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)]"
-                />
-              ) : (
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
-                  alt="Editorial Portrait"
-                  className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)]"
-                />
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
-        <div className="relative z-20 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="relative z-40 w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/20 text-xs sm:text-sm font-['Plus_Jakarta_Sans',sans-serif]">
           <span className="font-bold tracking-widest uppercase text-white/95">
             {fullName}
           </span>
