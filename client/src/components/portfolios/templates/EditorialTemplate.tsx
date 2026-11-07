@@ -23,6 +23,7 @@ import { TechIcon } from "@/components/portfolios/common/TechIcon";
 import { normalizeSkills } from "@/components/portfolios/adapters/resumePortfolioAdapter";
 import TechText from "./TechText";
 import FoldText from "./FoldText";
+import StaggeredMenu from "./StaggeredMenu";
 
 const Lanyard = React.lazy(() => import("./Lanyard"));
 
@@ -157,8 +158,7 @@ export function EditorialTemplate({
   hiddenSections = [],
 }: EditorialTemplateProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [activeSection, setActiveSection] = useState("hero");
+  const [isMenuOnLightBg, setIsMenuOnLightBg] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeExpIdx, setActiveExpIdx] = useState(0);
 
@@ -365,17 +365,36 @@ export function EditorialTemplate({
     },
   ];
 
-  // Scroll progress (works inside nested scroll containers like the editor preview)
+  // Scroll tracking (works inside nested scroll containers like the editor preview)
   useEffect(() => {
     const handleScroll = () => {
       const root = rootRef.current;
       if (!root) return;
       const rect = root.getBoundingClientRect();
-      const viewH = window.innerHeight || 1;
-      const total = Math.max(rect.height - viewH, 1);
-      const progressed = Math.min(Math.max(-rect.top / total, 0), 1);
-      setScrollProgress(progressed);
       setShowScrollTop(-rect.top > 400);
+
+      if (isDarkMode) {
+        setIsMenuOnLightBg(false);
+        return;
+      }
+
+      const toggleBtn = root.querySelector<HTMLElement>(".sm-toggle");
+      const btnRect = toggleBtn?.getBoundingClientRect();
+      const probeY = btnRect && btnRect.height > 0 ? btnRect.top + btnRect.height / 2 : 36;
+      const slides = root.querySelectorAll<HTMLElement>(".editorial-slide");
+      let overColoredSlide = false;
+
+      for (const slide of Array.from(slides)) {
+        const sRect = slide.getBoundingClientRect();
+        if (sRect.top <= probeY && sRect.bottom >= probeY) {
+          if (slide.classList.contains("text-white") || slide.classList.contains("ed-crimson")) {
+            overColoredSlide = true;
+          }
+          break;
+        }
+      }
+
+      setIsMenuOnLightBg(!overColoredSlide);
     };
     handleScroll();
     document.addEventListener("scroll", handleScroll, { passive: true, capture: true });
@@ -384,7 +403,7 @@ export function EditorialTemplate({
       document.removeEventListener("scroll", handleScroll, { capture: true });
       window.removeEventListener("resize", handleScroll);
     };
-  }, []);
+  }, [isDarkMode]);
 
   // Scroll-reveal for slides + active section tracking for the floating nav
   useEffect(() => {
@@ -409,26 +428,12 @@ export function EditorialTemplate({
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
     );
 
-    const activeObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = (entry.target as HTMLElement).id || (entry.target.closest("[id]") as HTMLElement | null)?.id;
-            if (id) setActiveSection(id);
-          }
-        });
-      },
-      { threshold: 0.5 },
-    );
-
     slides.forEach((s) => {
       revealObserver.observe(s);
-      activeObserver.observe(s);
     });
 
     return () => {
       revealObserver.disconnect();
-      activeObserver.disconnect();
     };
   }, [sectionOrder, hiddenSections, displayProjects.length]);
 
@@ -2119,7 +2124,7 @@ export function EditorialTemplate({
     <div
       ref={rootRef}
       onPointerMove={handlePointerMove}
-      className="editorial-root relative w-full min-h-screen py-6 sm:py-12 px-3 sm:px-6 lg:px-10 space-y-10 sm:space-y-16"
+      className="editorial-root relative w-full min-h-screen py-6 sm:py-12 px-3 sm:px-6 lg:px-10"
       style={{
         backgroundColor: colors.paper,
         color: colors.ink,
@@ -2180,73 +2185,36 @@ export function EditorialTemplate({
         }
       `}</style>
 
-      {/* Floating Presentation Deck Navigation Bar with High-Contrast Pill Layout */}
-      <header className="sticky top-4 z-40 max-w-5xl mx-auto rounded-full px-4 sm:px-6 py-2.5 bg-[#141418]/95 backdrop-blur-xl border border-white/15 text-white flex items-center justify-between gap-3 shadow-2xl relative">
-        {/* Cleanly inset reading progress meter across the bottom of the floating pill */}
-        <div className="absolute bottom-0 left-6 right-6 h-[2.5px] rounded-full bg-white/10 overflow-hidden pointer-events-none">
-          <div
-            className="h-full rounded-full transition-all duration-150 ease-out"
-            style={{
-              width: `${Math.round(scrollProgress * 100)}%`,
-              backgroundColor: primaryColor,
-            }}
-          />
-        </div>
-
-        <a href="#hero" className="flex items-center gap-2 shrink-0 pl-1">
-          <span className="font-['Caveat',cursive] text-2xl font-bold text-white">
-            {firstName}
-          </span>
-          <span
-            className="font-['Bebas_Neue',sans-serif] tracking-widest text-[11px] px-2 py-0.5 rounded-full text-white font-semibold"
-            style={{ backgroundColor: primaryColor }}
-          >
-            DECK
-          </span>
-        </a>
-
-        {/* Quick Section Anchors with High-Contrast Active Pill */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-mono tracking-wide overflow-x-auto scrollbar-none py-0.5">
-          {sectionOrder
+      {/* React Bits StaggeredMenu (no navbar bar behind it) */}
+      <div className="sticky top-0 z-50 h-0 max-w-6xl mx-auto">
+        <StaggeredMenu
+          position="left"
+          items={sectionOrder
             .filter((sec) => !isHidden(sec))
-            .map((sec) => {
-              const isActive = activeSection === sec;
-              return (
-                <a
-                  key={sec}
-                  href={`#${sec}`}
-                  className={`px-3 py-1 rounded-full transition-all capitalize whitespace-nowrap ${
-                    isActive
-                      ? "bg-white text-neutral-950 font-bold shadow-xs"
-                      : "text-white/85 hover:text-white hover:bg-white/10 font-medium"
-                  }`}
-                >
-                  {sec}
-                </a>
-              );
-            })}
-        </nav>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {email ? (
-            <SafeLink
-              href={`mailto:${email}`}
-              className="px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all font-mono"
-              style={{ backgroundColor: primaryColor, color: "#FFFFFF" }}
-            >
-              Connect
-            </SafeLink>
-          ) : (
-            <a
-              href="#contact"
-              className="px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all font-mono"
-              style={{ backgroundColor: primaryColor, color: "#FFFFFF" }}
-            >
-              Connect
-            </a>
-          )}
-        </div>
-      </header>
+            .map((sec) => ({
+              label: sec.charAt(0).toUpperCase() + sec.slice(1).replace(/[-_]/g, " "),
+              ariaLabel: `Go to ${sec} section`,
+              link: `#${sec}`,
+            }))}
+          socialItems={
+            socialLinks.length > 0
+              ? socialLinks.map((s: PortfolioSocialLink) => ({
+                  label: s.platform || "Link",
+                  link: s.url,
+                }))
+              : email
+              ? [{ label: "Email", link: `mailto:${email}` }]
+              : []
+          }
+          displaySocials={socialLinks.length > 0 || Boolean(email)}
+          displayItemNumbering={true}
+          menuButtonColor={isMenuOnLightBg ? "#0F172A" : "#ffffff"}
+          openMenuButtonColor={isMenuOnLightBg ? "#0F172A" : "#ffffff"}
+          changeMenuColorOnOpen={true}
+          colors={["#141418", primaryColor]}
+          accentColor={primaryColor}
+        />
+      </div>
 
       {/* Render Dynamic Sections Based on User's Customized sectionOrder & hiddenSections */}
       <main className="max-w-6xl mx-auto space-y-10 sm:space-y-16">
