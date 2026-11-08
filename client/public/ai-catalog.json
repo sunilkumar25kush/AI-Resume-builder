@@ -1,0 +1,38 @@
+{
+  "$schema": "https://ard.org/schema/v1/ai-catalog.json",
+  "name": "ResumeBuddy & AI Resume Builder",
+  "description": "AI-powered resume optimization workspace and developer portfolio website generator",
+  "version": "1.0.0",
+  "homepage": "https://ai-resume-builder-client-three.vercel.app",
+  "provider": {
+    "name": "ResumeBuddy",
+    "url": "https://ai-resume-builder-client-three.vercel.app"
+  },
+  "capabilities": [
+    {
+      "name": "resume-builder",
+      "description": "Create and edit ATS-optimized resumes with live PDF/DOCX preview",
+      "type": "application"
+    },
+    {
+      "name": "portfolio-generator",
+      "description": "Generate interactive developer portfolios from resume data with multiple themes",
+      "type": "generator"
+    },
+    {
+      "name": "ats-scanner",
+      "description": "Score resumes against target job descriptions and analyze keyword gaps",
+      "type": "analyzer"
+    }
+  ],
+  "resources": [
+    {
+      "type": "llms-txt",
+      "url": "https://ai-resume-builder-client-three.vercel.app/llms.txt"
+    },
+    {
+      "type": "llms-full-txt",
+      "url": "https://ai-resume-builder-client-three.vercel.app/llms-full.txt"
+    }
+  ]
+}

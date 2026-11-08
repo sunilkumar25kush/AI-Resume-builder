@@ -10,6 +10,22 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }]
     },
     {
+      "source": "/(llms\\.txt|llms-full\\.txt|ai-catalog\\.json|robots\\.txt)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/ai-catalog\\.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
       "source": "/index.html",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }

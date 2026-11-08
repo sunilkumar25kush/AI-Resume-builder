@@ -1,0 +1,24 @@
+# ResumeBuddy & AI Resume Builder
+
+> Open source, privacy-focused AI Resume Builder and Developer Portfolio Platform.
+
+ResumeBuddy enables engineers and professionals to parse resumes, analyze ATS compatibility, match target job descriptions, and generate responsive, interactive developer portfolio websites.
+
+## Core Capabilities
+
+- **AI Resume Builder & Parser**: Upload existing resumes in PDF or DOCX formats, parse experience and skills deterministically, and export optimized documents.
+- **ATS Checker & Keyword Matcher**: Score resumes against target job descriptions with keyword and skill gap analysis.
+- **Developer Portfolio Generator**: Generate interactive live portfolio websites with themes including Kinetic Editorial, Spotlight, Poster, and One-Page Résumé.
+- **Export Formats**: Deterministic PDF rendering and Word DOCX generation.
+
+## Documentation & Links
+
+- [Official Website](https://ai-resume-builder-client-three.vercel.app/)
+- [Portfolio Showcase](https://ai-resume-builder-client-three.vercel.app/portfolios)
+- [Resume Templates](https://ai-resume-builder-client-three.vercel.app/resumes)
+- [API Documentation](https://ai-resume-builder-client-three.vercel.app/api)
+
+## Technology Stack
+
+- **Frontend**: React 19, Tailwind CSS v4, Framer Motion, GSAP, Three.js, Lucide Icons, Vite
+- **Backend**: Node.js, Express, MongoDB Mongoose, Cloudinary, Gemini AI

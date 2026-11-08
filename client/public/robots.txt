@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Agentic Crawlers and AI Scrapers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://ai-resume-builder-client-three.vercel.app/sitemap.xml

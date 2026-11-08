@@ -1,0 +1,25 @@
+# ResumeBuddy & AI Resume Builder - Full Documentation
+
+> Complete catalog of features, templates, and agentic integrations for ResumeBuddy.
+
+ResumeBuddy is an AI-powered resume optimization and developer portfolio platform.
+
+## Features
+
+- **Resume Parsing & Optimization**: Deterministic ATS-compatible resume analysis.
+- **Developer Portfolio Generator**: Customizable interactive portfolio websites.
+- **Export Engine**: Vector-grade PDF generation and native Word (.docx) export.
+
+## Templates
+
+- [Kinetic Editorial](https://ai-resume-builder-client-three.vercel.app/portfolio-templates/editorial): High-impact interactive editorial design.
+- [Spotlight](https://ai-resume-builder-client-three.vercel.app/portfolio-templates/spotlight): Modern developer showcase with light/dark contrast.
+- [Poster](https://ai-resume-builder-client-three.vercel.app/portfolio-templates/poster): Bold typography and graphic cards.
+- [One-Page Résumé](https://ai-resume-builder-client-three.vercel.app/portfolio-templates/one-page): Minimalist single-page technical resume.
+
+## Navigation & Actions
+
+- [Home](https://ai-resume-builder-client-three.vercel.app/)
+- [Login](https://ai-resume-builder-client-three.vercel.app/login)
+- [Register](https://ai-resume-builder-client-three.vercel.app/register)
+- [Portfolios](https://ai-resume-builder-client-three.vercel.app/portfolios)
