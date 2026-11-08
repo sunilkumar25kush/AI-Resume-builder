@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Code2, ExternalLink, FileText, Gauge, Globe, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,45 +8,33 @@ export function LandingHero() {
   return (
     <section className="relative pt-32 pb-16 sm:pt-40 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
       {/* Category Pill */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted/60 text-xs font-medium text-foreground select-none"
+      <div
+        className="hero-rise mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted/60 text-xs font-medium text-foreground select-none"
       >
         <Sparkles className="h-3.5 w-3.5 text-primary" />
         <span>Applicant Tracking System and Developer Portfolio Suite</span>
-      </motion.div>
+      </div>
 
       {/* Heading with required B5 text gradient */}
-      <motion.h1
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-        className="max-w-[680px] mx-auto text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.08] [text-wrap:balance] bg-gradient-to-r from-black to-[#666666] dark:from-white dark:to-[#9B9B9B] bg-clip-text text-transparent"
+      <h1
+        className="hero-rise [animation-delay:80ms] max-w-[680px] mx-auto text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.08] [text-wrap:balance] bg-gradient-to-r from-black to-[#666666] dark:from-white dark:to-[#9B9B9B] bg-clip-text text-transparent"
       >
         Build an interview winning resume
         <br className="hidden sm:inline" />
         and live portfolio in minutes
-      </motion.h1>
+      </h1>
 
       {/* Subheading capped at 680px */}
-      <motion.p
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
-        className="mt-6 max-w-[680px] mx-auto text-base sm:text-lg text-muted-foreground leading-relaxed [text-wrap:pretty]"
+      <p
+        className="hero-rise [animation-delay:160ms] mt-6 max-w-[680px] mx-auto text-base sm:text-lg text-muted-foreground leading-relaxed [text-wrap:pretty]"
       >
         Optimize your qualifications against target job descriptions with instant keyword analysis,
         then publish an interactive developer portfolio website with one click.
-      </motion.p>
+      </p>
 
       {/* Primary CTA & Secondary Action */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
-        className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto"
+      <div
+        className="hero-rise [animation-delay:240ms] mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto"
       >
         <Button
           asChild
@@ -70,14 +57,11 @@ export function LandingHero() {
             <span>Explore templates</span>
           </a>
         </Button>
-      </motion.div>
+      </div>
 
       {/* Proof Signal */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.32 }}
-        className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground font-medium"
+      <div
+        className="hero-fade [animation-delay:320ms] mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground font-medium"
       >
         <span className="flex items-center gap-1.5">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
@@ -91,14 +75,11 @@ export function LandingHero() {
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
           Deterministic ATS validation
         </span>
-      </motion.div>
+      </div>
 
       {/* Hero Visual Mockup */}
-      <motion.div
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.38 }}
-        className="mt-14 w-full max-w-5xl rounded-3xl border border-border/80 bg-card dark:bg-[#181818] p-3 sm:p-5 shadow-xl text-left select-none"
+      <div
+        className="hero-fade [animation-delay:380ms] mt-14 w-full max-w-5xl rounded-3xl border border-border/80 bg-card dark:bg-[#181818] p-3 sm:p-5 shadow-xl text-left select-none"
       >
         {/* Top Window Bar */}
         <div className="flex items-center justify-between pb-3 px-2 border-b border-border/70 text-xs">
@@ -231,7 +212,7 @@ export function LandingHero() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

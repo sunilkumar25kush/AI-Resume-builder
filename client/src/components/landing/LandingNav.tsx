@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Menu, Sparkles, X } from "lucide-react";
 
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -113,14 +112,9 @@ export function LandingNav() {
       </header>
 
       {/* Mobile Drawer Panel */}
-      <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-4 top-20 z-40 p-5 rounded-2xl border border-border bg-background/95 dark:bg-[#181818]/95 backdrop-blur-xl shadow-xl flex flex-col gap-4 md:hidden"
+          <div
+            className="animate-in fade-in slide-in-from-top-2 duration-300 fixed inset-x-4 top-20 z-40 p-5 rounded-2xl border border-border bg-background/95 dark:bg-[#181818]/95 backdrop-blur-xl shadow-xl flex flex-col gap-4 md:hidden"
           >
             <div className="flex flex-col gap-1">
               {navLinks.map((item) => (
@@ -157,9 +151,8 @@ export function LandingNav() {
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 }

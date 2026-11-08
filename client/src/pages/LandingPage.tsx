@@ -1,14 +1,13 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 
-import { LandingBenefits } from "@/components/landing/LandingBenefits";
-import { LandingCta } from "@/components/landing/LandingCta";
-import { LandingFaq } from "@/components/landing/LandingFaq";
-import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHero } from "@/components/landing/LandingHero";
-import { LandingHowItWorks } from "@/components/landing/LandingHowItWorks";
 import { LandingNav } from "@/components/landing/LandingNav";
-import { LandingShowcase } from "@/components/landing/LandingShowcase";
-import { TaglineReveal } from "@/components/landing/TaglineReveal";
+
+// Below-the-fold sections live in a separate chunk (framer-motion, showcase,
+// FAQ, ...) so they never block the hero's first paint (FCP / LCP).
+const loadBelowFold = () => import("@/components/landing/LandingBelowFold");
+const LandingBelowFold = lazy(loadBelowFold);
+const LandingFooter = lazy(() => loadBelowFold().then((m) => ({ default: m.LandingFooter })));
 
 export default function LandingPage() {
   useEffect(() => {
@@ -57,27 +56,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Mandatory Tagline Reveal Section with Scroll Animation */}
-        <TaglineReveal />
-
-        {/* Outcome Driven Benefits */}
-        <LandingBenefits />
-
-        {/* 3 Step Workflow */}
-        <LandingHowItWorks />
-
-        {/* Template Showcase Gallery */}
-        <LandingShowcase />
-
-        {/* Frequently Asked Questions */}
-        <LandingFaq />
-
-        {/* Bottom Conversion Banner */}
-        <LandingCta />
+        {/* Below-the-fold sections (lazy). min-height placeholder avoids a footer jump. */}
+        <Suspense fallback={<div className="min-h-screen" aria-hidden />}>
+          <LandingBelowFold />
+        </Suspense>
       </main>
 
       {/* Semantic Footer */}
-      <LandingFooter />
+      <Suspense fallback={null}>
+        <LandingFooter />
+      </Suspense>
     </div>
   );
 }

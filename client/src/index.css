@@ -808,4 +808,45 @@ html {
   width: var(--rc-photo-size, 85px) !important;
   height: var(--rc-photo-size, 85px) !important;
   object-fit: cover !important;
-}
+}
+
+/* -------------------------------------------------------------------------
+   Landing hero entrance animations (pure CSS, no JS required).
+   `hero-rise` only moves the element (opacity stays 1) so the text is painted
+   on the very first frame — this keeps LCP equal to FCP instead of waiting
+   for a JS animation library to download and fade the hero in.
+   ------------------------------------------------------------------------- */
+@keyframes hero-rise {
+  from {
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-fade {
+  animation: hero-fade 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .hero-fade {
+    animation: none;
+  }
+}

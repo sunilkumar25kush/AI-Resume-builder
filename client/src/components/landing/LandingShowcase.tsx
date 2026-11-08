@@ -317,6 +317,10 @@ export function LandingShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { margin: "200px 0px" });
+  // Latch: once the showcase has come near the viewport, keep the heavy live
+  // previews mounted. Until then we don't download PortfolioRenderer (~360 KB)
+  // so it never competes with the hero for bandwidth/CPU (FCP/LCP/TBT).
+  const shouldMountPreview = useInView(containerRef, { margin: "400px 0px", once: true });
 
   const filtered = templates.filter((t) => t.category === tab);
   const activeTemplate = templates.find((t) => t.id === activeId && t.category === tab) || filtered[0];
@@ -626,7 +630,9 @@ export function LandingShowcase() {
           )}
 
           {/* Template Content */}
-          {tab === "portfolio" ? (
+          {!shouldMountPreview ? (
+            <PreviewLoadingState />
+          ) : tab === "portfolio" ? (
             <Suspense fallback={<PreviewLoadingState />}>
               <PortfolioRenderer
                 portfolio={activePortfolioPayload}
