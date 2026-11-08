@@ -22,3 +22,4 @@ ResumeBuddy enables engineers and professionals to parse resumes, analyze ATS co
 
 - **Frontend**: React 19, Tailwind CSS v4, Framer Motion, GSAP, Three.js, Lucide Icons, Vite
 - **Backend**: Node.js, Express, MongoDB Mongoose, Cloudinary, Gemini AI
+

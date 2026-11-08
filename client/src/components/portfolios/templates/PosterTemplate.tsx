@@ -14,7 +14,7 @@ export interface PosterTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
-  previewMode?: "desktop" | "tablet" | "mobile";
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 export function PosterTemplate({

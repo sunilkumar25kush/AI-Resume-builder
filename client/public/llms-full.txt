@@ -23,3 +23,4 @@ ResumeBuddy is an AI-powered resume optimization and developer portfolio platfor
 - [Login](https://ai-resume-builder-client-three.vercel.app/login)
 - [Register](https://ai-resume-builder-client-three.vercel.app/register)
 - [Portfolios](https://ai-resume-builder-client-three.vercel.app/portfolios)
+

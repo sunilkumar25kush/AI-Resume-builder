@@ -25,7 +25,7 @@ export interface SpotlightTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
-  previewMode?: "desktop" | "tablet" | "mobile";
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 // Font family map supporting the typography customization settings

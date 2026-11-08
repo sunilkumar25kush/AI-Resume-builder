@@ -30,5 +30,5 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
   ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/((?!.*\\.[\\w]+$|_next|assets).*)", "destination": "/index.html" }]
 }

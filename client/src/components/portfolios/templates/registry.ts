@@ -1,14 +1,42 @@
-import type { ComponentType } from "react";
-
-import { DeveloperTemplate } from "@/components/portfolios/templates/DeveloperTemplate";
-import { DevPortTemplate } from "@/components/portfolios/templates/DevPortTemplate";
-import { MinimalTemplate } from "@/components/portfolios/templates/MinimalTemplate";
+import { lazy, type ComponentType } from "react";
 import type { PortfolioTemplateProps } from "@/components/portfolios/templates/MinimalTemplate";
-import { ModernCreativeTemplate } from "@/components/portfolios/templates/ModernCreativeTemplate";
-import { PosterTemplate } from "@/components/portfolios/templates/PosterTemplate";
-import { SpotlightTemplate } from "@/components/portfolios/templates/SpotlightTemplate";
-import { EditorialTemplate } from "@/components/portfolios/templates/EditorialTemplate";
 import type { PortfolioTemplateId } from "@/types/portfolio";
+
+export const SpotlightTemplate = lazy(() =>
+  import("@/components/portfolios/templates/SpotlightTemplate").then((m) => ({
+    default: m.SpotlightTemplate,
+  })),
+);
+export const PosterTemplate = lazy(() =>
+  import("@/components/portfolios/templates/PosterTemplate").then((m) => ({
+    default: m.PosterTemplate,
+  })),
+);
+export const DevPortTemplate = lazy(() =>
+  import("@/components/portfolios/templates/DevPortTemplate").then((m) => ({
+    default: m.DevPortTemplate,
+  })),
+);
+export const ModernCreativeTemplate = lazy(() =>
+  import("@/components/portfolios/templates/ModernCreativeTemplate").then((m) => ({
+    default: m.ModernCreativeTemplate,
+  })),
+);
+export const DeveloperTemplate = lazy(() =>
+  import("@/components/portfolios/templates/DeveloperTemplate").then((m) => ({
+    default: m.DeveloperTemplate,
+  })),
+);
+export const MinimalTemplate = lazy(() =>
+  import("@/components/portfolios/templates/MinimalTemplate").then((m) => ({
+    default: m.MinimalTemplate,
+  })),
+);
+export const EditorialTemplate = lazy(() =>
+  import("@/components/portfolios/templates/EditorialTemplate").then((m) => ({
+    default: m.EditorialTemplate,
+  })),
+);
 
 export type TemplateCategory = "all" | "creative" | "technical" | "minimal";
 
@@ -27,15 +55,15 @@ export interface TemplateDefinition {
 }
 
 export const TEMPLATE_REGISTRY: Record<PortfolioTemplateId, ComponentType<PortfolioTemplateProps>> = {
-  spotlight: SpotlightTemplate,
-  poster: PosterTemplate,
-  devport: DevPortTemplate,
-  creative: ModernCreativeTemplate,
-  modern: ModernCreativeTemplate,
-  developer: DeveloperTemplate,
-  minimal: MinimalTemplate,
-  executive: MinimalTemplate,
-  editorial: EditorialTemplate as unknown as ComponentType<PortfolioTemplateProps>,
+  spotlight: SpotlightTemplate as ComponentType<PortfolioTemplateProps>,
+  poster: PosterTemplate as ComponentType<PortfolioTemplateProps>,
+  devport: DevPortTemplate as ComponentType<PortfolioTemplateProps>,
+  creative: ModernCreativeTemplate as ComponentType<PortfolioTemplateProps>,
+  modern: ModernCreativeTemplate as ComponentType<PortfolioTemplateProps>,
+  developer: DeveloperTemplate as ComponentType<PortfolioTemplateProps>,
+  minimal: MinimalTemplate as ComponentType<PortfolioTemplateProps>,
+  executive: MinimalTemplate as ComponentType<PortfolioTemplateProps>,
+  editorial: EditorialTemplate as ComponentType<PortfolioTemplateProps>,
 };
 
 export const TEMPLATE_METADATA: TemplateDefinition[] = [
@@ -130,7 +158,7 @@ export const VALID_TEMPLATE_IDS = [
  * If unknown or missing, securely defaults to `SpotlightTemplate`.
  */
 export function getPortfolioTemplate(templateId?: string | null): ComponentType<PortfolioTemplateProps> {
-  if (!templateId) return SpotlightTemplate;
+  if (!templateId) return SpotlightTemplate as ComponentType<PortfolioTemplateProps>;
   const normalized = templateId.toLowerCase().trim() as PortfolioTemplateId;
 
   if (
@@ -141,5 +169,5 @@ export function getPortfolioTemplate(templateId?: string | null): ComponentType<
   }
 
   // Secure default fallback
-  return SpotlightTemplate;
+  return SpotlightTemplate as ComponentType<PortfolioTemplateProps>;
 }

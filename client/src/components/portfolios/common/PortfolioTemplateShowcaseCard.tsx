@@ -341,104 +341,85 @@ function LiveScrollableTemplateViewport({
     return () => io.disconnect();
   }, []);
 
-  // Section-by-section stepped scroll: pauses randomly between 1.0s and 2.5s on each section, then glides to the next section
+  // Section-by-section stepped scroll: smooth glide between sections with zero layout thrashing
   useEffect(() => {
     if (!isVisible || !hasEnteredView) return;
     const scroller = scrollContainerRef.current;
     if (!scroller) return;
 
-    const getRandomPauseDurationMs = () => Math.round(1000 + Math.random() * 1500);
-
     let rafId = 0;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
     let currentSectionIndex = 0;
-    let phase: "pausing" | "scrolling" = "pausing";
-    let phaseStartTime = performance.now();
-    let currentPauseDurationMs = getRandomPauseDurationMs();
-    const SCROLL_DURATION_MS = 950; // Smooth 0.95s ease-in-out glide between sections
-    let startScrollTop = scroller.scrollTop;
-    let targetScrollTop = scroller.scrollTop;
+    let isCancelled = false;
+    let cachedWaypoints: number[] = [];
 
-    // Trigger interactive hover/reveal effects while paused on a section
-    const triggerSectionEffects = (
-      el: HTMLElement,
-      now: number,
-      pauseElapsed: number,
-      pauseDuration: number,
-    ) => {
-      // Ensure any slide in view has its reveal class triggered
-      const slides = el.querySelectorAll<HTMLElement>(".editorial-slide");
-      slides.forEach((s) => s.classList.add("is-visible"));
-
-      // Gently sweep a synthetic pointer across the active section so TechText / FoldText / hover effects animate live
-      const frame = frameRef.current;
-      if (frame && pauseElapsed > 180 && pauseElapsed < pauseDuration - 180) {
-        const rect = frame.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          const progress = (pauseElapsed - 180) / Math.max(200, pauseDuration - 360);
-          const sweepX = rect.left + rect.width * (0.22 + 0.56 * Math.sin(progress * Math.PI));
-          const sweepY = rect.top + rect.height * (0.48 + 0.12 * Math.cos(now * 0.004));
-          const targetEl = document.elementFromPoint(sweepX, sweepY) || el;
-          targetEl.dispatchEvent(
-            new PointerEvent("pointermove", {
-              clientX: sweepX,
-              clientY: sweepY,
-              bubbles: true,
-            }),
-          );
-        }
+    const updateWaypoints = () => {
+      if (scroller && !isCancelled) {
+        cachedWaypoints = getSectionWaypoints(scroller, scaleRef.current);
       }
     };
+    const initialTimer = setTimeout(updateWaypoints, 350);
 
-    const step = (now: number) => {
-      const el = scrollContainerRef.current;
-      if (!el) return;
+    const SCROLL_DURATION_MS = 950;
 
-      // Respect manual user wheel scrolling
-      if (now < userWheelPauseUntilRef.current) {
-        phase = "pausing";
-        phaseStartTime = now;
-        currentPauseDurationMs = getRandomPauseDurationMs();
-        startScrollTop = el.scrollTop;
-        rafId = requestAnimationFrame(step);
+    const startGlide = () => {
+      if (isCancelled || !scroller) return;
+      if (performance.now() < userWheelPauseUntilRef.current) {
+        scheduleNextPause(1500);
         return;
       }
 
-      if (phase === "pausing") {
-        const elapsed = now - phaseStartTime;
-        triggerSectionEffects(el, now, elapsed, currentPauseDurationMs);
-
-        if (elapsed >= currentPauseDurationMs) {
-          const waypoints = getSectionWaypoints(el, scaleRef.current);
-          if (waypoints.length > 1) {
-            currentSectionIndex = (currentSectionIndex + 1) % waypoints.length;
-            startScrollTop = el.scrollTop;
-            targetScrollTop = waypoints[currentSectionIndex];
-            phase = "scrolling";
-            phaseStartTime = now;
-          } else {
-            currentPauseDurationMs = getRandomPauseDurationMs();
-            phaseStartTime = now;
-          }
-        }
-      } else {
-        const elapsed = now - phaseStartTime;
-        const t = Math.min(1, elapsed / SCROLL_DURATION_MS);
-        const eased = easeInOutCubic(t);
-        el.scrollTop = startScrollTop + (targetScrollTop - startScrollTop) * eased;
-
-        if (t >= 1) {
-          el.scrollTop = targetScrollTop;
-          phase = "pausing";
-          currentPauseDurationMs = getRandomPauseDurationMs();
-          phaseStartTime = now;
-        }
+      if (cachedWaypoints.length <= 1) {
+        updateWaypoints();
       }
 
-      rafId = requestAnimationFrame(step);
+      if (cachedWaypoints.length > 1) {
+        currentSectionIndex = (currentSectionIndex + 1) % cachedWaypoints.length;
+        const startScrollTop = scroller.scrollTop;
+        const targetScrollTop = cachedWaypoints[currentSectionIndex];
+        const startTime = performance.now();
+
+        const animateScroll = (now: number) => {
+          if (isCancelled || !scroller) return;
+          if (now < userWheelPauseUntilRef.current) {
+            scheduleNextPause(2000);
+            return;
+          }
+
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / SCROLL_DURATION_MS);
+          const eased = easeInOutCubic(t);
+          scroller.scrollTop = startScrollTop + (targetScrollTop - startScrollTop) * eased;
+
+          if (t < 1) {
+            rafId = requestAnimationFrame(animateScroll);
+          } else {
+            scroller.scrollTop = targetScrollTop;
+            const pauseDuration = Math.round(1400 + Math.random() * 1600);
+            scheduleNextPause(pauseDuration);
+          }
+        };
+
+        rafId = requestAnimationFrame(animateScroll);
+      } else {
+        scheduleNextPause(2500);
+      }
     };
 
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
+    const scheduleNextPause = (delayMs: number) => {
+      if (isCancelled) return;
+      timerId = setTimeout(startGlide, delayMs);
+    };
+
+    // Begin tour after initial settling pause
+    scheduleNextPause(1600);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(initialTimer);
+      clearTimeout(timerId);
+      cancelAnimationFrame(rafId);
+    };
   }, [isVisible, hasEnteredView]);
 
   const previewPortfolio = useMemo<Portfolio>(() => {
@@ -506,6 +487,7 @@ function LiveScrollableTemplateViewport({
             portfolio={previewPortfolio}
             overrideTemplate={template.id}
             showEmpty={true}
+            previewMode="thumbnail"
           />
         </div>
       )}

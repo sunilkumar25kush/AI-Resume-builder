@@ -17,6 +17,7 @@ export interface PortfolioTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 export function MinimalTemplate({

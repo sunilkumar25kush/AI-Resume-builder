@@ -32,7 +32,7 @@ export interface EditorialTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
-  previewMode?: "desktop" | "tablet" | "mobile";
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 function SafeProjectImage({
@@ -156,7 +156,9 @@ export function EditorialTemplate({
     "contact",
   ],
   hiddenSections = [],
+  previewMode = "desktop",
 }: EditorialTemplateProps) {
+  const isThumbnail = previewMode === "thumbnail";
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMenuOnLightBg, setIsMenuOnLightBg] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -475,48 +477,109 @@ export function EditorialTemplate({
         <div className="ed-orb ed-orb-a absolute pointer-events-none" />
         <div className="ed-orb ed-orb-b absolute pointer-events-none" />
 
-        {/* Hanging 3D Lanyard emerging directly from the top edge of the Hero background */}
+        {/* Hanging Lanyard: 3D interactive WebGL on desktop/mobile live views, lightweight 2D badge for preview thumbnails */}
         <div
           className="absolute inset-x-0 top-0 z-30"
           style={{ width: "100%", height: "600px" }}
         >
-          <React.Suspense fallback={null}>
-            <Lanyard
-              frontImage={
-                avatarUrl ||
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
-              }
-              backImage={
-                avatarUrl ||
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
-              }
-              strapImage="/band.png"
-              strapLength={0.62}
-            />
-          </React.Suspense>
+          {isThumbnail ? (
+            /* Lightweight 2D pass badge for preview thumbnails: zero Three.js/WebGL overhead */
+            <div className="relative mx-auto flex flex-col items-center pt-0 pointer-events-none select-none">
+              {/* Lanyard strap */}
+              <div
+                className="w-8 h-28 bg-neutral-900 border-x border-neutral-700/60 shadow-md relative flex items-center justify-center"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 6px)",
+                }}
+              >
+                <span className="text-[7px] font-mono tracking-widest text-neutral-400 rotate-90 uppercase whitespace-nowrap">
+                  PASS
+                </span>
+              </div>
+              {/* Metal clamp and ring */}
+              <div className="w-4 h-3 bg-gradient-to-b from-neutral-400 to-neutral-600 rounded-xs shadow border border-neutral-300/40 -mt-0.5 z-10" />
+              <div className="w-3 h-3 rounded-full border-2 border-neutral-400/80 -mt-0.5 z-10" />
+              {/* ID Badge Card */}
+              <div className="w-44 h-64 rounded-2xl bg-neutral-950/95 border border-white/20 shadow-2xl p-3 flex flex-col items-center justify-between text-center backdrop-blur-md -mt-1">
+                <div className="w-6 h-1 rounded-full bg-neutral-700 mx-auto" />
+                <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-white/20 shadow-inner bg-neutral-800">
+                  <img
+                    src={
+                      avatarUrl ||
+                      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80"
+                    }
+                    alt={fullName}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="w-full space-y-0.5">
+                  <p className="text-xs font-bold text-white tracking-wide truncate">{fullName}</p>
+                  <p className="text-[9px] text-neutral-400 truncate">{headline}</p>
+                </div>
+                <div className="w-full pt-1 border-t border-neutral-800 flex justify-between items-center text-[8px] text-neutral-500 font-mono">
+                  <span>ALL ACCESS</span>
+                  <span>2026</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <React.Suspense fallback={null}>
+              <Lanyard
+                frontImage={
+                  avatarUrl ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+                }
+                backImage={
+                  avatarUrl ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+                }
+                strapImage="/band.png"
+                strapLength={0.62}
+              />
+            </React.Suspense>
+          )}
         </div>
 
         {/* Center Background: Giant Condensed "PORTFOLIO" with React Bits TechText behind the swinging Lanyard */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center px-2 sm:px-4">
-          <div style={{ width: "100%", height: "480px", position: "relative" }}>
-            <TechText
-              text="PORTFOLIO"
-              fontFamily="'Bebas Neue', 'Anton', sans-serif"
-              fontWeight={600}
-              fontSize={210}
-              letterSpacing={0}
-              color="#FFFFFF"
-              accentColor="#FFFFFF"
-              reveal="letter"
-              dashLength={4}
-              dashGap={2}
-              specks={15}
-              intro="none"
-              introDuration={2}
-              clickKick
-              guides={false}
-            />
-          </div>
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-2 sm:px-4 pointer-events-none select-none">
+          {isThumbnail ? (
+            <div
+              className="text-white text-center font-black uppercase tracking-tight select-none opacity-90"
+              style={{
+                fontFamily: "'Bebas Neue', 'Anton', sans-serif",
+                fontSize: "175px",
+                lineHeight: 1,
+                letterSpacing: "0.02em",
+                textShadow: "0 0 40px rgba(255,255,255,0.18)",
+              }}
+            >
+              PORTFOLIO
+            </div>
+          ) : (
+            <div style={{ width: "100%", height: "480px", position: "relative" }}>
+              <TechText
+                text="PORTFOLIO"
+                fontFamily="'Bebas Neue', 'Anton', sans-serif"
+                fontWeight={600}
+                fontSize={210}
+                letterSpacing={0}
+                color="#FFFFFF"
+                accentColor="#FFFFFF"
+                reveal="letter"
+                dashLength={4}
+                dashGap={2}
+                specks={15}
+                intro="none"
+                introDuration={2}
+                clickKick
+                guides={false}
+              />
+            </div>
+          )}
         </div>
 
         {/* Bottom Bar: Name Left, Headline Right, Quick Jump */}
@@ -560,7 +623,7 @@ export function EditorialTemplate({
             className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
             style={{ color: primaryColor }}
           >
-            <FoldText
+            <FoldText disabled={isThumbnail}
               text="ABOUT ME"
               foldStyle="paper"
               splitBy="char"
@@ -625,7 +688,7 @@ export function EditorialTemplate({
                 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(36px,5.5vw,72px)] leading-[0.9] uppercase tracking-normal m-0 mt-1"
                 style={{ color: primaryColor }}
               >
-                <FoldText
+                <FoldText disabled={isThumbnail}
                   text={lastName.toUpperCase()}
                   foldStyle="paper"
                   splitBy="char"
@@ -720,7 +783,7 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              <FoldText
+              <FoldText disabled={isThumbnail}
                 text="EXPERIENCES"
                 foldStyle="paper"
                 splitBy="char"
@@ -876,7 +939,7 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              <FoldText
+              <FoldText disabled={isThumbnail}
                 text="EDUCATION"
                 foldStyle="paper"
                 splitBy="char"
@@ -1046,7 +1109,7 @@ export function EditorialTemplate({
             {/* Center Giant Title */}
             <div className="lg:col-span-6 text-center space-y-2">
               <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(64px,13vw,168px)] leading-[0.85] uppercase tracking-normal text-white text-center select-none m-0">
-                <FoldText
+                <FoldText disabled={isThumbnail}
                   text="PROJECTS"
                   foldStyle="paper"
                   splitBy="char"
@@ -1142,7 +1205,7 @@ export function EditorialTemplate({
                       className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                       style={{ color: primaryColor }}
                     >
-                      <FoldText
+                      <FoldText disabled={isThumbnail}
                         text="PROJECT"
                         foldStyle="paper"
                         splitBy="char"
@@ -1371,7 +1434,7 @@ export function EditorialTemplate({
                       className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                       style={{ color: primaryColor }}
                     >
-                      <FoldText
+                      <FoldText disabled={isThumbnail}
                         text="PROJECT"
                         foldStyle="paper"
                         splitBy="char"
@@ -1498,7 +1561,7 @@ export function EditorialTemplate({
                     className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,6.5vw,84px)] leading-[0.88] uppercase tracking-normal m-0"
                     style={{ color: primaryColor }}
                   >
-                    <FoldText
+                    <FoldText disabled={isThumbnail}
                       text="PROJECT"
                       foldStyle="paper"
                       splitBy="char"
@@ -1613,7 +1676,7 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              <FoldText
+              <FoldText disabled={isThumbnail}
                 text="CERTIFICATIONS"
                 foldStyle="paper"
                 splitBy="char"
@@ -1799,7 +1862,7 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              <FoldText
+              <FoldText disabled={isThumbnail}
                 text="TECHNICAL SKILLS"
                 foldStyle="paper"
                 splitBy="char"
@@ -1925,7 +1988,7 @@ export function EditorialTemplate({
               className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0"
               style={{ color: primaryColor }}
             >
-              <FoldText
+              <FoldText disabled={isThumbnail}
                 text="CLIENT SAY"
                 foldStyle="paper"
                 splitBy="char"
@@ -2043,7 +2106,7 @@ export function EditorialTemplate({
                 let&apos;s Connect
               </p>
               <h2 className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(56px,10vw,130px)] leading-[0.85] uppercase tracking-normal m-0 text-white">
-                <FoldText
+                <FoldText disabled={isThumbnail}
                   text="THANK YOU"
                   foldStyle="paper"
                   splitBy="char"
@@ -2246,7 +2309,7 @@ export function EditorialTemplate({
                     className="font-['Bebas_Neue','Anton',sans-serif] text-[clamp(44px,7vw,92px)] leading-[0.88] uppercase tracking-normal m-0 capitalize"
                     style={{ color: primaryColor }}
                   >
-                    <FoldText
+                    <FoldText disabled={isThumbnail}
                       text={sec.replace(/[-_]/g, " ").toUpperCase()}
                       foldStyle="paper"
                       splitBy="char"

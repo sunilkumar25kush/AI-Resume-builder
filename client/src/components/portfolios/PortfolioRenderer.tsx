@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ThemeWrapper } from "@/components/portfolios/common/ThemeWrapper";
 import { getPortfolioTemplate } from "@/components/portfolios/templates/registry";
 import type { Portfolio } from "@/types/portfolio";
@@ -9,6 +10,7 @@ export interface PortfolioRendererProps {
   hiddenSections?: string[];
   className?: string;
   overrideTemplate?: Portfolio["design"]["template"];
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 /**
@@ -23,6 +25,7 @@ export function PortfolioRenderer({
   hiddenSections,
   className = "",
   overrideTemplate,
+  previewMode,
 }: PortfolioRendererProps) {
   const activeTemplateId = overrideTemplate || portfolio.design?.template;
   const TemplateComponent = getPortfolioTemplate(activeTemplateId);
@@ -53,12 +56,21 @@ export function PortfolioRenderer({
 
   return (
     <ThemeWrapper design={portfolio.design} className={className}>
-      <TemplateComponent
-        portfolio={portfolio}
-        showEmpty={showEmpty}
-        sectionOrder={resolvedSectionOrder}
-        hiddenSections={resolvedHiddenSections}
-      />
+      <Suspense
+        fallback={
+          <div className="flex h-full w-full items-center justify-center bg-neutral-950 text-neutral-600 animate-pulse">
+            <div className="h-8 w-8 rounded-full border-2 border-neutral-700 border-t-primary animate-spin" />
+          </div>
+        }
+      >
+        <TemplateComponent
+          portfolio={portfolio}
+          showEmpty={showEmpty}
+          sectionOrder={resolvedSectionOrder}
+          hiddenSections={resolvedHiddenSections}
+          previewMode={previewMode}
+        />
+      </Suspense>
     </ThemeWrapper>
   );
 }

@@ -30,6 +30,7 @@ export interface FoldTextProps {
   color?: string;
   className?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
@@ -90,8 +91,26 @@ const FoldText: React.FC<FoldTextProps> = ({
   fontWeight = 800,
   color = 'currentColor',
   className = '',
-  style = {}
+  style = {},
+  disabled = false,
 }) => {
+  if (disabled) {
+    return (
+      <span
+        className={`inline-block select-none ${className}`}
+        style={{
+          fontSize: typeof fontSize === "number" ? `${fontSize}px` : fontSize,
+          fontWeight,
+          color,
+          lineHeight: 1.1,
+          ...style,
+        }}
+      >
+        {text}
+      </span>
+    );
+  }
+
   const rootRef = useRef<HTMLSpanElement | null>(null);
   const safeHinge = HINGES[hinge] ? hinge : 'top';
   const hingeConfig = HINGES[safeHinge];
