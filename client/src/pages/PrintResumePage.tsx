@@ -4,6 +4,7 @@ import { apiClient } from "@/api/client";
 import { getTemplateById } from "@/templates";
 import { getCustomizationCssVariables, getCustomizationClassNames } from "@/utils/customization";
 import type { Resume } from "@/types";
+import "@/styles/resume-canvas.css";
 
 export default function PrintResumePage() {
   const { id } = useParams<{ id: string }>();

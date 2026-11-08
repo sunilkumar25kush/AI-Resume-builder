@@ -334,7 +334,7 @@ function LiveScrollableTemplateViewport({
           setHasEnteredView(true);
         }
       },
-      { rootMargin: "200px 0px", threshold: 0.05 },
+      { rootMargin: "60px 0px", threshold: 0.05 },
     );
 
     io.observe(el);
@@ -470,7 +470,13 @@ function LiveScrollableTemplateViewport({
       }}
       className="relative h-full w-full overflow-hidden bg-neutral-950"
     >
-      {hasEnteredView && (
+      {!hasEnteredView ? (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-neutral-900/60 p-6 text-neutral-500 animate-pulse">
+          <div className="h-10 w-10 rounded-full bg-neutral-800" />
+          <div className="h-3.5 w-28 rounded-md bg-neutral-800" />
+          <div className="h-2.5 w-40 rounded-md bg-neutral-800/60" />
+        </div>
+      ) : (
         <div
           ref={scrollContainerRef}
           style={{
@@ -517,7 +523,7 @@ export const PortfolioTemplateShowcaseCard: React.FC<PortfolioTemplateShowcaseCa
   const isPremium = template.tier === "Premium";
 
   return (
-    <div className="group flex flex-col gap-3">
+    <div className="group flex flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:0_450px]">
       {/* GitSkins-style Frame: Black border ONLY on top and bottom (py-3 px-0), edge-to-edge horizontally */}
       <div className="relative aspect-[16/10] w-full rounded-[22px] bg-[#0c0c0e] py-3 px-0 shadow-md border border-black/15 dark:border-white/10 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl overflow-hidden">
         <LiveScrollableTemplateViewport template={template} />

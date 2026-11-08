@@ -21,6 +21,7 @@ export interface ModernCreativeTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 export function ModernCreativeTemplate({
@@ -28,7 +29,9 @@ export function ModernCreativeTemplate({
   showEmpty = false,
   sectionOrder: _sectionOrder = ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
   hiddenSections = [],
+  previewMode = "desktop",
 }: ModernCreativeTemplateProps) {
+  const isThumbnail = previewMode === "thumbnail";
   const { profile, socialLinks = [], skills = [], experience = [], projects = [] } =
     portfolio;
 
@@ -97,6 +100,7 @@ export function ModernCreativeTemplate({
 
   // Active section spy on scroll
   useEffect(() => {
+    if (isThumbnail) return;
     const handleScroll = () => {
       const scrollPos = window.scrollY + 120;
       const sections = ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"];
@@ -115,7 +119,7 @@ export function ModernCreativeTemplate({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isThumbnail]);
 
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 

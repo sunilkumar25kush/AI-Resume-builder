@@ -369,46 +369,54 @@ export function EditorialTemplate({
 
   // Scroll tracking (works inside nested scroll containers like the editor preview)
   useEffect(() => {
+    if (isThumbnail) return;
+
+    let rafId = 0;
     const handleScroll = () => {
-      const root = rootRef.current;
-      if (!root) return;
-      const rect = root.getBoundingClientRect();
-      setShowScrollTop(-rect.top > 400);
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        const rect = root.getBoundingClientRect();
+        setShowScrollTop(-rect.top > 400);
 
-      if (isDarkMode) {
-        setIsMenuOnLightBg(false);
-        return;
-      }
-
-      const toggleBtn = root.querySelector<HTMLElement>(".sm-toggle");
-      const btnRect = toggleBtn?.getBoundingClientRect();
-      const probeY = btnRect && btnRect.height > 0 ? btnRect.top + btnRect.height / 2 : 36;
-      const slides = root.querySelectorAll<HTMLElement>(".editorial-slide");
-      let overColoredSlide = false;
-
-      for (const slide of Array.from(slides)) {
-        const sRect = slide.getBoundingClientRect();
-        if (sRect.top <= probeY && sRect.bottom >= probeY) {
-          if (slide.classList.contains("text-white") || slide.classList.contains("ed-crimson")) {
-            overColoredSlide = true;
-          }
-          break;
+        if (isDarkMode) {
+          setIsMenuOnLightBg(false);
+          return;
         }
-      }
 
-      setIsMenuOnLightBg(!overColoredSlide);
+        const toggleBtn = root.querySelector<HTMLElement>(".sm-toggle");
+        const btnRect = toggleBtn?.getBoundingClientRect();
+        const probeY = btnRect && btnRect.height > 0 ? btnRect.top + btnRect.height / 2 : 36;
+        const slides = root.querySelectorAll<HTMLElement>(".editorial-slide");
+        let overColoredSlide = false;
+
+        for (const slide of Array.from(slides)) {
+          const sRect = slide.getBoundingClientRect();
+          if (sRect.top <= probeY && sRect.bottom >= probeY) {
+            if (slide.classList.contains("text-white") || slide.classList.contains("ed-crimson")) {
+              overColoredSlide = true;
+            }
+            break;
+          }
+        }
+
+        setIsMenuOnLightBg(!overColoredSlide);
+      });
     };
     handleScroll();
-    document.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
     return () => {
-      document.removeEventListener("scroll", handleScroll, { capture: true });
+      cancelAnimationFrame(rafId);
+      document.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [isDarkMode]);
+  }, [isDarkMode, isThumbnail]);
 
   // Scroll-reveal for slides + active section tracking for the floating nav
   useEffect(() => {
+    if (isThumbnail) return;
     const root = rootRef.current;
     if (!root) return;
     const slides = Array.from(root.querySelectorAll<HTMLElement>(".editorial-slide"));
@@ -2193,10 +2201,9 @@ export function EditorialTemplate({
         color: colors.ink,
       }}
     >
-      {/* Import Google Fonts and Keyframe Animation Engine */}
+      {/* Keyframe Animation Engine & Slide Reveal Styles */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
+        ${isThumbnail ? `.editorial-slide { opacity: 1 !important; transform: none !important; }` : `
         .editorial-slide {
           opacity: 0;
           transform: translateY(30px) scale(0.985);
@@ -2208,6 +2215,7 @@ export function EditorialTemplate({
           opacity: 1;
           transform: translateY(0) scale(1);
         }
+        `}
 
         @keyframes editorialSway {
           0%, 100% {

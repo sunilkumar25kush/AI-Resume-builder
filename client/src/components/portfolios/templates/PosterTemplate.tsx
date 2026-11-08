@@ -22,7 +22,9 @@ export function PosterTemplate({
   showEmpty = false,
   sectionOrder = ["hero", "projects", "about", "experience", "education", "certifications", "contact"],
   hiddenSections = [],
+  previewMode = "desktop",
 }: PosterTemplateProps) {
+  const isThumbnail = previewMode === "thumbnail";
   const profile = portfolio.profile;
   const design = portfolio.design;
   const socialLinks = portfolio.socialLinks || [];
@@ -72,16 +74,18 @@ export function PosterTemplate({
   const [currentCharIdx, setCurrentCharIdx] = useState(0);
 
   useEffect(() => {
+    if (isThumbnail) return;
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isThumbnail]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 
   // Typewriter animation: types each skill character by character with blinking caret
   useEffect(() => {
+    if (isThumbnail) return;
     if (activeSkillIdx >= skillNames.length) return;
 
     const currentTarget = skillNames[activeSkillIdx];

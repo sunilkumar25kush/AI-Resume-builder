@@ -64,7 +64,9 @@ export function SpotlightTemplate({
     "contact",
   ],
   hiddenSections = [],
+  previewMode = "desktop",
 }: SpotlightTemplateProps) {
+  const isThumbnail = previewMode === "thumbnail";
   const profile = portfolio.profile;
   const design = portfolio.design;
   const socialLinks = portfolio.socialLinks || [];
@@ -149,7 +151,7 @@ export function SpotlightTemplate({
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (isThumbnail || typeof window === "undefined") return;
 
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -167,9 +169,10 @@ export function SpotlightTemplate({
     const handleResize = () => setIsLgScreen(window.innerWidth >= 1024);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [isThumbnail]);
 
   useEffect(() => {
+    if (isThumbnail) return;
     const handleScroll = () => {
       const heroEl = document.getElementById("top");
       if (heroEl) {
@@ -187,7 +190,7 @@ export function SpotlightTemplate({
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isThumbnail]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const isHidden = (sec: string) => hiddenSections.includes(sec);

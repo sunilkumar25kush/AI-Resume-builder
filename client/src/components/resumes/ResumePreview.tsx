@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getTemplateById } from "@/templates";
 import { getCustomizationCssVariables, getCustomizationClassNames } from "@/utils/customization";
 import type { ParsedResumeData, ResumeCustomization, ResumeTemplate } from "@/types";
+import "@/styles/resume-canvas.css";
 
 interface ResumePreviewProps {
   data: ParsedResumeData | any;

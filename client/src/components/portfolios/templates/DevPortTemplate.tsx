@@ -28,6 +28,7 @@ export interface DevPortTemplateProps {
   showEmpty?: boolean;
   sectionOrder?: string[];
   hiddenSections?: string[];
+  previewMode?: "desktop" | "tablet" | "mobile" | "thumbnail";
 }
 
 /** Pre-curated badge color themes inspired by the DevPort design reference */
@@ -47,7 +48,9 @@ export function DevPortTemplate({
   showEmpty = false,
   sectionOrder: _sectionOrder = ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"],
   hiddenSections = [],
+  previewMode = "desktop",
 }: DevPortTemplateProps) {
+  const isThumbnail = previewMode === "thumbnail";
   const { profile, socialLinks = [], skills = [], experience = [], education = [], projects = [], certifications = [] } =
     portfolio;
 
@@ -135,6 +138,7 @@ export function DevPortTemplate({
 
   // Active section observer on scroll
   useEffect(() => {
+    if (isThumbnail) return;
     const handleScroll = () => {
       const scrollPos = window.scrollY + 120;
       const sections = ["hero", "about", "skills", "projects", "experience", "education", "certifications", "contact"];
@@ -153,7 +157,7 @@ export function DevPortTemplate({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isThumbnail]);
 
   const isHidden = (sec: string) => hiddenSections.includes(sec);
 
