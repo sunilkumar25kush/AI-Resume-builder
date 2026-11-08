@@ -1,11 +1,14 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
   AlertCircle,
+  Bookmark,
   Download,
   ExternalLink,
   Eye,
+  FolderKanban,
   Globe,
+  LayoutGrid,
   Loader2,
   Pencil,
   Plus,
@@ -15,13 +18,17 @@ import {
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import {
+  PortfolioTemplateShowcaseCard,
+  SHOWCASE_TEMPLATES,
+} from "@/components/portfolios/common/PortfolioTemplateShowcaseCard";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePortfoliosStore } from "@/stores/portfolios";
-import type { Portfolio } from "@/types";
+import type { Portfolio, PortfolioDesignSettings } from "@/types";
 
 const CreatePortfolioDialog = lazy(
   () => import("@/components/portfolios/common/CreatePortfolioDialog"),
@@ -34,6 +41,9 @@ const PortfolioExportModal = lazy(() =>
     default: m.PortfolioExportModal,
   })),
 );
+
+const LIKES_STORAGE_KEY = "agy_portfolio_template_likes";
+const BOOKMARKS_STORAGE_KEY = "agy_portfolio_template_bookmarks";
 
 const dateFormatCache = new Map<string, string>();
 function formatDate(value: string): string {
@@ -52,6 +62,8 @@ function formatDate(value: string): string {
   }
 }
 
+type CategoryFilter = "all" | "creative" | "technical" | "minimal" | "bookmarked";
+
 export default function PortfoliosPage() {
   const items = usePortfoliosStore((state) => state.items);
   const loading = usePortfoliosStore((state) => state.loading);
@@ -60,13 +72,73 @@ export default function PortfoliosPage() {
   const remove = usePortfoliosStore((state) => state.remove);
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [preselectedTemplate, setPreselectedTemplate] =
+    useState<PortfolioDesignSettings["template"]>("spotlight");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [publishPortfolioTarget, setPublishPortfolioTarget] = useState<Portfolio | null>(null);
   const [exportPortfolioTarget, setExportPortfolioTarget] = useState<Portfolio | null>(null);
 
+  const [likedIds, setLikedIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(LIKES_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     void fetch();
   }, [fetch]);
+
+  const handleToggleLike = (id: PortfolioDesignSettings["template"]) => {
+    setLikedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage errors
+      }
+      return next;
+    });
+  };
+
+  const handleToggleBookmark = (id: PortfolioDesignSettings["template"]) => {
+    setBookmarkedIds((prev) => {
+      const isBookmarked = prev.includes(id);
+      const next = isBookmarked ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage errors
+      }
+      toast.success(isBookmarked ? "Removed from saved templates" : "Template saved");
+      return next;
+    });
+  };
+
+  const handleUseTemplate = (id: PortfolioDesignSettings["template"]) => {
+    setPreselectedTemplate(id);
+    setCreateOpen(true);
+  };
+
+  const filteredTemplates = useMemo(() => {
+    return SHOWCASE_TEMPLATES.filter((tpl) => {
+      if (categoryFilter === "all") return true;
+      if (categoryFilter === "bookmarked") return bookmarkedIds.includes(tpl.id);
+      return tpl.category === categoryFilter;
+    });
+  }, [categoryFilter, bookmarkedIds]);
 
   const handleDelete = async (portfolio: Portfolio) => {
     if (!confirm(`Are you sure you want to delete "${portfolio.title}"?`)) return;
@@ -82,7 +154,7 @@ export default function PortfoliosPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-12">
+    <div className="flex flex-col gap-10 pb-14">
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
         <div>
@@ -93,7 +165,7 @@ export default function PortfoliosPage() {
             </Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Generate stunning, responsive developer portfolio websites from your resume in seconds.
+            Explore interactive portfolio templates or manage your generated developer portfolios.
           </p>
         </div>
 
@@ -111,7 +183,10 @@ export default function PortfoliosPage() {
 
           <Button
             size="sm"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => {
+              setPreselectedTemplate("spotlight");
+              setCreateOpen(true);
+            }}
             className="gap-1.5 shadow-sm"
           >
             <Plus className="h-4 w-4" aria-hidden />
@@ -133,8 +208,104 @@ export default function PortfoliosPage() {
         </div>
       )}
 
-      {/* Grid of existing portfolios */}
-      <section>
+      {/* =====================================================================
+          SECTION 1: PORTFOLIO TEMPLATES GALLERY (GitSkins-Inspired Showcase)
+         ===================================================================== */}
+      <section className="space-y-6" aria-labelledby="templates-section-heading">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="h-5 w-5 text-primary" aria-hidden />
+              <h2 id="templates-section-heading" className="text-xl font-bold tracking-tight">
+                Portfolio Templates
+              </h2>
+              <Badge variant="secondary" className="rounded-full text-xs font-medium">
+                {SHOWCASE_TEMPLATES.length} Templates
+              </Badge>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Preview live interactive experiences or click any template to generate your portfolio.
+            </p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                { id: "all", label: "All Templates" },
+                { id: "creative", label: "Creative" },
+                { id: "technical", label: "Developer" },
+                { id: "minimal", label: "Minimal" },
+                { id: "bookmarked", label: `Saved (${bookmarkedIds.length})` },
+              ] as const
+            ).map((tab) => {
+              const active = categoryFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setCategoryFilter(tab.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                    active
+                      ? "bg-foreground text-background shadow-xs"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50"
+                  }`}
+                >
+                  {tab.id === "bookmarked" && <Bookmark className="h-3 w-3" aria-hidden />}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {filteredTemplates.length === 0 ? (
+          <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+            No saved templates in this filter yet. Click the bookmark icon on any template card to save it.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.map((tpl) => {
+              const isLiked = likedIds.includes(tpl.id);
+              const isBookmarked = bookmarkedIds.includes(tpl.id);
+              return (
+                <PortfolioTemplateShowcaseCard
+                  key={tpl.id}
+                  template={tpl}
+                  liked={isLiked}
+                  likeCount={tpl.defaultLikes + (isLiked ? 1 : 0)}
+                  bookmarked={isBookmarked}
+                  onToggleLike={handleToggleLike}
+                  onToggleBookmark={handleToggleBookmark}
+                  onUseTemplate={handleUseTemplate}
+                />
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* =====================================================================
+          SECTION 2: USER'S CREATED PORTFOLIOS
+         ===================================================================== */}
+      <section className="space-y-5 border-t pt-8" aria-labelledby="my-portfolios-heading">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-primary" aria-hidden />
+              <h2 id="my-portfolios-heading" className="text-xl font-bold tracking-tight">
+                Your Created Portfolios
+              </h2>
+              <Badge variant="secondary" className="rounded-full text-xs font-medium">
+                {items.length}
+              </Badge>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Edit, preview, publish, or export the portfolios you have created.
+            </p>
+          </div>
+        </div>
+
         {loading && items.length === 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -156,10 +327,17 @@ export default function PortfoliosPage() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={Globe}
-            title="No portfolio websites yet"
-            description="Create your first developer portfolio from an uploaded resume or build one from scratch with our templates."
+            title="No portfolio websites created yet"
+            description="Pick any template above or click Generate Portfolio to build your first developer portfolio from your resume."
             action={
-              <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPreselectedTemplate("spotlight");
+                  setCreateOpen(true);
+                }}
+                className="gap-1.5"
+              >
                 <Plus className="h-4 w-4" aria-hidden />
                 Generate Portfolio
               </Button>
@@ -173,13 +351,23 @@ export default function PortfoliosPage() {
                 className="group relative flex flex-col justify-between overflow-hidden border border-border/70 hover:border-primary/50 transition-all hover:shadow-md bg-card"
               >
                 <CardHeader className="p-5 pb-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant={portfolio.status === "published" ? "default" : "secondary"}
-                      className="text-[10px] uppercase font-semibold tracking-wide"
-                    >
-                      {portfolio.status}
-                    </Badge>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Badge
+                        variant={portfolio.status === "published" ? "default" : "secondary"}
+                        className="text-[10px] uppercase font-semibold tracking-wide"
+                      >
+                        {portfolio.status}
+                      </Badge>
+                      {portfolio.design?.template && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] capitalize font-normal text-muted-foreground"
+                        >
+                          {portfolio.design.template}
+                        </Badge>
+                      )}
+                    </div>
                     <span className="text-xs text-muted-foreground">
                       Updated {formatDate(portfolio.updatedAt)}
                     </span>
@@ -204,7 +392,9 @@ export default function PortfoliosPage() {
                         {portfolio.title}
                       </CardTitle>
                       <CardDescription className="line-clamp-2 text-xs">
-                        {portfolio.profile?.headline || portfolio.profile?.bio || `Template: ${portfolio.design.template}`}
+                        {portfolio.profile?.headline ||
+                          portfolio.profile?.bio ||
+                          `Template: ${portfolio.design.template}`}
                       </CardDescription>
                     </div>
                   </div>
@@ -237,7 +427,11 @@ export default function PortfoliosPage() {
                         className="gap-1 text-xs"
                       >
                         <Link
-                          to={portfolio.status === "published" && portfolio.slug ? `/p/${portfolio.slug}` : `/portfolios/${portfolio._id}`}
+                          to={
+                            portfolio.status === "published" && portfolio.slug
+                              ? `/p/${portfolio.slug}`
+                              : `/portfolios/${portfolio._id}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -251,7 +445,11 @@ export default function PortfoliosPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        title={portfolio.status === "published" ? "Publish settings & share" : "Publish portfolio"}
+                        title={
+                          portfolio.status === "published"
+                            ? "Publish settings & share"
+                            : "Publish portfolio"
+                        }
                         onClick={() => setPublishPortfolioTarget(portfolio)}
                         className={
                           portfolio.status === "published"
@@ -311,6 +509,7 @@ export default function PortfoliosPage() {
           <CreatePortfolioDialog
             open={createOpen}
             onOpenChange={setCreateOpen}
+            initialTemplate={preselectedTemplate}
           />
         </Suspense>
       )}
