@@ -14,6 +14,7 @@ export const COOKIE_OPTIONS = {
   // on every request. Dev (localhost client + server) stays Lax.
   sameSite: env.NODE_ENV === "production" ? "none" : "lax",
   secure: env.NODE_ENV === "production",
+  partitioned: env.NODE_ENV === "production",
   maxAge: COOKIE_MAX_AGE,
   path: "/",
 };

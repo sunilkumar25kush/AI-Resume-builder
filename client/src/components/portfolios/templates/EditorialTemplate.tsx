@@ -2203,12 +2203,19 @@ export function EditorialTemplate({
     >
       {/* Keyframe Animation Engine & Slide Reveal Styles */}
       <style>{`
-        ${isThumbnail ? `.editorial-slide { opacity: 1 !important; transform: none !important; }` : `
+        ${isThumbnail ? `
+        .editorial-slide { opacity: 1 !important; transform: none !important; }
+        .editorial-slide:not(.ed-hero) { content-visibility: auto; contain-intrinsic-size: 0 700px; }
+        ` : `
         .editorial-slide {
           opacity: 0;
           transform: translateY(30px) scale(0.985);
           transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
           will-change: opacity, transform;
+        }
+        .editorial-slide:not(.ed-hero) {
+          content-visibility: auto;
+          contain-intrinsic-size: 0 700px;
         }
 
         .editorial-slide.is-visible {
