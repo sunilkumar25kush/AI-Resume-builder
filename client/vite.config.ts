@@ -35,9 +35,30 @@ function preloadCriticalFonts(): Plugin {
   };
 }
 
+/**
+ * Converts initial bundle CSS from a render-blocking <link rel="stylesheet">
+ * into a high-priority preload with async onload activation. This eliminates
+ * the 250-300ms render-blocking delay flagged by Lighthouse for FCP and LCP.
+ */
+function nonBlockingCss(): Plugin {
+  return {
+    name: "non-blocking-css",
+    apply: "build",
+    enforce: "post",
+    transformIndexHtml(html) {
+      return html.replace(
+        /<link rel="stylesheet" crossorigin href="(\/assets\/[^"]+\.css)">/g,
+        `<link rel="preload" href="$1" as="style" crossorigin>
+  <link rel="stylesheet" href="$1" media="print" onload="this.media='all'" crossorigin>
+  <noscript><link rel="stylesheet" href="$1" crossorigin></noscript>`,
+      );
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadCriticalFonts()],
+  plugins: [react(), tailwindcss(), preloadCriticalFonts(), nonBlockingCss()],
   resolve: {
     alias: {
       "@": path.fileURLToPath(new URL("./src", import.meta.url)),
