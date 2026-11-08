@@ -108,12 +108,14 @@ function formatBytes(bytes: number): string {
 export interface CreatePortfolioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTemplate?: PortfolioDesignSettings["template"];
   onSuccess?: (created: Portfolio) => void;
 }
 
 export default function CreatePortfolioDialog({
   open,
   onOpenChange,
+  initialTemplate,
   onSuccess,
 }: CreatePortfolioDialogProps) {
   const navigate = useNavigate();
@@ -127,9 +129,17 @@ export default function CreatePortfolioDialog({
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [portfolioTitle, setPortfolioTitle] = useState<string>("");
-  const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>("spotlight");
+  const [selectedTemplate, setSelectedTemplate] = useState<PortfolioDesignSettings["template"]>(
+    initialTemplate || "spotlight",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submittingStatus, setSubmittingStatus] = useState<string>("");
+
+  useEffect(() => {
+    if (open && initialTemplate) {
+      setSelectedTemplate(initialTemplate);
+    }
+  }, [open, initialTemplate]);
 
   useEffect(() => {
     if (open) {
