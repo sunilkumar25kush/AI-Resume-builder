@@ -228,20 +228,17 @@ function easeInOutCubic(t: number): number {
  * Computes the list of section stop offsets (in unscaled 1280x800 scroll coordinates)
  * so the preview stops cleanly on each section for 2-3 seconds to showcase its animations.
  */
-function getSectionWaypoints(scroller: HTMLElement, currentScale: number): number[] {
+function getSectionWaypoints(scroller: HTMLElement): number[] {
   const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
   if (maxScroll <= 20) return [0];
 
-  const safeScale = currentScale > 0.05 ? currentScale : 0.28;
-  const scrollerRect = scroller.getBoundingClientRect();
   const candidates = Array.from(
     scroller.querySelectorAll<HTMLElement>(".editorial-slide, section"),
   );
 
   const rawOffsets: number[] = [0];
   for (const sec of candidates) {
-    const rect = sec.getBoundingClientRect();
-    const unscaledTop = scroller.scrollTop + (rect.top - scrollerRect.top) / safeScale;
+    const unscaledTop = sec.offsetTop;
     const clamped = Math.max(0, Math.min(maxScroll, Math.round(unscaledTop - 24)));
     rawOffsets.push(clamped);
   }
@@ -384,7 +381,7 @@ function LiveScrollableTemplateViewport({
 
     const updateWaypoints = () => {
       if (scroller && !isCancelled) {
-        cachedWaypoints = getSectionWaypoints(scroller, scaleRef.current);
+        cachedWaypoints = getSectionWaypoints(scroller);
       }
     };
     const initialTimer = setTimeout(updateWaypoints, 350);
@@ -531,7 +528,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-function MobileTemplatePreviewCover({
+function TemplatePreviewCover({
   template,
   fullName,
   avatarUrl,
@@ -554,10 +551,9 @@ function MobileTemplatePreviewCover({
 
           <div className="relative z-10 my-auto flex flex-col items-center text-center py-1">
             <div
-              className="text-white/95 font-black uppercase tracking-tight text-3xl sm:text-4xl leading-none"
+              className="text-white/95 font-black uppercase tracking-wider text-3xl sm:text-4xl leading-none font-sans"
               style={{
-                fontFamily: "'Bebas Neue', 'Anton', sans-serif",
-                letterSpacing: "0.04em",
+                letterSpacing: "0.08em",
                 textShadow: "0 0 24px rgba(29, 78, 216, 0.45)",
               }}
             >
@@ -821,20 +817,29 @@ export const PortfolioTemplateShowcaseCard: React.FC<PortfolioTemplateShowcaseCa
   const isPremium = template.tier === "Premium";
   const isMobile = useIsMobile();
   const profile = useResolvedPortfolioProfile();
+  const [isHovered, setIsHovered] = useState(false);
+
+  // On mobile or before hover on desktop: render instant, zero-JS layout static cover.
+  // On desktop hover: mount the live interactive scaled scroller.
+  const showLivePreview = !isMobile && isHovered;
 
   return (
-    <div className="group flex flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:0_450px]">
+    <div
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
+      className="group flex flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:0_450px]"
+    >
       {/* GitSkins-style Frame: Black border ONLY on top and bottom (py-3 px-0), edge-to-edge horizontally */}
       <div className="relative aspect-[16/10] w-full rounded-[22px] bg-[#0c0c0e] py-3 px-0 shadow-md border border-black/15 dark:border-white/10 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl overflow-hidden">
-        {isMobile ? (
-          <MobileTemplatePreviewCover
+        {showLivePreview ? (
+          <LiveScrollableTemplateViewport template={template} profile={profile} />
+        ) : (
+          <TemplatePreviewCover
             template={template}
             fullName={profile.fullName}
             avatarUrl={profile.avatarUrl}
             headline={profile.headline}
           />
-        ) : (
-          <LiveScrollableTemplateViewport template={template} profile={profile} />
         )}
 
         {/* Floating "Preview experience" Pill Button on Bottom-Right */}
