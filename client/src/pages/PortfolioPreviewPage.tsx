@@ -151,6 +151,7 @@ export default function PortfolioPreviewPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const templateQuery = searchParams.get("template");
   const authStatus = useAuthStore((state) => state.status);
+  const currentUser = useAuthStore((state) => state.user);
 
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [loading, setLoading] = useState(true);
@@ -352,9 +353,20 @@ export default function PortfolioPreviewPage() {
 
   const activePortfolio = portfolio || DEFAULT_DEMO_PORTFOLIO;
 
-  // Construct active preview portfolio object
+  // Construct active preview portfolio object, applying the logged-in user's name & avatar in template preview mode
   const activePreviewPortfolio: Portfolio = {
     ...activePortfolio,
+    profile: {
+      ...activePortfolio.profile,
+      fullName:
+        activePortfolio._id !== "demo" && activePortfolio.profile?.fullName
+          ? activePortfolio.profile.fullName
+          : currentUser?.name?.trim() || activePortfolio.profile?.fullName || "Creative Developer",
+      avatarUrl:
+        activePortfolio.profile?.avatarUrl ||
+        currentUser?.avatar ||
+        DEFAULT_DEMO_PORTFOLIO.profile?.avatarUrl,
+    },
     design: {
       ...activePortfolio.design,
       template: previewTemplate,
