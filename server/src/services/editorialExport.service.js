@@ -388,36 +388,43 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-orb ed-orb-a"></div>
         <div class="ed-orb ed-orb-b"></div>
 
-        <!-- Swinging Lanyard Pass Card -->
-        <div class="ed-lanyard-stage">
+        <!-- Swinging 3D Rope Lanyard Pass Card (Full-Bleed Interactive Badge) -->
+        <svg id="edLanyardRopeSvg" class="ed-lanyard-rope-svg" aria-hidden="true">
+          <path id="edLanyardStrapShadow" class="ed-lanyard-strap-shadow" d="" />
+          <path id="edLanyardStrapPath" class="ed-lanyard-strap-path" d="" />
+          <path id="edLanyardStrapWeave" class="ed-lanyard-strap-weave" d="" />
+        </svg>
+        <div class="ed-lanyard-stage" id="edLanyardStage">
           <div class="ed-lanyard-pendulum" id="edLanyardPendulum">
-            <div class="ed-lanyard-strap" id="edLanyardStrap"><span>PASS</span></div>
-            <div class="ed-lanyard-clamp"></div>
-            <div class="ed-lanyard-ring"></div>
-            <div class="ed-lanyard-card" id="edLanyardCard" title="Drag to swing or click to spin">
-              <div class="ed-lanyard-glare" id="edLanyardGlare" aria-hidden="true"></div>
-              <div class="ed-lanyard-slot"></div>
-              <div class="ed-lanyard-photo-wrap">
+            <div class="ed-lanyard-hardware" id="edLanyardHardware">
+              <div class="ed-lanyard-clamp"></div>
+              <div class="ed-lanyard-eyelet"></div>
+              <div class="ed-lanyard-ring"></div>
+            </div>
+            <div class="ed-lanyard-card" id="edLanyardCard" title="Drag & pull to swing or click to spin">
+              <div class="ed-lanyard-card-front">
+                <div class="ed-lanyard-glare" id="edLanyardGlare" aria-hidden="true"></div>
                 ${
                   avatarUrl
-                    ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="ed-lanyard-photo" onerror="this.style.display='none'" />`
-                    : `<div class="ed-lanyard-photo-fallback">${escapeHtml(firstName.slice(0, 1).toUpperCase())}</div>`
+                    ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="ed-lanyard-full-img" draggable="false" onerror="this.style.display='none'" />`
+                    : `<img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80" alt="${escapeHtml(fullName)}" class="ed-lanyard-full-img" draggable="false" />`
                 }
+                <div class="ed-lanyard-slot-rim" aria-hidden="true"></div>
               </div>
-              <div class="ed-lanyard-identity">
-                <p class="ed-lanyard-name">${escapeHtml(fullName)}</p>
-                <p class="ed-lanyard-role">${escapeHtml(headline)}</p>
-              </div>
-              <div class="ed-lanyard-foot">
-                <span>ALL ACCESS</span>
-                <span>${new Date().getFullYear()}</span>
+              <div class="ed-lanyard-card-back" aria-hidden="true">
+                ${
+                  avatarUrl
+                    ? `<img src="${escapeHtml(avatarUrl)}" alt="" class="ed-lanyard-full-img ed-lanyard-back-img" draggable="false" />`
+                    : `<img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80" alt="" class="ed-lanyard-full-img ed-lanyard-back-img" draggable="false" />`
+                }
+                <div class="ed-lanyard-slot-rim" aria-hidden="true"></div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Center Background Giant Condensed Display Title (Interactive TechText Canvas + Fallback) -->
-        <div class="ed-hero-wordmark-wrap" aria-hidden="true">
+        <div class="ed-hero-wordmark-wrap" id="edTechTextWrap" aria-hidden="true">
           <canvas id="edTechTextCanvas" class="ed-tech-canvas" data-text="PORTFOLIO"></canvas>
           <div class="ed-hero-wordmark" id="edHeroWordmarkFallback">PORTFOLIO</div>
         </div>
@@ -1720,8 +1727,8 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
 .ed-tech-canvas {
   display: block;
   width: 100%;
-  height: 440px;
-  max-height: 75%;
+  height: 480px;
+  max-height: 92%;
 }
 
 .ed-hero-wordmark {
@@ -1741,200 +1748,173 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   pointer-events: none;
 }
 
+.ed-lanyard-rope-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 29;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ed-lanyard-strap-shadow {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.34);
+  stroke-width: 40;
+  stroke-linecap: butt;
+  filter: blur(4px);
+}
+
+.ed-lanyard-strap-path {
+  fill: none;
+  stroke: #131316;
+  stroke-width: 36;
+  stroke-linecap: butt;
+}
+
+.ed-lanyard-strap-weave {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.055);
+  stroke-width: 30;
+  stroke-dasharray: 2 3;
+}
+
+@media (max-width: 639px) {
+  .ed-lanyard-strap-shadow { stroke-width: 30; }
+  .ed-lanyard-strap-path { stroke-width: 26; }
+  .ed-lanyard-strap-weave { stroke-width: 22; }
+}
+
 .ed-lanyard-stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 30;
-  display: flex;
-  justify-content: center;
-  margin-top: -1.5rem;
-  perspective: 1100px;
-  perspective-origin: 50% 15%;
+  perspective: 1200px;
+  perspective-origin: 50% 25%;
   pointer-events: none;
 }
 
-@media (min-width: 640px) {
-  .ed-lanyard-stage {
-    margin-top: -3rem;
-  }
-}
-
 .ed-lanyard-pendulum {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   transform-origin: 50% 0%;
   transform-style: preserve-3d;
-  animation: edLanyardSwing 5.5s ease-in-out infinite;
   will-change: transform;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
-.ed-lanyard-pendulum.is-js-driven {
-  animation: none !important;
-}
-
-@keyframes edLanyardSwing {
-  0%, 100% { transform: rotateZ(-3deg) rotateY(-6deg); }
-  50% { transform: rotateZ(3deg) rotateY(6deg); }
-}
-
-.ed-lanyard-strap {
-  width: 26px;
-  height: 76px;
-  background: #171717 repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 6px);
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
+.ed-lanyard-hardware {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  z-index: 6;
+  pointer-events: none;
   transform-origin: 50% 0%;
 }
 
-@media (min-width: 640px) {
-  .ed-lanyard-strap {
-    width: 32px;
-    height: 112px;
-  }
-}
-
-.ed-lanyard-strap span {
-  font-family: ui-monospace, monospace;
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  color: #a3a3a3;
-  transform: rotate(90deg);
-}
-
 .ed-lanyard-clamp {
-  width: 18px;
+  width: 38px;
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(155deg, #e2e8f0 0%, #94a3b8 42%, #475569 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.ed-lanyard-eyelet {
+  width: 12px;
   height: 12px;
-  background: linear-gradient(to bottom, #a3a3a3, #525252);
-  border-radius: 3px;
-  margin-top: -2px;
-  z-index: 2;
+  border-radius: 50%;
+  border: 2.5px solid #cbd5e1;
+  background: rgba(15, 23, 42, 0.3);
+  margin-top: -4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .ed-lanyard-ring {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #a3a3a3;
+  width: 22px;
+  height: 24px;
+  border: 2.5px solid #e2e8f0;
   border-radius: 50%;
-  margin-top: -2px;
-  z-index: 2;
+  margin-top: -4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .ed-lanyard-card {
   position: relative;
-  overflow: hidden;
-  width: 156px;
-  background: rgba(10, 10, 14, 0.94);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 1rem;
-  padding: 0.7rem;
-  margin-top: -4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  text-align: center;
+  width: clamp(164px, 21.5vw, 246px);
+  aspect-ratio: 1.6 / 2.25;
+  margin-top: -13px;
   transform-style: preserve-3d;
-  backface-visibility: visible;
   touch-action: none;
   user-select: none;
   cursor: grab;
+  pointer-events: auto;
+  will-change: transform;
 }
 
 .ed-lanyard-card.is-dragging {
   cursor: grabbing;
 }
 
-.ed-lanyard-glare {
+.ed-lanyard-card-front,
+.ed-lanyard-card-back {
   position: absolute;
-  inset: -40%;
-  background: radial-gradient(circle at var(--gx, 35%) var(--gy, 25%), rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 62%);
-  pointer-events: none;
-  mix-blend-mode: screen;
-  z-index: 5;
-}
-
-@media (min-width: 640px) {
-  .ed-lanyard-card {
-    width: 190px;
-    padding: 0.85rem;
-    gap: 0.6rem;
-  }
-}
-
-.ed-lanyard-slot {
-  width: 28px;
-  height: 4px;
-  border-radius: 99px;
-  background: #404040;
-}
-
-.ed-lanyard-photo-wrap {
-  width: 96px;
-  height: 96px;
-  border-radius: 0.75rem;
+  inset: 0;
+  border-radius: 14px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  background: #262626;
+  background: #141418;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,13 A4.5,4.5 0 0 0 57.5,17.5 V18.5 A4.5,4.5 0 0 0 62,23 H98 A4.5,4.5 0 0 0 102.5,18.5 V17.5 A4.5,4.5 0 0 0 98,13 Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,13 A4.5,4.5 0 0 0 57.5,17.5 V18.5 A4.5,4.5 0 0 0 62,23 H98 A4.5,4.5 0 0 0 102.5,18.5 V17.5 A4.5,4.5 0 0 0 98,13 Z'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
-.ed-lanyard-photo {
+.ed-lanyard-card-back {
+  transform: rotateY(180deg);
+}
+
+.ed-lanyard-full-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
+  user-select: none;
 }
 
-.ed-lanyard-photo-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.5rem;
-  color: #ffffff;
-  background: var(--ed-primary);
+.ed-lanyard-back-img {
+  transform: scaleX(-1);
+  filter: brightness(0.92) contrast(1.04);
 }
 
-.ed-lanyard-identity {
-  width: 100%;
+.ed-lanyard-slot-rim {
+  position: absolute;
+  left: 36%;
+  width: 28%;
+  top: 5.5%;
+  height: 4.5%;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
 }
 
-.ed-lanyard-name {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ed-lanyard-role {
-  margin: 0.15rem 0 0;
-  font-size: 0.65rem;
-  color: #a3a3a3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ed-lanyard-foot {
-  width: 100%;
-  padding-top: 0.45rem;
-  border-top: 1px solid #262626;
-  display: flex;
-  justify-content: space-between;
-  font-family: ui-monospace, monospace;
-  font-size: 9px;
-  color: #737373;
+.ed-lanyard-glare {
+  position: absolute;
+  inset: -35%;
+  background: radial-gradient(circle at var(--gx, 35%) var(--gy, 25%), rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 60%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: 4;
 }
 
 .ed-hero-bottom {
@@ -3434,35 +3414,94 @@ export function generateEditorialStaticJs(data) {
     });
   }
 
-  // 5. Interactive 3D Physics Lanyard Engine (Drop-in, Breeze Sway, Hover Tilt, Drag/Fling & Click Spin)
+  // 5. Interactive 3D Verlet-Rope Lanyard Engine (Free-Pull Elastic Strap, Pendulum Physics & 3D Flip/Spin)
   function initLanyardPhysics() {
     var heroEl = document.getElementById("hero");
     var pendulum = document.getElementById("edLanyardPendulum");
-    var strap = document.getElementById("edLanyardStrap");
     var card = document.getElementById("edLanyardCard");
     var glare = document.getElementById("edLanyardGlare");
-    if (!heroEl || !pendulum || !card || isReduced) return;
+    var pathShadow = document.getElementById("edLanyardStrapShadow");
+    var pathMain = document.getElementById("edLanyardStrapPath");
+    var pathWeave = document.getElementById("edLanyardStrapWeave");
+    if (!heroEl || !pendulum || !card) return;
 
-    pendulum.classList.add("is-js-driven");
+    var JOINTS = 4;
+    var nodes = [];
+    var prevNodes = [];
+    for (var i = 0; i <= JOINTS; i++) {
+      nodes.push({ x: 0, y: 0 });
+      prevNodes.push({ x: 0, y: 0 });
+    }
 
-    // Intro drop + spring state
-    var state = {
-      x: 0, vx: 0,
-      y: -38, vy: 0,
-      rz: 11, vrz: 0,
-      rx: 8, vrx: 0,
-      ry: -18, vry: 0,
+    var metrics = { w: 1000, h: 700, cardW: 220, cardH: 310, anchorX: 500, restY: 165 };
+    var body = {
+      x: 500, y: 165,
+      vx: 0, vy: 0,
+      rz: 0, vrz: 0,
+      rx: 0, vrx: 0,
+      ry: 0, vry: 0,
       spin: 0, vspin: 0
     };
+    var drag = { active: false, pointerId: -1, grabOffX: 0, grabOffY: 0, targetX: 500, targetY: 165, startX: 0, startY: 0, moved: false };
     var hover = { x: 0, y: 0, active: false };
-    var drag = { active: false, startX: 0, startY: 0, baseX: 0, baseY: 0, moved: false };
-    var timeClock = 0;
+    var initialized = false;
+    var clock = 0;
     var lastTs = performance.now();
 
+    function measureHero(resetIntro) {
+      var hRect = heroEl.getBoundingClientRect();
+      var cRect = card.getBoundingClientRect();
+      if (!hRect.width || !hRect.height) return;
+      metrics.w = hRect.width;
+      metrics.h = hRect.height;
+      metrics.cardW = cRect.width || Math.max(164, Math.min(246, hRect.width * 0.215));
+      metrics.cardH = cRect.height || metrics.cardW * (2.25 / 1.6);
+      metrics.anchorX = hRect.width * 0.5;
+      metrics.restY = Math.max(105, Math.min(200, hRect.height * 0.235));
+
+      if (!initialized || resetIntro) {
+        initialized = true;
+        body.x = metrics.anchorX + (isReduced ? 0 : 18);
+        body.y = isReduced ? metrics.restY : metrics.restY - 52;
+        body.vx = isReduced ? 0 : -45;
+        body.vy = 0;
+        body.rz = isReduced ? 0 : -8;
+        body.ry = isReduced ? 0 : -14;
+        for (var j = 0; j <= JOINTS; j++) {
+          var t = j / JOINTS;
+          var nx = metrics.anchorX + (body.x - metrics.anchorX) * t;
+          var ny = -4 + (body.y + 4) * t;
+          nodes[j].x = nx;
+          nodes[j].y = ny;
+          prevNodes[j].x = nx;
+          prevNodes[j].y = ny;
+        }
+      }
+    }
+
+    measureHero(true);
+    window.addEventListener("resize", function () { measureHero(false); });
+
+    function drawStaticPose() {
+      measureHero(false);
+      var cx = metrics.anchorX;
+      var cy = metrics.restY;
+      var d = "M " + cx.toFixed(1) + " -6 L " + cx.toFixed(1) + " " + (cy + 10).toFixed(1);
+      if (pathShadow) pathShadow.setAttribute("d", d);
+      if (pathMain) pathMain.setAttribute("d", d);
+      if (pathWeave) pathWeave.setAttribute("d", d);
+      pendulum.style.transform = "translate3d(" + (cx - metrics.cardW * 0.5).toFixed(1) + "px, " + cy.toFixed(1) + "px, 0)";
+    }
+
+    if (isReduced) {
+      drawStaticPose();
+      return;
+    }
+
     heroEl.addEventListener("pointermove", function (e) {
-      var rect = heroEl.getBoundingClientRect();
-      hover.x = (e.clientX - rect.left) / Math.max(1, rect.width) - 0.5;
-      hover.y = (e.clientY - rect.top) / Math.max(1, rect.height) - 0.5;
+      var r = heroEl.getBoundingClientRect();
+      hover.x = (e.clientX - r.left) / Math.max(1, r.width) - 0.5;
+      hover.y = (e.clientY - r.top) / Math.max(1, r.height) - 0.5;
       hover.active = true;
     }, { passive: true });
 
@@ -3473,16 +3512,24 @@ export function generateEditorialStaticJs(data) {
     });
 
     card.addEventListener("pointerdown", function (e) {
+      measureHero(false);
+      var r = heroEl.getBoundingClientRect();
+      var px = e.clientX - r.left;
+      var py = e.clientY - r.top;
       drag.active = true;
+      drag.pointerId = e.pointerId;
+      drag.grabOffX = px - body.x;
+      drag.grabOffY = py - body.y;
+      drag.targetX = body.x;
+      drag.targetY = body.y;
       drag.startX = e.clientX;
       drag.startY = e.clientY;
-      drag.baseX = state.x;
-      drag.baseY = state.y;
       drag.moved = false;
       card.classList.add("is-dragging");
       if (card.setPointerCapture) {
         try { card.setPointerCapture(e.pointerId); } catch (_) {}
       }
+      e.stopPropagation();
       e.preventDefault();
     });
 
@@ -3490,14 +3537,19 @@ export function generateEditorialStaticJs(data) {
       if (!drag.active) return;
       var dx = e.clientX - drag.startX;
       var dy = e.clientY - drag.startY;
-      if (Math.hypot(dx, dy) > 4) drag.moved = true;
-      var clampedX = Math.max(-140, Math.min(140, drag.baseX + dx));
-      var clampedY = Math.max(-30, Math.min(90, drag.baseY + dy * 0.55));
-      state.vx = (clampedX - state.x) * 14;
-      state.vy = (clampedY - state.y) * 14;
-      state.x = clampedX;
-      state.y = clampedY;
+      if (Math.hypot(dx, dy) > 5) drag.moved = true;
+      var r = heroEl.getBoundingClientRect();
+      var rawX = e.clientX - r.left - drag.grabOffX;
+      var rawY = e.clientY - r.top - drag.grabOffY;
+      drag.targetX = Math.max(metrics.cardW * 0.25, Math.min(metrics.w - metrics.cardW * 0.25, rawX));
+      drag.targetY = Math.max(24, Math.min(metrics.h - metrics.cardH * 0.35, rawY));
     }, { passive: true });
+
+    function stateKick() {
+      body.vspin += 960;
+      body.vy -= 220;
+      body.vrx += 140;
+    }
 
     function endDrag(e) {
       if (!drag.active) return;
@@ -3507,79 +3559,169 @@ export function generateEditorialStaticJs(data) {
         try { card.releasePointerCapture(e.pointerId); } catch (_) {}
       }
       if (!drag.moved) {
-        // Click kick -> smooth 360 degree spin & lively bounce
-        state.vspin += 920;
-        state.vy -= 140;
-        state.vrx += 120;
+        stateKick();
       } else {
-        state.vrz += -state.vx * 0.14;
-        state.vry += state.vx * 0.18;
+        body.vrz += -body.vx * 0.045;
+        body.vry += body.vx * 0.075;
       }
     }
 
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
 
+    function buildSmoothRopePath(pts) {
+      if (pts.length < 2) return "";
+      var d = "M " + pts[0].x.toFixed(1) + " " + pts[0].y.toFixed(1);
+      for (var i = 1; i < pts.length - 1; i++) {
+        var mx = (pts[i].x + pts[i + 1].x) * 0.5;
+        var my = (pts[i].y + pts[i + 1].y) * 0.5;
+        d += " Q " + pts[i].x.toFixed(1) + " " + pts[i].y.toFixed(1) + " " + mx.toFixed(1) + " " + my.toFixed(1);
+      }
+      var last = pts[pts.length - 1];
+      d += " L " + last.x.toFixed(1) + " " + last.y.toFixed(1);
+      return d;
+    }
+
     function stepLanyard(now) {
-      var dt = Math.min(0.04, Math.max(0.001, (now - lastTs) / 1000));
+      var dt = Math.min(0.032, Math.max(0.001, (now - lastTs) / 1000));
       lastTs = now;
-      timeClock += dt;
+      clock += dt;
 
-      var breezeZ = Math.sin(timeClock * 1.35) * 2.8 + Math.sin(timeClock * 2.15) * 0.9;
-      var breezeY = Math.sin(timeClock * 1.1) * 8 + (hover.active ? hover.x * 24 : 0);
-      var breezeX = Math.cos(timeClock * 0.95) * 2.5 + (hover.active ? -hover.y * 16 : 0);
+      var breezeX = Math.sin(clock * 1.45) * 42 + Math.sin(clock * 2.35) * 18;
+      var breezeY = Math.cos(clock * 1.1) * 10;
 
-      if (!drag.active) {
-        var kPos = 95;
-        var dPos = 10.5;
-        state.vx += (-kPos * state.x - dPos * state.vx) * dt;
-        state.vy += (-kPos * state.y - dPos * state.vy) * dt;
-        state.x += state.vx * dt;
-        state.y += state.vy * dt;
+      if (drag.active) {
+        var nextVx = (drag.targetX - body.x) * 20;
+        var nextVy = (drag.targetY - body.y) * 20;
+        body.vx = body.vx * 0.55 + nextVx * 0.45;
+        body.vy = body.vy * 0.55 + nextVy * 0.45;
+        body.x += (drag.targetX - body.x) * Math.min(1, dt * 26);
+        body.y += (drag.targetY - body.y) * Math.min(1, dt * 26);
+      } else {
+        var dxAnchor = body.x - metrics.anchorX;
+        var dyAnchor = body.y - (-6);
+        var dist = Math.hypot(dxAnchor, dyAnchor) || 1;
+        var restDist = metrics.restY + 6;
+        var fx = 0;
+        var fy = 980;
+
+        if (dist > restDist) {
+          var stretch = dist - restDist;
+          var tension = stretch * 38;
+          fx -= (dxAnchor / dist) * tension;
+          fy -= (dyAnchor / dist) * tension;
+        } else {
+          fx -= dxAnchor * 6.5;
+          fy -= (body.y - metrics.restY) * 18;
+        }
+
+        fx += breezeX;
+        fy += breezeY;
+
+        body.vx += fx * dt;
+        body.vy += fy * dt;
+        body.vx *= Math.exp(-2.85 * dt);
+        body.vy *= Math.exp(-3.4 * dt);
+        body.x += body.vx * dt;
+        body.y += body.vy * dt;
       }
 
-      var targetZ = breezeZ - state.x * 0.22;
-      var targetY = breezeY + state.x * 0.12;
-      var targetX = breezeX - state.y * 0.12;
+      body.x = Math.max(metrics.cardW * 0.2, Math.min(metrics.w - metrics.cardW * 0.2, body.x));
+      body.y = Math.max(12, Math.min(metrics.h - metrics.cardH * 0.28, body.y));
 
-      var kRot = 110;
-      var dRot = 9.5;
-      state.vrz += (kRot * (targetZ - state.rz) - dRot * state.vrz) * dt;
-      state.vry += (kRot * (targetY - state.ry) - dRot * state.vry) * dt;
-      state.vrx += (kRot * (targetX - state.rx) - dRot * state.vrx) * dt;
-      state.rz += state.vrz * dt;
-      state.ry += state.vry * dt;
-      state.rx += state.vrx * dt;
+      var anchorY = -6;
+      var endX = body.x;
+      var endY = body.y + 8;
+      var totalRopeDist = Math.hypot(endX - metrics.anchorX, endY - anchorY);
+      var segLen = Math.max(totalRopeDist, metrics.restY + 14) / JOINTS;
 
-      if (Math.abs(state.spin) > 0.1 || Math.abs(state.vspin) > 0.5) {
-        state.vspin *= Math.exp(-3.6 * dt);
-        state.spin += state.vspin * dt;
-        if (Math.abs(state.vspin) < 12) {
-          var nearest = Math.round(state.spin / 360) * 360;
-          state.vspin += (nearest - state.spin) * 32 * dt;
-          state.spin += (nearest - state.spin) * 8 * dt;
-          if (Math.abs(nearest - state.spin) < 0.2 && Math.abs(state.vspin) < 1) {
-            state.spin = 0;
-            state.vspin = 0;
+      nodes[0].x = metrics.anchorX;
+      nodes[0].y = anchorY;
+      nodes[JOINTS].x = endX;
+      nodes[JOINTS].y = endY;
+
+      for (var i = 1; i < JOINTS; i++) {
+        var vx = (nodes[i].x - prevNodes[i].x) * 0.88;
+        var vy = (nodes[i].y - prevNodes[i].y) * 0.88;
+        prevNodes[i].x = nodes[i].x;
+        prevNodes[i].y = nodes[i].y;
+        nodes[i].x += vx + breezeX * 0.004;
+        nodes[i].y += vy + 980 * dt * dt * 0.65;
+      }
+
+      for (var iter = 0; iter < 5; iter++) {
+        nodes[0].x = metrics.anchorX;
+        nodes[0].y = anchorY;
+        nodes[JOINTS].x = endX;
+        nodes[JOINTS].y = endY;
+        for (var j = 0; j < JOINTS; j++) {
+          var a = nodes[j];
+          var b = nodes[j + 1];
+          var sx = b.x - a.x;
+          var sy = b.y - a.y;
+          var d = Math.hypot(sx, sy) || 0.001;
+          var diff = (d - segLen) / d;
+          if (j === 0) {
+            b.x -= sx * diff;
+            b.y -= sy * diff;
+          } else if (j + 1 === JOINTS) {
+            a.x += sx * diff;
+            a.y += sy * diff;
+          } else {
+            a.x += sx * diff * 0.5;
+            a.y += sy * diff * 0.5;
+            b.x -= sx * diff * 0.5;
+            b.y -= sy * diff * 0.5;
           }
         }
       }
 
-      pendulum.style.transform =
-        "translate3d(" + state.x.toFixed(2) + "px, " + state.y.toFixed(2) + "px, 0) " +
-        "rotateZ(" + state.rz.toFixed(2) + "deg)";
-      card.style.transform =
-        "rotateX(" + state.rx.toFixed(2) + "deg) " +
-        "rotateY(" + (state.ry + state.spin).toFixed(2) + "deg)";
+      var ropeDx = nodes[JOINTS].x - nodes[JOINTS - 1].x;
+      var ropeDy = nodes[JOINTS].y - nodes[JOINTS - 1].y;
+      var ropeAngleDeg = Math.atan2(ropeDx, Math.max(10, ropeDy)) * (-180 / Math.PI);
+      var targetZ = ropeAngleDeg * 0.65 - body.vx * 0.025 + Math.sin(clock * 1.45) * 1.6;
+      var targetY = Math.sin(clock * 1.05) * 9 + (hover.active && !drag.active ? hover.x * 26 : 0) + body.vx * 0.032;
+      var targetX = Math.cos(clock * 0.9) * 3 + (hover.active && !drag.active ? -hover.y * 18 : 0) - Math.min(18, Math.max(-18, (body.y - metrics.restY) * 0.09));
 
-      if (strap) {
-        var scaleY = Math.max(0.85, 1 + state.y * 0.0045);
-        strap.style.transform = "scaleY(" + scaleY.toFixed(3) + ")";
+      var kRot = 120;
+      var dRot = 9.5;
+      body.vrz += (kRot * (targetZ - body.rz) - dRot * body.vrz) * dt;
+      body.vry += (kRot * (targetY - body.ry) - dRot * body.vry) * dt;
+      body.vrx += (kRot * (targetX - body.rx) - dRot * body.vrx) * dt;
+      body.rz += body.vrz * dt;
+      body.ry += body.vry * dt;
+      body.rx += body.vrx * dt;
+
+      if (Math.abs(body.spin) > 0.1 || Math.abs(body.vspin) > 0.5) {
+        body.vspin *= Math.exp(-3.4 * dt);
+        body.spin += body.vspin * dt;
+        if (Math.abs(body.vspin) < 12) {
+          var nearest = Math.round(body.spin / 360) * 360;
+          body.vspin += (nearest - body.spin) * 30 * dt;
+          body.spin += (nearest - body.spin) * 8 * dt;
+          if (Math.abs(nearest - body.spin) < 0.2 && Math.abs(body.vspin) < 1) {
+            body.spin = 0;
+            body.vspin = 0;
+          }
+        }
       }
 
+      var ropePath = buildSmoothRopePath(nodes);
+      if (pathShadow) pathShadow.setAttribute("d", ropePath);
+      if (pathMain) pathMain.setAttribute("d", ropePath);
+      if (pathWeave) pathWeave.setAttribute("d", ropePath);
+
+      var tx = body.x - metrics.cardW * 0.5;
+      pendulum.style.transform =
+        "translate3d(" + tx.toFixed(2) + "px, " + body.y.toFixed(2) + "px, 0) " +
+        "rotateZ(" + body.rz.toFixed(2) + "deg)";
+      card.style.transform =
+        "rotateX(" + body.rx.toFixed(2) + "deg) " +
+        "rotateY(" + (body.ry + body.spin).toFixed(2) + "deg)";
+
       if (glare) {
-        var gx = 50 + (state.ry % 90) * 0.65;
-        var gy = 30 + state.rx * 1.2;
+        var gx = 50 + (body.ry % 90) * 0.65;
+        var gy = 28 + body.rx * 1.25;
         glare.style.setProperty("--gx", Math.max(5, Math.min(95, gx)).toFixed(1) + "%");
         glare.style.setProperty("--gy", Math.max(5, Math.min(95, gy)).toFixed(1) + "%");
       }
@@ -3591,240 +3733,511 @@ export function generateEditorialStaticJs(data) {
   }
   initLanyardPhysics();
 
-  // 6. Interactive TechText Blueprint Canvas for "PORTFOLIO" Wordmark
+  // 6. Exact TechText Blueprint Canvas Engine for "PORTFOLIO" Wordmark (Ported from TechText.tsx)
   function initTechText() {
     var heroEl = document.getElementById("hero");
+    var container = document.getElementById("edTechTextWrap");
     var canvas = document.getElementById("edTechTextCanvas");
     var fallback = document.getElementById("edHeroWordmarkFallback");
-    if (!heroEl || !canvas || !canvas.getContext) return;
+    if (!heroEl || !container || !canvas || !canvas.getContext) return;
     var ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    var scratchCanvas = document.createElement("canvas");
+    var scratchCtx = scratchCanvas.getContext("2d");
+    if (!ctx || !scratchCtx) return;
 
-    var word = canvas.getAttribute("data-text") || "PORTFOLIO";
-    var glyphs = [];
-    var specks = [];
-    for (var s = 0; s < 16; s++) {
-      specks.push({
-        rx: ((s * 73 + 17) % 100) / 100,
-        ry: ((s * 41 + 29) % 100) / 100,
-        phase: s * 0.9,
-        size: 1.5 + (s % 3)
-      });
+    var cfg = {
+      text: canvas.getAttribute("data-text") || "PORTFOLIO",
+      fontFamily: "'Bebas Neue', 'Anton', sans-serif",
+      fontWeight: 600,
+      fontSize: 210,
+      letterSpacing: 0,
+      color: "#FFFFFF",
+      accentColor: "#FFFFFF",
+      dashLength: 4,
+      dashGap: 2,
+      strokeWidth: 1.5,
+      specks: 15,
+      bounce: 0.4,
+      speed: 1
+    };
+
+    var SPRING = 320;
+    var KICK_DECAY = 0.62;
+    var LABEL_FONT = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+
+    function clamp01(v) { return Math.min(1, Math.max(0, Number(v) || 0)); }
+    function approach(curr, target, dt, seconds) {
+      return curr + (target - curr) * (1 - Math.exp(-dt / seconds));
     }
+    function noise(a, b, c, d) {
+      var vals = [a | 0, b | 0, c | 0, d | 0];
+      var h = 2166136261;
+      for (var i = 0; i < vals.length; i++) {
+        h = Math.imul(h ^ vals[i], 16777619);
+        h ^= h >>> 13;
+        h = Math.imul(h, 0x5bd1e995);
+        h ^= h >>> 15;
+      }
+      return (h >>> 0) / 4294967296;
+    }
+    function signed(v) { return v > 0 ? "+" + v : v < 0 ? "-" + (-v) : "0"; }
 
     var width = 1;
     var height = 1;
+    var dpr = 1;
+    var layoutKey = "";
+    var glyphs = [];
+    var wordView = null;
+    var clock = 0;
+    var pulse = 0;
+    var placed = false;
+    var dragging = -1;
     var pointer = { x: 0, y: 0, inside: false };
-    var sweepClock = 0;
-    var lastTime = performance.now();
+    var grab = { x: 0, y: 0 };
+    var lens = { x: 0, y: 0 };
+    var frame = { x1: 0, y1: 0, x2: 0, y2: 0, alpha: 0, index: -1 };
+    var kicks = [];
+    var press = { x: 0, y: 0, time: 0, index: -1 };
+    var lastTs = performance.now();
     var readyDrawn = false;
 
-    function measureGlyphs() {
+    function setFont(target, size) {
+      target.font = cfg.fontWeight + " " + size + "px " + cfg.fontFamily;
+      if ("letterSpacing" in target) {
+        target.letterSpacing = (cfg.letterSpacing * size) + "px";
+      }
+      target.textAlign = "left";
+      target.textBaseline = "alphabetic";
+    }
+
+    function buildSprite(view, glyphBase, stroke) {
+      var pad = Math.ceil(cfg.strokeWidth * 2 + 4);
+      var left = glyphBase.box.x1 - pad;
+      var top = glyphBase.box.y1 - pad;
+      var w = glyphBase.box.x2 - glyphBase.box.x1 + pad * 2;
+      var h = glyphBase.box.y2 - glyphBase.box.y1 + pad * 2;
+      var img = document.createElement("canvas");
+      img.width = Math.max(1, Math.ceil(w * dpr));
+      img.height = Math.max(1, Math.ceil(h * dpr));
+      var c = img.getContext("2d");
+      if (!c) return { image: img, left: left, top: top };
+      c.setTransform(dpr, 0, 0, dpr, -left * dpr, -top * dpr);
+      setFont(c, view.size);
+      if (stroke) {
+        c.lineJoin = "round";
+        c.lineWidth = cfg.strokeWidth * 2;
+        c.lineCap = "butt";
+        c.strokeStyle = cfg.color;
+        c.setLineDash([Math.max(1, cfg.dashLength), Math.max(1, cfg.dashGap)]);
+        c.strokeText(glyphBase.char, glyphBase.x, view.baseline);
+        c.setLineDash([]);
+        c.globalCompositeOperation = "destination-out";
+        c.fillStyle = "#000000";
+        c.fillText(glyphBase.char, glyphBase.x, view.baseline);
+        c.globalCompositeOperation = "source-over";
+      } else {
+        c.fillStyle = cfg.color;
+        c.fillText(glyphBase.char, glyphBase.x, view.baseline);
+      }
+      return { image: img, left: left, top: top };
+    }
+
+    function ensureLayout() {
       var rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (!rect.width || !rect.height) return null;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = rect.width;
       height = rect.height;
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var key = width + "|" + height + "|" + dpr;
+      if (key === layoutKey && wordView) return wordView;
+      layoutKey = key;
 
-      var fontSize = Math.max(64, Math.min(210, width * 0.175));
-      var fontStr = "600 " + fontSize.toFixed(0) + "px 'Bebas Neue', 'Anton', sans-serif";
-      ctx.font = fontStr;
-      var chars = word.split("");
-      var widths = chars.map(function (c) { return ctx.measureText(c).width; });
-      var gap = fontSize * 0.025;
-      var totalW = widths.reduce(function (a, b) { return a + b; }, 0) + gap * Math.max(0, chars.length - 1);
-      var startX = (width - totalW) / 2;
-      var baseline = height * 0.56 + fontSize * 0.32;
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
 
-      var prev = glyphs;
+      setFont(scratchCtx, cfg.fontSize);
+      var m = scratchCtx.measureText(cfg.text);
+      var fit = Math.min(
+        1,
+        (width * 0.9) / Math.max(m.actualBoundingBoxLeft + m.actualBoundingBoxRight, 1),
+        (height * 0.68) / Math.max(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent, 1)
+      );
+      var size = cfg.fontSize * fit;
+      setFont(scratchCtx, size);
+      m = scratchCtx.measureText(cfg.text);
+      var inkWidth = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+      var inkHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+      var start = (width - inkWidth) * 0.5;
+      var x = start + m.actualBoundingBoxLeft;
+      var baseline = (height - inkHeight) * 0.5 + m.actualBoundingBoxAscent;
+      var top = baseline - m.actualBoundingBoxAscent;
+      var bottom = baseline + m.actualBoundingBoxDescent;
+
+      wordView = { size: size, baseline: baseline, left: x - m.actualBoundingBoxLeft, right: x + m.actualBoundingBoxRight, top: top, bottom: bottom };
+
+      var chars = cfg.text.split("");
+      var previous = glyphs;
       glyphs = [];
-      var curX = startX;
+      var prefix = "";
       for (var i = 0; i < chars.length; i++) {
-        var cw = widths[i];
-        var old = prev[i];
+        var ch = chars[i];
+        prefix += ch;
+        var own = scratchCtx.measureText(ch);
+        var gx = x + scratchCtx.measureText(prefix).width - own.width;
+        if (!ch.trim()) continue;
+        var base = {
+          char: ch,
+          x: gx,
+          box: {
+            x1: gx - own.actualBoundingBoxLeft,
+            y1: baseline - own.actualBoundingBoxAscent,
+            x2: gx + own.actualBoundingBoxRight,
+            y2: baseline + own.actualBoundingBoxDescent
+          }
+        };
+        var kept = previous[glyphs.length];
         glyphs.push({
-          char: chars[i],
-          x: curX,
-          y: baseline,
-          w: cw,
-          h: fontSize * 0.78,
-          outline: old ? old.outline : 0,
-          oy: old ? old.oy : 0,
-          vy: old ? old.vy : 0,
-          fontStr: fontStr,
-          fontSize: fontSize
+          char: base.char,
+          x: base.x,
+          box: base.box,
+          offset: kept && kept.char === ch ? kept.offset : { x: 0, y: 0 },
+          velocity: { x: 0, y: 0 },
+          outline: kept ? kept.outline : 0,
+          fill: buildSprite(wordView, base, false),
+          dashes: buildSprite(wordView, base, true)
         });
-        curX += cw + gap;
       }
+
       if (!readyDrawn && fallback) {
         readyDrawn = true;
         fallback.classList.add("is-canvas-active");
       }
+      return wordView;
+    }
+
+    function glyphAt(px, py) {
+      if (!wordView || py < wordView.top - 28 || py > wordView.bottom + 28) return -1;
+      var best = -1;
+      var bestDist = Infinity;
+      for (var i = 0; i < glyphs.length; i++) {
+        var g = glyphs[i];
+        var x1 = g.box.x1 + g.offset.x;
+        var x2 = g.box.x2 + g.offset.x;
+        var d = px < x1 ? x1 - px : px > x2 ? px - x2 : 0;
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      }
+      return bestDist < 28 ? best : -1;
+    }
+
+    function blit(art, dx, dy) {
+      ctx.drawImage(art.image, Math.round((art.left + dx) * dpr), Math.round((art.top + dy) * dpr));
+    }
+
+    function crisp(value) { return (Math.round(value * dpr) + 0.5) / dpr; }
+
+    function perimeterPoint(distance, w, h) {
+      var perim = 2 * (w + h);
+      var d = ((distance % perim) + perim) % perim;
+      if (d < w) return [frame.x1 + d, frame.y1, 0, -1];
+      d -= w;
+      if (d < h) return [frame.x2, frame.y1 + d, 1, 0];
+      d -= h;
+      if (d < w) return [frame.x2 - d, frame.y2, 0, 1];
+      d -= w;
+      return [frame.x1, frame.y2 - d, -1, 0];
+    }
+
+    function drawSpecks(a) {
+      var w = frame.x2 - frame.x1;
+      var h = frame.y2 - frame.y1;
+      if (w < 2 || h < 2) return;
+      var perim = 2 * (w + h);
+      var seed = frame.index + 1;
+      var grid = 3;
+      ctx.fillStyle = cfg.accentColor;
+      ctx.strokeStyle = cfg.accentColor;
+
+      for (var k = 0; k < cfg.specks; k++) {
+        var period = 0.5 + noise(seed, k, 11, 0) * 1.2;
+        var t = pulse / period + noise(seed, k, 17, 0);
+        var cycle = Math.floor(t);
+        var life = t - cycle;
+        if (life > 0.7) continue;
+        var pt = perimeterPoint(noise(seed, k, cycle, 0) * perim, w, h);
+        var pick = noise(seed, k, cycle, 2);
+        var size = pick < 0.46 ? 2 : pick < 0.7 ? 3 : pick < 0.84 ? 5 : pick < 0.94 ? 8 : 11;
+        var large = size >= 8;
+        var out = (large ? 9 : 4) + Math.floor(noise(seed, k, cycle, 1) * 5) * grid;
+        var sx = frame.x1 + Math.round((pt[0] + pt[2] * out - frame.x1) / grid) * grid;
+        var sy = frame.y1 + Math.round((pt[1] + pt[3] * out - frame.y1) / grid) * grid;
+        var tone = noise(seed, k, cycle, 3);
+        var blink = life < 0.06 || (life > 0.32 && life < 0.36) ? 0.35 : 1;
+        ctx.globalAlpha = a * (large ? 0.3 + 0.4 * tone : 0.3 + 0.6 * tone) * blink;
+        var left = Math.round(sx - size / 2);
+        var top = Math.round(sy - size / 2);
+        if (tone < 0.26 || (large && tone < 0.78)) {
+          ctx.strokeRect(left + 0.5, top + 0.5, size, size);
+          if (large && tone > 0.5) ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 1, 2, 2);
+        } else {
+          ctx.fillRect(left, top, size, size);
+        }
+      }
+
+      for (var j = 0; j < 2; j++) {
+        var head = (pulse * 0.42 * cfg.speed + j * 0.5) * perim;
+        for (var i = 0; i < 4; i++) {
+          var p = perimeterPoint(head - i * 6, w, h);
+          var sz = i === 0 ? 3 : 2;
+          ctx.globalAlpha = a * [0.95, 0.55, 0.32, 0.16][i];
+          ctx.fillRect(Math.round(p[0] - sz / 2), Math.round(p[1] - sz / 2), sz, sz);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawFrame() {
+      var glyph = glyphs[frame.index];
+      if (!glyph || frame.alpha < 0.01) return;
+      var a = frame.alpha;
+      var x1 = crisp(frame.x1);
+      var y1 = crisp(frame.y1);
+      var x2 = crisp(frame.x2);
+      var y2 = crisp(frame.y2);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = cfg.accentColor;
+      ctx.strokeStyle = cfg.accentColor;
+      ctx.lineWidth = 1;
+
+      var moved = Math.hypot(glyph.offset.x, glyph.offset.y);
+      if (moved > 1) {
+        var hx = (glyph.box.x1 + glyph.box.x2) * 0.5;
+        var hy = (glyph.box.y1 + glyph.box.y2) * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(hx, hy);
+        ctx.lineTo(hx + glyph.offset.x, hy + glyph.offset.y);
+        ctx.setLineDash([3, 4]);
+        ctx.globalAlpha = 0.45 * a;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.rect(Math.round(hx) - 2, Math.round(hy) - 2, 4, 4);
+        ctx.globalAlpha = 0.7 * a;
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.rect(x1, y1, x2 - x1, y2 - y1);
+      ctx.globalAlpha = 0.5 * a;
+      ctx.stroke();
+
+      var corners = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+      ctx.beginPath();
+      for (var c = 0; c < corners.length; c++) {
+        ctx.rect(Math.round(corners[c][0]) - 2, Math.round(corners[c][1]) - 2, 5, 5);
+      }
+      ctx.globalAlpha = 0.95 * a;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      drawSpecks(a);
+
+      ctx.font = LABEL_FONT;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillStyle = cfg.accentColor;
+      ctx.globalAlpha = 0.62 * a;
+      var lbl = moved > 1
+        ? signed(Math.round(glyph.offset.x)) + ", " + signed(Math.round(-glyph.offset.y))
+        : glyph.char + "  " + Math.round(glyph.box.x2 - glyph.box.x1) + " \u00d7 " + Math.round(glyph.box.y2 - glyph.box.y1);
+      ctx.fillText(lbl, Math.round(frame.x1), Math.round(frame.y1) - 7);
+      ctx.globalAlpha = 1;
+    }
+
+    function kickGlyph(index) {
+      var strength = (wordView ? wordView.size : 120) * 11;
+      kicks.push({ index: index, at: pulse, velocity: strength });
+      for (var d = 1; d < glyphs.length; d++) {
+        var velocity = strength * Math.pow(KICK_DECAY, d);
+        if (velocity < 30) break;
+        if (index - d >= 0) kicks.push({ index: index - d, at: pulse + d * 0.055, velocity: velocity });
+        if (index + d < glyphs.length) kicks.push({ index: index + d, at: pulse + d * 0.055, velocity: velocity });
+      }
+    }
+
+    function locate(e) {
+      var rect = canvas.getBoundingClientRect();
+      pointer.x = e.clientX - rect.left;
+      pointer.y = e.clientY - rect.top;
     }
 
     heroEl.addEventListener("pointermove", function (e) {
-      var cRect = canvas.getBoundingClientRect();
-      pointer.x = e.clientX - cRect.left;
-      pointer.y = e.clientY - cRect.top;
-      pointer.inside = e.clientX >= cRect.left && e.clientX <= cRect.right && e.clientY >= cRect.top && e.clientY <= cRect.bottom;
+      locate(e);
+      pointer.inside = true;
     }, { passive: true });
 
     heroEl.addEventListener("pointerleave", function () {
-      pointer.inside = false;
-    });
+      if (dragging < 0) pointer.inside = false;
+    }, { passive: true });
 
-    heroEl.addEventListener("click", function (e) {
+    heroEl.addEventListener("pointerdown", function (e) {
       if (isReduced) return;
       if (e.target && e.target.closest && (e.target.closest("#edLanyardCard") || e.target.closest(".ed-hero-cta"))) return;
-      var cRect = canvas.getBoundingClientRect();
-      var cx = e.clientX - cRect.left;
-      var nearest = -1;
-      var bestDist = Infinity;
-      for (var i = 0; i < glyphs.length; i++) {
-        var gCenter = glyphs[i].x + glyphs[i].w * 0.5;
-        var d = Math.abs(cx - gCenter);
-        if (d < bestDist) {
-          bestDist = d;
-          nearest = i;
-        }
+      locate(e);
+      pointer.inside = true;
+      var index = glyphAt(pointer.x, pointer.y);
+      press.x = pointer.x;
+      press.y = pointer.y;
+      press.time = performance.now();
+      press.index = index;
+      if (index >= 0) {
+        dragging = index;
+        grab.x = pointer.x - glyphs[index].offset.x;
+        grab.y = pointer.y - glyphs[index].offset.y;
       }
-      if (nearest >= 0) {
-        for (var j = 0; j < glyphs.length; j++) {
-          var distIdx = Math.abs(j - nearest);
-          if (distIdx <= 3) {
-            glyphs[j].vy -= (260 - distIdx * 65);
-          }
-        }
-      }
-    });
+    }, { passive: true });
 
-    window.addEventListener("resize", measureGlyphs);
+    window.addEventListener("pointerup", function (e) {
+      if (dragging >= 0) {
+        dragging = -1;
+        var rect = canvas.getBoundingClientRect();
+        pointer.inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+      }
+      if (press.index >= 0 && !isReduced && performance.now() - press.time < 450) {
+        var r2 = canvas.getBoundingClientRect();
+        if (Math.hypot(e.clientX - r2.left - press.x, e.clientY - r2.top - press.y) < 6) {
+          kickGlyph(press.index);
+        }
+      }
+      press.index = -1;
+    }, { passive: true });
+
+    window.addEventListener("resize", function () { layoutKey = ""; ensureLayout(); });
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(measureGlyphs);
+      document.fonts.ready.then(function () { layoutKey = ""; ensureLayout(); });
     }
-    measureGlyphs();
+    ensureLayout();
 
-    function drawTechText(now) {
-      var dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
-      lastTime = now;
-      if (glyphs.length === 0) measureGlyphs();
-      ctx.clearRect(0, 0, width, height);
+    function tick(now) {
+      var dt = Math.min(0.05, Math.max(0.001, (now - lastTs) / 1000));
+      lastTs = now;
+      var view = ensureLayout();
+      if (!view) {
+        requestAnimationFrame(tick);
+        return;
+      }
 
-      if (!isReduced) sweepClock += dt;
-      var first = glyphs[0];
-      var last = glyphs[glyphs.length - 1];
-      var leftBound = first ? first.x : 0;
-      var rightBound = last ? last.x + last.w : width;
-      var sweepX = leftBound + (rightBound - leftBound) * (0.5 - 0.5 * Math.cos(sweepClock * 0.72));
-      var focusX = pointer.inside ? pointer.x : sweepX;
+      var damping = 2 * Math.sqrt(SPRING) * (1 - clamp01(cfg.bounce) * 0.96);
+      var sweeping = !isReduced && !pointer.inside && dragging < 0;
+      if (sweeping) clock += dt * cfg.speed;
+      pulse += dt;
 
-      var activeIdx = -1;
+      var targetX = pointer.x;
+      var targetY = pointer.y;
+      if (sweeping) {
+        targetX = view.left + (view.right - view.left) * (0.5 - 0.5 * Math.cos(clock * 0.45));
+        targetY = view.top + (view.bottom - view.top) * (0.45 + 0.1 * Math.sin(clock * 0.8));
+      }
+      var active = !isReduced && (pointer.inside || sweeping || dragging >= 0);
+      if (active && !placed) {
+        lens.x = targetX;
+        lens.y = targetY;
+      }
+      if (active) {
+        var lag = pointer.inside ? 0.05 : 0.22;
+        lens.x = approach(lens.x, targetX, dt, lag);
+        lens.y = approach(lens.y, targetY, dt, lag);
+      }
+      placed = active;
+
+      for (var k = kicks.length - 1; k >= 0; k--) {
+        if (kicks[k].at > pulse) continue;
+        var kg = glyphs[kicks[k].index];
+        if (kg) kg.velocity.y -= kicks[k].velocity;
+        kicks.splice(k, 1);
+      }
+
       for (var i = 0; i < glyphs.length; i++) {
-        var g = glyphs[i];
-        if (focusX >= g.x - 10 && focusX <= g.x + g.w + 10) {
-          activeIdx = i;
-          break;
+        var gl = glyphs[i];
+        if (i === dragging) {
+          gl.offset.x = approach(gl.offset.x, pointer.x - grab.x, dt, 0.03);
+          gl.offset.y = approach(gl.offset.y, pointer.y - grab.y, dt, 0.03);
+          gl.velocity.x = 0;
+          gl.velocity.y = 0;
+        } else if (Math.abs(gl.offset.x) > 0.05 || Math.abs(gl.offset.y) > 0.05 || Math.hypot(gl.velocity.x, gl.velocity.y) > 0.5) {
+          gl.velocity.x += (-SPRING * gl.offset.x - damping * gl.velocity.x) * dt;
+          gl.velocity.y += (-SPRING * gl.offset.y - damping * gl.velocity.y) * dt;
+          gl.offset.x += gl.velocity.x * dt;
+          gl.offset.y += gl.velocity.y * dt;
+        } else {
+          gl.offset.x = 0;
+          gl.offset.y = 0;
+          gl.velocity.x = 0;
+          gl.velocity.y = 0;
         }
       }
 
-      // Draw faint technical specks around wordmark
-      if (!isReduced && glyphs.length > 0) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
-        for (var sp = 0; sp < specks.length; sp++) {
-          var sk = specks[sp];
-          var sx = leftBound + sk.rx * (rightBound - leftBound);
-          var sy = (first.y - first.h) + sk.ry * (first.h * 1.15) + Math.sin(sweepClock * 1.4 + sk.phase) * 5;
-          var dist = Math.hypot(sx - focusX, sy - (first.y - first.h * 0.5));
-          if (dist < 140) {
-            ctx.globalAlpha = Math.max(0.08, (1 - dist / 140) * 0.55);
-            ctx.fillRect(sx, sy, sk.size, sk.size);
-          }
+      var focus = dragging >= 0 ? dragging : active ? glyphAt(lens.x, lens.y) : -1;
+      if (focus >= 0) {
+        var fg = glyphs[focus];
+        var bx1 = fg.box.x1 + fg.offset.x - 6;
+        var by1 = fg.box.y1 + fg.offset.y - 6;
+        var bx2 = fg.box.x2 + fg.offset.x + 6;
+        var by2 = fg.box.y2 + fg.offset.y + 6;
+        if (frame.index < 0 || frame.alpha < 0.02) {
+          frame.x1 = bx1; frame.y1 = by1; frame.x2 = bx2; frame.y2 = by2;
         }
-        ctx.globalAlpha = 1;
+        var glide = focus === dragging ? 0.02 : 0.08;
+        frame.x1 = approach(frame.x1, bx1, dt, glide);
+        frame.y1 = approach(frame.y1, by1, dt, glide);
+        frame.x2 = approach(frame.x2, bx2, dt, glide);
+        frame.y2 = approach(frame.y2, by2, dt, glide);
+        frame.index = focus;
+      }
+      frame.alpha = approach(frame.alpha, focus >= 0 ? 1 : 0, dt, 0.1);
+
+      for (var g = 0; g < glyphs.length; g++) {
+        var item = glyphs[g];
+        var tOut = g === focus && g !== dragging ? 1 : 0;
+        item.outline = approach(item.outline, tOut, dt, 0.09);
+        if (Math.abs(item.outline - tOut) <= 0.002) item.outline = tOut;
       }
 
-      for (var k = 0; k < glyphs.length; k++) {
-        var gl = glyphs[k];
-        var targetOut = !isReduced && k === activeIdx ? 1 : 0;
-        gl.outline += (targetOut - gl.outline) * (1 - Math.exp(-dt / 0.085));
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Spring bounce physics on click kick
-        gl.vy += (-320 * gl.oy - 22 * gl.vy) * dt;
-        gl.oy += gl.vy * dt;
-
-        ctx.font = gl.fontStr;
-        ctx.textBaseline = "alphabetic";
-        ctx.textAlign = "left";
-
-        var drawY = gl.y + gl.oy;
-
-        // Solid fill layer (fades slightly to expose wireframe blueprint under focus)
-        ctx.save();
-        ctx.globalAlpha = 0.94 - gl.outline * 0.78;
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(gl.char, gl.x, drawY);
-        ctx.restore();
-
-        // Dashed blueprint wireframe layer
-        if (gl.outline > 0.02) {
-          ctx.save();
-          ctx.globalAlpha = gl.outline;
-          ctx.strokeStyle = "#FFFFFF";
-          ctx.lineWidth = 1.65;
-          ctx.setLineDash([4, 2]);
-          ctx.lineDashOffset = -sweepClock * 18;
-          ctx.strokeText(gl.char, gl.x, drawY);
-          ctx.restore();
+      for (var mIdx = 0; mIdx < glyphs.length; mIdx++) {
+        var mg = glyphs[mIdx];
+        var dMoved = Math.hypot(mg.offset.x, mg.offset.y);
+        if (dMoved > 1) {
+          ctx.globalAlpha = Math.min(1, dMoved / 24) * 0.55;
+          blit(mg.dashes, 0, 0);
+          ctx.globalAlpha = 1;
         }
       }
 
-      // Draw CAD selection bracket & coordinate readout on active glyph
-      if (!isReduced && activeIdx >= 0) {
-        var ag = glyphs[activeIdx];
-        var bx1 = ag.x - 6;
-        var by1 = ag.y + ag.oy - ag.h - 4;
-        var bx2 = ag.x + ag.w + 6;
-        var by2 = ag.y + ag.oy + 8;
-        var arm = 10;
-
-        ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        // Top-left
-        ctx.moveTo(bx1, by1 + arm); ctx.lineTo(bx1, by1); ctx.lineTo(bx1 + arm, by1);
-        // Top-right
-        ctx.moveTo(bx2 - arm, by1); ctx.lineTo(bx2, by1); ctx.lineTo(bx2, by1 + arm);
-        // Bottom-left
-        ctx.moveTo(bx1, by2 - arm); ctx.lineTo(bx1, by2); ctx.lineTo(bx1 + arm, by2);
-        // Bottom-right
-        ctx.moveTo(bx2 - arm, by2); ctx.lineTo(bx2, by2); ctx.lineTo(bx2, by2 - arm);
-        ctx.stroke();
-
-        // Blueprint dashed guides
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(leftBound - 18, ag.y + ag.oy);
-        ctx.lineTo(rightBound + 18, ag.y + ag.oy);
-        ctx.stroke();
-
-        // Micro glyph index label
-        ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
-        ctx.fillText("GLYPH[" + activeIdx + "] " + ag.char, bx1, by1 - 6);
-        ctx.restore();
+      for (var rIdx = 0; rIdx < glyphs.length; rIdx++) {
+        var rg = glyphs[rIdx];
+        if (rg.outline < 0.999) {
+          ctx.globalAlpha = 1 - rg.outline;
+          blit(rg.fill, rg.offset.x, rg.offset.y);
+        }
+        if (rg.outline > 0.001) {
+          ctx.globalAlpha = rg.outline;
+          blit(rg.dashes, rg.offset.x, rg.offset.y);
+        }
       }
+      ctx.globalAlpha = 1;
 
-      if (!isReduced) requestAnimationFrame(drawTechText);
+      drawFrame();
+      if (!isReduced) requestAnimationFrame(tick);
     }
 
-    requestAnimationFrame(drawTechText);
+    requestAnimationFrame(tick);
   }
   initTechText();
 
