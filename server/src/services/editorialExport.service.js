@@ -3,6 +3,7 @@
  * Mirrors client/src/components/portfolios/templates/EditorialTemplate.tsx pixel-for-pixel
  * across colors, typography, slide layouts, multi-image project slots, and interactive controls.
  */
+import { getEditorialLanyardBundleJs } from "./editorialLanyardVendor.js";
 
 const TRIVIAL_SKILL_PATTERNS = [
   /^dom\s*manipulation$/i,
@@ -388,37 +389,19 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-orb ed-orb-a"></div>
         <div class="ed-orb ed-orb-b"></div>
 
-        <!-- Swinging 3D Rope Lanyard Pass Card (Full-Bleed Interactive Badge) -->
-        <svg id="edLanyardRopeSvg" class="ed-lanyard-rope-svg" aria-hidden="true">
-          <path id="edLanyardStrapShadow" class="ed-lanyard-strap-shadow" d="" />
-          <path id="edLanyardStrapPath" class="ed-lanyard-strap-path" d="" />
-          <path id="edLanyardStrapWeave" class="ed-lanyard-strap-weave" d="" />
-        </svg>
-        <div class="ed-lanyard-stage" id="edLanyardStage">
-          <div class="ed-lanyard-hardware" id="edLanyardHardware">
-            <div class="ed-lanyard-clamp"></div>
-            <div class="ed-lanyard-eyelet"></div>
-          </div>
-          <div class="ed-lanyard-pendulum" id="edLanyardPendulum">
-            <div class="ed-lanyard-ring"></div>
-            <div class="ed-lanyard-card" id="edLanyardCard" title="Drag & pull to swing or click to spin">
-              <div class="ed-lanyard-card-front">
-                <div class="ed-lanyard-glare" id="edLanyardGlare" aria-hidden="true"></div>
-                ${
-                  avatarUrl
-                    ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(fullName)}" class="ed-lanyard-full-img" draggable="false" onerror="this.style.display='none'" />`
-                    : `<img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80" alt="${escapeHtml(fullName)}" class="ed-lanyard-full-img" draggable="false" />`
-                }
-                <div class="ed-lanyard-slot-rim" aria-hidden="true"></div>
-              </div>
-              <div class="ed-lanyard-card-back" aria-hidden="true">
-                ${
-                  avatarUrl
-                    ? `<img src="${escapeHtml(avatarUrl)}" alt="" class="ed-lanyard-full-img ed-lanyard-back-img" draggable="false" />`
-                    : `<img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80" alt="" class="ed-lanyard-full-img ed-lanyard-back-img" draggable="false" />`
-                }
-                <div class="ed-lanyard-slot-rim" aria-hidden="true"></div>
-              </div>
+        <!-- Exact 3D WebGL Lanyard (matches EditorialTemplate.tsx Lanyard component 100%, with crisp 2D fallback if WebGL is unavailable) -->
+        <div
+          id="edLanyardStage"
+          class="lanyard ed-lanyard-stage"
+          data-front-image="${escapeHtml(avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80")}"
+          data-strap-length="0.62"
+        >
+          <div class="ed-lanyard-fallback" aria-hidden="true">
+            <div class="ed-lanyard-fb-strap"></div>
+            <div class="ed-lanyard-fb-clamp"></div>
+            <div class="ed-lanyard-fb-ring"></div>
+            <div class="ed-lanyard-fb-card">
+              <img src="${escapeHtml(avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80")}" alt="${escapeHtml(fullName)}" class="ed-lanyard-fb-img" onerror="this.style.display='none'" />
             </div>
           </div>
         </div>
@@ -1748,181 +1731,76 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   pointer-events: none;
 }
 
-.ed-lanyard-rope-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 29;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.ed-lanyard-strap-shadow {
-  fill: none;
-  stroke: rgba(0, 0, 0, 0.34);
-  stroke-width: 40;
-  stroke-linecap: butt;
-  filter: blur(4px);
-}
-
-.ed-lanyard-strap-path {
-  fill: none;
-  stroke: #131316;
-  stroke-width: 36;
-  stroke-linecap: butt;
-}
-
-.ed-lanyard-strap-weave {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.055);
-  stroke-width: 30;
-  stroke-dasharray: 2 3;
-}
-
-@media (max-width: 639px) {
-  .ed-lanyard-strap-shadow { stroke-width: 30; }
-  .ed-lanyard-strap-path { stroke-width: 26; }
-  .ed-lanyard-strap-weave { stroke-width: 22; }
-}
-
+.lanyard,
 .ed-lanyard-stage {
   position: absolute;
-  inset: 0;
-  z-index: 30;
-  perspective: 1200px;
-  perspective-origin: 50% 25%;
-  pointer-events: none;
-}
-
-.ed-lanyard-pendulum {
-  position: absolute;
   top: 0;
   left: 0;
+  right: 0;
+  width: 100%;
+  height: 600px;
+  z-index: 30;
+  overflow: hidden;
+}
+
+.lanyard-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ed-lanyard-stage.has-webgl .ed-lanyard-fallback {
+  display: none;
+}
+
+.ed-lanyard-fallback {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform-origin: 50% 6px;
-  transform-style: preserve-3d;
-  will-change: transform;
+  width: 100%;
   pointer-events: none;
-  z-index: 30;
 }
 
-.ed-lanyard-hardware {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 33;
-  pointer-events: none;
-  transform-origin: 50% 8px;
-  will-change: transform;
+.ed-lanyard-fb-strap {
+  width: 34px;
+  height: 155px;
+  background: #141417;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
-.ed-lanyard-clamp {
+.ed-lanyard-fb-clamp {
   width: 38px;
   height: 22px;
   border-radius: 5px;
-  background: linear-gradient(155deg, #e2e8f0 0%, #94a3b8 42%, #475569 100%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: linear-gradient(155deg, #e2e8f0, #64748b);
+  margin-top: -2px;
+  z-index: 2;
 }
 
-.ed-lanyard-eyelet {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2.5px solid #cbd5e1;
-  background: rgba(15, 23, 42, 0.35);
-  margin-top: -4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.ed-lanyard-ring {
-  position: relative;
+.ed-lanyard-fb-ring {
   width: 22px;
-  height: 24px;
-  border: 2.5px solid #e2e8f0;
+  height: 22px;
   border-radius: 50%;
-  margin-top: 0;
-  z-index: 6;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 0 2px rgba(0, 0, 0, 0.35);
+  border: 2.5px solid #e2e8f0;
+  margin-top: -4px;
+  z-index: 3;
 }
 
-.ed-lanyard-card {
-  position: relative;
+.ed-lanyard-fb-card {
   width: clamp(164px, 21.5vw, 246px);
   aspect-ratio: 1.6 / 2.25;
-  margin-top: -17px;
-  transform-style: preserve-3d;
-  transform-origin: 50% 14px;
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
-  pointer-events: auto;
-  will-change: transform;
-}
-
-.ed-lanyard-card.is-dragging {
-  cursor: grabbing;
-}
-
-.ed-lanyard-card-front,
-.ed-lanyard-card-back {
-  position: absolute;
-  inset: 0;
   border-radius: 14px;
   overflow: hidden;
+  margin-top: -12px;
   background: #141418;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,7 A3.5,3.5 0 0 0 58.5,10.5 V11.5 A3.5,3.5 0 0 0 62,15 H98 A3.5,3.5 0 0 0 101.5,11.5 V10.5 A3.5,3.5 0 0 0 98,7 Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,7 A3.5,3.5 0 0 0 58.5,10.5 V11.5 A3.5,3.5 0 0 0 62,15 H98 A3.5,3.5 0 0 0 101.5,11.5 V10.5 A3.5,3.5 0 0 0 98,7 Z'/%3E%3C/svg%3E");
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.46), 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
-.ed-lanyard-card-back {
-  transform: rotateY(180deg);
-}
-
-.ed-lanyard-full-img {
+.ed-lanyard-fb-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  pointer-events: none;
-  user-select: none;
-}
-
-.ed-lanyard-back-img {
-  transform: scaleX(-1);
-  filter: brightness(0.92) contrast(1.04);
-}
-
-.ed-lanyard-slot-rim {
-  position: absolute;
-  left: 36.5%;
-  width: 27%;
-  top: 3.1%;
-  height: 3.6%;
-  border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-}
-
-.ed-lanyard-glare {
-  position: absolute;
-  inset: -35%;
-  background: radial-gradient(circle at var(--gx, 35%) var(--gy, 25%), rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 60%);
-  pointer-events: none;
-  mix-blend-mode: screen;
-  z-index: 4;
 }
 
 .ed-hero-bottom {
@@ -3306,7 +3184,8 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
 
 export function generateEditorialStaticJs(data) {
   const isDarkMode = data.design?.theme === "dark";
-  return `(function () {
+  return `${getEditorialLanyardBundleJs()}
+(function () {
   var isReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var isDarkMode = ${isDarkMode ? "true" : "false"};
 
@@ -3422,344 +3301,23 @@ export function generateEditorialStaticJs(data) {
     });
   }
 
-  // 5. Interactive 3D Verlet-Rope Lanyard Engine (Zero-Gap Clamp Kinematics, Free-Pull Elastic Strap & 3D Flip/Spin)
-  function initLanyardPhysics() {
-    var heroEl = document.getElementById("hero");
-    var hardware = document.getElementById("edLanyardHardware");
-    var pendulum = document.getElementById("edLanyardPendulum");
-    var card = document.getElementById("edLanyardCard");
-    var glare = document.getElementById("edLanyardGlare");
-    var pathShadow = document.getElementById("edLanyardStrapShadow");
-    var pathMain = document.getElementById("edLanyardStrapPath");
-    var pathWeave = document.getElementById("edLanyardStrapWeave");
-    if (!heroEl || !hardware || !pendulum || !card) return;
-
-    var JOINTS = 4;
-    var nodes = [];
-    var prevNodes = [];
-    for (var i = 0; i <= JOINTS; i++) {
-      nodes.push({ x: 0, y: 0 });
-      prevNodes.push({ x: 0, y: 0 });
-    }
-
-    var metrics = { w: 1000, h: 700, cardW: 220, cardH: 310, anchorX: 500, restY: 165 };
-    var body = {
-      x: 500, y: 165,
-      vx: 0, vy: 0,
-      rz: 0, vrz: 0,
-      rx: 0, vrx: 0,
-      ry: 0, vry: 0,
-      spin: 0, vspin: 0
-    };
-    var drag = { active: false, pointerId: -1, grabOffX: 0, grabOffY: 0, targetX: 500, targetY: 165, startX: 0, startY: 0, moved: false };
-    var hover = { x: 0, y: 0, active: false };
-    var initialized = false;
-    var clock = 0;
-    var lastTs = performance.now();
-
-    function measureHero(resetIntro) {
-      var hRect = heroEl.getBoundingClientRect();
-      if (!hRect.width || !hRect.height) return;
-      metrics.w = hRect.width;
-      metrics.h = hRect.height;
-      // Always use unrotated layout offsetWidth/offsetHeight so 3D rotation never skews alignment
-      metrics.cardW = card.offsetWidth || Math.max(164, Math.min(246, hRect.width * 0.215));
-      metrics.cardH = card.offsetHeight || metrics.cardW * (2.25 / 1.6);
-      metrics.anchorX = hRect.width * 0.5;
-      metrics.restY = Math.max(105, Math.min(200, hRect.height * 0.235));
-
-      if (!initialized || resetIntro) {
-        initialized = true;
-        body.x = metrics.anchorX + (isReduced ? 0 : 16);
-        body.y = isReduced ? metrics.restY : metrics.restY - 52;
-        body.vx = isReduced ? 0 : -40;
-        body.vy = 0;
-        body.rz = isReduced ? 0 : -6;
-        body.ry = isReduced ? 0 : -14;
-        for (var j = 0; j <= JOINTS; j++) {
-          var t = j / JOINTS;
-          var nx = metrics.anchorX + (body.x - metrics.anchorX) * t;
-          var ny = -6 + (body.y + 6) * t;
-          nodes[j].x = nx;
-          nodes[j].y = ny;
-          prevNodes[j].x = nx;
-          prevNodes[j].y = ny;
-        }
-      }
-    }
-
-    measureHero(true);
-    window.addEventListener("resize", function () { measureHero(false); });
-
-    function drawStaticPose() {
-      measureHero(false);
-      var cx = metrics.anchorX;
-      var cy = metrics.restY;
-      var d = "M " + cx.toFixed(1) + " -6 L " + cx.toFixed(1) + " " + (cy + 6).toFixed(1);
-      if (pathShadow) pathShadow.setAttribute("d", d);
-      if (pathMain) pathMain.setAttribute("d", d);
-      if (pathWeave) pathWeave.setAttribute("d", d);
-      hardware.style.transform = "translate3d(" + (cx - 20).toFixed(1) + "px, " + (cy - 8).toFixed(1) + "px, 0)";
-      pendulum.style.transform = "translate3d(" + (cx - metrics.cardW * 0.5).toFixed(1) + "px, " + (cy + 10).toFixed(1) + "px, 0)";
-    }
-
-    if (isReduced) {
-      drawStaticPose();
-      return;
-    }
-
-    heroEl.addEventListener("pointermove", function (e) {
-      var r = heroEl.getBoundingClientRect();
-      hover.x = (e.clientX - r.left) / Math.max(1, r.width) - 0.5;
-      hover.y = (e.clientY - r.top) / Math.max(1, r.height) - 0.5;
-      hover.active = true;
-    }, { passive: true });
-
-    heroEl.addEventListener("pointerleave", function () {
-      hover.active = false;
-      hover.x = 0;
-      hover.y = 0;
+  // 5. Original Three.js WebGL Lanyard Engine (Direct from client Lanyard.tsx)
+  var lanyardStage = document.getElementById("edLanyardStage");
+  if (lanyardStage && typeof window.mountEditorialLanyard === "function") {
+    var lanyardImg = lanyardStage.getAttribute("data-front-image") || "";
+    var lanyardLen = parseFloat(lanyardStage.getAttribute("data-strap-length") || "0.62");
+    window.mountEditorialLanyard(lanyardStage, {
+      frontImage: lanyardImg,
+      backImage: lanyardImg,
+      strapLength: isNaN(lanyardLen) ? 0.62 : lanyardLen,
+      breeze: 0,
+      intro: false,
+      interactive: true
     });
-
-    card.addEventListener("pointerdown", function (e) {
-      measureHero(false);
-      var r = heroEl.getBoundingClientRect();
-      var px = e.clientX - r.left;
-      var py = e.clientY - r.top;
-      drag.active = true;
-      drag.pointerId = e.pointerId;
-      drag.grabOffX = px - body.x;
-      drag.grabOffY = py - body.y;
-      drag.targetX = body.x;
-      drag.targetY = body.y;
-      drag.startX = e.clientX;
-      drag.startY = e.clientY;
-      drag.moved = false;
-      card.classList.add("is-dragging");
-      if (card.setPointerCapture) {
-        try { card.setPointerCapture(e.pointerId); } catch (_) {}
-      }
-      e.stopPropagation();
-      e.preventDefault();
-    });
-
-    window.addEventListener("pointermove", function (e) {
-      if (!drag.active) return;
-      var dx = e.clientX - drag.startX;
-      var dy = e.clientY - drag.startY;
-      if (Math.hypot(dx, dy) > 5) drag.moved = true;
-      var r = heroEl.getBoundingClientRect();
-      var rawX = e.clientX - r.left - drag.grabOffX;
-      var rawY = e.clientY - r.top - drag.grabOffY;
-      drag.targetX = Math.max(metrics.cardW * 0.25, Math.min(metrics.w - metrics.cardW * 0.25, rawX));
-      drag.targetY = Math.max(24, Math.min(metrics.h - metrics.cardH * 0.35, rawY));
-    }, { passive: true });
-
-    function stateKick() {
-      body.vspin += 960;
-      body.vy -= 220;
-      body.vrx += 140;
+    if (lanyardStage.querySelector("canvas.lanyard-canvas")) {
+      lanyardStage.classList.add("has-webgl");
     }
-
-    function endDrag(e) {
-      if (!drag.active) return;
-      drag.active = false;
-      card.classList.remove("is-dragging");
-      if (card.releasePointerCapture && e && e.pointerId !== undefined) {
-        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
-      }
-      if (!drag.moved) {
-        stateKick();
-      } else {
-        body.vrz += -body.vx * 0.045;
-        body.vry += body.vx * 0.075;
-      }
-    }
-
-    window.addEventListener("pointerup", endDrag);
-    window.addEventListener("pointercancel", endDrag);
-
-    function buildSmoothRopePath(pts) {
-      if (pts.length < 2) return "";
-      var d = "M " + pts[0].x.toFixed(1) + " " + pts[0].y.toFixed(1);
-      for (var i = 1; i < pts.length - 1; i++) {
-        var mx = (pts[i].x + pts[i + 1].x) * 0.5;
-        var my = (pts[i].y + pts[i + 1].y) * 0.5;
-        d += " Q " + pts[i].x.toFixed(1) + " " + pts[i].y.toFixed(1) + " " + mx.toFixed(1) + " " + my.toFixed(1);
-      }
-      var last = pts[pts.length - 1];
-      d += " L " + last.x.toFixed(1) + " " + last.y.toFixed(1);
-      return d;
-    }
-
-    function stepLanyard(now) {
-      var dt = Math.min(0.032, Math.max(0.001, (now - lastTs) / 1000));
-      lastTs = now;
-      clock += dt;
-
-      var breezeX = Math.sin(clock * 1.45) * 42 + Math.sin(clock * 2.35) * 18;
-      var breezeY = Math.cos(clock * 1.1) * 10;
-
-      if (drag.active) {
-        var nextVx = (drag.targetX - body.x) * 20;
-        var nextVy = (drag.targetY - body.y) * 20;
-        body.vx = body.vx * 0.55 + nextVx * 0.45;
-        body.vy = body.vy * 0.55 + nextVy * 0.45;
-        body.x += (drag.targetX - body.x) * Math.min(1, dt * 26);
-        body.y += (drag.targetY - body.y) * Math.min(1, dt * 26);
-      } else {
-        var dxAnchor = body.x - metrics.anchorX;
-        var dyAnchor = body.y - (-6);
-        var dist = Math.hypot(dxAnchor, dyAnchor) || 1;
-        var restDist = metrics.restY + 6;
-        var fx = 0;
-        var fy = 980;
-
-        if (dist > restDist) {
-          var stretch = dist - restDist;
-          var tension = stretch * 38;
-          fx -= (dxAnchor / dist) * tension;
-          fy -= (dyAnchor / dist) * tension;
-        } else {
-          fx -= dxAnchor * 6.5;
-          fy -= (body.y - metrics.restY) * 18;
-        }
-
-        fx += breezeX;
-        fy += breezeY;
-
-        body.vx += fx * dt;
-        body.vy += fy * dt;
-        body.vx *= Math.exp(-2.85 * dt);
-        body.vy *= Math.exp(-3.4 * dt);
-        body.x += body.vx * dt;
-        body.y += body.vy * dt;
-      }
-
-      body.x = Math.max(metrics.cardW * 0.2, Math.min(metrics.w - metrics.cardW * 0.2, body.x));
-      body.y = Math.max(12, Math.min(metrics.h - metrics.cardH * 0.28, body.y));
-
-      var anchorY = -6;
-      var endX = body.x;
-      var endY = body.y + 4;
-      var totalRopeDist = Math.hypot(endX - metrics.anchorX, endY - anchorY);
-      var segLen = Math.max(totalRopeDist, metrics.restY + 10) / JOINTS;
-
-      nodes[0].x = metrics.anchorX;
-      nodes[0].y = anchorY;
-      nodes[JOINTS].x = endX;
-      nodes[JOINTS].y = endY;
-
-      for (var i = 1; i < JOINTS; i++) {
-        var vx = (nodes[i].x - prevNodes[i].x) * 0.88;
-        var vy = (nodes[i].y - prevNodes[i].y) * 0.88;
-        prevNodes[i].x = nodes[i].x;
-        prevNodes[i].y = nodes[i].y;
-        nodes[i].x += vx + breezeX * 0.004;
-        nodes[i].y += vy + 980 * dt * dt * 0.65;
-      }
-
-      for (var iter = 0; iter < 5; iter++) {
-        nodes[0].x = metrics.anchorX;
-        nodes[0].y = anchorY;
-        nodes[JOINTS].x = endX;
-        nodes[JOINTS].y = endY;
-        for (var j = 0; j < JOINTS; j++) {
-          var a = nodes[j];
-          var b = nodes[j + 1];
-          var sx = b.x - a.x;
-          var sy = b.y - a.y;
-          var d = Math.hypot(sx, sy) || 0.001;
-          var diff = (d - segLen) / d;
-          if (j === 0) {
-            b.x -= sx * diff;
-            b.y -= sy * diff;
-          } else if (j + 1 === JOINTS) {
-            a.x += sx * diff;
-            a.y += sy * diff;
-          } else {
-            a.x += sx * diff * 0.5;
-            a.y += sy * diff * 0.5;
-            b.x -= sx * diff * 0.5;
-            b.y -= sy * diff * 0.5;
-          }
-        }
-      }
-
-      var ropeDx = nodes[JOINTS].x - nodes[JOINTS - 1].x;
-      var ropeDy = nodes[JOINTS].y - nodes[JOINTS - 1].y;
-      var strapAngleRad = Math.atan2(ropeDx, Math.max(10, ropeDy));
-      var strapAngleDeg = -strapAngleRad * (180 / Math.PI);
-      var targetZ = strapAngleDeg * 0.72 - body.vx * 0.022 + Math.sin(clock * 1.45) * 1.6;
-      var targetY = Math.sin(clock * 1.05) * 9 + (hover.active && !drag.active ? hover.x * 26 : 0) + body.vx * 0.032;
-      var targetX = Math.cos(clock * 0.9) * 3 + (hover.active && !drag.active ? -hover.y * 18 : 0) - Math.min(18, Math.max(-18, (body.y - metrics.restY) * 0.09));
-
-      var kRot = 120;
-      var dRot = 9.5;
-      body.vrz += (kRot * (targetZ - body.rz) - dRot * body.vrz) * dt;
-      body.vry += (kRot * (targetY - body.ry) - dRot * body.vry) * dt;
-      body.vrx += (kRot * (targetX - body.rx) - dRot * body.vrx) * dt;
-      body.rz += body.vrz * dt;
-      body.ry += body.vry * dt;
-      body.rx += body.vrx * dt;
-
-      if (Math.abs(body.spin) > 0.1 || Math.abs(body.vspin) > 0.5) {
-        body.vspin *= Math.exp(-3.4 * dt);
-        body.spin += body.vspin * dt;
-        if (Math.abs(body.vspin) < 12) {
-          var nearest = Math.round(body.spin / 360) * 360;
-          body.vspin += (nearest - body.spin) * 30 * dt;
-          body.spin += (nearest - body.spin) * 8 * dt;
-          if (Math.abs(nearest - body.spin) < 0.2 && Math.abs(body.vspin) < 1) {
-            body.spin = 0;
-            body.vspin = 0;
-          }
-        }
-      }
-
-      // Lock SVG strap endpoint inside the clamp body so it NEVER detaches at any angle
-      var sinC = Math.sin(strapAngleRad);
-      var cosC = Math.cos(strapAngleRad);
-      var ropePts = [];
-      for (var rp = 0; rp < JOINTS; rp++) {
-        ropePts.push({ x: nodes[rp].x, y: nodes[rp].y });
-      }
-      ropePts.push({ x: body.x + sinC * 6, y: body.y + cosC * 6 });
-
-      var ropePath = buildSmoothRopePath(ropePts);
-      if (pathShadow) pathShadow.setAttribute("d", ropePath);
-      if (pathMain) pathMain.setAttribute("d", ropePath);
-      if (pathWeave) pathWeave.setAttribute("d", ropePath);
-
-      // Position clamp aligned exactly with strap tangent at (body.x, body.y)
-      hardware.style.transform =
-        "translate3d(" + (body.x - 20).toFixed(2) + "px, " + (body.y - 8).toFixed(2) + "px, 0) " +
-        "rotateZ(" + strapAngleDeg.toFixed(2) + "deg)";
-
-      // Position ring & card pivoted right at the clamp's bottom eyelet hole!
-      var eyeX = body.x + sinC * 18;
-      var eyeY = body.y + cosC * 18;
-      var tx = eyeX - metrics.cardW * 0.5;
-      pendulum.style.transform =
-        "translate3d(" + tx.toFixed(2) + "px, " + (eyeY - 6).toFixed(2) + "px, 0) " +
-        "rotateZ(" + body.rz.toFixed(2) + "deg)";
-      card.style.transform =
-        "rotateX(" + body.rx.toFixed(2) + "deg) " +
-        "rotateY(" + (body.ry + body.spin).toFixed(2) + "deg)";
-
-      if (glare) {
-        var gx = 50 + (body.ry % 90) * 0.65;
-        var gy = 28 + body.rx * 1.25;
-        glare.style.setProperty("--gx", Math.max(5, Math.min(95, gx)).toFixed(1) + "%");
-        glare.style.setProperty("--gy", Math.max(5, Math.min(95, gy)).toFixed(1) + "%");
-      }
-
-      requestAnimationFrame(stepLanyard);
-    }
-
-    requestAnimationFrame(stepLanyard);
   }
-  initLanyardPhysics();
 
   // 6. Exact TechText Blueprint Canvas Engine for "PORTFOLIO" Wordmark (Ported from TechText.tsx)
   function initTechText() {
