@@ -395,12 +395,12 @@ export function generateEditorialStaticHtml(data, helpers) {
           <path id="edLanyardStrapWeave" class="ed-lanyard-strap-weave" d="" />
         </svg>
         <div class="ed-lanyard-stage" id="edLanyardStage">
+          <div class="ed-lanyard-hardware" id="edLanyardHardware">
+            <div class="ed-lanyard-clamp"></div>
+            <div class="ed-lanyard-eyelet"></div>
+          </div>
           <div class="ed-lanyard-pendulum" id="edLanyardPendulum">
-            <div class="ed-lanyard-hardware" id="edLanyardHardware">
-              <div class="ed-lanyard-clamp"></div>
-              <div class="ed-lanyard-eyelet"></div>
-              <div class="ed-lanyard-ring"></div>
-            </div>
+            <div class="ed-lanyard-ring"></div>
             <div class="ed-lanyard-card" id="edLanyardCard" title="Drag & pull to swing or click to spin">
               <div class="ed-lanyard-card-front">
                 <div class="ed-lanyard-glare" id="edLanyardGlare" aria-hidden="true"></div>
@@ -1802,20 +1802,25 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform-origin: 50% 0%;
+  transform-origin: 50% 6px;
   transform-style: preserve-3d;
   will-change: transform;
   pointer-events: none;
+  z-index: 30;
 }
 
 .ed-lanyard-hardware {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 6;
+  z-index: 33;
   pointer-events: none;
-  transform-origin: 50% 0%;
+  transform-origin: 50% 8px;
+  will-change: transform;
 }
 
 .ed-lanyard-clamp {
@@ -1832,17 +1837,19 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   height: 12px;
   border-radius: 50%;
   border: 2.5px solid #cbd5e1;
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(15, 23, 42, 0.35);
   margin-top: -4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .ed-lanyard-ring {
+  position: relative;
   width: 22px;
   height: 24px;
   border: 2.5px solid #e2e8f0;
   border-radius: 50%;
-  margin-top: -4px;
+  margin-top: 0;
+  z-index: 6;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
@@ -1850,8 +1857,9 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   position: relative;
   width: clamp(164px, 21.5vw, 246px);
   aspect-ratio: 1.6 / 2.25;
-  margin-top: -13px;
+  margin-top: -17px;
   transform-style: preserve-3d;
+  transform-origin: 50% 14px;
   touch-action: none;
   user-select: none;
   cursor: grab;
@@ -1873,8 +1881,8 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   box-shadow: 0 26px 52px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,13 A4.5,4.5 0 0 0 57.5,17.5 V18.5 A4.5,4.5 0 0 0 62,23 H98 A4.5,4.5 0 0 0 102.5,18.5 V17.5 A4.5,4.5 0 0 0 98,13 Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,13 A4.5,4.5 0 0 0 57.5,17.5 V18.5 A4.5,4.5 0 0 0 62,23 H98 A4.5,4.5 0 0 0 102.5,18.5 V17.5 A4.5,4.5 0 0 0 98,13 Z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,7 A3.5,3.5 0 0 0 58.5,10.5 V11.5 A3.5,3.5 0 0 0 62,15 H98 A3.5,3.5 0 0 0 101.5,11.5 V10.5 A3.5,3.5 0 0 0 98,7 Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 225' preserveAspectRatio='none'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0,0 H160 V225 H0 Z M62,7 A3.5,3.5 0 0 0 58.5,10.5 V11.5 A3.5,3.5 0 0 0 62,15 H98 A3.5,3.5 0 0 0 101.5,11.5 V10.5 A3.5,3.5 0 0 0 98,7 Z'/%3E%3C/svg%3E");
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
@@ -1899,10 +1907,10 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
 
 .ed-lanyard-slot-rim {
   position: absolute;
-  left: 36%;
-  width: 28%;
-  top: 5.5%;
-  height: 4.5%;
+  left: 36.5%;
+  width: 27%;
+  top: 3.1%;
+  height: 3.6%;
   border-radius: 999px;
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   pointer-events: none;
@@ -3414,16 +3422,17 @@ export function generateEditorialStaticJs(data) {
     });
   }
 
-  // 5. Interactive 3D Verlet-Rope Lanyard Engine (Free-Pull Elastic Strap, Pendulum Physics & 3D Flip/Spin)
+  // 5. Interactive 3D Verlet-Rope Lanyard Engine (Zero-Gap Clamp Kinematics, Free-Pull Elastic Strap & 3D Flip/Spin)
   function initLanyardPhysics() {
     var heroEl = document.getElementById("hero");
+    var hardware = document.getElementById("edLanyardHardware");
     var pendulum = document.getElementById("edLanyardPendulum");
     var card = document.getElementById("edLanyardCard");
     var glare = document.getElementById("edLanyardGlare");
     var pathShadow = document.getElementById("edLanyardStrapShadow");
     var pathMain = document.getElementById("edLanyardStrapPath");
     var pathWeave = document.getElementById("edLanyardStrapWeave");
-    if (!heroEl || !pendulum || !card) return;
+    if (!heroEl || !hardware || !pendulum || !card) return;
 
     var JOINTS = 4;
     var nodes = [];
@@ -3450,27 +3459,27 @@ export function generateEditorialStaticJs(data) {
 
     function measureHero(resetIntro) {
       var hRect = heroEl.getBoundingClientRect();
-      var cRect = card.getBoundingClientRect();
       if (!hRect.width || !hRect.height) return;
       metrics.w = hRect.width;
       metrics.h = hRect.height;
-      metrics.cardW = cRect.width || Math.max(164, Math.min(246, hRect.width * 0.215));
-      metrics.cardH = cRect.height || metrics.cardW * (2.25 / 1.6);
+      // Always use unrotated layout offsetWidth/offsetHeight so 3D rotation never skews alignment
+      metrics.cardW = card.offsetWidth || Math.max(164, Math.min(246, hRect.width * 0.215));
+      metrics.cardH = card.offsetHeight || metrics.cardW * (2.25 / 1.6);
       metrics.anchorX = hRect.width * 0.5;
       metrics.restY = Math.max(105, Math.min(200, hRect.height * 0.235));
 
       if (!initialized || resetIntro) {
         initialized = true;
-        body.x = metrics.anchorX + (isReduced ? 0 : 18);
+        body.x = metrics.anchorX + (isReduced ? 0 : 16);
         body.y = isReduced ? metrics.restY : metrics.restY - 52;
-        body.vx = isReduced ? 0 : -45;
+        body.vx = isReduced ? 0 : -40;
         body.vy = 0;
-        body.rz = isReduced ? 0 : -8;
+        body.rz = isReduced ? 0 : -6;
         body.ry = isReduced ? 0 : -14;
         for (var j = 0; j <= JOINTS; j++) {
           var t = j / JOINTS;
           var nx = metrics.anchorX + (body.x - metrics.anchorX) * t;
-          var ny = -4 + (body.y + 4) * t;
+          var ny = -6 + (body.y + 6) * t;
           nodes[j].x = nx;
           nodes[j].y = ny;
           prevNodes[j].x = nx;
@@ -3486,11 +3495,12 @@ export function generateEditorialStaticJs(data) {
       measureHero(false);
       var cx = metrics.anchorX;
       var cy = metrics.restY;
-      var d = "M " + cx.toFixed(1) + " -6 L " + cx.toFixed(1) + " " + (cy + 10).toFixed(1);
+      var d = "M " + cx.toFixed(1) + " -6 L " + cx.toFixed(1) + " " + (cy + 6).toFixed(1);
       if (pathShadow) pathShadow.setAttribute("d", d);
       if (pathMain) pathMain.setAttribute("d", d);
       if (pathWeave) pathWeave.setAttribute("d", d);
-      pendulum.style.transform = "translate3d(" + (cx - metrics.cardW * 0.5).toFixed(1) + "px, " + cy.toFixed(1) + "px, 0)";
+      hardware.style.transform = "translate3d(" + (cx - 20).toFixed(1) + "px, " + (cy - 8).toFixed(1) + "px, 0)";
+      pendulum.style.transform = "translate3d(" + (cx - metrics.cardW * 0.5).toFixed(1) + "px, " + (cy + 10).toFixed(1) + "px, 0)";
     }
 
     if (isReduced) {
@@ -3631,9 +3641,9 @@ export function generateEditorialStaticJs(data) {
 
       var anchorY = -6;
       var endX = body.x;
-      var endY = body.y + 8;
+      var endY = body.y + 4;
       var totalRopeDist = Math.hypot(endX - metrics.anchorX, endY - anchorY);
-      var segLen = Math.max(totalRopeDist, metrics.restY + 14) / JOINTS;
+      var segLen = Math.max(totalRopeDist, metrics.restY + 10) / JOINTS;
 
       nodes[0].x = metrics.anchorX;
       nodes[0].y = anchorY;
@@ -3678,8 +3688,9 @@ export function generateEditorialStaticJs(data) {
 
       var ropeDx = nodes[JOINTS].x - nodes[JOINTS - 1].x;
       var ropeDy = nodes[JOINTS].y - nodes[JOINTS - 1].y;
-      var ropeAngleDeg = Math.atan2(ropeDx, Math.max(10, ropeDy)) * (-180 / Math.PI);
-      var targetZ = ropeAngleDeg * 0.65 - body.vx * 0.025 + Math.sin(clock * 1.45) * 1.6;
+      var strapAngleRad = Math.atan2(ropeDx, Math.max(10, ropeDy));
+      var strapAngleDeg = -strapAngleRad * (180 / Math.PI);
+      var targetZ = strapAngleDeg * 0.72 - body.vx * 0.022 + Math.sin(clock * 1.45) * 1.6;
       var targetY = Math.sin(clock * 1.05) * 9 + (hover.active && !drag.active ? hover.x * 26 : 0) + body.vx * 0.032;
       var targetX = Math.cos(clock * 0.9) * 3 + (hover.active && !drag.active ? -hover.y * 18 : 0) - Math.min(18, Math.max(-18, (body.y - metrics.restY) * 0.09));
 
@@ -3706,14 +3717,31 @@ export function generateEditorialStaticJs(data) {
         }
       }
 
-      var ropePath = buildSmoothRopePath(nodes);
+      // Lock SVG strap endpoint inside the clamp body so it NEVER detaches at any angle
+      var sinC = Math.sin(strapAngleRad);
+      var cosC = Math.cos(strapAngleRad);
+      var ropePts = [];
+      for (var rp = 0; rp < JOINTS; rp++) {
+        ropePts.push({ x: nodes[rp].x, y: nodes[rp].y });
+      }
+      ropePts.push({ x: body.x + sinC * 6, y: body.y + cosC * 6 });
+
+      var ropePath = buildSmoothRopePath(ropePts);
       if (pathShadow) pathShadow.setAttribute("d", ropePath);
       if (pathMain) pathMain.setAttribute("d", ropePath);
       if (pathWeave) pathWeave.setAttribute("d", ropePath);
 
-      var tx = body.x - metrics.cardW * 0.5;
+      // Position clamp aligned exactly with strap tangent at (body.x, body.y)
+      hardware.style.transform =
+        "translate3d(" + (body.x - 20).toFixed(2) + "px, " + (body.y - 8).toFixed(2) + "px, 0) " +
+        "rotateZ(" + strapAngleDeg.toFixed(2) + "deg)";
+
+      // Position ring & card pivoted right at the clamp's bottom eyelet hole!
+      var eyeX = body.x + sinC * 18;
+      var eyeY = body.y + cosC * 18;
+      var tx = eyeX - metrics.cardW * 0.5;
       pendulum.style.transform =
-        "translate3d(" + tx.toFixed(2) + "px, " + body.y.toFixed(2) + "px, 0) " +
+        "translate3d(" + tx.toFixed(2) + "px, " + (eyeY - 6).toFixed(2) + "px, 0) " +
         "rotateZ(" + body.rz.toFixed(2) + "deg)";
       card.style.transform =
         "rotateX(" + body.rx.toFixed(2) + "deg) " +
@@ -4201,8 +4229,8 @@ export function generateEditorialStaticJs(data) {
       for (var g = 0; g < glyphs.length; g++) {
         var item = glyphs[g];
         var tOut = g === focus && g !== dragging ? 1 : 0;
-        item.outline = approach(item.outline, tOut, dt, 0.09);
-        if (Math.abs(item.outline - tOut) <= 0.002) item.outline = tOut;
+        item.outline = approach(item.outline, tOut, dt, 0.035);
+        if (Math.abs(item.outline - tOut) <= 0.015) item.outline = tOut;
       }
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
