@@ -3,6 +3,24 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { exportedPortfolioSchema } from "../validations/portfolio.validation.js";
+import {
+  generateEditorialStaticHtml,
+  generateEditorialStaticCss,
+  generateEditorialStaticJs,
+} from "./editorialExport.service.js";
+import {
+  getEditorialTemplateJsx,
+  getLanyardJsx,
+  getLanyardCss,
+  getFoldTextJsx,
+  getFoldTextCss,
+  getTechTextJsx,
+  getTechTextCss,
+  getStaggeredMenuJsx,
+  getStaggeredMenuCss,
+  getTechIconJsx,
+  getEditorialSkillsAdapterJs,
+} from "./editorialReactModules.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,6 +141,13 @@ function bundlePortfolioAssets(data, archive, isReactSource = false) {
         if (processedProj !== null) {
           proj.imageUrl = processedProj;
         }
+      }
+      if (Array.isArray(proj.images)) {
+        proj.images = proj.images.map((img, imgIdx) => {
+          if (!img) return img;
+          const processedImg = processImage(img, `project-${idx + 1}-img-${imgIdx + 1}`);
+          return processedImg !== null ? processedImg : img;
+        });
       }
     });
   }
@@ -334,7 +359,7 @@ function adjustBrightness(hex, percent) {
 
 const GOOGLE_FONTS_LINK_TAG = `<link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fira+Code:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@400;600;700&family=Fira+Code:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">`;
 
 /**
  * Sanitizes portfolio data to exclude private DB metadata or internal IDs.
@@ -350,14 +375,26 @@ export function sanitizePortfolioData(portfolio) {
       ? "creative"
       : rawTemplate === "developer"
       ? "developer"
-      : rawTemplate === "minimal" || rawTemplate === "executive" || rawTemplate === "editorial"
+      : rawTemplate === "minimal" || rawTemplate === "executive"
       ? "minimal"
+      : rawTemplate === "editorial"
+      ? "editorial"
       : "devport";
 
   const theme = portfolio.design?.theme || "system";
   const primaryColor =
     portfolio.design?.primaryColor ||
-    (template === "spotlight" ? "#e3141f" : template === "poster" ? "#e11d2a" : template === "creative" ? "#9333ea" : template === "devport" ? "#06b6d4" : "#2563eb");
+    (template === "spotlight"
+      ? "#e3141f"
+      : template === "poster"
+      ? "#e11d2a"
+      : template === "creative"
+      ? "#9333ea"
+      : template === "devport"
+      ? "#06b6d4"
+      : template === "editorial"
+      ? "#8B151B"
+      : "#2563eb");
   const fontFamily = portfolio.design?.fontFamily || "Inter";
 
   const cleanData = {
@@ -402,6 +439,7 @@ export function sanitizePortfolioData(portfolio) {
       endDate: ed.endDate || ed.graduationDate || "",
       graduationDate: ed.graduationDate || ed.endDate || "",
       grade: ed.grade || "",
+      description: ed.description || "",
     })),
     projects: (portfolio.projects || []).map((p) => ({
       title: p.title || "",
@@ -410,6 +448,7 @@ export function sanitizePortfolioData(portfolio) {
       liveUrl: p.liveUrl || p.demoUrl || "",
       repoUrl: p.repoUrl || p.githubUrl || "",
       imageUrl: p.imageUrl || "",
+      images: Array.isArray(p.images) ? p.images : [],
       featured: Boolean(p.featured),
       role: p.role || "",
       highlights: Array.isArray(p.highlights) ? p.highlights : [],
@@ -513,6 +552,7 @@ export async function exportPortfolioAsSourceZip(rawPortfolio, res) {
   bundlePortfolioAssets(data, archive, true);
 
   const selectedTemplate = data.design.template;
+  const isEditorial = selectedTemplate === "editorial";
 
   // 1. package.json
   const packageJson = {
@@ -527,6 +567,7 @@ export async function exportPortfolioAsSourceZip(rawPortfolio, res) {
     },
     dependencies: {
       clsx: "^2.1.1",
+      ...(isEditorial ? { gsap: "^3.15.1", three: "^0.187.0" } : {}),
       "lucide-react": "^1.28.0",
       react: "^19.2.8",
       "react-dom": "^19.2.8",
@@ -555,7 +596,11 @@ export default defineConfig({
 
   // 3. index.html
   const isLight = data.design.theme === "light";
+  const isEditorialLight = isEditorial && data.design.theme !== "dark";
   const fontFamilyCss = getFontFamilyCss(data.design.fontFamily);
+  const bodyClass = isEditorial
+    ? (isEditorialLight ? "bg-[#FDFBF7] text-[#0F172A]" : "bg-[#120F17] text-white")
+    : (isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100");
   const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -567,7 +612,7 @@ export default defineConfig({
     <meta name="description" content="${escapeHtml(data.publication.seoDescription)}" />
     ${GOOGLE_FONTS_LINK_TAG}
   </head>
-  <body class="${isLight ? "bg-[#f8fafc] text-neutral-900" : "bg-[#090a16] text-neutral-100"} antialiased selection:bg-cyan-500/30 selection:text-white">
+  <body class="${bodyClass} antialiased selection:bg-cyan-500/30 selection:text-white">
     <div id="root"></div>
     <script type="module" src="./src/main.jsx"></script>
   </body>
@@ -633,6 +678,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   archive.append(mainJsx, { name: "src/main.jsx" });
 
   // 7. src/App.jsx
+  const editorialImport = isEditorial
+    ? `import { EditorialTemplate } from "./components/templates/EditorialTemplate.jsx";\n`
+    : "";
+  const editorialMapEntry = isEditorial ? `  editorial: EditorialTemplate,\n` : "";
   const appJsx = `import React from "react";
 import portfolioData from "./portfolioData.json";
 import { ThemeWrapper } from "./components/common/ThemeWrapper.jsx";
@@ -642,7 +691,7 @@ import { DevPortTemplate } from "./components/templates/DevPortTemplate.jsx";
 import { ModernCreativeTemplate } from "./components/templates/ModernCreativeTemplate.jsx";
 import { DeveloperTemplate } from "./components/templates/DeveloperTemplate.jsx";
 import { MinimalTemplate } from "./components/templates/MinimalTemplate.jsx";
-
+${editorialImport}
 const TEMPLATE_MAP = {
   spotlight: SpotlightTemplate,
   poster: PosterTemplate,
@@ -650,7 +699,7 @@ const TEMPLATE_MAP = {
   creative: ModernCreativeTemplate,
   developer: DeveloperTemplate,
   minimal: MinimalTemplate,
-};
+${editorialMapEntry}};
 
 export default function App() {
   const templateKey = (portfolioData?.design?.template || "${selectedTemplate}").toLowerCase();
@@ -700,6 +749,20 @@ export default function App() {
   archive.append(getFullDeveloperTemplateJsx(), { name: "src/components/templates/DeveloperTemplate.jsx" });
   archive.append(getFullMinimalTemplateJsx(), { name: "src/components/templates/MinimalTemplate.jsx" });
 
+  if (isEditorial) {
+    archive.append(getTechIconJsx(), { name: "src/components/common/TechIcon.jsx" });
+    archive.append(getEditorialSkillsAdapterJs(), { name: "src/components/adapters/resumePortfolioAdapter.js" });
+    archive.append(getLanyardCss(), { name: "src/components/templates/Lanyard.css" });
+    archive.append(getLanyardJsx(), { name: "src/components/templates/Lanyard.jsx" });
+    archive.append(getFoldTextCss(), { name: "src/components/templates/FoldText.css" });
+    archive.append(getFoldTextJsx(), { name: "src/components/templates/FoldText.jsx" });
+    archive.append(getTechTextCss(), { name: "src/components/templates/TechText.css" });
+    archive.append(getTechTextJsx(), { name: "src/components/templates/TechText.jsx" });
+    archive.append(getStaggeredMenuCss(), { name: "src/components/templates/StaggeredMenu.css" });
+    archive.append(getStaggeredMenuJsx(), { name: "src/components/templates/StaggeredMenu.jsx" });
+    archive.append(getEditorialTemplateJsx(), { name: "src/components/templates/EditorialTemplate.jsx" });
+  }
+
   // 10. README.md & LICENSE
   archive.append(getSourceReadme(data), { name: "README.md" });
   archive.append(getLicenseText(data), { name: "LICENSE" });
@@ -718,6 +781,14 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
   bundlePortfolioAssets(data, archive, false);
 
   const template = data.design.template;
+  const editorialHelpers = {
+    escapeHtml,
+    sanitizeUrl,
+    getFontFamilyCss,
+    getStaticBackgroundEffectHtml,
+    getStaticBackgroundEffectCss,
+    GOOGLE_FONTS_LINK_TAG,
+  };
 
   // 1. Generate Template-Specific Static HTML
   let staticHtml;
@@ -731,6 +802,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticHtml = generateDeveloperStaticHtml(data);
   } else if (template === "minimal") {
     staticHtml = generateMinimalStaticHtml(data);
+  } else if (template === "editorial") {
+    staticHtml = generateEditorialStaticHtml(data, editorialHelpers);
   } else {
     // Default: DevPort
     staticHtml = generateDevPortStaticHtml(data);
@@ -749,6 +822,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticCss = generateDeveloperStaticCss(data);
   } else if (template === "minimal") {
     staticCss = generateMinimalStaticCss(data);
+  } else if (template === "editorial") {
+    staticCss = generateEditorialStaticCss(data, editorialHelpers);
   } else {
     staticCss = generateDevPortStaticCss(data);
   }
@@ -766,6 +841,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticJs = generateDeveloperStaticJs(data);
   } else if (template === "minimal") {
     staticJs = generateMinimalStaticJs(data);
+  } else if (template === "editorial") {
+    staticJs = generateEditorialStaticJs(data);
   } else {
     staticJs = generateDevPortStaticJs(data, template);
   }

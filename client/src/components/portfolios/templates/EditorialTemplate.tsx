@@ -462,6 +462,7 @@ export function EditorialTemplate({
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const isHidden = (sec: string) => hiddenSections.includes(sec);
+  const heroNextTarget = sectionOrder.find((sec) => sec !== "hero" && !isHidden(sec)) || "hero";
 
   // ---------------------------------------------------------------------------
   // SECTION MAP (Every slide implemented with pixel-accurate layout)
@@ -597,7 +598,7 @@ export function EditorialTemplate({
           </span>
           <div className="flex items-center gap-3">
             <a
-              href="#about"
+              href={`#${heroNextTarget}`}
               className="px-5 py-2 rounded-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 transition-all hover:scale-105 active:scale-95 text-xs shadow-lg"
               style={{ color: primaryColor }}
             >
@@ -2218,7 +2219,8 @@ export function EditorialTemplate({
           contain-intrinsic-size: 0 700px;
         }
 
-        .editorial-slide.is-visible {
+        .editorial-slide.is-visible,
+        .editorial-slide.ed-hero {
           opacity: 1;
           transform: translateY(0) scale(1);
         }

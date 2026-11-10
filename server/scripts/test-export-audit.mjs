@@ -63,7 +63,7 @@ function extractZip(buf, destDir) {
   }
 }
 
-const templates = ['spotlight', 'poster', 'devport', 'creative', 'developer', 'minimal'];
+const templates = ['spotlight', 'poster', 'devport', 'creative', 'developer', 'minimal', 'editorial'];
 const testBaseDir = path.resolve(process.cwd(), 'scratch', 'export_audit');
 
 console.log('Auditing Exported Packages across all templates...');

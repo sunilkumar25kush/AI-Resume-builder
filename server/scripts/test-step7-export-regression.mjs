@@ -237,6 +237,7 @@ const TEMPLATES_TO_TEST = [
   { id: "creative", name: "Modern 3D / Creative", primaryColor: "#9333ea" },
   { id: "developer", name: "Developer Terminal", primaryColor: "#38bdf8" },
   { id: "minimal", name: "Minimal Editorial", primaryColor: "#2563eb" },
+  { id: "editorial", name: "Crimson Editorial", primaryColor: "#8B151B" },
 ];
 
 const VIEWPORTS_TO_TEST = [
@@ -505,7 +506,7 @@ export async function runStep7RegressionTests() {
       const brokenImages = images.filter((img) => img.naturalWidth === 0 && !img.src.startsWith("data:image/svg"));
 
       // 6. Back-to-Top Presence
-      const hasScrollTopBtn = !!document.querySelector("#scrollTopBtn, .btn-scroll-top, .poster-btn-top, .spotlight-scroll-top, .creative-top-btn, .term-top-btn, .min-top-btn");
+      const hasScrollTopBtn = !!document.querySelector("#scrollTopBtn, .btn-scroll-top, .poster-btn-top, .spotlight-scroll-top, .creative-top-btn, .term-top-btn, .min-top-btn, .ed-scroll-top");
 
       return {
         hasName,
