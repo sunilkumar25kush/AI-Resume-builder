@@ -391,10 +391,11 @@ export function generateEditorialStaticHtml(data, helpers) {
         <!-- Swinging Lanyard Pass Card -->
         <div class="ed-lanyard-stage">
           <div class="ed-lanyard-pendulum" id="edLanyardPendulum">
-            <div class="ed-lanyard-strap"><span>PASS</span></div>
+            <div class="ed-lanyard-strap" id="edLanyardStrap"><span>PASS</span></div>
             <div class="ed-lanyard-clamp"></div>
             <div class="ed-lanyard-ring"></div>
-            <div class="ed-lanyard-card">
+            <div class="ed-lanyard-card" id="edLanyardCard" title="Drag to swing or click to spin">
+              <div class="ed-lanyard-glare" id="edLanyardGlare" aria-hidden="true"></div>
               <div class="ed-lanyard-slot"></div>
               <div class="ed-lanyard-photo-wrap">
                 ${
@@ -415,9 +416,10 @@ export function generateEditorialStaticHtml(data, helpers) {
           </div>
         </div>
 
-        <!-- Center Background Giant Condensed Display Title -->
+        <!-- Center Background Giant Condensed Display Title (Interactive TechText Canvas + Fallback) -->
         <div class="ed-hero-wordmark-wrap" aria-hidden="true">
-          <div class="ed-hero-wordmark">PORTFOLIO</div>
+          <canvas id="edTechTextCanvas" class="ed-tech-canvas" data-text="PORTFOLIO"></canvas>
+          <div class="ed-hero-wordmark" id="edHeroWordmarkFallback">PORTFOLIO</div>
         </div>
 
         <!-- Bottom Bar -->
@@ -433,7 +435,7 @@ export function generateEditorialStaticHtml(data, helpers) {
     about: `
       <section id="about" class="editorial-slide ed-paper">
         <div class="ed-slide-header">
-          <h2 class="ed-display-heading">${escapeHtml(customLabels.about || "ABOUT ME")}</h2>
+          <h2 class="ed-display-heading ed-fold-target">${escapeHtml(customLabels.about || "ABOUT ME")}</h2>
           <span class="ed-slide-num">02</span>
         </div>
 
@@ -460,7 +462,7 @@ export function generateEditorialStaticHtml(data, helpers) {
           <div class="ed-col-7 ed-about-info">
             <div>
               <p class="ed-script-lg">${escapeHtml(firstName)}</p>
-              <h3 class="ed-display-sub">${escapeHtml(lastName.toUpperCase())}</h3>
+              <h3 class="ed-display-sub ed-fold-target">${escapeHtml(lastName.toUpperCase())}</h3>
             </div>
             <p class="ed-body-copy">${escapeHtml(bio)}</p>
             <div class="ed-core-expertise">
@@ -486,7 +488,7 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-slide-header">
           <div>
             <p class="ed-script-md">My</p>
-            <h2 class="ed-display-heading">${escapeHtml(customLabels.experience || "EXPERIENCES")}</h2>
+            <h2 class="ed-display-heading ed-fold-target">${escapeHtml(customLabels.experience || "EXPERIENCES")}</h2>
           </div>
           <span class="ed-slide-num">03</span>
         </div>
@@ -557,7 +559,7 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-slide-header">
           <div>
             <p class="ed-script-md">My</p>
-            <h2 class="ed-display-heading">${escapeHtml(customLabels.education || "EDUCATION")}</h2>
+            <h2 class="ed-display-heading ed-fold-target">${escapeHtml(customLabels.education || "EDUCATION")}</h2>
           </div>
           <span class="ed-slide-num">04</span>
         </div>
@@ -634,7 +636,7 @@ export function generateEditorialStaticHtml(data, helpers) {
             </div>
 
             <div class="ed-col-6 ed-center ed-proj-cover-title-col">
-              <h2 class="ed-proj-giant-title">${escapeHtml(customLabels.projects || "PROJECTS")}</h2>
+              <h2 class="ed-proj-giant-title ed-fold-target">${escapeHtml(customLabels.projects || "PROJECTS")}</h2>
               <p class="ed-proj-cover-sub">Each numbered badge (#01 &ndash; #04) maps directly to your uploaded project photos.</p>
             </div>
 
@@ -673,7 +675,7 @@ export function generateEditorialStaticHtml(data, helpers) {
               <div class="ed-proj-head-row">
                 <div>
                   <p class="ed-script-lg">First</p>
-                  <h3 class="ed-display-sub">PROJECT</h3>
+                  <h3 class="ed-display-sub ed-fold-target">PROJECT</h3>
                 </div>
                 <span class="ed-pill-badge">PROJECT 01</span>
               </div>
@@ -786,7 +788,7 @@ export function generateEditorialStaticHtml(data, helpers) {
               <div class="ed-proj-head-row-gap">
                 <div>
                   <p class="ed-script-lg">Second</p>
-                  <h3 class="ed-display-sub">PROJECT</h3>
+                  <h3 class="ed-display-sub ed-fold-target">PROJECT</h3>
                 </div>
                 <span class="ed-pill-badge">PROJECT 02</span>
               </div>
@@ -834,7 +836,7 @@ export function generateEditorialStaticHtml(data, helpers) {
             <div class="ed-col-4 ed-proj3-center">
               <span class="ed-pill-badge">PROJECT 0${projectNumber}</span>
               <p class="ed-script-lg">${escapeHtml(scriptLabel)}</p>
-              <h3 class="ed-display-sub">PROJECT</h3>
+              <h3 class="ed-display-sub ed-fold-target">PROJECT</h3>
               <h4 class="ed-proj-name-sm">${escapeHtml(proj.title)}</h4>
               <p class="ed-body-copy">${escapeHtml(proj.description)}</p>
               <div class="ed-btn-row ed-center">
@@ -879,7 +881,7 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-slide-header">
           <div>
             <p class="ed-script-md">Verified</p>
-            <h2 class="ed-display-heading">${escapeHtml(customLabels.certifications || "CERTIFICATIONS")}</h2>
+            <h2 class="ed-display-heading ed-fold-target">${escapeHtml(customLabels.certifications || "CERTIFICATIONS")}</h2>
           </div>
           <span class="ed-pill-badge-ink">07</span>
         </div>
@@ -935,7 +937,7 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-slide-header">
           <div>
             <p class="ed-script-md">Specialized</p>
-            <h2 class="ed-display-heading">${escapeHtml(customLabels.skills || "TECHNICAL SKILLS")}</h2>
+            <h2 class="ed-display-heading ed-fold-target">${escapeHtml(customLabels.skills || "TECHNICAL SKILLS")}</h2>
           </div>
           <span class="ed-slide-num">08</span>
         </div>
@@ -974,7 +976,7 @@ export function generateEditorialStaticHtml(data, helpers) {
         <div class="ed-slide-header">
           <div>
             <p class="ed-script-md">Our</p>
-            <h2 class="ed-display-heading">CLIENT SAY</h2>
+            <h2 class="ed-display-heading ed-fold-target">CLIENT SAY</h2>
           </div>
           <span class="ed-slide-num">09</span>
         </div>
@@ -1036,7 +1038,7 @@ export function generateEditorialStaticHtml(data, helpers) {
           <div class="ed-col-7 ed-contact-right">
             <div>
               <p class="ed-script-white-lg">let&apos;s Connect</p>
-              <h2 class="ed-thankyou-title">${escapeHtml(customLabels.contact || "THANK YOU")}</h2>
+              <h2 class="ed-thankyou-title ed-fold-target">${escapeHtml(customLabels.contact || "THANK YOU")}</h2>
             </div>
 
             <div class="ed-contact-pills">
@@ -1077,7 +1079,7 @@ export function generateEditorialStaticHtml(data, helpers) {
       <section id="${escapeHtml(sec)}" class="editorial-slide ed-paper ed-custom-slide">
         <div>
           <p class="ed-script-md">Custom</p>
-          <h2 class="ed-display-heading">${escapeHtml(label.toUpperCase())}</h2>
+          <h2 class="ed-display-heading ed-fold-target">${escapeHtml(label.toUpperCase())}</h2>
         </div>
         <div class="ed-custom-card">
           <p>Editorial section for ${escapeHtml(label)}. Customize your content anytime in the portfolio editor.</p>
@@ -1563,6 +1565,65 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   transform: translateY(0) scale(1);
 }
 
+.editorial-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(480px circle at var(--mx, 50%) var(--my, 35%), rgba(255, 255, 255, 0.08), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.editorial-slide:hover::after {
+  opacity: 1;
+}
+
+/* FoldText 3D Paper Character Folding Engine */
+.ed-fold-target {
+  position: relative;
+}
+
+.fold-text-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fold-text-segment {
+  display: inline-block;
+  perspective: 700px;
+  vertical-align: baseline;
+}
+
+.fold-text-piece {
+  --fold-shade: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.58) 0%,
+    rgba(0, 0, 0, 0.22) 42%,
+    rgba(255, 255, 255, 0.26) 100%
+  );
+  position: relative;
+  display: inline-block;
+  backface-visibility: hidden;
+  transform-origin: 50% 0%;
+  will-change: transform, opacity;
+}
+
+.fold-text-piece::after {
+  content: attr(data-fold-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-image: var(--fold-shade);
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: var(--fold-crease, 0);
+}
+
 .ed-crimson {
   background-color: var(--ed-primary);
   color: #ffffff;
@@ -1622,6 +1683,7 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   background: #ffffff;
   top: -60px;
   right: 10%;
+  animation: edOrbFloatA 9s ease-in-out infinite;
 }
 
 .ed-orb-b {
@@ -1630,6 +1692,17 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   background: #000000;
   bottom: -80px;
   left: 5%;
+  animation: edOrbFloatB 11s ease-in-out infinite;
+}
+
+@keyframes edOrbFloatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-24px, 18px) scale(1.1); }
+}
+
+@keyframes edOrbFloatB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(24px, -20px) scale(1.08); }
 }
 
 .ed-hero-wordmark-wrap {
@@ -1644,6 +1717,13 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   user-select: none;
 }
 
+.ed-tech-canvas {
+  display: block;
+  width: 100%;
+  height: 440px;
+  max-height: 75%;
+}
+
 .ed-hero-wordmark {
   font-family: 'Bebas Neue', 'Anton', sans-serif;
   font-size: clamp(72px, 16vw, 200px);
@@ -1655,12 +1735,21 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   text-align: center;
 }
 
+.ed-hero-wordmark.is-canvas-active {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .ed-lanyard-stage {
   position: relative;
   z-index: 30;
   display: flex;
   justify-content: center;
   margin-top: -1.5rem;
+  perspective: 1100px;
+  perspective-origin: 50% 15%;
+  pointer-events: none;
 }
 
 @media (min-width: 640px) {
@@ -1673,15 +1762,20 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform-origin: top center;
+  transform-origin: 50% 0%;
+  transform-style: preserve-3d;
   animation: edLanyardSwing 5.5s ease-in-out infinite;
-  cursor: grab;
-  transition: transform 0.15s ease-out;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.ed-lanyard-pendulum.is-js-driven {
+  animation: none !important;
 }
 
 @keyframes edLanyardSwing {
-  0%, 100% { transform: rotate(-2.5deg); }
-  50% { transform: rotate(2.5deg); }
+  0%, 100% { transform: rotateZ(-3deg) rotateY(-6deg); }
+  50% { transform: rotateZ(3deg) rotateY(6deg); }
 }
 
 .ed-lanyard-strap {
@@ -1694,6 +1788,7 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transform-origin: 50% 0%;
 }
 
 @media (min-width: 640px) {
@@ -1730,6 +1825,8 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
 }
 
 .ed-lanyard-card {
+  position: relative;
+  overflow: hidden;
   width: 156px;
   background: rgba(10, 10, 14, 0.94);
   backdrop-filter: blur(12px);
@@ -1741,8 +1838,26 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   text-align: center;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.ed-lanyard-card.is-dragging {
+  cursor: grabbing;
+}
+
+.ed-lanyard-glare {
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at var(--gx, 35%) var(--gy, 25%), rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 62%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: 5;
 }
 
 @media (min-width: 640px) {
@@ -3183,10 +3298,19 @@ ${getStaticBackgroundEffectCss(isDarkMode)}
     transition: none !important;
   }
   .ed-sheen,
+  .ed-orb-a,
+  .ed-orb-b,
   .ed-lanyard-pendulum,
   .ed-polaroid-left,
   .ed-polaroid-right {
     animation: none !important;
+  }
+  .fold-text-piece {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .fold-text-piece::after {
+    opacity: 0 !important;
   }
 }
 `;
@@ -3198,7 +3322,7 @@ export function generateEditorialStaticJs(data) {
   var isReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var isDarkMode = ${isDarkMode ? "true" : "false"};
 
-  // 1. Slide Scroll Reveal
+  // 1. Slide Scroll Reveal & Cursor Spotlight
   var slides = Array.prototype.slice.call(document.querySelectorAll(".editorial-slide"));
   if (isReduced || typeof IntersectionObserver === "undefined") {
     slides.forEach(function (s) { s.classList.add("is-visible"); });
@@ -3212,6 +3336,16 @@ export function generateEditorialStaticJs(data) {
       });
     }, { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
     slides.forEach(function (s) { io.observe(s); });
+  }
+
+  if (!isReduced) {
+    document.addEventListener("pointermove", function (e) {
+      var target = e.target && e.target.closest ? e.target.closest(".editorial-slide") : null;
+      if (!target) return;
+      var rect = target.getBoundingClientRect();
+      target.style.setProperty("--mx", (e.clientX - rect.left).toFixed(1) + "px");
+      target.style.setProperty("--my", (e.clientY - rect.top).toFixed(1) + "px");
+    }, { passive: true });
   }
 
   // 2. Staggered Menu Toggle & Scroll Adaptive Contrast
@@ -3300,21 +3434,547 @@ export function generateEditorialStaticJs(data) {
     });
   }
 
-  // 5. Interactive Hero Lanyard Pointer Swing
-  var heroEl = document.getElementById("hero");
-  var pendulum = document.getElementById("edLanyardPendulum");
-  if (heroEl && pendulum && !isReduced) {
+  // 5. Interactive 3D Physics Lanyard Engine (Drop-in, Breeze Sway, Hover Tilt, Drag/Fling & Click Spin)
+  function initLanyardPhysics() {
+    var heroEl = document.getElementById("hero");
+    var pendulum = document.getElementById("edLanyardPendulum");
+    var strap = document.getElementById("edLanyardStrap");
+    var card = document.getElementById("edLanyardCard");
+    var glare = document.getElementById("edLanyardGlare");
+    if (!heroEl || !pendulum || !card || isReduced) return;
+
+    pendulum.classList.add("is-js-driven");
+
+    // Intro drop + spring state
+    var state = {
+      x: 0, vx: 0,
+      y: -38, vy: 0,
+      rz: 11, vrz: 0,
+      rx: 8, vrx: 0,
+      ry: -18, vry: 0,
+      spin: 0, vspin: 0
+    };
+    var hover = { x: 0, y: 0, active: false };
+    var drag = { active: false, startX: 0, startY: 0, baseX: 0, baseY: 0, moved: false };
+    var timeClock = 0;
+    var lastTs = performance.now();
+
     heroEl.addEventListener("pointermove", function (e) {
       var rect = heroEl.getBoundingClientRect();
-      var nx = (e.clientX - rect.left) / rect.width - 0.5;
-      var ny = (e.clientY - rect.top) / rect.height - 0.5;
-      pendulum.style.animationPlayState = "paused";
-      pendulum.style.transform = "rotate(" + (-nx * 14).toFixed(2) + "deg) translateY(" + (ny * 8).toFixed(2) + "px)";
-    });
+      hover.x = (e.clientX - rect.left) / Math.max(1, rect.width) - 0.5;
+      hover.y = (e.clientY - rect.top) / Math.max(1, rect.height) - 0.5;
+      hover.active = true;
+    }, { passive: true });
+
     heroEl.addEventListener("pointerleave", function () {
-      pendulum.style.transform = "";
-      pendulum.style.animationPlayState = "running";
+      hover.active = false;
+      hover.x = 0;
+      hover.y = 0;
     });
+
+    card.addEventListener("pointerdown", function (e) {
+      drag.active = true;
+      drag.startX = e.clientX;
+      drag.startY = e.clientY;
+      drag.baseX = state.x;
+      drag.baseY = state.y;
+      drag.moved = false;
+      card.classList.add("is-dragging");
+      if (card.setPointerCapture) {
+        try { card.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      e.preventDefault();
+    });
+
+    window.addEventListener("pointermove", function (e) {
+      if (!drag.active) return;
+      var dx = e.clientX - drag.startX;
+      var dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) > 4) drag.moved = true;
+      var clampedX = Math.max(-140, Math.min(140, drag.baseX + dx));
+      var clampedY = Math.max(-30, Math.min(90, drag.baseY + dy * 0.55));
+      state.vx = (clampedX - state.x) * 14;
+      state.vy = (clampedY - state.y) * 14;
+      state.x = clampedX;
+      state.y = clampedY;
+    }, { passive: true });
+
+    function endDrag(e) {
+      if (!drag.active) return;
+      drag.active = false;
+      card.classList.remove("is-dragging");
+      if (card.releasePointerCapture && e && e.pointerId !== undefined) {
+        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+      if (!drag.moved) {
+        // Click kick -> smooth 360 degree spin & lively bounce
+        state.vspin += 920;
+        state.vy -= 140;
+        state.vrx += 120;
+      } else {
+        state.vrz += -state.vx * 0.14;
+        state.vry += state.vx * 0.18;
+      }
+    }
+
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+
+    function stepLanyard(now) {
+      var dt = Math.min(0.04, Math.max(0.001, (now - lastTs) / 1000));
+      lastTs = now;
+      timeClock += dt;
+
+      var breezeZ = Math.sin(timeClock * 1.35) * 2.8 + Math.sin(timeClock * 2.15) * 0.9;
+      var breezeY = Math.sin(timeClock * 1.1) * 8 + (hover.active ? hover.x * 24 : 0);
+      var breezeX = Math.cos(timeClock * 0.95) * 2.5 + (hover.active ? -hover.y * 16 : 0);
+
+      if (!drag.active) {
+        var kPos = 95;
+        var dPos = 10.5;
+        state.vx += (-kPos * state.x - dPos * state.vx) * dt;
+        state.vy += (-kPos * state.y - dPos * state.vy) * dt;
+        state.x += state.vx * dt;
+        state.y += state.vy * dt;
+      }
+
+      var targetZ = breezeZ - state.x * 0.22;
+      var targetY = breezeY + state.x * 0.12;
+      var targetX = breezeX - state.y * 0.12;
+
+      var kRot = 110;
+      var dRot = 9.5;
+      state.vrz += (kRot * (targetZ - state.rz) - dRot * state.vrz) * dt;
+      state.vry += (kRot * (targetY - state.ry) - dRot * state.vry) * dt;
+      state.vrx += (kRot * (targetX - state.rx) - dRot * state.vrx) * dt;
+      state.rz += state.vrz * dt;
+      state.ry += state.vry * dt;
+      state.rx += state.vrx * dt;
+
+      if (Math.abs(state.spin) > 0.1 || Math.abs(state.vspin) > 0.5) {
+        state.vspin *= Math.exp(-3.6 * dt);
+        state.spin += state.vspin * dt;
+        if (Math.abs(state.vspin) < 12) {
+          var nearest = Math.round(state.spin / 360) * 360;
+          state.vspin += (nearest - state.spin) * 32 * dt;
+          state.spin += (nearest - state.spin) * 8 * dt;
+          if (Math.abs(nearest - state.spin) < 0.2 && Math.abs(state.vspin) < 1) {
+            state.spin = 0;
+            state.vspin = 0;
+          }
+        }
+      }
+
+      pendulum.style.transform =
+        "translate3d(" + state.x.toFixed(2) + "px, " + state.y.toFixed(2) + "px, 0) " +
+        "rotateZ(" + state.rz.toFixed(2) + "deg)";
+      card.style.transform =
+        "rotateX(" + state.rx.toFixed(2) + "deg) " +
+        "rotateY(" + (state.ry + state.spin).toFixed(2) + "deg)";
+
+      if (strap) {
+        var scaleY = Math.max(0.85, 1 + state.y * 0.0045);
+        strap.style.transform = "scaleY(" + scaleY.toFixed(3) + ")";
+      }
+
+      if (glare) {
+        var gx = 50 + (state.ry % 90) * 0.65;
+        var gy = 30 + state.rx * 1.2;
+        glare.style.setProperty("--gx", Math.max(5, Math.min(95, gx)).toFixed(1) + "%");
+        glare.style.setProperty("--gy", Math.max(5, Math.min(95, gy)).toFixed(1) + "%");
+      }
+
+      requestAnimationFrame(stepLanyard);
+    }
+
+    requestAnimationFrame(stepLanyard);
   }
+  initLanyardPhysics();
+
+  // 6. Interactive TechText Blueprint Canvas for "PORTFOLIO" Wordmark
+  function initTechText() {
+    var heroEl = document.getElementById("hero");
+    var canvas = document.getElementById("edTechTextCanvas");
+    var fallback = document.getElementById("edHeroWordmarkFallback");
+    if (!heroEl || !canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    var word = canvas.getAttribute("data-text") || "PORTFOLIO";
+    var glyphs = [];
+    var specks = [];
+    for (var s = 0; s < 16; s++) {
+      specks.push({
+        rx: ((s * 73 + 17) % 100) / 100,
+        ry: ((s * 41 + 29) % 100) / 100,
+        phase: s * 0.9,
+        size: 1.5 + (s % 3)
+      });
+    }
+
+    var width = 1;
+    var height = 1;
+    var pointer = { x: 0, y: 0, inside: false };
+    var sweepClock = 0;
+    var lastTime = performance.now();
+    var readyDrawn = false;
+
+    function measureGlyphs() {
+      var rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      var fontSize = Math.max(64, Math.min(210, width * 0.175));
+      var fontStr = "600 " + fontSize.toFixed(0) + "px 'Bebas Neue', 'Anton', sans-serif";
+      ctx.font = fontStr;
+      var chars = word.split("");
+      var widths = chars.map(function (c) { return ctx.measureText(c).width; });
+      var gap = fontSize * 0.025;
+      var totalW = widths.reduce(function (a, b) { return a + b; }, 0) + gap * Math.max(0, chars.length - 1);
+      var startX = (width - totalW) / 2;
+      var baseline = height * 0.56 + fontSize * 0.32;
+
+      var prev = glyphs;
+      glyphs = [];
+      var curX = startX;
+      for (var i = 0; i < chars.length; i++) {
+        var cw = widths[i];
+        var old = prev[i];
+        glyphs.push({
+          char: chars[i],
+          x: curX,
+          y: baseline,
+          w: cw,
+          h: fontSize * 0.78,
+          outline: old ? old.outline : 0,
+          oy: old ? old.oy : 0,
+          vy: old ? old.vy : 0,
+          fontStr: fontStr,
+          fontSize: fontSize
+        });
+        curX += cw + gap;
+      }
+      if (!readyDrawn && fallback) {
+        readyDrawn = true;
+        fallback.classList.add("is-canvas-active");
+      }
+    }
+
+    heroEl.addEventListener("pointermove", function (e) {
+      var cRect = canvas.getBoundingClientRect();
+      pointer.x = e.clientX - cRect.left;
+      pointer.y = e.clientY - cRect.top;
+      pointer.inside = e.clientX >= cRect.left && e.clientX <= cRect.right && e.clientY >= cRect.top && e.clientY <= cRect.bottom;
+    }, { passive: true });
+
+    heroEl.addEventListener("pointerleave", function () {
+      pointer.inside = false;
+    });
+
+    heroEl.addEventListener("click", function (e) {
+      if (isReduced) return;
+      if (e.target && e.target.closest && (e.target.closest("#edLanyardCard") || e.target.closest(".ed-hero-cta"))) return;
+      var cRect = canvas.getBoundingClientRect();
+      var cx = e.clientX - cRect.left;
+      var nearest = -1;
+      var bestDist = Infinity;
+      for (var i = 0; i < glyphs.length; i++) {
+        var gCenter = glyphs[i].x + glyphs[i].w * 0.5;
+        var d = Math.abs(cx - gCenter);
+        if (d < bestDist) {
+          bestDist = d;
+          nearest = i;
+        }
+      }
+      if (nearest >= 0) {
+        for (var j = 0; j < glyphs.length; j++) {
+          var distIdx = Math.abs(j - nearest);
+          if (distIdx <= 3) {
+            glyphs[j].vy -= (260 - distIdx * 65);
+          }
+        }
+      }
+    });
+
+    window.addEventListener("resize", measureGlyphs);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(measureGlyphs);
+    }
+    measureGlyphs();
+
+    function drawTechText(now) {
+      var dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+      lastTime = now;
+      if (glyphs.length === 0) measureGlyphs();
+      ctx.clearRect(0, 0, width, height);
+
+      if (!isReduced) sweepClock += dt;
+      var first = glyphs[0];
+      var last = glyphs[glyphs.length - 1];
+      var leftBound = first ? first.x : 0;
+      var rightBound = last ? last.x + last.w : width;
+      var sweepX = leftBound + (rightBound - leftBound) * (0.5 - 0.5 * Math.cos(sweepClock * 0.72));
+      var focusX = pointer.inside ? pointer.x : sweepX;
+
+      var activeIdx = -1;
+      for (var i = 0; i < glyphs.length; i++) {
+        var g = glyphs[i];
+        if (focusX >= g.x - 10 && focusX <= g.x + g.w + 10) {
+          activeIdx = i;
+          break;
+        }
+      }
+
+      // Draw faint technical specks around wordmark
+      if (!isReduced && glyphs.length > 0) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
+        for (var sp = 0; sp < specks.length; sp++) {
+          var sk = specks[sp];
+          var sx = leftBound + sk.rx * (rightBound - leftBound);
+          var sy = (first.y - first.h) + sk.ry * (first.h * 1.15) + Math.sin(sweepClock * 1.4 + sk.phase) * 5;
+          var dist = Math.hypot(sx - focusX, sy - (first.y - first.h * 0.5));
+          if (dist < 140) {
+            ctx.globalAlpha = Math.max(0.08, (1 - dist / 140) * 0.55);
+            ctx.fillRect(sx, sy, sk.size, sk.size);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      for (var k = 0; k < glyphs.length; k++) {
+        var gl = glyphs[k];
+        var targetOut = !isReduced && k === activeIdx ? 1 : 0;
+        gl.outline += (targetOut - gl.outline) * (1 - Math.exp(-dt / 0.085));
+
+        // Spring bounce physics on click kick
+        gl.vy += (-320 * gl.oy - 22 * gl.vy) * dt;
+        gl.oy += gl.vy * dt;
+
+        ctx.font = gl.fontStr;
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+
+        var drawY = gl.y + gl.oy;
+
+        // Solid fill layer (fades slightly to expose wireframe blueprint under focus)
+        ctx.save();
+        ctx.globalAlpha = 0.94 - gl.outline * 0.78;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(gl.char, gl.x, drawY);
+        ctx.restore();
+
+        // Dashed blueprint wireframe layer
+        if (gl.outline > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = gl.outline;
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1.65;
+          ctx.setLineDash([4, 2]);
+          ctx.lineDashOffset = -sweepClock * 18;
+          ctx.strokeText(gl.char, gl.x, drawY);
+          ctx.restore();
+        }
+      }
+
+      // Draw CAD selection bracket & coordinate readout on active glyph
+      if (!isReduced && activeIdx >= 0) {
+        var ag = glyphs[activeIdx];
+        var bx1 = ag.x - 6;
+        var by1 = ag.y + ag.oy - ag.h - 4;
+        var bx2 = ag.x + ag.w + 6;
+        var by2 = ag.y + ag.oy + 8;
+        var arm = 10;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        // Top-left
+        ctx.moveTo(bx1, by1 + arm); ctx.lineTo(bx1, by1); ctx.lineTo(bx1 + arm, by1);
+        // Top-right
+        ctx.moveTo(bx2 - arm, by1); ctx.lineTo(bx2, by1); ctx.lineTo(bx2, by1 + arm);
+        // Bottom-left
+        ctx.moveTo(bx1, by2 - arm); ctx.lineTo(bx1, by2); ctx.lineTo(bx1 + arm, by2);
+        // Bottom-right
+        ctx.moveTo(bx2 - arm, by2); ctx.lineTo(bx2, by2); ctx.lineTo(bx2, by2 - arm);
+        ctx.stroke();
+
+        // Blueprint dashed guides
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(leftBound - 18, ag.y + ag.oy);
+        ctx.lineTo(rightBound + 18, ag.y + ag.oy);
+        ctx.stroke();
+
+        // Micro glyph index label
+        ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+        ctx.fillText("GLYPH[" + activeIdx + "] " + ag.char, bx1, by1 - 6);
+        ctx.restore();
+      }
+
+      if (!isReduced) requestAnimationFrame(drawTechText);
+    }
+
+    requestAnimationFrame(drawTechText);
+  }
+  initTechText();
+
+  // 7. 3D Paper-Folding Headings (FoldText Scroll Reveal + Cursor Hover-Refold)
+  function initFoldText() {
+    var targets = Array.prototype.slice.call(document.querySelectorAll(".ed-fold-target"));
+    if (!targets.length || isReduced) return;
+
+    var groups = [];
+    targets.forEach(function (el) {
+      var rawText = (el.textContent || "").trim();
+      if (!rawText) return;
+      el.setAttribute("aria-label", rawText);
+      el.textContent = "";
+
+      var pieces = [];
+      var tokens = rawText.split(/(\\s+)/);
+      for (var t = 0; t < tokens.length; t++) {
+        var part = tokens[t];
+        if (!part) continue;
+        if (/^\\s+$/.test(part)) {
+          el.appendChild(document.createTextNode(part));
+          continue;
+        }
+        var wordSpan = document.createElement("span");
+        wordSpan.className = "fold-text-word";
+        wordSpan.setAttribute("aria-hidden", "true");
+        for (var c = 0; c < part.length; c++) {
+          var ch = part.charAt(c);
+          var seg = document.createElement("span");
+          seg.className = "fold-text-segment";
+          var piece = document.createElement("span");
+          piece.className = "fold-text-piece";
+          piece.setAttribute("data-fold-text", ch);
+          piece.textContent = ch;
+          piece.style.opacity = "0";
+          piece.style.transform = "rotateX(-92deg)";
+          seg.appendChild(piece);
+          wordSpan.appendChild(seg);
+          pieces.push({ el: piece, prog: 0, tilt: 0, aim: 0 });
+        }
+        el.appendChild(wordSpan);
+      }
+
+      var group = { root: el, pieces: pieces, playing: false, done: false, startTime: 0, hovering: false };
+      groups.push(group);
+
+      el.addEventListener("pointermove", function (e) {
+        if (!group.done) return;
+        group.hovering = true;
+        var mx = e.clientX;
+        var my = e.clientY;
+        var radius = 140;
+        for (var p = 0; p < group.pieces.length; p++) {
+          var r = group.pieces[p].el.getBoundingClientRect();
+          var cx = r.left + r.width * 0.5;
+          var cy = r.top + r.height * 0.5;
+          var d = Math.hypot(mx - cx, my - cy);
+          group.pieces[p].aim = d < radius ? Math.pow(1 - d / radius, 1.5) : 0;
+        }
+        ensureFoldLoop();
+      }, { passive: true });
+
+      el.addEventListener("pointerleave", function () {
+        group.hovering = false;
+        for (var p = 0; p < group.pieces.length; p++) {
+          group.pieces[p].aim = 0;
+        }
+        ensureFoldLoop();
+      });
+    });
+
+    var foldRaf = 0;
+    function ensureFoldLoop() {
+      if (!foldRaf) foldRaf = requestAnimationFrame(tickFold);
+    }
+
+    function cubicOut(t) {
+      var u = 1 - Math.max(0, Math.min(1, t));
+      return 1 - u * u * u;
+    }
+
+    function tickFold(now) {
+      foldRaf = 0;
+      var active = false;
+
+      for (var g = 0; g < groups.length; g++) {
+        var grp = groups[g];
+        if (!grp.playing && !grp.done && !grp.hovering) continue;
+
+        var elapsed = (now - grp.startTime) / 1000;
+        var allUnfolded = true;
+        var hoverMoving = false;
+
+        for (var p = 0; p < grp.pieces.length; p++) {
+          var pc = grp.pieces[p];
+          if (grp.playing && !grp.done) {
+            var localT = (elapsed - p * 0.045) / 0.65;
+            if (localT < 1) allUnfolded = false;
+            pc.prog = cubicOut(localT);
+          } else if (grp.done) {
+            pc.prog = 1;
+          }
+
+          pc.tilt += (pc.aim - pc.tilt) * 0.2;
+          if (Math.abs(pc.aim - pc.tilt) > 0.004) hoverMoving = true;
+          else pc.tilt = pc.aim;
+
+          var angleDeg = -((1 - pc.prog) * 92 + pc.tilt * 45);
+          pc.el.style.transform = Math.abs(angleDeg) < 0.05 ? "none" : "rotateX(" + angleDeg.toFixed(2) + "deg)";
+          pc.el.style.opacity = pc.prog.toFixed(3);
+          var shade = 0.55 * Math.max(0, Math.min(1, (1 - pc.prog) + (pc.tilt * 45) / 90));
+          pc.el.style.setProperty("--fold-crease", shade.toFixed(3));
+        }
+
+        if (grp.playing && allUnfolded) {
+          grp.done = true;
+          grp.playing = false;
+        }
+        if (grp.playing || hoverMoving || grp.hovering) active = true;
+      }
+
+      if (active) foldRaf = requestAnimationFrame(tickFold);
+    }
+
+    function revealGroup(grp) {
+      if (grp.done || grp.playing) return;
+      grp.playing = true;
+      grp.startTime = performance.now();
+      ensureFoldLoop();
+    }
+
+    if (typeof IntersectionObserver !== "undefined") {
+      var foldIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          for (var g = 0; g < groups.length; g++) {
+            if (groups[g].root === entry.target) {
+              revealGroup(groups[g]);
+              break;
+            }
+          }
+          foldIo.unobserve(entry.target);
+        });
+      }, { threshold: 0.12 });
+      groups.forEach(function (grp) { foldIo.observe(grp.root); });
+    } else {
+      groups.forEach(revealGroup);
+    }
+  }
+  initFoldText();
 })();`;
 }
