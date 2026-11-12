@@ -13,6 +13,11 @@ import { ZoomIn, ZoomOut, RotateCw, RotateCcw, Check, Loader2 } from "lucide-rea
 import { getCroppedImg, type CroppedImageResult, type PixelCrop } from "@/lib/cropImage";
 import { toast } from "sonner";
 
+export interface AspectOption {
+  label: string;
+  value: number;
+}
+
 interface ImageCropModalProps {
   open: boolean;
   imageSrc: string | null;
@@ -21,6 +26,9 @@ interface ImageCropModalProps {
   description?: string;
   cropShape?: "round" | "rect";
   aspect?: number;
+  aspectOptions?: AspectOption[];
+  maxSize?: number;
+  confirmLabel?: string;
   onClose: () => void;
   onCropSave: (result: CroppedImageResult) => Promise<void> | void;
 }
@@ -33,12 +41,16 @@ export function ImageCropModal({
   description = "Drag to choose which part to show. Use the zoom slider to adjust how much fits in the circle.",
   cropShape = "round",
   aspect = 1,
+  aspectOptions,
+  maxSize = 800,
+  confirmLabel = "Set as Picture",
   onClose,
   onCropSave,
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [selectedAspect, setSelectedAspect] = useState(aspect);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<PixelCrop | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -48,10 +60,11 @@ export function ImageCropModal({
       setCrop({ x: 0, y: 0 });
       setZoom(1);
       setRotation(0);
+      setSelectedAspect(aspect);
       setCroppedAreaPixels(null);
       setIsSaving(false);
     }
-  }, [open, imageSrc]);
+  }, [open, imageSrc, aspect]);
 
   const onCropComplete = useCallback((_croppedArea: Area, currentCroppedAreaPixels: Area) => {
     setCroppedAreaPixels(currentCroppedAreaPixels);
@@ -65,13 +78,14 @@ export function ImageCropModal({
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setRotation(0);
+    setSelectedAspect(aspect);
   };
 
   const handleSave = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
     setIsSaving(true);
     try {
-      const result = await getCroppedImg(imageSrc, croppedAreaPixels, rotation, fileName);
+      const result = await getCroppedImg(imageSrc, croppedAreaPixels, rotation, fileName, maxSize);
       await onCropSave(result);
       onClose();
     } catch (error) {
@@ -100,7 +114,7 @@ export function ImageCropModal({
               crop={crop}
               zoom={zoom}
               rotation={rotation}
-              aspect={aspect}
+              aspect={selectedAspect}
               cropShape={cropShape}
               showGrid={false}
               minZoom={1}
@@ -148,6 +162,30 @@ export function ImageCropModal({
             </span>
           </div>
 
+          {/* Aspect Ratio Options (if provided) */}
+          {aspectOptions && aspectOptions.length > 0 ? (
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-[11px] font-medium text-muted-foreground">Aspect ratio</span>
+              <div className="flex flex-wrap items-center gap-1">
+                {aspectOptions.map((opt) => {
+                  const isActive = Math.abs(selectedAspect - opt.value) < 0.01;
+                  return (
+                    <Button
+                      key={opt.label}
+                      type="button"
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className="h-6 text-[11px] px-2"
+                      onClick={() => setSelectedAspect(opt.value)}
+                    >
+                      {opt.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {/* Rotate & Reset Controls */}
           <div className="flex items-center justify-between text-xs pt-1">
             <div className="flex items-center gap-2">
@@ -173,7 +211,7 @@ export function ImageCropModal({
               </Button>
             </div>
             <span className="text-[11px] text-muted-foreground">
-              Circle preview
+              {cropShape === "round" ? "Circle preview" : "Rectangle preview"}
             </span>
           </div>
         </div>
@@ -204,7 +242,7 @@ export function ImageCropModal({
             ) : (
               <>
                 <Check className="h-3.5 w-3.5" />
-                Set as Picture
+                {confirmLabel}
               </>
             )}
           </Button>

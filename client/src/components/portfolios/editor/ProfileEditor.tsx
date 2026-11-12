@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { AlertCircle, Camera, MapPin, Mail, Phone, Upload, User, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -7,9 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizeAvatarUrl } from "@/components/portfolios/common/urlUtils";
+import type { CroppedImageResult } from "@/lib/cropImage";
 import { resolveAvatarUrl } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import type { PortfolioProfile } from "@/types/portfolio";
+
+const ImageCropModal = lazy(() =>
+  import("@/components/ui/ImageCropModal").then((m) => ({ default: m.ImageCropModal })),
+);
+
+const PORTFOLIO_AVATAR_ASPECTS = [
+  { label: "1:1", value: 1 },
+  { label: "3:4", value: 3 / 4 },
+  { label: "4:3", value: 4 / 3 },
+];
 
 export interface ProfileEditorProps {
   profile: PortfolioProfile;
@@ -19,6 +30,9 @@ export interface ProfileEditorProps {
 export function ProfileEditor({ profile, onChange }: ProfileEditorProps) {
   const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState("portfolio-photo.jpg");
 
   const handleChange = <K extends keyof PortfolioProfile>(field: K, value: PortfolioProfile[K]) => {
     onChange({
@@ -46,16 +60,17 @@ export function ProfileEditor({ profile, onChange }: ProfileEditorProps) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image file must be under 2 MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image file must be under 10 MB");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        handleChange("avatarUrl", reader.result);
-        toast.success("Photo loaded successfully!");
+        setSelectedImageSrc(reader.result);
+        setSelectedFileName(file.name || "portfolio-photo.jpg");
+        setCropModalOpen(true);
       }
     };
     reader.onerror = () => {
@@ -63,6 +78,11 @@ export function ProfileEditor({ profile, onChange }: ProfileEditorProps) {
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  const handleCropSave = (result: CroppedImageResult) => {
+    handleChange("avatarUrl", result.dataUrl);
+    toast.success("Portfolio photo updated!");
   };
 
   const handleUseAccountAvatar = () => {
@@ -309,6 +329,28 @@ export function ProfileEditor({ profile, onChange }: ProfileEditorProps) {
           />
         </div>
       </div>
+
+      {cropModalOpen && selectedImageSrc ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={cropModalOpen}
+            imageSrc={selectedImageSrc}
+            fileName={selectedFileName}
+            title="Adjust Portfolio Photo"
+            description="Drag to reposition, zoom, rotate, or pick a frame ratio for your portfolio photo."
+            cropShape="rect"
+            aspect={1}
+            aspectOptions={PORTFOLIO_AVATAR_ASPECTS}
+            maxSize={800}
+            confirmLabel="Apply Photo"
+            onClose={() => {
+              setCropModalOpen(false);
+              setSelectedImageSrc(null);
+            }}
+            onCropSave={handleCropSave}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

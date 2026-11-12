@@ -69,10 +69,15 @@ export async function getCroppedImg(
     throw new Error("Could not get output canvas context");
   }
 
-  // Bound output dimension to keep file size reasonable while preserving high DPI
-  const targetSize = Math.max(128, Math.min(Math.round(Math.max(pixelCrop.width, pixelCrop.height)), maxSize));
-  outputCanvas.width = targetSize;
-  outputCanvas.height = targetSize;
+  // Bound output dimensions to keep file size reasonable while preserving aspect ratio & high DPI
+  const cropWidth = Math.max(1, pixelCrop.width);
+  const cropHeight = Math.max(1, pixelCrop.height);
+  const longestSide = Math.max(cropWidth, cropHeight);
+  const clampedLongest = Math.max(128, Math.min(Math.round(longestSide), maxSize));
+  const scale = clampedLongest / longestSide;
+
+  outputCanvas.width = Math.max(1, Math.round(cropWidth * scale));
+  outputCanvas.height = Math.max(1, Math.round(cropHeight * scale));
 
   outputCtx.imageSmoothingEnabled = true;
   outputCtx.imageSmoothingQuality = "high";
@@ -85,8 +90,8 @@ export async function getCroppedImg(
     pixelCrop.height,
     0,
     0,
-    targetSize,
-    targetSize
+    outputCanvas.width,
+    outputCanvas.height
   );
 
   return new Promise((resolve, reject) => {

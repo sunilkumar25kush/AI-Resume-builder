@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -18,7 +18,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { CroppedImageResult } from "@/lib/cropImage";
 import type { PortfolioProject } from "@/types/portfolio";
+
+const ImageCropModal = lazy(() =>
+  import("@/components/ui/ImageCropModal").then((m) => ({ default: m.ImageCropModal })),
+);
+
+const PROJECT_IMAGE_ASPECTS = [
+  { label: "16:9", value: 16 / 9 },
+  { label: "4:3", value: 4 / 3 },
+  { label: "1:1", value: 1 },
+  { label: "3:4", value: 3 / 4 },
+];
+
+interface CropTarget {
+  projIndex: number;
+  slotIndex: number;
+  src: string;
+  fileName: string;
+}
 
 export interface ProjectsEditorProps {
   projects: PortfolioProject[];
@@ -28,6 +47,7 @@ export interface ProjectsEditorProps {
 export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps) {
   const [openIndices, setOpenIndices] = useState<Record<number, boolean>>({ 0: true });
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [cropTarget, setCropTarget] = useState<CropTarget | null>(null);
 
   const toggleOpen = (index: number) => {
     setOpenIndices((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -101,16 +121,20 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image file must be under 2 MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image file must be under 10 MB");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setSlotImageUrl(projIndex, slotIndex, reader.result);
-        toast.success(`Photo #0${slotIndex + 1} uploaded!`);
+        setCropTarget({
+          projIndex,
+          slotIndex,
+          src: reader.result,
+          fileName: file.name || `project-photo-${slotIndex + 1}.jpg`,
+        });
       }
     };
     reader.onerror = () => {
@@ -118,6 +142,12 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  const handleCropSave = (result: CroppedImageResult) => {
+    if (!cropTarget) return;
+    setSlotImageUrl(cropTarget.projIndex, cropTarget.slotIndex, result.dataUrl);
+    toast.success(`Photo #0${cropTarget.slotIndex + 1} updated!`);
   };
 
   const handleClearSlotImage = (projIndex: number, slotIndex: number) => {
@@ -469,6 +499,25 @@ export function ProjectsEditor({ projects = [], onChange }: ProjectsEditorProps)
           })}
         </div>
       )}
+
+      {cropTarget ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={Boolean(cropTarget)}
+            imageSrc={cropTarget.src}
+            fileName={cropTarget.fileName}
+            title={`Adjust Photo #0${cropTarget.slotIndex + 1}`}
+            description="Drag to reposition, zoom, rotate, or pick an aspect ratio for your project photo."
+            cropShape="rect"
+            aspect={16 / 9}
+            aspectOptions={PROJECT_IMAGE_ASPECTS}
+            maxSize={1200}
+            confirmLabel="Apply Photo"
+            onClose={() => setCropTarget(null)}
+            onCropSave={handleCropSave}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
