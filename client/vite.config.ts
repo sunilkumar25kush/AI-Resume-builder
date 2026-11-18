@@ -60,9 +60,18 @@ function nonBlockingCss(): Plugin {
 export default defineConfig({
   plugins: [react(), tailwindcss(), preloadCriticalFonts(), nonBlockingCss()],
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.fileURLToPath(new URL("./src", import.meta.url)),
+      react: path.fileURLToPath(new URL("./node_modules/react", import.meta.url)),
+      "react-dom": path.fileURLToPath(new URL("./node_modules/react-dom", import.meta.url)),
+      "react/jsx-runtime": path.fileURLToPath(new URL("./node_modules/react/jsx-runtime.js", import.meta.url)),
+      "react/jsx-dev-runtime": path.fileURLToPath(new URL("./node_modules/react/jsx-dev-runtime.js", import.meta.url)),
     },
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "sonner", "framer-motion"],
+    exclude: ["goey-toast"],
   },
   server: {
     port: 5173,
