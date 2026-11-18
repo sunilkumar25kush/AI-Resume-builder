@@ -191,3 +191,53 @@ nav[aria-label="Bottom navigation"] {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   Gooey Toast (goey-toast) visibility & contrast for light & dark modes
+   ========================================================================== */
+[data-sonner-toaster] {
+  z-index: 99999 !important;
+}
+
+/* Default / Light mode toast styling */
+.gooey-wrapper,
+.gooey-wrapper[data-theme="light"],
+:root:not(.dark) .gooey-wrapper {
+  --gooey-fill: #ffffff;
+  --gooey-border: rgba(0, 0, 0, 0.14);
+  --gooey-border-width: 1.5px;
+  --gooey-title-default: #18181b;
+  --gooey-description: #3f3f46;
+}
+
+.gooey-wrapper .gooey-blobSvg,
+.gooey-wrapper[data-theme="light"] .gooey-blobSvg,
+:root:not(.dark) .gooey-wrapper .gooey-blobSvg {
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.14)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+}
+
+/* Dark mode toast styling */
+.gooey-wrapper[data-theme="dark"],
+.dark .gooey-wrapper {
+  --gooey-fill: #18181b;
+  --gooey-border: rgba(255, 255, 255, 0.22);
+  --gooey-border-width: 1.5px;
+  --gooey-title-default: #fafafa;
+  --gooey-description: #e4e4e7;
+}
+
+.gooey-wrapper[data-theme="dark"] .gooey-blobSvg,
+.dark .gooey-wrapper .gooey-blobSvg {
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.85)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+}
+
+.gooey-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.gooey-description {
+  font-family: var(--font-sans);
+}
+

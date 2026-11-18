@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Download, FileText, Loader2, PenLine, Pencil, Printer, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";

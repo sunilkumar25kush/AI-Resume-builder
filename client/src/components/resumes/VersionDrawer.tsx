@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Copy, GitCompareArrows, History, Loader2, RotateCcw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { versionsApi } from "@/api/versions";

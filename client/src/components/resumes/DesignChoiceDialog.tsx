@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Download, Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { resumesApi } from "@/api/resumes";

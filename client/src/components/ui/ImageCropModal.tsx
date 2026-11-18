@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCw, RotateCcw, Check, Loader2 } from "lucide-react";
 import { getCroppedImg, type CroppedImageResult, type PixelCrop } from "@/lib/cropImage";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export interface AspectOption {
   label: string;

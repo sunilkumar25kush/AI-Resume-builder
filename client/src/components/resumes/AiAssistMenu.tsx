@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { ASSIST_ACTION_LABELS, aiApi, type AssistAction, type AssistSection } from "@/api/ai";

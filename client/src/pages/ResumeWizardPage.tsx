@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, ArrowRight, Check, Download, ExternalLink, FileDown, FileText, Loader2, PenLine, Route } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { optimizationsApi } from "@/api/optimizations";

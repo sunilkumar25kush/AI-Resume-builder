@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, ClipboardList, FileText, Loader2, ScanSearch, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { jdsApi } from "@/api/jds";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Gauge, Lightbulb, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { getApiErrorMessage } from "@/api/client";
 import { optimizationsApi } from "@/api/optimizations";

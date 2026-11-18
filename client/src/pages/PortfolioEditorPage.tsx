@@ -18,7 +18,7 @@ import {
   Tablet,
   User,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { portfoliosApi } from "@/api/portfolios";
 import { getApiErrorMessage } from "@/api/client";

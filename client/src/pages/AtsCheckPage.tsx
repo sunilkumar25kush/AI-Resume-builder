@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { CheckCircle2, FileSearch, FileText, Gauge, Loader2, Sparkles, UploadCloud, XCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { atsApi, type AtsReport } from "@/api/ats";
 import { getApiErrorMessage } from "@/api/client";

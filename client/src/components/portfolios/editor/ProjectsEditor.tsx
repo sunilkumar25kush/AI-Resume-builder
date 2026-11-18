@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { BrandIcon } from "@/components/portfolios/common/BrandIcon";
 import { Button } from "@/components/ui/button";

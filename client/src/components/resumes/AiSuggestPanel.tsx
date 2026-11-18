@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { aiApi, type AiSuggestion } from "@/api/ai";
 import { getApiErrorMessage } from "@/api/client";
