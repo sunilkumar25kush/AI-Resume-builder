@@ -37,6 +37,11 @@ export const EditorialTemplate = lazy(() =>
     default: m.EditorialTemplate,
   })),
 );
+export const DoodleTemplate = lazy(() =>
+  import("@/components/portfolios/templates/DoodleTemplate").then((m) => ({
+    default: m.DoodleTemplate,
+  })),
+);
 
 export type TemplateCategory = "all" | "creative" | "technical" | "minimal";
 
@@ -64,6 +69,7 @@ export const TEMPLATE_REGISTRY: Record<PortfolioTemplateId, ComponentType<Portfo
   minimal: MinimalTemplate as ComponentType<PortfolioTemplateProps>,
   executive: MinimalTemplate as ComponentType<PortfolioTemplateProps>,
   editorial: EditorialTemplate as ComponentType<PortfolioTemplateProps>,
+  doodle: DoodleTemplate as ComponentType<PortfolioTemplateProps>,
 };
 
 export const TEMPLATE_METADATA: TemplateDefinition[] = [
@@ -136,6 +142,23 @@ export const TEMPLATE_METADATA: TemplateDefinition[] = [
     author: "GitSkins Native",
     license: "MIT",
   },
+  {
+    id: "doodle",
+    name: "Doodle Scrapbook",
+    description: "Handmade notebook atelier with ballpoint ink doodles, warm parchment & matte slate contrast, phone mockups, and organic annotations.",
+    idealFor: "UI/UX Designers, Product Designers, Illustrators, Creative Developers, Visual Thinkers",
+    category: "creative",
+    features: [
+      "Ballpoint Ink Scribbles & Doodles",
+      "Alternating Slate & Parchment Deck",
+      "Interactive Device Mockups & App Flows",
+      "QR Code CV Scanner",
+      "Behind-the-Scenes Fun Facts",
+    ],
+    badge: "Doodle ★",
+    author: "GitSkins Native",
+    license: "MIT",
+  },
 ];
 
 export const DEFAULT_TEMPLATE: PortfolioTemplateId = "spotlight";
@@ -150,6 +173,7 @@ export const VALID_TEMPLATE_IDS = [
   "minimal",
   "executive",
   "editorial",
+  "doodle",
 ] as const;
 
 /**

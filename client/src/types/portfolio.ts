@@ -118,7 +118,8 @@ export type PortfolioTemplateId =
   | "minimal"
   | "modern"
   | "executive"
-  | "editorial";
+  | "editorial"
+  | "doodle";
 
 export interface PortfolioLayoutOptions {
   projectsLayout?: "grid" | "cards" | "staggered" | "list";

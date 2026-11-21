@@ -97,6 +97,14 @@ export const TEMPLATE_OPTIONS: Array<{
       gradient: "from-red-800 via-rose-900 to-amber-950",
       previewNote: "Crimson & Linen Deck Spreads",
     },
+    {
+      id: "doodle",
+      name: "Doodle Scrapbook",
+      desc: "Handmade notebook atelier with organic ballpoint ink doodles, warm parchment & matte slate contrast, and device mockups",
+      badge: "Handmade ★",
+      gradient: "from-stone-800 via-indigo-950 to-stone-900",
+      previewNote: "Doodle Scribbles & Parchment Deck",
+    },
   ];
 
 function formatBytes(bytes: number): string {

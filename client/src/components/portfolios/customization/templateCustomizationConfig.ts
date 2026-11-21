@@ -445,6 +445,39 @@ export const TEMPLATE_CAPABILITIES: Record<PortfolioTemplateId, TemplateCustomiz
       },
     ],
   },
+
+  doodle: {
+    templateId: "doodle",
+    name: "Doodle Scrapbook",
+    supportsThemeToggle: false,
+    supportedThemes: ["system", "light", "dark"],
+    supportsColorAccent: true,
+    supportsTypography: true,
+    supportedFonts: ["Playfair", "Geist", "Inter", "Merriweather"],
+    supportedBackgroundEffects: [
+      { id: "default", label: "Parchment & Slate", description: "Alternating warm natural paper and matte blackboard sections" },
+    ],
+    supportedLayoutOptions: {
+      projectsLayout: ["cards", "grid"],
+      skillsLayout: ["pills", "categories"],
+    },
+    templateSettings: [
+      {
+        key: "inkDoodles",
+        label: "Ballpoint Ink Doodles",
+        description: "Display hand-drawn SVG arrows, sparkles, and doodle annotations",
+        type: "boolean",
+        defaultValue: true,
+      },
+      {
+        key: "qrCode",
+        label: "Interactive QR Code",
+        description: "Display scannable QR code card linking to full resume / portfolio",
+        type: "boolean",
+        defaultValue: true,
+      },
+    ],
+  },
 };
 
 /** Hex color validation regex: #rgb, #rgba, #rrggbb, #rrggbbaa */
@@ -488,6 +521,8 @@ export function getDefaultDesignSettings(
       ? "#10b981"
       : templateId === "editorial"
       ? "#8B151B"
+      : templateId === "doodle"
+      ? "#5A65B8"
       : "#e3141f";
 
   return {

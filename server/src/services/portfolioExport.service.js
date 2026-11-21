@@ -9,6 +9,12 @@ import {
   generateEditorialStaticJs,
 } from "./editorialExport.service.js";
 import {
+  generateDoodleStaticHtml,
+  generateDoodleStaticCss,
+  generateDoodleStaticJs,
+  getFullDoodleTemplateJsx,
+} from "./doodleExport.service.js";
+import {
   getEditorialTemplateJsx,
   getLanyardJsx,
   getLanyardCss,
@@ -553,6 +559,7 @@ export async function exportPortfolioAsSourceZip(rawPortfolio, res) {
 
   const selectedTemplate = data.design.template;
   const isEditorial = selectedTemplate === "editorial";
+  const isDoodle = selectedTemplate === "doodle";
 
   // 1. package.json
   const packageJson = {
@@ -680,8 +687,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   // 7. src/App.jsx
   const editorialImport = isEditorial
     ? `import { EditorialTemplate } from "./components/templates/EditorialTemplate.jsx";\n`
+    : isDoodle
+    ? `import { DoodleTemplate } from "./components/templates/DoodleTemplate.jsx";\n`
     : "";
-  const editorialMapEntry = isEditorial ? `  editorial: EditorialTemplate,\n` : "";
+  const editorialMapEntry = isEditorial
+    ? `  editorial: EditorialTemplate,\n`
+    : isDoodle
+    ? `  doodle: DoodleTemplate,\n`
+    : "";
   const appJsx = `import React from "react";
 import portfolioData from "./portfolioData.json";
 import { ThemeWrapper } from "./components/common/ThemeWrapper.jsx";
@@ -763,6 +776,10 @@ export default function App() {
     archive.append(getEditorialTemplateJsx(), { name: "src/components/templates/EditorialTemplate.jsx" });
   }
 
+  if (isDoodle) {
+    archive.append(getFullDoodleTemplateJsx(), { name: "src/components/templates/DoodleTemplate.jsx" });
+  }
+
   // 10. README.md & LICENSE
   archive.append(getSourceReadme(data), { name: "README.md" });
   archive.append(getLicenseText(data), { name: "LICENSE" });
@@ -804,6 +821,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticHtml = generateMinimalStaticHtml(data);
   } else if (template === "editorial") {
     staticHtml = generateEditorialStaticHtml(data, editorialHelpers);
+  } else if (template === "doodle") {
+    staticHtml = generateDoodleStaticHtml(data, editorialHelpers);
   } else {
     // Default: DevPort
     staticHtml = generateDevPortStaticHtml(data);
@@ -824,6 +843,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticCss = generateMinimalStaticCss(data);
   } else if (template === "editorial") {
     staticCss = generateEditorialStaticCss(data, editorialHelpers);
+  } else if (template === "doodle") {
+    staticCss = generateDoodleStaticCss(data, editorialHelpers);
   } else {
     staticCss = generateDevPortStaticCss(data);
   }
@@ -843,6 +864,8 @@ export async function exportPortfolioAsStaticZip(rawPortfolio, res) {
     staticJs = generateMinimalStaticJs(data);
   } else if (template === "editorial") {
     staticJs = generateEditorialStaticJs(data);
+  } else if (template === "doodle") {
+    staticJs = generateDoodleStaticJs(data);
   } else {
     staticJs = generateDevPortStaticJs(data, template);
   }

@@ -540,6 +540,45 @@ function TemplatePreviewCover({
   headline: string;
 }) {
   switch (template.id) {
+    case "doodle":
+      return (
+        <div className="relative h-full w-full overflow-hidden bg-[#222223] flex flex-col justify-between p-4 select-none">
+          <div className="relative z-10 flex items-center justify-between text-[11px] font-mono tracking-wider text-stone-400 border-b border-stone-800 pb-2">
+            <span className="font-['Caveat',cursive] text-base text-[#9AA5E2]">Work (05)</span>
+            <span className="text-[10px] uppercase text-stone-500 font-mono">Doodle Scrapbook</span>
+          </div>
+
+          <div className="relative z-10 my-auto flex flex-col items-center text-center py-2">
+            <span className="font-['Caveat',cursive] text-sm text-[#9AA5E2] rotate-[-4deg] mb-1">
+              Welcome to my ✦
+            </span>
+            <h2 className="font-['Playfair_Display',Georgia,serif] text-3xl sm:text-4xl text-white font-normal tracking-tight leading-none">
+              Portf<span className="text-[#9AA5E2]">o</span>lio
+            </h2>
+            <div className="mt-2.5 px-3 py-1 rounded-full border border-dashed border-[#9AA5E2] bg-stone-900/80 text-xs font-['Caveat',cursive] text-stone-200">
+              {headline || "Product & UI/UX Designer"}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <img
+                src={avatarUrl}
+                alt={fullName}
+                className="h-5 w-5 rounded-full object-cover border border-[#9AA5E2]"
+                loading="lazy"
+              />
+              <span className="text-[11px] font-mono text-stone-300 truncate max-w-[140px]">
+                {fullName}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative z-10 flex items-center justify-between text-[10px] text-stone-400 pt-2 border-t border-stone-800">
+            <span className="rounded bg-[#5A65B8]/20 text-[#9AA5E2] px-1.5 py-0.5 font-['Caveat',cursive] text-xs">
+              Hand-Drawn Atelier
+            </span>
+            <span className="font-mono text-stone-500">Parchment & Slate</span>
+          </div>
+        </div>
+      );
     case "editorial":
       return (
         <div className="relative h-full w-full overflow-hidden bg-[#0c0c0e] flex flex-col justify-between p-4 select-none">

@@ -77,6 +77,7 @@ export const PORTFOLIO_TEMPLATES = Object.freeze([
   "modern",
   "executive",
   "editorial",
+  "doodle",
 ]);
 
 const designSettingsSchema = z.object({

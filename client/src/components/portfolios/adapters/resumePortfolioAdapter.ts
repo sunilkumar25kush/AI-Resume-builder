@@ -199,6 +199,34 @@ export const TEMPLATE_FIELD_CONTRACTS: Record<PortfolioTemplateId, TemplateField
       "Polaroid Showcase Cards",
     ],
   },
+  doodle: {
+    id: "doodle",
+    name: "Doodle Scrapbook",
+    requiredFields: ["profile.fullName"],
+    supportedFields: [
+      "profile.fullName",
+      "profile.headline",
+      "profile.bio",
+      "profile.avatarUrl",
+      "profile.location",
+      "profile.email",
+      "profile.phone",
+      "socialLinks",
+      "skills",
+      "experience",
+      "education",
+      "projects",
+      "certifications",
+    ],
+    optionalFields: ["education", "certifications", "profile.phone"],
+    specialFeatures: [
+      "Ballpoint Ink Scribbles & Doodles",
+      "Alternating Slate & Parchment Deck",
+      "Interactive Device Mockups & App Flows",
+      "QR Code CV Scanner",
+      "Behind-the-Scenes Fun Facts",
+    ],
+  },
 };
 
 // Micro-skills or sub-syntax items that clutter tech stacks and duplicate core tools
@@ -609,6 +637,7 @@ export function adaptResumeToPortfolio(
     minimal: "#10b981",
     executive: "#10b981",
     editorial: "#8B151B",
+    doodle: "#5A65B8",
   };
   const primaryColor =
     options.primaryColor ||
