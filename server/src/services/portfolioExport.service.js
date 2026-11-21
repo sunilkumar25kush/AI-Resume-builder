@@ -385,6 +385,8 @@ export function sanitizePortfolioData(portfolio) {
       ? "minimal"
       : rawTemplate === "editorial"
       ? "editorial"
+      : rawTemplate === "doodle"
+      ? "doodle"
       : "devport";
 
   const theme = portfolio.design?.theme || "system";
@@ -400,6 +402,8 @@ export function sanitizePortfolioData(portfolio) {
       ? "#06b6d4"
       : template === "editorial"
       ? "#8B151B"
+      : template === "doodle"
+      ? "#5A65B8"
       : "#2563eb");
   const fontFamily = portfolio.design?.fontFamily || "Inter";
 

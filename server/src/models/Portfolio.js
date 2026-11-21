@@ -99,6 +99,7 @@ const designSettingsSchema = new mongoose.Schema(
         "modern",
         "executive",
         "editorial",
+        "doodle",
       ],
       default: "spotlight",
     },
