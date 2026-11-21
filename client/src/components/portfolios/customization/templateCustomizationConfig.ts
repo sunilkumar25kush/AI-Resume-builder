@@ -449,7 +449,7 @@ export const TEMPLATE_CAPABILITIES: Record<PortfolioTemplateId, TemplateCustomiz
   doodle: {
     templateId: "doodle",
     name: "Doodle Scrapbook",
-    supportsThemeToggle: false,
+    supportsThemeToggle: true,
     supportedThemes: ["system", "light", "dark"],
     supportsColorAccent: true,
     supportsTypography: true,
