@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { ZipArchive } from "archiver";
 import { GithubReadme } from "../models/GithubReadme.js";
 import { Resume } from "../models/Resume.js";
 import { geminiService } from "./ai/gemini.service.js";
@@ -6,6 +9,9 @@ import {
   fetchGithubProfileData,
   getGithubOAuthUrl as getOAuthUrlHelper,
   exchangeGithubOAuthCode as exchangeOAuthCodeHelper,
+  checkProfileRepo,
+  createProfileRepo,
+  publishProfileReadme,
 } from "./githubApi.service.js";
 
 /** Map of default shields.io tech badge colors */
@@ -1031,4 +1037,159 @@ export function getGithubOAuthUrl(state = "gh_auth") {
 /** Exchange GitHub OAuth Code */
 export async function exchangeGithubOAuthCode(code) {
   return exchangeOAuthCodeHelper(code);
+}
+
+function getUploadsSearchRoots() {
+  return [
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "server", "uploads"),
+    path.resolve(process.cwd(), "../uploads"),
+  ];
+}
+
+function findLocalUploadedFile(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  const trimmed = rawUrl.trim();
+  const clean = trimmed.replace(/^https?:\/\/[^\/]+/, "").trim();
+  const normalizedClean = clean.replace(/\\/g, "/");
+
+  let uploadSubPath = null;
+  if (normalizedClean.includes("/uploads/")) {
+    uploadSubPath = normalizedClean.substring(normalizedClean.indexOf("/uploads/") + "/uploads/".length);
+  } else if (normalizedClean.startsWith("uploads/")) {
+    uploadSubPath = normalizedClean.substring("uploads/".length);
+  }
+
+  if (!uploadSubPath) return null;
+
+  try {
+    uploadSubPath = decodeURIComponent(uploadSubPath);
+  } catch {}
+
+  const searchRoots = getUploadsSearchRoots();
+  for (const root of searchRoots) {
+    const fullPath = path.resolve(root, uploadSubPath);
+    try {
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        const ext = path.extname(fullPath).toLowerCase();
+        return {
+          fullPath,
+          filename: path.basename(fullPath),
+          ext,
+        };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+/** Check GitHub Profile Repo status */
+export async function checkGithubProfileRepo(userId, { username, token }) {
+  return checkProfileRepo(username, token);
+}
+
+/** Publish or Update README in username/username */
+export async function publishGithubProfileReadme(userId, {
+  username,
+  token,
+  content,
+  commitMessage,
+  sha,
+  branch,
+  createRepoIfMissing = false,
+}) {
+  if (createRepoIfMissing) {
+    const status = await checkProfileRepo(username, token);
+    if (!status.repoExists) {
+      await createProfileRepo(username, token);
+    }
+  }
+  return publishProfileReadme({
+    username,
+    token,
+    content,
+    commitMessage,
+    sha,
+    branch,
+  });
+}
+
+/** Export README as a complete ZIP package with images/ */
+export async function exportReadmeZip(res, userId, readmeId, options = {}) {
+  let doc = null;
+  if (readmeId) {
+    doc = await GithubReadme.findOne({ _id: readmeId, userId }).lean();
+  }
+  const rawMarkdown = options.customMarkdown || doc?.content || "";
+  const projectTitle = options.title || doc?.title || "README";
+  const safeFilename = `${projectTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}_github_readme.zip`;
+
+  const archive = new ZipArchive({ zlib: { level: 9 } });
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+
+  archive.on("error", (err) => {
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: `Archive error: ${err.message}` });
+    }
+  });
+
+  archive.pipe(res);
+
+  let rewrittenMarkdown = rawMarkdown;
+  const addedFiles = new Set();
+  let imageCounter = 1;
+
+  // 1. Scan for base64 data URIs: data:image/(png|jpeg|jpg|gif|svg+xml|webp);base64,...
+  const dataUriRegex = /data:image\/([a-zA-Z0-9+]+);base64,([A-Za-z0-9+/=]+)/g;
+  rewrittenMarkdown = rewrittenMarkdown.replace(dataUriRegex, (match, rawExt, base64Data) => {
+    try {
+      const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("jpeg") ? "jpg" : rawExt;
+      const imageName = `image_${imageCounter++}.${ext}`;
+      const buf = Buffer.from(base64Data, "base64");
+      archive.append(buf, { name: `images/${imageName}` });
+      return `./images/${imageName}`;
+    } catch {
+      return match;
+    }
+  });
+
+  // 2. Scan for local upload URLs (e.g. /uploads/..., http://localhost:5001/uploads/...)
+  const uploadUrlRegex = /(https?:\/\/[^\s"'<>\)]+)?(\/uploads\/[^\s"'<>\)]+)/g;
+  rewrittenMarkdown = rewrittenMarkdown.replace(uploadUrlRegex, (fullMatch, origin, uploadPath) => {
+    const local = findLocalUploadedFile(uploadPath);
+    if (local) {
+      const targetName = local.filename;
+      if (!addedFiles.has(targetName)) {
+        try {
+          const fileBuf = fs.readFileSync(local.fullPath);
+          archive.append(fileBuf, { name: `images/${targetName}` });
+          addedFiles.add(targetName);
+        } catch {}
+      }
+      return `./images/${targetName}`;
+    }
+    return fullMatch;
+  });
+
+  // Add README.md to archive
+  archive.append(rewrittenMarkdown, { name: "README.md" });
+
+  // Add an informative assets readme
+  const infoText = `# Assets for GitHub Profile README
+
+This package contains:
+- README.md (with updated relative image references for GitHub)
+- images/ (all bundled image assets)
+
+### How to publish to GitHub:
+1. Go to your personal profile repository: https://github.com/<username>/<username>
+2. Upload the \`images/\` folder and the \`README.md\` file directly into the repository root.
+3. Commit the changes to your default branch (main).
+4. Your GitHub Profile will immediately display your new README!
+`;
+  archive.append(infoText, { name: "assets/INSTRUCTIONS.md" });
+
+  await archive.finalize();
 }

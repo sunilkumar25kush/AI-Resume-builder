@@ -15,6 +15,9 @@ import {
   fetchGithubProfile,
   getGithubOAuthUrl,
   exchangeGithubOAuth,
+  checkProfileRepo,
+  publishProfileReadme,
+  exportReadmeZip,
 } from "../controllers/githubReadme.controller.js";
 import {
   createGithubReadmeSchema,
@@ -52,6 +55,12 @@ router.post("/:id/assist", aiLimiter, assistReadmeAi);
 router.get("/github/profile/:username", fetchGithubProfile);
 router.get("/github/oauth-url", getGithubOAuthUrl);
 router.post("/github/exchange-oauth", exchangeGithubOAuth);
+router.post("/github/check-repo/:username", checkProfileRepo);
+router.post("/github/publish", publishProfileReadme);
+
+// ZIP Export endpoints
+router.post("/export-zip", exportReadmeZip);
+router.post("/:id/export-zip", exportReadmeZip);
 
 // Specific document endpoints
 router.get("/:id", getReadmeById);

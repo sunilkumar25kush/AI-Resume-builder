@@ -248,3 +248,52 @@ export interface ReadmeTemplateMeta {
   accentColor?: string;
   features?: string[];
 }
+
+export interface GithubRepoCheckResult {
+  repoExists: boolean;
+  readmeExists: boolean;
+  defaultBranch?: string;
+  sha?: string | null;
+  repoUrl?: string;
+}
+
+export interface PublishProfileReadmeInput {
+  username: string;
+  content: string;
+  token?: string;
+  commitMessage?: string;
+  sha?: string | null;
+  branch?: string;
+  createRepoIfMissing?: boolean;
+}
+
+export interface PublishProfileReadmeResult {
+  success: boolean;
+  repoUrl: string;
+  fileUrl: string;
+  commitUrl?: string;
+  sha?: string;
+}
+
+export interface ValidationIssue {
+  id: string;
+  type: "error" | "warning" | "info";
+  title: string;
+  description: string;
+  fixSuggestion?: string;
+}
+
+export interface ValidationReport {
+  isValid: boolean;
+  canExport: boolean;
+  issues: ValidationIssue[];
+  stats: {
+    characters: number;
+    words: number;
+    lines: number;
+    sectionsCount: number;
+    imageCount: number;
+    badgeCount: number;
+    linkCount: number;
+  };
+}

@@ -90,3 +90,26 @@ export const exchangeGithubOAuth = asyncHandler(async (req, res) => {
   const token = await githubReadmeService.exchangeGithubOAuthCode(code);
   res.json({ success: true, data: { token } });
 });
+
+/** Check status of user's username/username profile repo */
+export const checkProfileRepo = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  const token = req.body?.token || req.query?.token || req.user?.githubAccessToken || req.headers["x-github-token"];
+  const status = await githubReadmeService.checkGithubProfileRepo(req.user.id, { username, token });
+  res.json({ success: true, data: status });
+});
+
+/** Publish or update README directly to GitHub repository */
+export const publishProfileReadme = asyncHandler(async (req, res) => {
+  const token = req.body?.token || req.user?.githubAccessToken || req.headers["x-github-token"];
+  const result = await githubReadmeService.publishGithubProfileReadme(req.user.id, {
+    ...req.body,
+    token,
+  });
+  res.json({ success: true, data: result });
+});
+
+/** Export README as a ZIP package with images/ */
+export const exportReadmeZip = asyncHandler(async (req, res) => {
+  await githubReadmeService.exportReadmeZip(res, req.user.id, req.params.id, req.body);
+});

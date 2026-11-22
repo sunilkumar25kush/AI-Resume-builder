@@ -8,6 +8,9 @@ import type {
   UpdateGithubReadmeInput,
   GithubProfileData,
   AiAssistReadmeInput,
+  GithubRepoCheckResult,
+  PublishProfileReadmeInput,
+  PublishProfileReadmeResult,
 } from "@/types";
 
 export const githubReadmeApi = {
@@ -101,6 +104,42 @@ export const githubReadmeApi = {
       { code },
     );
     return res.data.data.token;
+  },
+
+  /** Check username/username repository status */
+  async checkProfileRepo(username: string, token?: string): Promise<GithubRepoCheckResult> {
+    const res = await apiClient.post<ApiEnvelope<GithubRepoCheckResult>>(
+      `/github-readme/github/check-repo/${encodeURIComponent(username)}`,
+      { token },
+    );
+    return res.data.data;
+  },
+
+  /** Publish README.md directly to GitHub repository */
+  async publishProfileReadme(payload: PublishProfileReadmeInput): Promise<PublishProfileReadmeResult> {
+    const res = await apiClient.post<ApiEnvelope<PublishProfileReadmeResult>>(
+      "/github-readme/github/publish",
+      payload,
+    );
+    return res.data.data;
+  },
+
+  /** Download README as a ZIP package with images/ */
+  async downloadZip(id: string, payload: { customMarkdown?: string; title?: string }): Promise<void> {
+    const endpoint = id && id !== "new" ? `/github-readme/${id}/export-zip` : "/github-readme/export-zip";
+    const res = await apiClient.post(endpoint, payload, {
+      responseType: "blob",
+    });
+    const blob = new Blob([res.data], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeTitle = (payload.title || "README").replace(/\s+/g, "_");
+    link.download = `${safeTitle}_github_readme.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   },
 };
 export default githubReadmeApi;

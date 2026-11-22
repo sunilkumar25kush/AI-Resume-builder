@@ -172,3 +172,196 @@ export async function exchangeGithubOAuthCode(code) {
 
   return data.access_token;
 }
+
+/**
+ * Checks if username/username profile repository exists and whether README.md already exists
+ */
+export async function checkProfileRepo(username, token) {
+  if (!username) throw ApiError.badRequest("Username is required");
+  if (!token) throw ApiError.unauthorized("GitHub Access Token or PAT is required to check repository");
+
+  const cleanUser = username.trim().replace(/^@/, "");
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    Authorization: `Bearer ${token}`,
+    "User-Agent": "AI-Resume-Builder-Profile-Generator",
+  };
+
+  // 1. Check if repo exists: GET https://api.github.com/repos/{cleanUser}/{cleanUser}
+  const repoRes = await fetch(
+    `https://api.github.com/repos/${encodeURIComponent(cleanUser)}/${encodeURIComponent(cleanUser)}`,
+    { headers },
+  );
+
+  if (repoRes.status === 404) {
+    return {
+      repoExists: false,
+      readmeExists: false,
+      defaultBranch: "main",
+      sha: null,
+      repoUrl: `https://github.com/${cleanUser}/${cleanUser}`,
+    };
+  }
+
+  if (repoRes.status === 401 || repoRes.status === 403) {
+    const errorBody = await repoRes.json().catch(() => ({}));
+    throw ApiError.unauthorized(
+      errorBody.message || "GitHub authorization failed. Please check your token or permissions.",
+    );
+  }
+
+  if (!repoRes.ok) {
+    throw ApiError.internal(`GitHub error (${repoRes.status}) checking repository`);
+  }
+
+  const repoData = await repoRes.json();
+  const defaultBranch = repoData.default_branch || "main";
+
+  // 2. Check if README.md exists in repo
+  const readmeRes = await fetch(
+    `https://api.github.com/repos/${encodeURIComponent(cleanUser)}/${encodeURIComponent(cleanUser)}/contents/README.md?ref=${encodeURIComponent(defaultBranch)}`,
+    { headers },
+  );
+
+  if (readmeRes.status === 404) {
+    return {
+      repoExists: true,
+      readmeExists: false,
+      defaultBranch,
+      sha: null,
+      repoUrl: repoData.html_url,
+    };
+  }
+
+  if (!readmeRes.ok) {
+    throw ApiError.internal(`GitHub error (${readmeRes.status}) checking existing README`);
+  }
+
+  const fileData = await readmeRes.json();
+  return {
+    repoExists: true,
+    readmeExists: true,
+    defaultBranch,
+    sha: fileData.sha,
+    repoUrl: repoData.html_url,
+  };
+}
+
+/**
+ * Creates user's public profile repository: username/username
+ */
+export async function createProfileRepo(username, token) {
+  if (!username) throw ApiError.badRequest("Username is required");
+  if (!token) throw ApiError.unauthorized("GitHub Access Token or PAT is required");
+
+  const cleanUser = username.trim().replace(/^@/, "");
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "User-Agent": "AI-Resume-Builder-Profile-Generator",
+  };
+
+  const res = await fetch("https://api.github.com/user/repos", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      name: cleanUser,
+      description: "My personal GitHub profile README - generated with AI Profile Builder",
+      private: false,
+      auto_init: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw ApiError.badRequest(
+      errData.message || `Failed to create repository ${cleanUser}/${cleanUser}`,
+    );
+  }
+
+  const data = await res.json();
+  return {
+    repoUrl: data.html_url,
+    defaultBranch: data.default_branch || "main",
+  };
+}
+
+/**
+ * Publishes or updates README.md in username/username
+ */
+export async function publishProfileReadme({
+  username,
+  token,
+  content,
+  commitMessage = "Update GitHub profile README.md",
+  sha = null,
+  branch = "main",
+}) {
+  if (!username) throw ApiError.badRequest("Username is required");
+  if (!token) throw ApiError.unauthorized("GitHub Access Token or PAT is required");
+  if (!content) throw ApiError.badRequest("README content cannot be empty");
+
+  const cleanUser = username.trim().replace(/^@/, "");
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "User-Agent": "AI-Resume-Builder-Profile-Generator",
+  };
+
+  // If sha is not provided, check if README already exists to prevent conflict
+  let fileSha = sha;
+  if (!fileSha) {
+    try {
+      const existingRes = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(cleanUser)}/${encodeURIComponent(cleanUser)}/contents/README.md?ref=${encodeURIComponent(branch)}`,
+        { headers },
+      );
+      if (existingRes.ok) {
+        const existingData = await existingRes.json();
+        fileSha = existingData.sha;
+      }
+    } catch {}
+  }
+
+  const encodedContent = Buffer.from(content, "utf-8").toString("base64");
+  const payload = {
+    message: commitMessage,
+    content: encodedContent,
+    branch,
+  };
+  if (fileSha) {
+    payload.sha = fileSha;
+  }
+
+  const putRes = await fetch(
+    `https://api.github.com/repos/${encodeURIComponent(cleanUser)}/${encodeURIComponent(cleanUser)}/contents/README.md`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!putRes.ok) {
+    const errData = await putRes.json().catch(() => ({}));
+    if (putRes.status === 409) {
+      throw ApiError.badRequest(
+        "A conflict occurred while committing README.md. The repository contents changed remotely. Please refresh and try again.",
+      );
+    }
+    throw ApiError.badRequest(
+      errData.message || `Failed to publish README.md (${putRes.status})`,
+    );
+  }
+
+  const resData = await putRes.json();
+  return {
+    success: true,
+    repoUrl: `https://github.com/${cleanUser}/${cleanUser}`,
+    fileUrl: resData.content?.html_url || `https://github.com/${cleanUser}/${cleanUser}/blob/${branch}/README.md`,
+    commitUrl: resData.commit?.html_url,
+    sha: resData.content?.sha,
+  };
+}

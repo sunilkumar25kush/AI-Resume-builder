@@ -13,6 +13,7 @@ import {
   Redo2,
   RefreshCw,
   Save,
+  Send,
   Smartphone,
   Sparkles,
   Undo2,
@@ -28,6 +29,7 @@ import { SectionListPanel } from "@/components/githubReadme/editor/SectionListPa
 import { PropertiesPanel } from "@/components/githubReadme/editor/PropertiesPanel";
 import { AiAssistantDialog } from "@/components/githubReadme/editor/AiAssistantDialog";
 import { GithubIntegrationModal } from "@/components/githubReadme/GithubIntegrationModal";
+import { ExportPublishDialog } from "@/components/githubReadme/editor/ExportPublishDialog";
 import { ReadmeMarkdownPreview } from "@/components/githubReadme/ReadmeMarkdownPreview";
 import { compileReadmeToMarkdown, getDefaultSections } from "@/components/githubReadme/compiler";
 import { getTemplatePreset } from "@/components/githubReadme/templates/registry";
@@ -95,6 +97,8 @@ export function GithubReadmeEditorPage() {
   // Modals State
   const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportDialogInitialTab, setExportDialogInitialTab] = useState<"export" | "publish">("export");
 
   // Undo / Redo History Stack
   const [history, setHistory] = useState<Partial<GithubReadme>[]>([]);
@@ -376,20 +380,6 @@ export function GithubReadmeEditorPage() {
     }
   };
 
-  // Download README.md
-  const handleDownloadMarkdown = () => {
-    const blob = new Blob([doc.content || ""], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${(doc.title || "README").replace(/\s+/g, "_")}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("README.md downloaded!");
-  };
-
   // Apply GitHub profile data import
   const handleApplyGithubData = (imported: {
     name?: string;
@@ -610,12 +600,29 @@ export function GithubReadmeEditorPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDownloadMarkdown}
+            onClick={() => {
+              setExportDialogInitialTab("export");
+              setIsExportDialogOpen(true);
+            }}
             className="h-7 text-xs gap-1 cursor-pointer"
-            title="Download README.md"
+            title="Download README.md or Assets ZIP Package"
           >
             <Download className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Export</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setExportDialogInitialTab("publish");
+              setIsExportDialogOpen(true);
+            }}
+            className="h-7 text-xs gap-1 cursor-pointer border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+            title="Publish README directly to your GitHub profile repository"
+          >
+            <Send className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline font-medium">Publish</span>
           </Button>
 
           <Button
@@ -778,6 +785,15 @@ export function GithubReadmeEditorPage() {
         readmeId={id}
         currentDoc={doc}
         onApply={handleApplyAiAssist}
+      />
+
+      {/* Export & Publishing Dialog */}
+      <ExportPublishDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        doc={doc}
+        readmeId={id}
+        initialTab={exportDialogInitialTab}
       />
     </div>
   );
