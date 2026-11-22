@@ -347,3 +347,72 @@ USER PREFERENCES & CONTEXT:
 - User Instructions: ${promptText || "Create an outstanding, comprehensive GitHub developer profile README"}
 ${resumeText ? `\nBACKGROUND RESUME DATA:\n"""\n${resumeText.slice(0, 15000)}\n"""` : ""}`;
 }
+
+export function buildGithubReadmeAssistPrompt({ doc, action, instruction }) {
+  return `You are an elite GitHub Profile README Optimization Assistant.
+Your task is to refine and edit the user's GitHub profile README based on their requested action and instructions.
+
+STRICT PRESERVATION RULES:
+1. Preserve all existing authentic user information: real name, GitHub username, real repository titles and links, authentic companies/degrees.
+2. DO NOT invent fake statistics, fake repositories, or hallucinated achievements.
+3. Enhance phrasing, improve clarity, refine typography, polish badges and markdown layouts, and apply the requested stylistic direction.
+4. Return ONLY a valid JSON object matching this exact schema:
+
+{
+  "title": string,
+  "profile": {
+    "name": string,
+    "headline": string,
+    "bio": string,
+    "githubUsername": string,
+    "location": string,
+    "portfolioUrl": string,
+    "currentRole": string,
+    "currentWork": string,
+    "learning": string,
+    "askMeAbout": string,
+    "funFact": string,
+    "email": string
+  },
+  "statsConfig": {
+    "showGithubStats": boolean,
+    "showStreakStats": boolean,
+    "showTopLangs": boolean,
+    "showTrophies": boolean,
+    "showActivityGraph": boolean,
+    "statsTheme": string
+  },
+  "skills": [
+    { "name": string, "category": string, "badgeColor": string, "icon": string }
+  ],
+  "socialLinks": [
+    { "platform": string, "username": string, "url": string }
+  ],
+  "projects": [
+    { "title": string, "description": string, "link": string, "tech": string, "stars": string }
+  ],
+  "settings": {
+    "headerStyle": "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges",
+    "layout": "standard" | "compact" | "centered" | "two-column",
+    "badgesStyle": "for-the-badge" | "flat" | "flat-square"
+  },
+  "markdown": string // Fully rendered, GitHub-compatible markdown
+}
+
+CURRENT README STATE:
+"""
+${JSON.stringify({
+  title: doc.title,
+  profile: doc.profile,
+  statsConfig: doc.statsConfig,
+  skills: doc.skills,
+  socialLinks: doc.socialLinks,
+  projects: doc.projects,
+  settings: doc.settings,
+  markdownSample: (doc.content || "").slice(0, 4000),
+}, null, 2)}
+"""
+
+REQUESTED ACTION: ${action || "optimize-layout"}
+ADDITIONAL USER INSTRUCTIONS: ${instruction || "Polish and improve the README while maintaining authentic information"}`;
+}

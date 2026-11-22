@@ -10,6 +10,8 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().optional().or(z.literal("")),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),

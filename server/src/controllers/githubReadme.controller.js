@@ -58,3 +58,35 @@ export const duplicateReadme = asyncHandler(async (req, res) => {
   const readme = await githubReadmeService.duplicateReadme(req.user.id, req.params.id);
   res.status(201).json({ success: true, data: { readme } });
 });
+
+/** AI Editing Assistant */
+export const assistReadmeAi = asyncHandler(async (req, res) => {
+  const result = await githubReadmeService.assistReadmeWithAi(
+    req.user.id,
+    req.params.id,
+    req.body,
+  );
+  res.json({ success: true, data: result });
+});
+
+/** Fetch GitHub Profile (Public or OAuth) */
+export const fetchGithubProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  const accessToken = req.user?.githubAccessToken || req.headers["x-github-token"] || null;
+  const data = await githubReadmeService.getGithubProfile(username, accessToken);
+  res.json({ success: true, data });
+});
+
+/** Get GitHub OAuth authorization URL */
+export const getGithubOAuthUrl = asyncHandler(async (req, res) => {
+  const state = req.query.state || "gh_auth";
+  const url = githubReadmeService.getGithubOAuthUrl(state);
+  res.json({ success: true, data: { url } });
+});
+
+/** Exchange OAuth code */
+export const exchangeGithubOAuth = asyncHandler(async (req, res) => {
+  const { code } = req.body;
+  const token = await githubReadmeService.exchangeGithubOAuthCode(code);
+  res.json({ success: true, data: { token } });
+});

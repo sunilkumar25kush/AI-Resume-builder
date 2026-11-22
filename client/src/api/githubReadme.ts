@@ -6,6 +6,8 @@ import type {
   GithubReadme,
   ImportReadmeInput,
   UpdateGithubReadmeInput,
+  GithubProfileData,
+  AiAssistReadmeInput,
 } from "@/types";
 
 export const githubReadmeApi = {
@@ -64,6 +66,41 @@ export const githubReadmeApi = {
   async importMarkdown(payload: ImportReadmeInput): Promise<GithubReadme> {
     const res = await apiClient.post<ApiEnvelope<{ readme: GithubReadme }>>("/github-readme/import", payload);
     return res.data.data.readme;
+  },
+
+  /** AI Assistant - Refine / Edit README sections */
+  async assistAi(id: string, payload: AiAssistReadmeInput): Promise<Partial<GithubReadme>> {
+    const res = await apiClient.post<ApiEnvelope<Partial<GithubReadme>>>(
+      `/github-readme/${id}/assist`,
+      payload,
+      { timeout: AI_REQUEST_TIMEOUT },
+    );
+    return res.data.data;
+  },
+
+  /** Fetch public/authenticated GitHub profile and repositories */
+  async fetchGithubProfile(username: string): Promise<GithubProfileData> {
+    const res = await apiClient.get<ApiEnvelope<GithubProfileData>>(
+      `/github-readme/github/profile/${encodeURIComponent(username)}`,
+    );
+    return res.data.data;
+  },
+
+  /** Get GitHub OAuth authorization URL */
+  async getGithubOAuthUrl(): Promise<string | null> {
+    const res = await apiClient.get<ApiEnvelope<{ url: string | null }>>(
+      "/github-readme/github/oauth-url",
+    );
+    return res.data.data.url;
+  },
+
+  /** Exchange GitHub OAuth Code */
+  async exchangeGithubOAuth(code: string): Promise<string> {
+    const res = await apiClient.post<ApiEnvelope<{ token: string }>>(
+      "/github-readme/github/exchange-oauth",
+      { code },
+    );
+    return res.data.data.token;
   },
 };
 export default githubReadmeApi;

@@ -7,12 +7,14 @@ import {
   Download,
   Eye,
   FileCode,
+  FolderGit2,
   Laptop,
   Loader2,
   Redo2,
   RefreshCw,
   Save,
   Smartphone,
+  Sparkles,
   Undo2,
   CopyPlus,
 } from "lucide-react";
@@ -24,13 +26,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useGithubReadmeStore } from "@/stores/githubReadme";
 import { SectionListPanel } from "@/components/githubReadme/editor/SectionListPanel";
 import { PropertiesPanel } from "@/components/githubReadme/editor/PropertiesPanel";
+import { AiAssistantDialog } from "@/components/githubReadme/editor/AiAssistantDialog";
+import { GithubIntegrationModal } from "@/components/githubReadme/GithubIntegrationModal";
 import { ReadmeMarkdownPreview } from "@/components/githubReadme/ReadmeMarkdownPreview";
 import { compileReadmeToMarkdown, getDefaultSections } from "@/components/githubReadme/compiler";
 import { getTemplatePreset } from "@/components/githubReadme/templates/registry";
 import type {
   GithubReadme,
+  GithubReadmeProject,
   GithubReadmeSection,
   GithubReadmeSectionType,
+  GithubReadmeSkill,
 } from "@/types";
 
 export function GithubReadmeEditorPage() {
@@ -85,6 +91,10 @@ export function GithubReadmeEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [isCopied, setIsCopied] = useState(false);
+
+  // Modals State
+  const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
 
   // Undo / Redo History Stack
   const [history, setHistory] = useState<Partial<GithubReadme>[]>([]);
@@ -380,6 +390,85 @@ export function GithubReadmeEditorPage() {
     toast.success("README.md downloaded!");
   };
 
+  // Apply GitHub profile data import
+  const handleApplyGithubData = (imported: {
+    name?: string;
+    headline?: string;
+    bio?: string;
+    githubUsername?: string;
+    location?: string;
+    website?: string;
+    skills?: GithubReadmeSkill[];
+    projects?: GithubReadmeProject[];
+  }) => {
+    setDoc((prev) => {
+      const nextProfile = {
+        ...prev.profile,
+        ...(imported.name ? { name: imported.name } : {}),
+        ...(imported.headline ? { headline: imported.headline } : {}),
+        ...(imported.bio ? { bio: imported.bio } : {}),
+        ...(imported.githubUsername ? { githubUsername: imported.githubUsername } : {}),
+        ...(imported.location ? { location: imported.location } : {}),
+        ...(imported.website ? { portfolioUrl: imported.website } : {}),
+      };
+
+      // Merge skills avoiding duplicates
+      const existingSkillNames = new Set((prev.skills || []).map((s) => s.name.toLowerCase()));
+      const newSkills = (imported.skills || []).filter(
+        (s) => !existingSkillNames.has(s.name.toLowerCase()),
+      );
+      const mergedSkills = [...(prev.skills || []), ...newSkills];
+
+      // Merge projects avoiding duplicates
+      const existingRepoNames = new Set((prev.projects || []).map((p) => p.title.toLowerCase()));
+      const newProjects = (imported.projects || []).filter(
+        (p) => !existingRepoNames.has(p.title.toLowerCase()),
+      );
+      const mergedProjects = [...(prev.projects || []), ...newProjects];
+
+      const next: Partial<GithubReadme> = {
+        ...prev,
+        profile: nextProfile,
+        skills: mergedSkills,
+        projects: mergedProjects,
+      };
+      next.content = compileReadmeToMarkdown(next);
+      pushToHistory(next);
+      setSaveStatus("unsaved");
+      return next;
+    });
+    toast.success("GitHub profile data imported into your README!");
+  };
+
+  // Apply AI assistant improvements
+  const handleApplyAiAssist = (aiDoc: Partial<GithubReadme>) => {
+    setDoc((prev) => {
+      const next: Partial<GithubReadme> = {
+        ...prev,
+        ...aiDoc,
+        profile: {
+          ...prev.profile,
+          ...(aiDoc.profile || {}),
+        },
+        statsConfig: {
+          ...prev.statsConfig,
+          ...(aiDoc.statsConfig || {}),
+        },
+        settings: {
+          ...prev.settings,
+          ...(aiDoc.settings || {}),
+        },
+        sections: aiDoc.sections && aiDoc.sections.length > 0 ? aiDoc.sections : prev.sections,
+        skills: aiDoc.skills && aiDoc.skills.length > 0 ? aiDoc.skills : prev.skills,
+        projects: aiDoc.projects && aiDoc.projects.length > 0 ? aiDoc.projects : prev.projects,
+      };
+      next.content = compileReadmeToMarkdown(next);
+      pushToHistory(next);
+      setSaveStatus("unsaved");
+      return next;
+    });
+  };
+
   const selectedSection =
     (doc.sections || []).find((s) => s.id === selectedSectionId) || null;
 
@@ -462,8 +551,30 @@ export function GithubReadmeEditorPage() {
           </span>
         </div>
 
-        {/* Right: Actions (Duplicate, Reset, Copy, Download, Save) */}
+        {/* Right: Actions (GitHub Import, AI Assist, Duplicate, Reset, Copy, Download, Save) */}
         <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsGithubModalOpen(true)}
+            className="h-7 text-xs gap-1 cursor-pointer border-border/80 hover:border-primary/50"
+            title="Import profile & repositories from GitHub"
+          >
+            <FolderGit2 className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">GitHub Sync</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAiAssistantOpen(true)}
+            className="h-7 text-xs gap-1 cursor-pointer border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary font-medium"
+            title="AI Editing Assistant"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="hidden sm:inline">AI Assist</span>
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -651,6 +762,23 @@ export function GithubReadmeEditorPage() {
           onUpdateSection={handleUpdateSection}
         />
       </div>
+
+      {/* GitHub Integration Modal */}
+      <GithubIntegrationModal
+        open={isGithubModalOpen}
+        onOpenChange={setIsGithubModalOpen}
+        initialUsername={doc.profile?.githubUsername}
+        onApply={handleApplyGithubData}
+      />
+
+      {/* AI Editing Assistant Dialog */}
+      <AiAssistantDialog
+        open={isAiAssistantOpen}
+        onOpenChange={setIsAiAssistantOpen}
+        readmeId={id}
+        currentDoc={doc}
+        onApply={handleApplyAiAssist}
+      />
     </div>
   );
 }

@@ -11,6 +11,10 @@ import {
   importReadme,
   updateReadmeById,
   duplicateReadme,
+  assistReadmeAi,
+  fetchGithubProfile,
+  getGithubOAuthUrl,
+  exchangeGithubOAuth,
 } from "../controllers/githubReadme.controller.js";
 import {
   createGithubReadmeSchema,
@@ -42,6 +46,12 @@ router.post(
 );
 
 router.post("/:id/duplicate", duplicateReadme);
+router.post("/:id/assist", aiLimiter, assistReadmeAi);
+
+// GitHub API Integration endpoints
+router.get("/github/profile/:username", fetchGithubProfile);
+router.get("/github/oauth-url", getGithubOAuthUrl);
+router.post("/github/exchange-oauth", exchangeGithubOAuth);
 
 // Specific document endpoints
 router.get("/:id", getReadmeById);

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   FileUp,
+  GitBranch,
   LayoutTemplate,
   Loader2,
   PenTool,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { githubReadmeApi } from "@/api/githubReadme";
 import { useGithubReadmeStore } from "@/stores/githubReadme";
 import { useResumesStore } from "@/stores/resumes";
 import { useAuthStore } from "@/stores/auth";
@@ -82,6 +84,38 @@ export function CreateReadmeDialog({
   const [aiPrompt, setAiPrompt] = useState("");
   const [selectedResumeId, setSelectedResumeId] = useState<string>("none");
   const [aiTone, setAiTone] = useState<"professional" | "creative" | "minimal" | "hacker">("professional");
+  const [fetchingGithub, setFetchingGithub] = useState(false);
+
+  const handleFetchGithubForAi = async () => {
+    if (!githubUsername.trim()) {
+      toast.error("Please enter a GitHub username first.");
+      return;
+    }
+    setFetchingGithub(true);
+    try {
+      const data = await githubReadmeApi.fetchGithubProfile(githubUsername.trim());
+      let addition = `\n\n[GitHub Profile: @${data.username}]`;
+      if (data.name) addition += `\nName: ${data.name}`;
+      if (data.bio) addition += `\nBio: ${data.bio}`;
+      if (data.topLanguages && data.topLanguages.length > 0) {
+        addition += `\nTop Languages: ${data.topLanguages.map((l) => l.language).join(", ")}`;
+      }
+      if (data.projects && data.projects.length > 0) {
+        const topRepos = data.projects
+          .slice(0, 4)
+          .map((r) => `${r.title} (${r.tech || "Code"}: ${r.description || "project"})`)
+          .join("; ");
+        addition += `\nKey Repositories: ${topRepos}`;
+      }
+      setAiPrompt((prev) => (prev ? `${prev.trim()}${addition}` : addition.trim()));
+      toast.success(`Fetched GitHub context for @${data.username}! Added to prompt.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to fetch GitHub profile";
+      toast.error(msg);
+    } finally {
+      setFetchingGithub(false);
+    }
+  };
 
   // Import Form states
   const [importedMarkdown, setImportedMarkdown] = useState("");
@@ -319,35 +353,110 @@ export function CreateReadmeDialog({
 
           {/* TAB 2: AI GENERATE */}
           <TabsContent value="ai" className="space-y-4 pt-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="ai-prompt" className="text-xs font-semibold flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span>Tell AI About Yourself & Your Stack</span>
-              </Label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ai-prompt" className="text-xs font-semibold flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span>Tell AI About Yourself & Your Stack</span>
+                </Label>
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  Click a template idea below to auto-fill
+                </span>
+              </div>
+
+              {/* Quick Prompt Ideas */}
+              <div className="flex flex-wrap gap-1.5 pb-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiPrompt(
+                      "I am a full-stack developer specializing in React, Node.js, MongoDB, and TypeScript. I want a modern dark-themed GitHub profile with animated elements, tech stack badges, and GitHub statistics.",
+                    );
+                    setSelectedTemplate("developer-tech-stack");
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  ⚡ Full-Stack Developer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiPrompt(
+                      "I am a backend & systems engineer working with Go, Docker, and Kubernetes. I prefer a clean, minimal monochrome GitHub profile with repository metrics and system architecture.",
+                    );
+                    setSelectedTemplate("minimal-aesthetic");
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  🌱 Minimal Monochrome
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiPrompt(
+                      "I am an AI / ML engineer working with PyTorch, LLMs, and computer vision. I want a research-oriented GitHub README with model showcases, HuggingFace badges, and arXiv links.",
+                    );
+                    setSelectedTemplate("ai-ml");
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  🧠 AI / ML Researcher
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiPrompt(
+                      "I am a creative software developer who loves gaming, anime aesthetics, and interactive web tools. I want a vibrant dark theme with GIF support and trophies.",
+                    );
+                    setSelectedTemplate("anime-gaming");
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  🎮 Anime & Gaming
+                </button>
+              </div>
+
               <Textarea
                 id="ai-prompt"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="e.g. I am a senior full-stack developer with 5 years of experience in React, TypeScript, Node.js, and AWS. I love building cloud microservices, contributing to open source, and mentoring developers. Make my README exciting and clean!"
+                placeholder="e.g. I am a senior full-stack developer specializing in React, TypeScript, and Node.js. Make my README exciting, modern, and clean!"
                 rows={4}
-                className="resize-none"
+                className="resize-none text-xs"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">GitHub Username</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">GitHub Username</Label>
+                  <button
+                    type="button"
+                    onClick={handleFetchGithubForAi}
+                    disabled={fetchingGithub || !githubUsername.trim()}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                    title="Fetch public GitHub repos & languages into prompt"
+                  >
+                    {fetchingGithub ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <GitBranch className="h-3 w-3" />
+                    )}
+                    <span>{fetchingGithub ? "Fetching..." : "Fetch Info"}</span>
+                  </button>
+                </div>
                 <Input
                   value={githubUsername}
                   onChange={(e) => setGithubUsername(e.target.value)}
                   placeholder="octocat"
+                  className="text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Source Resume (Optional)</Label>
                 <Select value={selectedResumeId} onValueChange={setSelectedResumeId}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full text-xs">
                     <SelectValue placeholder="None (from prompt)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -364,7 +473,7 @@ export function CreateReadmeDialog({
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Profile Tone</Label>
                 <Select value={aiTone} onValueChange={(v) => setAiTone(v as typeof aiTone)}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

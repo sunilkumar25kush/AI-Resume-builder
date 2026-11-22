@@ -6,6 +6,7 @@ import {
   buildAssistPrompt,
   buildGenerationPrompt,
   buildGithubReadmePrompt,
+  buildGithubReadmeAssistPrompt,
   buildJdOnlyPrompt,
   buildOptimizePrompt,
   buildPortfolioExtractionPrompt,
@@ -224,6 +225,17 @@ class GeminiService {
   generateGithubReadme({ promptText, resumeText, githubUsername, template, tone }) {
     return this.generateJson(
       buildGithubReadmePrompt({ promptText, resumeText, githubUsername, template, tone }),
+      {
+        timeoutMs: 45_000,
+        temperature: 0.3,
+      },
+    );
+  }
+
+  /** Refine and edit GitHub README sections via Gemini AI */
+  assistGithubReadme({ doc, action, instruction }) {
+    return this.generateJson(
+      buildGithubReadmeAssistPrompt({ doc, action, instruction }),
       {
         timeoutMs: 45_000,
         temperature: 0.3,

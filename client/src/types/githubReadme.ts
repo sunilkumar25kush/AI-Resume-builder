@@ -199,6 +199,41 @@ export interface ImportReadmeInput {
   title?: string;
 }
 
+export interface GithubProfileData {
+  username: string;
+  name: string;
+  bio: string;
+  avatarUrl: string;
+  location: string;
+  company: string;
+  blog: string;
+  twitter: string;
+  email: string;
+  followers: number;
+  following: number;
+  publicRepos: number;
+  totalStars: number;
+  totalForks: number;
+  topLanguages: { language: string; count: number }[];
+  projects: {
+    title: string;
+    description: string;
+    link: string;
+    stars: string;
+    forks: string;
+    tech: string;
+    topics?: string[];
+    homepage?: string;
+  }[];
+  profileUrl: string;
+}
+
+export interface AiAssistReadmeInput {
+  action?: string;
+  instruction?: string;
+  currentDoc?: Partial<GithubReadme>;
+}
+
 export interface ReadmeTemplateMeta {
   id: GithubReadmeTemplateId;
   name: string;

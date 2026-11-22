@@ -2,6 +2,11 @@ import { GithubReadme } from "../models/GithubReadme.js";
 import { Resume } from "../models/Resume.js";
 import { geminiService } from "./ai/gemini.service.js";
 import { ApiError } from "../utils/ApiError.js";
+import {
+  fetchGithubProfileData,
+  getGithubOAuthUrl as getOAuthUrlHelper,
+  exchangeGithubOAuthCode as exchangeOAuthCodeHelper,
+} from "./githubApi.service.js";
 
 /** Map of default shields.io tech badge colors */
 const TECH_BADGE_COLORS = {
@@ -992,4 +997,38 @@ export async function importReadmeMarkdown(userId, { markdown, title }) {
     content: markdown,
   };
   return GithubReadme.create(doc);
+}
+
+/** Assist in editing README with AI */
+export async function assistReadmeWithAi(userId, readmeId, { action, instruction, currentDoc }) {
+  let doc = currentDoc;
+  if (!doc && readmeId) {
+    doc = await GithubReadme.findOne({ _id: readmeId, userId }).lean();
+  }
+  if (!doc) {
+    throw ApiError.notFound("README document not found");
+  }
+
+  const aiResult = await geminiService.assistGithubReadme({
+    doc,
+    action,
+    instruction,
+  });
+
+  return aiResult;
+}
+
+/** Fetch public or authenticated GitHub profile data */
+export async function getGithubProfile(username, accessToken = null) {
+  return fetchGithubProfileData(username, accessToken);
+}
+
+/** Get GitHub OAuth authorization URL */
+export function getGithubOAuthUrl(state = "gh_auth") {
+  return getOAuthUrlHelper(state);
+}
+
+/** Exchange GitHub OAuth Code */
+export async function exchangeGithubOAuthCode(code) {
+  return exchangeOAuthCodeHelper(code);
 }
