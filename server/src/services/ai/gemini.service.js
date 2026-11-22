@@ -5,6 +5,7 @@ import { withRetry } from "./retry.js";
 import {
   buildAssistPrompt,
   buildGenerationPrompt,
+  buildGithubReadmePrompt,
   buildJdOnlyPrompt,
   buildOptimizePrompt,
   buildPortfolioExtractionPrompt,
@@ -217,6 +218,17 @@ class GeminiService {
       timeoutMs: 40_000,
       temperature: 0.1,
     });
+  }
+
+  /** Generate structured GitHub profile README content via Gemini AI */
+  generateGithubReadme({ promptText, resumeText, githubUsername, template, tone }) {
+    return this.generateJson(
+      buildGithubReadmePrompt({ promptText, resumeText, githubUsername, template, tone }),
+      {
+        timeoutMs: 45_000,
+        temperature: 0.3,
+      },
+    );
   }
 }
 

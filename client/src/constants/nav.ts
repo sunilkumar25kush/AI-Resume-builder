@@ -5,6 +5,7 @@ import {
   FileSignature,
   FileText,
   Gauge,
+  GitPullRequest,
   Globe,
   LayoutDashboard,
   MessageSquare,
@@ -55,6 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "LinkedIn Summary", icon: FileSignature, soon: true },
       { label: "Interview Questions", icon: MessageSquare, soon: true },
       { label: "Portfolio Generator", href: "/portfolios", icon: Globe },
+      { label: "GitHub README", href: "/github-readme", icon: GitPullRequest },
     ],
   },
   {

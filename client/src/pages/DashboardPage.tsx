@@ -1,4 +1,4 @@
-import { ChevronRight, FilePlus2, FileText, Gauge, Globe, Route, ScanSearch, Wand2, Briefcase } from "lucide-react";
+import { ChevronRight, FilePlus2, FileText, Gauge, Globe, Route, ScanSearch, Wand2, Briefcase, GitPullRequest } from "lucide-react";
 import { Link } from "react-router";
 
 import { useAuthStore } from "@/stores/auth";
@@ -11,6 +11,7 @@ const features = [
   { icon: ScanSearch, title: "JD Parser", description: "Parse job descriptions and extract skills.", stage: "Live", to: "/jds" },
   { icon: Wand2, title: "AI Optimization", description: "ATS score, match %, missing skills, keywords.", stage: "Live", to: "/optimize" },
   { icon: Globe, title: "Portfolio Generator", description: "Turn your resume into a personalized, responsive portfolio website.", stage: "Live", to: "/portfolios" },
+  { icon: GitPullRequest, title: "GitHub README", description: "Design, customize, and export professional GitHub profile READMEs with live stats and badges.", stage: "Live", to: "/github-readme" },
   { icon: Briefcase, title: "Generators", description: "Cover letters, LinkedIn summaries, interview questions.", stage: "Soon" },
 ];
 

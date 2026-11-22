@@ -8,6 +8,7 @@ import jdRoutes from "./jd.routes.js";
 import notificationRoutes from "./notification.routes.js";
 import optimizationRoutes from "./optimization.routes.js";
 import portfolioRoutes from "./portfolio.routes.js";
+import githubReadmeRoutes from "./githubReadme.routes.js";
 import resumeRoutes from "./resume.routes.js";
 import userRoutes from "./user.routes.js";
 
@@ -19,6 +20,8 @@ router.use("/users", userRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/resumes", resumeRoutes);
 router.use("/portfolios", portfolioRoutes);
+router.use("/github-readme", githubReadmeRoutes);
+router.use("/readmes", githubReadmeRoutes); // Alias
 
 // Canonical REST resources with backward-compatible aliases
 router.use("/job-descriptions", jdRoutes);

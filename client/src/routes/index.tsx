@@ -46,6 +46,8 @@ const PortfoliosPage = lazy(() => import("@/pages/PortfoliosPage"));
 const PortfolioPreviewPage = lazy(() => import("@/pages/PortfolioPreviewPage"));
 const PortfolioEditorPage = lazy(() => import("@/pages/PortfolioEditorPage"));
 const PublicPortfolioPage = lazy(() => import("@/pages/PublicPortfolioPage"));
+const GithubReadmeLandingPage = lazy(() => import("@/pages/GithubReadmeLandingPage"));
+const GithubReadmeEditorPage = lazy(() => import("@/pages/GithubReadmeEditorPage"));
 
 /*
  * Kick off the most likely first-screen chunks in parallel with the entry
@@ -212,6 +214,14 @@ export const router = createBrowserRouter([
       {
         path: "/portfolios/:id/edit",
         element: <PortfolioEditorPage />,
+      },
+      {
+        path: "/github-readme",
+        element: <GithubReadmeLandingPage />,
+      },
+      {
+        path: "/github-readme/:id/edit",
+        element: <GithubReadmeEditorPage />,
       },
       { path: "*", element: <NotFoundPage /> },
     ],

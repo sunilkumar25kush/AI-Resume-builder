@@ -283,3 +283,67 @@ RESUME TEXT (UNTRUSTED CONTENT):
 ${boundedText}
 """`;
 }
+
+const GITHUB_README_INSTRUCTIONS = `You are an elite developer branding specialist and GitHub profile README architect.
+Generate a high-impact, professional GitHub Profile README file in structured JSON format.
+
+Your output must be strict JSON matching this schema:
+{
+  "title": string,
+  "profile": {
+    "name": string,
+    "headline": string,
+    "bio": string,
+    "githubUsername": string,
+    "location": string,
+    "portfolioUrl": string,
+    "currentRole": string,
+    "currentWork": string,
+    "learning": string,
+    "askMeAbout": string,
+    "funFact": string,
+    "email": string
+  },
+  "statsConfig": {
+    "showGithubStats": boolean,
+    "showStreakStats": boolean,
+    "showTopLangs": boolean,
+    "showTrophies": boolean,
+    "showActivityGraph": boolean,
+    "statsTheme": "tokyonight" | "radical" | "dracula" | "onedark" | "github_dark"
+  },
+  "skills": [
+    { "name": string, "category": string, "badgeColor": string, "icon": string }
+  ],
+  "socialLinks": [
+    { "platform": string, "username": string, "url": string }
+  ],
+  "projects": [
+    { "title": string, "description": string, "link": string, "tech": string }
+  ],
+  "settings": {
+    "headerStyle": "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges",
+    "layout": "standard" | "compact" | "centered" | "two-column",
+    "badgesStyle": "for-the-badge" | "flat" | "flat-square"
+  },
+  "markdown": string // The full rendered Markdown containing badges, stats, markdown tables/lists, social icons
+}
+
+RULES:
+- For skills badges, use shields.io format: https://img.shields.io/badge/-{Name}-{Color}?style=for-the-badge&logo={logo}&logoColor=white
+- Include GitHub Readme Stats: https://github-readme-stats.vercel.app/api?username={username}&show_icons=true&theme={theme}
+- Include Streak Stats: https://github-readme-streak-stats.herokuapp.com/?user={username}&theme={theme}
+- Include Top Languages: https://github-readme-stats.vercel.app/api/top-langs/?username={username}&layout=compact&theme={theme}
+- Format the "markdown" field with clean, readable Markdown code.
+- Return ONLY valid JSON with no markdown backticks wrapper.`;
+
+export function buildGithubReadmePrompt({ promptText, resumeText, githubUsername, template = "developer", tone = "professional" }) {
+  return `${GITHUB_README_INSTRUCTIONS}
+
+USER PREFERENCES & CONTEXT:
+- Requested Template: ${template}
+- Desired Tone: ${tone}
+- GitHub Username: ${githubUsername || "octocat"}
+- User Instructions: ${promptText || "Create an outstanding, comprehensive GitHub developer profile README"}
+${resumeText ? `\nBACKGROUND RESUME DATA:\n"""\n${resumeText.slice(0, 15000)}\n"""` : ""}`;
+}

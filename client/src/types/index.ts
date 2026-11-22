@@ -86,3 +86,4 @@ export type {
   PortfolioStatus,
   CreatePortfolioInput,
 } from "./portfolio";
+export * from "./githubReadme";
