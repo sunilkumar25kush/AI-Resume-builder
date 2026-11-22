@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
+  Image as ImageIcon,
   Layers,
+  Loader2,
   Plus,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { githubReadmeApi } from "@/api/githubReadme";
+import { toast } from "@/lib/toast";
 import type {
   GithubReadme,
   GithubReadmeSection,
@@ -84,6 +89,54 @@ export function PropertiesPanel({
   const [newEduDeg, setNewEduDeg] = useState("");
   const [newEduInst, setNewEduInst] = useState("");
   const [newEduYear, setNewEduYear] = useState("");
+
+  // Asset Upload States
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingGif, setUploadingGif] = useState(false);
+  const [uploadingCustomImg, setUploadingCustomImg] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const gifInputRef = useRef<HTMLInputElement>(null);
+  const customImgInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File, target: "banner" | "gif" | "custom") => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size exceeds 5MB limit");
+      return;
+    }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Please select a valid image file (PNG, JPG, GIF, WebP, SVG)");
+      return;
+    }
+
+    if (target === "banner") setUploadingBanner(true);
+    if (target === "gif") setUploadingGif(true);
+    if (target === "custom") setUploadingCustomImg(true);
+
+    try {
+      const res = await githubReadmeApi.uploadAsset(file);
+      if (target === "banner") {
+        onUpdateDoc({ bannerUrl: res.url });
+        toast.success("Banner image uploaded!");
+      } else if (target === "gif") {
+        onUpdateDoc({ gifUrl: res.url });
+        toast.success("Mascot GIF uploaded!");
+      } else if (target === "custom" && selectedSection) {
+        const currentMd = selectedSection.customMarkdown || "";
+        const inserted = `${currentMd}\n\n![${file.name.replace(/\.[^/.]+$/, "")}](${res.url})\n`;
+        onUpdateSection(selectedSection.id, { customMarkdown: inserted });
+        toast.success("Image inserted into custom section!");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to upload asset";
+      toast.error(msg);
+    } finally {
+      if (target === "banner") setUploadingBanner(false);
+      if (target === "gif") setUploadingGif(false);
+      if (target === "custom") setUploadingCustomImg(false);
+    }
+  };
 
   const handleAddSkill = (skillName?: string) => {
     const name = (skillName || newSkill).trim();
@@ -238,23 +291,65 @@ export function PropertiesPanel({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Custom Banner Image URL</Label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Custom Banner Image</Label>
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={uploadingBanner}
+                  className="text-[10px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {uploadingBanner ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                  <span>{uploadingBanner ? "Uploading..." : "Upload File"}</span>
+                </button>
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileUpload(f, "banner");
+                  }}
+                />
+              </div>
               <Input
-                placeholder="https://example.com/banner.png"
+                placeholder="https://example.com/banner.png or upload above"
                 value={doc.bannerUrl || ""}
                 onChange={(e) => onUpdateDoc({ bannerUrl: e.target.value })}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-mono"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Animated Mascot GIF URL</Label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Animated Mascot GIF</Label>
+                <button
+                  type="button"
+                  onClick={() => gifInputRef.current?.click()}
+                  disabled={uploadingGif}
+                  className="text-[10px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {uploadingGif ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                  <span>{uploadingGif ? "Uploading..." : "Upload GIF"}</span>
+                </button>
+                <input
+                  ref={gifInputRef}
+                  type="file"
+                  accept="image/gif,image/webp,image/png"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileUpload(f, "gif");
+                  }}
+                />
+              </div>
               <Input
-                placeholder="https://media.giphy.com/.../giphy.gif"
+                placeholder="https://media.giphy.com/.../giphy.gif or upload above"
                 value={doc.gifUrl || ""}
                 onChange={(e) => onUpdateDoc({ gifUrl: e.target.value })}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-mono"
               />
             </div>
           </div>
@@ -771,7 +866,32 @@ export function PropertiesPanel({
             {/* CUSTOM MARKDOWN SECTION */}
             {selectedSection.type === "custom" && (
               <div className="space-y-3 pt-1">
-                <Label className="text-xs font-semibold">Custom Section Markdown</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">Custom Section Markdown</Label>
+                  <button
+                    type="button"
+                    onClick={() => customImgInputRef.current?.click()}
+                    disabled={uploadingCustomImg}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {uploadingCustomImg ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <ImageIcon className="h-3 w-3" />
+                    )}
+                    <span>Insert Image</span>
+                  </button>
+                  <input
+                    ref={customImgInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleFileUpload(f, "custom");
+                    }}
+                  />
+                </div>
                 <Textarea
                   rows={10}
                   value={selectedSection.customMarkdown || ""}

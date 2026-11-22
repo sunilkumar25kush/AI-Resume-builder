@@ -2,6 +2,7 @@ import { Router } from "express";
 import { protect } from "../middlewares/auth.js";
 import { aiLimiter } from "../middlewares/rateLimiter.js";
 import { validate } from "../middlewares/validate.js";
+import { uploadReadmeAsset } from "../middlewares/upload.js";
 import {
   createReadme,
   deleteReadmeById,
@@ -18,6 +19,7 @@ import {
   checkProfileRepo,
   publishProfileReadme,
   exportReadmeZip,
+  uploadAsset,
 } from "../controllers/githubReadme.controller.js";
 import {
   createGithubReadmeSchema,
@@ -61,6 +63,9 @@ router.post("/github/publish", publishProfileReadme);
 // ZIP Export endpoints
 router.post("/export-zip", exportReadmeZip);
 router.post("/:id/export-zip", exportReadmeZip);
+
+// Asset Upload endpoint
+router.post("/upload-asset", uploadReadmeAsset.single("image"), uploadAsset);
 
 // Specific document endpoints
 router.get("/:id", getReadmeById);

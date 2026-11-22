@@ -113,3 +113,20 @@ export const publishProfileReadme = asyncHandler(async (req, res) => {
 export const exportReadmeZip = asyncHandler(async (req, res) => {
   await githubReadmeService.exportReadmeZip(res, req.user.id, req.params.id, req.body);
 });
+
+/** Upload asset image or gif for README */
+export const uploadAsset = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No image file provided" });
+  }
+  const cleanPath = `/${req.file.path.replace(/\\/g, "/")}`;
+  res.status(201).json({
+    success: true,
+    data: {
+      url: cleanPath,
+      filename: req.file.filename,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+    },
+  });
+});

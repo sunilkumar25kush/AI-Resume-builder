@@ -9,11 +9,13 @@ import {
   FileCode,
   FolderGit2,
   Laptop,
+  Layers,
   Loader2,
   Redo2,
   RefreshCw,
   Save,
   Send,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   Undo2,
@@ -88,6 +90,7 @@ export function GithubReadmeEditorPage() {
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>("sec_header");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");
+  const [mobilePanelTab, setMobilePanelTab] = useState<"sections" | "preview" | "properties">("preview");
 
   // Save & Sync State
   const [isSaving, setIsSaving] = useState(false);
@@ -637,21 +640,72 @@ export function GithubReadmeEditorPage() {
         </div>
       </header>
 
+      {/* Mobile / Tablet Panel Switcher Bar (< lg) */}
+      <div className="lg:hidden flex items-center justify-around border-b border-border/80 bg-card/60 px-2 py-1.5 shrink-0 text-xs select-none">
+        <button
+          type="button"
+          onClick={() => setMobilePanelTab("sections")}
+          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
+            mobilePanelTab === "sections"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Sections</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanelTab("preview")}
+          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
+            mobilePanelTab === "preview"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          <span>Preview</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanelTab("properties")}
+          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
+            mobilePanelTab === "properties"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>Properties</span>
+        </button>
+      </div>
+
       {/* 2. THREE-PANEL WORKSPACE */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
         {/* PANEL 1 (LEFT): SECTIONS & REORDERING */}
-        <SectionListPanel
-          sections={doc.sections || []}
-          selectedSectionId={selectedSectionId}
-          onSelectSection={setSelectedSectionId}
-          onToggleSection={handleToggleSection}
-          onReorderSections={handleReorderSections}
-          onAddSection={handleAddSection}
-          onRemoveSection={handleRemoveSection}
-        />
+        <div className={`h-full lg:block ${mobilePanelTab === "sections" ? "block w-full flex-1" : "hidden"}`}>
+          <SectionListPanel
+            sections={doc.sections || []}
+            selectedSectionId={selectedSectionId}
+            onSelectSection={(secId) => {
+              setSelectedSectionId(secId);
+              if (window.innerWidth < 1024) {
+                setMobilePanelTab("properties");
+              }
+            }}
+            onToggleSection={handleToggleSection}
+            onReorderSections={handleReorderSections}
+            onAddSection={handleAddSection}
+            onRemoveSection={handleRemoveSection}
+          />
+        </div>
 
         {/* PANEL 2 (CENTER): LIVE PREVIEW & GITHUB CONTAINER */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <main
+          className={`flex-1 flex flex-col h-full overflow-hidden bg-background ${
+            mobilePanelTab === "preview" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {/* Center Toolbar: View Toggles */}
           <div className="h-10 border-b border-border/80 px-4 flex items-center justify-between gap-2 shrink-0 select-none bg-card/20">
             {/* View Mode: Preview vs Raw */}
@@ -762,12 +816,14 @@ export function GithubReadmeEditorPage() {
         </main>
 
         {/* PANEL 3 (RIGHT): PROPERTIES & SETTINGS */}
-        <PropertiesPanel
-          doc={doc}
-          selectedSection={selectedSection}
-          onUpdateDoc={handleUpdateDoc}
-          onUpdateSection={handleUpdateSection}
-        />
+        <div className={`h-full lg:block ${mobilePanelTab === "properties" ? "block w-full flex-1" : "hidden"}`}>
+          <PropertiesPanel
+            doc={doc}
+            selectedSection={selectedSection}
+            onUpdateDoc={handleUpdateDoc}
+            onUpdateSection={handleUpdateSection}
+          />
+        </div>
       </div>
 
       {/* GitHub Integration Modal */}

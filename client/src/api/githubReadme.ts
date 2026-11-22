@@ -141,5 +141,19 @@ export const githubReadmeApi = {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   },
+
+  /** Upload an image or GIF asset for the README */
+  async uploadAsset(file: File): Promise<{ url: string; filename: string }> {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await apiClient.post<ApiEnvelope<{ url: string; filename: string }>>(
+      "/github-readme/upload-asset",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    return res.data.data;
+  },
 };
 export default githubReadmeApi;

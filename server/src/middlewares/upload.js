@@ -8,12 +8,20 @@ import { ApiError } from "../utils/ApiError.js";
 const AVATAR_DIR = "uploads/avatars";
 const RESUME_DIR = "uploads/resumes";
 const JD_DIR = "uploads/jds";
+const README_ASSET_DIR = "uploads/readme-assets";
 
-for (const dir of [AVATAR_DIR, RESUME_DIR, JD_DIR]) {
+for (const dir of [AVATAR_DIR, RESUME_DIR, JD_DIR, README_ASSET_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 export const AVATAR_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+export const README_ASSET_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+]);
 export const RESUME_MIME = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -27,6 +35,9 @@ export const JD_MIME = new Set([
 function extensionFor(mimeType) {
   if (mimeType === "image/png") return "png";
   if (mimeType === "image/webp") return "webp";
+  if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  if (mimeType === "image/gif") return "gif";
+  if (mimeType === "image/svg+xml") return "svg";
   if (mimeType === "application/pdf") return "pdf";
   if (mimeType === "text/plain") return "txt";
   return "docx";
@@ -69,6 +80,13 @@ export const uploadJd = createUpload({
   maxBytes: 10 * 1024 * 1024,
   allowedMime: JD_MIME,
   message: "Only PDF, DOCX or TXT files are allowed",
+});
+
+export const uploadReadmeAsset = createUpload({
+  dir: README_ASSET_DIR,
+  maxBytes: 5 * 1024 * 1024,
+  allowedMime: README_ASSET_MIME,
+  message: "Only JPEG, PNG, WebP, GIF, or SVG images up to 5MB are allowed",
 });
 
 /**
