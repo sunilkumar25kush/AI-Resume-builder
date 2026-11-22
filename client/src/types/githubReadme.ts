@@ -20,10 +20,10 @@ export type GithubReadmeTemplateId =
   | "custom";
 
 export interface GithubReadmeProfile {
-  name: string;
-  headline: string;
-  bio: string;
-  githubUsername: string;
+  name?: string;
+  headline?: string;
+  bio?: string;
+  githubUsername?: string;
   location?: string;
   portfolioUrl?: string;
   currentRole?: string;
@@ -35,12 +35,12 @@ export interface GithubReadmeProfile {
 }
 
 export interface GithubReadmeStatsConfig {
-  showGithubStats: boolean;
-  showStreakStats: boolean;
-  showTopLangs: boolean;
-  showTrophies: boolean;
-  showActivityGraph: boolean;
-  statsTheme: string;
+  showGithubStats?: boolean;
+  showStreakStats?: boolean;
+  showTopLangs?: boolean;
+  showTrophies?: boolean;
+  showActivityGraph?: boolean;
+  statsTheme?: string;
 }
 
 export interface GithubReadmeSkill {
@@ -64,10 +64,57 @@ export interface GithubReadmeProject {
   tech?: string;
 }
 
+export type GithubReadmeSectionType =
+  | "header"
+  | "intro"
+  | "about"
+  | "skills"
+  | "socials"
+  | "stats"
+  | "trophies"
+  | "graph"
+  | "top_langs"
+  | "projects"
+  | "experience"
+  | "education"
+  | "certifications"
+  | "achievements"
+  | "competitive"
+  | "contact"
+  | "custom";
+
+export interface GithubReadmeSection {
+  id: string;
+  type: GithubReadmeSectionType;
+  title: string;
+  enabled: boolean;
+  customMarkdown?: string;
+  data?: Record<string, any>;
+}
+
+export interface GithubReadmeExperience {
+  role: string;
+  company: string;
+  period: string;
+  description: string;
+}
+
+export interface GithubReadmeEducation {
+  degree: string;
+  institution: string;
+  year: string;
+}
+
+export interface GithubReadmeCompetitive {
+  leetcodeUsername?: string;
+  codeforcesUsername?: string;
+  hackerrankUsername?: string;
+}
+
 export interface GithubReadmeSettings {
-  headerStyle: "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges";
-  layout: "standard" | "compact" | "centered" | "two-column";
-  badgesStyle: "flat" | "flat-square" | "for-the-badge" | "plastic";
+  headerStyle?: "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges";
+  layout?: "standard" | "compact" | "centered" | "two-column";
+  badgesStyle?: "flat" | "flat-square" | "for-the-badge" | "plastic";
 }
 
 export interface GithubReadme {
@@ -84,6 +131,14 @@ export interface GithubReadme {
   skills: GithubReadmeSkill[];
   socialLinks: GithubReadmeSocial[];
   projects: GithubReadmeProject[];
+  sections?: GithubReadmeSection[];
+  experience?: GithubReadmeExperience[];
+  education?: GithubReadmeEducation[];
+  certifications?: string[];
+  achievements?: string[];
+  competitive?: GithubReadmeCompetitive;
+  bannerUrl?: string;
+  gifUrl?: string;
   settings: GithubReadmeSettings;
   createdAt: string;
   updatedAt: string;
@@ -99,6 +154,14 @@ export interface CreateGithubReadmeInput {
   skills?: GithubReadmeSkill[];
   socialLinks?: GithubReadmeSocial[];
   projects?: GithubReadmeProject[];
+  sections?: GithubReadmeSection[];
+  experience?: GithubReadmeExperience[];
+  education?: GithubReadmeEducation[];
+  certifications?: string[];
+  achievements?: string[];
+  competitive?: GithubReadmeCompetitive;
+  bannerUrl?: string;
+  gifUrl?: string;
   settings?: Partial<GithubReadmeSettings>;
 }
 
@@ -112,6 +175,14 @@ export interface UpdateGithubReadmeInput {
   skills?: GithubReadmeSkill[];
   socialLinks?: GithubReadmeSocial[];
   projects?: GithubReadmeProject[];
+  sections?: GithubReadmeSection[];
+  experience?: GithubReadmeExperience[];
+  education?: GithubReadmeEducation[];
+  certifications?: string[];
+  achievements?: string[];
+  competitive?: GithubReadmeCompetitive;
+  bannerUrl?: string;
+  gifUrl?: string;
   settings?: Partial<GithubReadmeSettings>;
 }
 

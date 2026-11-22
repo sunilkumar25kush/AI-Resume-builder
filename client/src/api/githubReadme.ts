@@ -44,6 +44,12 @@ export const githubReadmeApi = {
     await apiClient.delete(`/github-readme/${id}`);
   },
 
+  /** Duplicate an existing README */
+  async duplicate(id: string): Promise<GithubReadme> {
+    const res = await apiClient.post<ApiEnvelope<{ readme: GithubReadme }>>(`/github-readme/${id}/duplicate`);
+    return res.data.data.readme;
+  },
+
   /** Generate README with Gemini AI */
   async generateAi(payload: GenerateReadmeAiInput): Promise<GithubReadme> {
     const res = await apiClient.post<ApiEnvelope<{ readme: GithubReadme }>>(

@@ -969,6 +969,19 @@ export async function generateReadmeWithAi(userId, options = {}) {
   return GithubReadme.create(generatedData);
 }
 
+/** Duplicate an existing README project */
+export async function duplicateReadme(userId, readmeId) {
+  const source = await GithubReadme.findOne({ _id: readmeId, userId }).lean();
+  if (!source) {
+    throw ApiError.notFound("GitHub README not found");
+  }
+  delete source._id;
+  delete source.createdAt;
+  delete source.updatedAt;
+  source.title = `${source.title} (Copy)`;
+  return GithubReadme.create(source);
+}
+
 /** Import raw Markdown */
 export async function importReadmeMarkdown(userId, { markdown, title }) {
   const doc = {

@@ -60,6 +60,37 @@ const projectSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const sectionItemSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    type: { type: String, required: true },
+    title: { type: String, default: "" },
+    enabled: { type: Boolean, default: true },
+    customMarkdown: { type: String, default: "" },
+    data: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+  },
+  { _id: false },
+);
+
+const experienceSchema = new mongoose.Schema(
+  {
+    role: { type: String, default: "", trim: true },
+    company: { type: String, default: "", trim: true },
+    period: { type: String, default: "", trim: true },
+    description: { type: String, default: "", trim: true },
+  },
+  { _id: false },
+);
+
+const educationSchema = new mongoose.Schema(
+  {
+    degree: { type: String, default: "", trim: true },
+    institution: { type: String, default: "", trim: true },
+    year: { type: String, default: "", trim: true },
+  },
+  { _id: false },
+);
+
 const settingsSchema = new mongoose.Schema(
   {
     headerStyle: {
@@ -156,6 +187,33 @@ const githubReadmeSchema = new mongoose.Schema(
       type: [projectSchema],
       default: [],
     },
+    sections: {
+      type: [sectionItemSchema],
+      default: [],
+    },
+    experience: {
+      type: [experienceSchema],
+      default: [],
+    },
+    education: {
+      type: [educationSchema],
+      default: [],
+    },
+    certifications: {
+      type: [String],
+      default: [],
+    },
+    achievements: {
+      type: [String],
+      default: [],
+    },
+    competitive: {
+      leetcodeUsername: { type: String, default: "" },
+      codeforcesUsername: { type: String, default: "" },
+      hackerrankUsername: { type: String, default: "" },
+    },
+    bannerUrl: { type: String, default: "" },
+    gifUrl: { type: String, default: "" },
     settings: {
       type: settingsSchema,
       default: () => ({}),

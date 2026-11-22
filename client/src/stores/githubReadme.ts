@@ -27,6 +27,8 @@ interface GithubReadmeState {
   importMarkdown: (payload: ImportReadmeInput) => Promise<GithubReadme>;
   remove: (id: string) => Promise<void>;
   removeReadme: (id: string) => Promise<void>;
+  duplicate: (id: string) => Promise<GithubReadme>;
+  duplicateReadme: (id: string) => Promise<GithubReadme>;
   setActiveReadme: (readme: GithubReadme | null) => void;
 }
 
@@ -121,6 +123,16 @@ export const useGithubReadmeStore = create<GithubReadmeState>((set, get) => ({
 
   async removeReadme(id: string) {
     return get().remove(id);
+  },
+
+  async duplicate(id: string) {
+    const readme = await githubReadmeApi.duplicate(id);
+    set((state) => ({ items: [readme, ...state.items] }));
+    return readme;
+  },
+
+  async duplicateReadme(id: string) {
+    return get().duplicate(id);
   },
 
   setActiveReadme(readme) {

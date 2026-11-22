@@ -52,3 +52,9 @@ export const importReadme = asyncHandler(async (req, res) => {
   );
   res.status(201).json({ success: true, data: { readme } });
 });
+
+/** Duplicate README */
+export const duplicateReadme = asyncHandler(async (req, res) => {
+  const readme = await githubReadmeService.duplicateReadme(req.user.id, req.params.id);
+  res.status(201).json({ success: true, data: { readme } });
+});

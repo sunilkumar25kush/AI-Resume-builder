@@ -10,6 +10,7 @@ import {
   getUserReadmes,
   importReadme,
   updateReadmeById,
+  duplicateReadme,
 } from "../controllers/githubReadme.controller.js";
 import {
   createGithubReadmeSchema,
@@ -39,6 +40,8 @@ router.post(
   validate({ body: importReadmeSchema }),
   importReadme,
 );
+
+router.post("/:id/duplicate", duplicateReadme);
 
 // Specific document endpoints
 router.get("/:id", getReadmeById);

@@ -53,6 +53,34 @@ const settingsSchema = z.object({
   badgesStyle: z.enum(["flat", "flat-square", "for-the-badge", "plastic"]).optional().default("for-the-badge"),
 });
 
+const sectionItemSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  title: z.string().optional().default(""),
+  enabled: z.boolean().optional().default(true),
+  customMarkdown: z.string().optional().default(""),
+  data: z.record(z.any()).optional().default({}),
+});
+
+const experienceSchema = z.object({
+  role: z.string().optional().default(""),
+  company: z.string().optional().default(""),
+  period: z.string().optional().default(""),
+  description: z.string().optional().default(""),
+});
+
+const educationSchema = z.object({
+  degree: z.string().optional().default(""),
+  institution: z.string().optional().default(""),
+  year: z.string().optional().default(""),
+});
+
+const competitiveSchema = z.object({
+  leetcodeUsername: z.string().optional().default(""),
+  codeforcesUsername: z.string().optional().default(""),
+  hackerrankUsername: z.string().optional().default(""),
+});
+
 export const README_TEMPLATES = [
   "minimal",
   "developer",
@@ -85,6 +113,14 @@ export const createGithubReadmeSchema = z.object({
   skills: z.array(skillSchema).max(100).optional().default([]),
   socialLinks: z.array(socialLinkSchema).max(50).optional().default([]),
   projects: z.array(projectSchema).max(50).optional().default([]),
+  sections: z.array(sectionItemSchema).optional().default([]),
+  experience: z.array(experienceSchema).optional().default([]),
+  education: z.array(educationSchema).optional().default([]),
+  certifications: z.array(z.string()).optional().default([]),
+  achievements: z.array(z.string()).optional().default([]),
+  competitive: competitiveSchema.optional().default({}),
+  bannerUrl: z.string().optional().default(""),
+  gifUrl: z.string().optional().default(""),
   settings: settingsSchema.optional().default({}),
 });
 
@@ -98,6 +134,14 @@ export const updateGithubReadmeSchema = z.object({
   skills: z.array(skillSchema).max(100).optional(),
   socialLinks: z.array(socialLinkSchema).max(50).optional(),
   projects: z.array(projectSchema).max(50).optional(),
+  sections: z.array(sectionItemSchema).optional(),
+  experience: z.array(experienceSchema).optional(),
+  education: z.array(educationSchema).optional(),
+  certifications: z.array(z.string()).optional(),
+  achievements: z.array(z.string()).optional(),
+  competitive: competitiveSchema.optional(),
+  bannerUrl: z.string().optional(),
+  gifUrl: z.string().optional(),
   settings: settingsSchema.partial().optional(),
 });
 
