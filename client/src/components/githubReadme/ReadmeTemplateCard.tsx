@@ -78,18 +78,20 @@ export function ReadmeTemplateCard({ template, onUse, onPreview }: ReadmeTemplat
               {getTemplateIcon()}
               <span className="font-mono text-xs font-bold text-white tracking-wide">
                 {template.id === "anime-gaming"
-                  ? "🎮 PLAYER 1 :: READY"
+                  ? "Mohabbat ⚔️ Lv. 42 Sorcerer"
                   : template.id === "cybersecurity"
                   ? "root@security:~# whoami"
                   : template.id === "modern-dashboard"
-                  ? "Devon Clark 📊 Dashboard"
+                  ? "Dev Hugo Yannt 📊 Dashboard"
                   : template.id === "minimal-aesthetic"
-                  ? "Alex Vance — Software"
+                  ? "Imma Shady ⚪ Just Code"
+                  : template.id === "student"
+                  ? "Joshua Thadi 🎓 Student & Dev"
                   : template.id === "ai-ml"
                   ? "🧠 Neural Research & Models"
                   : template.id === "backend"
                   ? "alex@server:~$ neofetch"
-                  : "Hi 👋, I'm Sunil Kumar"}
+                  : "Sahil Raut 💻 Tech Stack"}
               </span>
             </div>
 
