@@ -24,6 +24,7 @@ import {
   getTemplateCustomizationConfig,
   validateCustomizationInput,
 } from "@/components/portfolios/customization/templateCustomizationConfig";
+import { FONT_FAMILY_RAW } from "@/components/portfolios/common/ThemeWrapper";
 import type { PortfolioDesignSettings, PortfolioTemplateId } from "@/types/portfolio";
 
 export interface DesignControlsProps {
@@ -340,20 +341,23 @@ export function DesignControls({ design, onChange }: DesignControlsProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {availableFonts.map((f) => {
               const isSelected = currentFont === f.id;
+              const rawFontFamily = FONT_FAMILY_RAW[f.id] || "inherit";
               return (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => handleUpdate({ fontFamily: f.id })}
-                  className={`p-2.5 rounded-lg border text-left text-xs transition-all ${
+                  className={`p-2.5 rounded-lg border text-left text-xs transition-all cursor-pointer ${
                     isSelected
                       ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-medium shadow-xs"
                       : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-850"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>{f.label}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-mono">
+                    <span style={{ fontFamily: rawFontFamily }} className="text-xs sm:text-sm font-medium">
+                      {f.label}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-mono shrink-0 ml-1">
                       {f.preview}
                     </span>
                   </div>

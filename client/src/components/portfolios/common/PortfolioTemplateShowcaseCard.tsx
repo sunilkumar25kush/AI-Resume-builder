@@ -694,6 +694,7 @@ function TemplatePreviewCover({
       );
 
     case "minimal":
+    case "executive":
       return (
         <div className="relative h-full w-full overflow-hidden bg-white dark:bg-[#141416] flex flex-col justify-between p-4 select-none border border-neutral-200/60 dark:border-neutral-800">
           <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
@@ -766,6 +767,7 @@ function TemplatePreviewCover({
       );
 
     case "creative":
+    case "modern":
       return (
         <div className="relative h-full w-full overflow-hidden bg-[#0c0a22] flex flex-col justify-between p-4 select-none">
           <div className="absolute inset-0 bg-radial from-[#8b5cf6]/20 via-transparent to-transparent pointer-events-none" />
@@ -830,7 +832,32 @@ function TemplatePreviewCover({
       );
 
     default:
-      return null;
+      return (
+        <div className="relative h-full w-full overflow-hidden bg-neutral-900 flex flex-col justify-between p-4 select-none">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <span className="text-xs font-semibold text-white">{template.name}</span>
+            <span className="text-[10px] font-mono text-neutral-400">TEMPLATE</span>
+          </div>
+
+          <div className="my-auto flex items-center gap-3 py-1">
+            <img
+              src={avatarUrl}
+              alt={fullName}
+              className="h-12 w-12 rounded-xl object-cover ring-1 ring-white/20 shrink-0"
+              loading="lazy"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white truncate">{fullName}</p>
+              <p className="text-[11px] text-neutral-400 truncate">{headline}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-2 border-t border-neutral-800 font-mono">
+            <span>LIVE PORTFOLIO</span>
+            <span className="text-blue-400 font-medium">Verified</span>
+          </div>
+        </div>
+      );
   }
 }
 

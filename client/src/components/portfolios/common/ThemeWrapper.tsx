@@ -17,7 +17,7 @@ const FONT_MAP: Record<string, string> = {
   Fira: "font-mono",
 };
 
-const FONT_FAMILY_RAW: Record<string, string> = {
+export const FONT_FAMILY_RAW: Record<string, string> = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   Geist: "'Geist Variable', 'Inter', sans-serif",
   Roboto: "'Roboto', 'Inter', sans-serif",

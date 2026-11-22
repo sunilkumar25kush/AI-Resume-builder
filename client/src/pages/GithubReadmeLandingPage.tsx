@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { useGithubReadmeStore } from "@/stores/githubReadme";
 import { README_TEMPLATES, getTemplatePreset } from "@/components/githubReadme/templates/registry";
+import { compileReadmeToMarkdown, getDefaultSections } from "@/components/githubReadme/compiler";
 import { ReadmeTemplateCard } from "@/components/githubReadme/ReadmeTemplateCard";
 import { ReadmeMarkdownPreview } from "@/components/githubReadme/ReadmeMarkdownPreview";
 import { CreateReadmeDialog } from "@/components/githubReadme/CreateReadmeDialog";
@@ -77,20 +78,16 @@ export function GithubReadmeLandingPage() {
     });
   }, [activeCategory, searchQuery]);
 
-  // Open Preview Modal for a template
+  // Open Preview Modal for a template with full compiled markdown
   const handlePreviewTemplate = (tpl: ReadmeTemplateMeta) => {
     const preset = getTemplatePreset(tpl.id, "octocat");
-    // Generate sample preview markdown from the preset
-    const sampleMd = `<!-- Template: ${tpl.name} -->
-${preset.content || `# ${preset.profile?.name || "Developer"}
-> ${preset.profile?.headline || "Building impactful software"}
-
-### 🛠️ Technology Stack
-\`${preset.skills?.map((s) => s.name).join(" • ") || "TypeScript • React • Node.js"}\`
-
-### 📊 GitHub Stats
-![Stats](https://github-readme-stats.vercel.app/api?username=octocat&show_icons=true&theme=${tpl.statsTheme}&hide_border=true)
-`}`;
+    const sections = getDefaultSections(tpl.id);
+    const fullDoc: Partial<GithubReadme> = {
+      ...preset,
+      template: tpl.id,
+      sections,
+    };
+    const sampleMd = compileReadmeToMarkdown(fullDoc);
     setPreviewMarkdown(sampleMd);
     setPreviewTemplate(tpl);
   };
