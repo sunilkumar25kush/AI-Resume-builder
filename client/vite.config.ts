@@ -1,8 +1,14 @@
-import path from "node:url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+
+const require = createRequire(import.meta.url);
+const reactDir = path.dirname(require.resolve("react/package.json"));
+const reactDomDir = path.dirname(require.resolve("react-dom/package.json"));
 
 /**
  * Injects `<link rel="preload">` for the primary UI font (Geist, latin subset)
@@ -62,11 +68,11 @@ export default defineConfig({
   resolve: {
     dedupe: ["react", "react-dom"],
     alias: {
-      "@": path.fileURLToPath(new URL("./src", import.meta.url)),
-      react: path.fileURLToPath(new URL("./node_modules/react", import.meta.url)),
-      "react-dom": path.fileURLToPath(new URL("./node_modules/react-dom", import.meta.url)),
-      "react/jsx-runtime": path.fileURLToPath(new URL("./node_modules/react/jsx-runtime.js", import.meta.url)),
-      "react/jsx-dev-runtime": path.fileURLToPath(new URL("./node_modules/react/jsx-dev-runtime.js", import.meta.url)),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      react: reactDir,
+      "react-dom": reactDomDir,
+      "react/jsx-runtime": path.join(reactDir, "jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.join(reactDir, "jsx-dev-runtime.js"),
     },
   },
   optimizeDeps: {
