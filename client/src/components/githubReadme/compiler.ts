@@ -491,7 +491,7 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
           lines.push(
             `<p align="center">`,
             `  <img src="https://github-readme-stats.vercel.app/api?username=${githubUser}&show_icons=true&theme=${statsTheme}&hide_border=true&count_private=true" height="165" alt="GitHub Stats" />`,
-            `  <img src="https://github-readme-streak-stats.herokuapp.com/?user=${githubUser}&theme=${statsTheme}&hide_border=true" height="165" alt="GitHub Streak" />`,
+            `  <img src="https://streak-stats.demolab.com/?user=${githubUser}&theme=${statsTheme}&hide_border=true" height="165" alt="GitHub Streak" />`,
             `</p>`,
             "",
           );

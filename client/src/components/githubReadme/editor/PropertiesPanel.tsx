@@ -27,6 +27,9 @@ interface PropertiesPanelProps {
   selectedSection: GithubReadmeSection | null;
   onUpdateDoc: (updates: Partial<GithubReadme>) => void;
   onUpdateSection: (sectionId: string, updates: Partial<GithubReadmeSection>) => void;
+  className?: string;
+  activeTab?: "section" | "settings";
+  hideHeaderTabs?: boolean;
 }
 
 const STATS_THEMES = [
@@ -52,8 +55,12 @@ export function PropertiesPanel({
   selectedSection,
   onUpdateDoc,
   onUpdateSection,
+  className = "",
+  activeTab,
+  hideHeaderTabs = false,
 }: PropertiesPanelProps) {
-  const [panelTab, setPanelTab] = useState<"section" | "settings">("section");
+  const [internalTab, setInternalTab] = useState<"section" | "settings">("section");
+  const panelTab = activeTab || internalTab;
 
   const profile = doc.profile || { name: "", headline: "", bio: "", githubUsername: "octocat" };
   const statsConfig = doc.statsConfig || {
@@ -231,20 +238,26 @@ export function PropertiesPanel({
   };
 
   return (
-    <aside className="w-full lg:w-80 xl:w-96 h-full border-l border-border/80 bg-card/40 flex flex-col shrink-0 select-none">
-      {/* Panel Switcher */}
-      <div className="p-3 border-b border-border/80">
-        <Tabs value={panelTab} onValueChange={(v) => setPanelTab(v as typeof panelTab)} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full h-8 bg-muted/80 p-0.5">
-            <TabsTrigger value="section" className="text-xs cursor-pointer">
-              {selectedSection ? selectedSection.title : "Section Props"}
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs cursor-pointer">
-              Global Settings
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <aside className={`w-full h-full bg-card/20 flex flex-col shrink-0 select-none ${className}`}>
+      {/* Panel Switcher (if not hidden) */}
+      {!hideHeaderTabs && (
+        <div className="p-3 border-b border-border/80">
+          <Tabs
+            value={panelTab}
+            onValueChange={(v) => setInternalTab(v as "section" | "settings")}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-2 w-full h-8 bg-muted/80 p-0.5">
+              <TabsTrigger value="section" className="text-xs cursor-pointer">
+                {selectedSection ? selectedSection.title : "Section Props"}
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs cursor-pointer">
+                Global Settings
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs">
         {panelTab === "settings" ? (

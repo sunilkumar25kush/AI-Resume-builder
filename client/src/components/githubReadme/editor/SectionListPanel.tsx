@@ -44,6 +44,7 @@ interface SectionListPanelProps {
   onReorderSections: (newSections: GithubReadmeSection[]) => void;
   onAddSection: (type: GithubReadmeSectionType, title: string) => void;
   onRemoveSection: (id: string) => void;
+  className?: string;
 }
 
 const SECTION_TYPE_METAS: { type: GithubReadmeSectionType; label: string; icon: any; description: string }[] = [
@@ -74,6 +75,7 @@ export function SectionListPanel({
   onReorderSections,
   onAddSection,
   onRemoveSection,
+  className = "",
 }: SectionListPanelProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -95,7 +97,7 @@ export function SectionListPanel({
   const enabledCount = sections.filter((s) => s.enabled).length;
 
   return (
-    <aside className="w-full lg:w-72 xl:w-80 h-full border-r border-border/80 bg-card/40 flex flex-col shrink-0 select-none">
+    <aside className={`w-full h-full bg-card/20 flex flex-col shrink-0 select-none ${className}`}>
       {/* Header */}
       <div className="p-3.5 border-b border-border/80 flex items-center justify-between gap-2">
         <div>

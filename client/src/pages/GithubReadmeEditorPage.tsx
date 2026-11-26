@@ -6,18 +6,23 @@ import {
   Copy,
   Download,
   Eye,
+  ExternalLink,
   FileCode,
   FolderGit2,
   Laptop,
   Layers,
+  Layout,
   Loader2,
+  Moon,
+  Palette,
+  Plus,
   Redo2,
   RefreshCw,
   Save,
   Send,
-  SlidersHorizontal,
   Smartphone,
   Sparkles,
+  Sun,
   Undo2,
   CopyPlus,
 } from "lucide-react";
@@ -37,11 +42,11 @@ import { compileReadmeToMarkdown, getDefaultSections } from "@/components/github
 import { getTemplatePreset } from "@/components/githubReadme/templates/registry";
 import type {
   GithubReadme,
-  GithubReadmeProject,
   GithubReadmeSection,
   GithubReadmeSectionType,
-  GithubReadmeSkill,
 } from "@/types";
+
+type EditorTab = "content" | "sections" | "design";
 
 export function GithubReadmeEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -87,10 +92,12 @@ export function GithubReadmeEditorPage() {
   });
 
   // Editor View State
+  const [editorTab, setEditorTab] = useState<EditorTab>("content");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>("sec_header");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");
-  const [mobilePanelTab, setMobilePanelTab] = useState<"sections" | "preview" | "properties">("preview");
+  const [githubTheme, setGithubTheme] = useState<"dark" | "light">("dark");
+  const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
 
   // Save & Sync State
   const [isSaving, setIsSaving] = useState(false);
@@ -144,7 +151,6 @@ export function GithubReadmeEditorPage() {
     }
     setHistory((prev) => {
       const sliced = prev.slice(0, historyIndex + 1);
-      // Keep max 30 snapshots
       const next = [...sliced, newDoc];
       if (next.length > 30) next.shift();
       return next;
@@ -181,7 +187,6 @@ export function GithubReadmeEditorPage() {
     (updates: Partial<GithubReadme>) => {
       setDoc((prev) => {
         const next = { ...prev, ...updates };
-        // Automatically compile markdown whenever visual fields change
         next.content = compileReadmeToMarkdown(next);
         pushToHistory(next);
         setSaveStatus("unsaved");
@@ -242,6 +247,7 @@ export function GithubReadmeEditorPage() {
       return next;
     });
     setSelectedSectionId(newSec.id);
+    setEditorTab("content");
   };
 
   // Remove section
@@ -303,97 +309,56 @@ export function GithubReadmeEditorPage() {
     }
   }, [id, doc, updateReadme]);
 
-  // Debounced auto-save every 2.5s if unsaved
-  useEffect(() => {
-    if (saveStatus !== "unsaved") return;
-    const timer = setTimeout(() => {
-      handleSave();
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [saveStatus, handleSave]);
-
-  // Keyboard shortcuts (Ctrl+S, Ctrl+Z, Ctrl+Y)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        e.preventDefault();
-        if (e.shiftKey) handleRedo();
-        else handleUndo();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave, handleUndo, handleRedo]);
-
-  // Duplicate current README
+  // Duplicate current project
   const handleDuplicate = async () => {
     if (!id) return;
     try {
-      const duplicated = await duplicateReadme(id);
-      toast.success("README duplicated!");
-      navigate(`/github-readme/${duplicated._id}/edit`);
+      const dup = await duplicateReadme(id);
+      toast.success("Project duplicated!");
+      navigate(`/github-readme/${dup._id || dup.id}/edit`);
     } catch {
       toast.error("Failed to duplicate README");
     }
   };
 
-  // Reset to original template preset
+  // Reset to template defaults
   const handleResetToTemplate = () => {
-    if (!doc.template) return;
-    if (confirm("Reset all sections and data back to the default template layout?")) {
-      const preset = getTemplatePreset(doc.template, doc.profile?.githubUsername || "octocat");
-      const defaultSecs = getDefaultSections(doc.template);
-      const resetDoc: Partial<GithubReadme> = {
-        ...doc,
-        ...preset,
-        profile: {
-          name: preset.profile?.name || "Developer",
-          headline: preset.profile?.headline || "Software Engineer",
-          bio: preset.profile?.bio || "",
-          githubUsername: preset.profile?.githubUsername || "octocat",
-          ...preset.profile,
-        },
-        sections: defaultSecs,
-      };
-      resetDoc.content = compileReadmeToMarkdown(resetDoc);
-      setDoc(resetDoc);
-      pushToHistory(resetDoc);
-      setSaveStatus("unsaved");
-      toast.success("Reset to template preset!");
-    }
+    const templateId = doc.template || "developer-tech-stack";
+    const preset = getTemplatePreset(templateId);
+    if (!preset) return;
+
+    const resetDoc: Partial<GithubReadme> = {
+      ...doc,
+      profile: {
+        ...doc.profile,
+        name: doc.profile?.name || preset.profile?.name || "",
+        headline: preset.profile?.headline || "",
+        bio: preset.profile?.bio || "",
+      },
+      statsConfig: preset.statsConfig,
+      skills: preset.skills,
+      settings: preset.settings,
+      sections: getDefaultSections(templateId),
+      bannerUrl: preset.bannerUrl || "",
+      gifUrl: preset.gifUrl || "",
+    };
+    resetDoc.content = compileReadmeToMarkdown(resetDoc);
+    setDoc(resetDoc);
+    pushToHistory(resetDoc);
+    toast.success("Reset README to template default settings!");
   };
 
-  // Copy Markdown
-  const handleCopyMarkdown = async () => {
-    try {
-      await navigator.clipboard.writeText(doc.content || "");
-      setIsCopied(true);
-      toast.success("Markdown copied to clipboard!");
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy markdown");
-    }
+  // Copy markdown to clipboard
+  const handleCopyMarkdown = () => {
+    if (!doc.content) return;
+    navigator.clipboard.writeText(doc.content);
+    setIsCopied(true);
+    toast.success("Markdown copied to clipboard!");
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
-  // Apply GitHub profile data import
-  const handleApplyGithubData = (imported: {
-    name?: string;
-    headline?: string;
-    bio?: string;
-    githubUsername?: string;
-    location?: string;
-    website?: string;
-    skills?: GithubReadmeSkill[];
-    projects?: GithubReadmeProject[];
-  }) => {
+  // Apply imported GitHub profile data
+  const handleApplyGithubData = (imported: Partial<any>) => {
     setDoc((prev) => {
       const nextProfile = {
         ...prev.profile,
@@ -405,17 +370,15 @@ export function GithubReadmeEditorPage() {
         ...(imported.website ? { portfolioUrl: imported.website } : {}),
       };
 
-      // Merge skills avoiding duplicates
-      const existingSkillNames = new Set((prev.skills || []).map((s) => s.name.toLowerCase()));
+      const existingSkillNames = new Set((prev.skills || []).map((s: any) => s.name.toLowerCase()));
       const newSkills = (imported.skills || []).filter(
-        (s) => !existingSkillNames.has(s.name.toLowerCase()),
+        (s: any) => !existingSkillNames.has(s.name.toLowerCase()),
       );
       const mergedSkills = [...(prev.skills || []), ...newSkills];
 
-      // Merge projects avoiding duplicates
-      const existingRepoNames = new Set((prev.projects || []).map((p) => p.title.toLowerCase()));
+      const existingRepoNames = new Set((prev.projects || []).map((p: any) => p.title.toLowerCase()));
       const newProjects = (imported.projects || []).filter(
-        (p) => !existingRepoNames.has(p.title.toLowerCase()),
+        (p: any) => !existingRepoNames.has(p.title.toLowerCase()),
       );
       const mergedProjects = [...(prev.projects || []), ...newProjects];
 
@@ -462,8 +425,9 @@ export function GithubReadmeEditorPage() {
     });
   };
 
+  const sectionsList = doc.sections || [];
   const selectedSection =
-    (doc.sections || []).find((s) => s.id === selectedSectionId) || null;
+    sectionsList.find((s) => s.id === selectedSectionId) || sectionsList[0] || null;
 
   if (loading && !activeReadme) {
     return (
@@ -472,6 +436,8 @@ export function GithubReadmeEditorPage() {
       </div>
     );
   }
+
+  const username = doc.profile?.githubUsername || "octocat";
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -492,7 +458,7 @@ export function GithubReadmeEditorPage() {
           <Input
             value={doc.title || ""}
             onChange={(e) => handleUpdateDoc({ title: e.target.value })}
-            className="h-7 text-xs font-semibold max-w-[180px] sm:max-w-xs truncate bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background"
+            className="h-7 text-xs font-semibold max-w-[160px] sm:max-w-xs truncate bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background"
             placeholder="Project Title"
           />
 
@@ -544,7 +510,7 @@ export function GithubReadmeEditorPage() {
           </span>
         </div>
 
-        {/* Right: Actions (GitHub Import, AI Assist, Duplicate, Reset, Copy, Download, Save) */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
@@ -593,16 +559,6 @@ export function GithubReadmeEditorPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleCopyMarkdown}
-            className="h-7 text-xs gap-1 cursor-pointer"
-          >
-            {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{isCopied ? "Copied" : "Copy"}</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
             onClick={() => {
               setExportDialogInitialTab("export");
               setIsExportDialogOpen(true);
@@ -640,133 +596,306 @@ export function GithubReadmeEditorPage() {
         </div>
       </header>
 
-      {/* Mobile / Tablet Panel Switcher Bar (< lg) */}
+      {/* Mobile / Tablet Screen Mode Toggle (< lg) */}
       <div className="lg:hidden flex items-center justify-around border-b border-border/80 bg-card/60 px-2 py-1.5 shrink-0 text-xs select-none">
         <button
           type="button"
-          onClick={() => setMobilePanelTab("sections")}
-          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
-            mobilePanelTab === "sections"
+          onClick={() => setMobileMode("edit")}
+          className={`flex items-center gap-1.5 py-1 px-4 rounded-md font-medium cursor-pointer transition-colors ${
+            mobileMode === "edit"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Layers className="h-3.5 w-3.5" />
-          <span>Sections</span>
+          <Layout className="h-3.5 w-3.5" />
+          <span>Edit Controls</span>
         </button>
         <button
           type="button"
-          onClick={() => setMobilePanelTab("preview")}
-          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
-            mobilePanelTab === "preview"
+          onClick={() => setMobileMode("preview")}
+          className={`flex items-center gap-1.5 py-1 px-4 rounded-md font-medium cursor-pointer transition-colors ${
+            mobileMode === "preview"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <Eye className="h-3.5 w-3.5" />
-          <span>Preview</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobilePanelTab("properties")}
-          className={`flex items-center gap-1.5 py-1 px-3 rounded-md font-medium cursor-pointer transition-colors ${
-            mobilePanelTab === "properties"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span>Properties</span>
+          <span>Live Preview</span>
         </button>
       </div>
 
-      {/* 2. THREE-PANEL WORKSPACE */}
+      {/* 2. TWO-COLUMN SPLIT WORKSPACE */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-        {/* PANEL 1 (LEFT): SECTIONS & REORDERING */}
-        <div className={`h-full lg:block ${mobilePanelTab === "sections" ? "block w-full flex-1" : "hidden"}`}>
-          <SectionListPanel
-            sections={doc.sections || []}
-            selectedSectionId={selectedSectionId}
-            onSelectSection={(secId) => {
-              setSelectedSectionId(secId);
-              if (window.innerWidth < 1024) {
-                setMobilePanelTab("properties");
-              }
-            }}
-            onToggleSection={handleToggleSection}
-            onReorderSections={handleReorderSections}
-            onAddSection={handleAddSection}
-            onRemoveSection={handleRemoveSection}
-          />
-        </div>
-
-        {/* PANEL 2 (CENTER): LIVE PREVIEW & GITHUB CONTAINER */}
-        <main
-          className={`flex-1 flex flex-col h-full overflow-hidden bg-background ${
-            mobilePanelTab === "preview" ? "flex" : "hidden lg:flex"
+        {/* LEFT COLUMN: THE ORGANIZED EDITOR (Content / Sections / Design) */}
+        <div
+          className={`w-full lg:w-[45%] xl:w-[42%] 2xl:w-[40%] border-r border-border/80 flex flex-col h-full bg-card/25 shrink-0 overflow-hidden ${
+            mobileMode === "preview" ? "hidden lg:flex" : "flex"
           }`}
         >
-          {/* Center Toolbar: View Toggles */}
-          <div className="h-10 border-b border-border/80 px-4 flex items-center justify-between gap-2 shrink-0 select-none bg-card/20">
-            {/* View Mode: Preview vs Raw */}
-            <div className="flex items-center gap-1 border border-border/60 rounded-md p-0.5 bg-muted/40">
-              <button
-                type="button"
-                onClick={() => setViewMode("preview")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  viewMode === "preview"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Eye className="h-3.5 w-3.5" />
-                <span>Live Preview</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("raw")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  viewMode === "raw"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <FileCode className="h-3.5 w-3.5" />
-                <span>Raw Markdown</span>
-              </button>
-            </div>
+          {/* Main Category Tabs */}
+          <div className="p-2 border-b border-border/80 bg-card/60 grid grid-cols-3 gap-1 shrink-0 select-none">
+            <button
+              type="button"
+              onClick={() => setEditorTab("content")}
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                editorTab === "content"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+              }`}
+            >
+              <Layout className="h-3.5 w-3.5" />
+              <span>Content</span>
+            </button>
 
-            {/* Device Frame Switcher */}
-            {viewMode === "preview" && (
-              <div className="flex items-center gap-1 border border-border/60 rounded-md p-0.5 bg-muted/40">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setPreviewDevice("desktop")}
-                  className={`h-6 w-6 cursor-pointer ${
-                    previewDevice === "desktop" ? "bg-background text-foreground" : "text-muted-foreground"
-                  }`}
-                  title="Desktop View"
-                >
-                  <Laptop className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setPreviewDevice("mobile")}
-                  className={`h-6 w-6 cursor-pointer ${
-                    previewDevice === "mobile" ? "bg-background text-foreground" : "text-muted-foreground"
-                  }`}
-                  title="Mobile View (390px)"
-                >
-                  <Smartphone className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setEditorTab("sections")}
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                editorTab === "sections"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Sections</span>
+              <span className="text-[10px] opacity-75 font-mono ml-0.5">
+                ({sectionsList.filter((s) => s.enabled).length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab("design")}
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                editorTab === "design"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+              }`}
+            >
+              <Palette className="h-3.5 w-3.5" />
+              <span>Design & Style</span>
+            </button>
           </div>
 
-          {/* Center Canvas */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex justify-center bg-muted/10">
+          {/* TAB 1: CONTENT (Section Pills + Selected Section Form) */}
+          {editorTab === "content" && (
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+              {/* Section Quick Navigator Bar */}
+              <div className="px-3 py-2 border-b border-border/60 bg-muted/20 shrink-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Select Section to Edit:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab("sections")}
+                    className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Manage / Add</span>
+                  </button>
+                </div>
+
+                {/* Horizontal scrollable pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {sectionsList
+                    .filter((s) => s.enabled)
+                    .map((sec) => (
+                      <button
+                        key={sec.id}
+                        type="button"
+                        onClick={() => setSelectedSectionId(sec.id)}
+                        className={`text-xs px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-all cursor-pointer border ${
+                          selectedSectionId === sec.id
+                            ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                            : "bg-background/80 text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                        }`}
+                      >
+                        {sec.title}
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              {/* Section Form Fields */}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <PropertiesPanel
+                  doc={doc}
+                  selectedSection={selectedSection}
+                  onUpdateDoc={handleUpdateDoc}
+                  onUpdateSection={handleUpdateSection}
+                  activeTab="section"
+                  hideHeaderTabs={true}
+                  className="bg-transparent"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: SECTIONS (Add, Reorder, Enable/Disable, Delete) */}
+          {editorTab === "sections" && (
+            <div className="flex-1 overflow-hidden min-h-0">
+              <SectionListPanel
+                sections={sectionsList}
+                selectedSectionId={selectedSectionId}
+                onSelectSection={(secId) => {
+                  setSelectedSectionId(secId);
+                  setEditorTab("content");
+                }}
+                onToggleSection={handleToggleSection}
+                onReorderSections={handleReorderSections}
+                onAddSection={handleAddSection}
+                onRemoveSection={handleRemoveSection}
+                className="bg-transparent"
+              />
+            </div>
+          )}
+
+          {/* TAB 3: DESIGN & STYLE (Templates, Themes, Badges, Banners) */}
+          {editorTab === "design" && (
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <PropertiesPanel
+                doc={doc}
+                selectedSection={selectedSection}
+                onUpdateDoc={handleUpdateDoc}
+                onUpdateSection={handleUpdateSection}
+                activeTab="settings"
+                hideHeaderTabs={true}
+                className="bg-transparent"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: THE EXPANSIVE LIVE PREVIEW CANVAS */}
+        <main
+          className={`flex-1 flex flex-col h-full overflow-hidden bg-background/50 ${
+            mobileMode === "edit" ? "hidden lg:flex" : "flex"
+          }`}
+        >
+          {/* Preview Header Bar */}
+          <div className="h-11 border-b border-border/80 px-4 flex items-center justify-between gap-3 shrink-0 select-none bg-card/30">
+            {/* Left: View Mode (Preview vs Raw) & Theme Simulator */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 border border-border/60 rounded-md p-0.5 bg-muted/40 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("preview")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                    viewMode === "preview"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Live Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("raw")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                    viewMode === "raw"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <FileCode className="h-3.5 w-3.5" />
+                  <span>Raw Markdown</span>
+                </button>
+              </div>
+
+              {/* GitHub Theme Simulator */}
+              {viewMode === "preview" && (
+                <div className="flex items-center gap-1 border border-border/60 rounded-md p-0.5 bg-muted/40 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setGithubTheme("dark")}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                      githubTheme === "dark"
+                        ? "bg-neutral-800 text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Simulate GitHub Dark Mode"
+                  >
+                    <Moon className="h-3 w-3" />
+                    <span>Dark</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGithubTheme("light")}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                      githubTheme === "light"
+                        ? "bg-white text-neutral-900 shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Simulate GitHub Light Mode"
+                  >
+                    <Sun className="h-3 w-3" />
+                    <span>Light</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Device Switcher & Open Preview in New Tab */}
+            <div className="flex items-center gap-2">
+              {viewMode === "preview" && (
+                <div className="flex items-center gap-1 border border-border/60 rounded-md p-0.5 bg-muted/40">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPreviewDevice("desktop")}
+                    className={`h-6 w-6 cursor-pointer ${
+                      previewDevice === "desktop" ? "bg-background text-foreground" : "text-muted-foreground"
+                    }`}
+                    title="Desktop Scale (Full Width)"
+                  >
+                    <Laptop className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPreviewDevice("mobile")}
+                    className={`h-6 w-6 cursor-pointer ${
+                      previewDevice === "mobile" ? "bg-background text-foreground" : "text-muted-foreground"
+                    }`}
+                    title="Mobile Scale (390px)"
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Standalone New Tab Preview Button */}
+              {id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(`/github-readme/${id}/preview`, "_blank")}
+                  className="h-7 text-xs gap-1.5 cursor-pointer text-primary border-primary/40 hover:bg-primary/10 font-medium"
+                  title="Open full preview in a new browser tab"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Open in new tab</span>
+                </Button>
+              )}
+
+              {/* Copy Markdown */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyMarkdown}
+                className="h-7 text-xs gap-1 cursor-pointer"
+                title="Copy Markdown to Clipboard"
+              >
+                {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{isCopied ? "Copied" : "Copy"}</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Canvas Viewport */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex justify-center bg-muted/15">
             {viewMode === "raw" ? (
               <div className="w-full max-w-4xl h-full flex flex-col space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
@@ -776,54 +905,49 @@ export function GithubReadmeEditorPage() {
                 <Textarea
                   value={doc.content || ""}
                   onChange={(e) => handleRawMarkdownChange(e.target.value)}
-                  className="flex-1 font-mono text-xs leading-relaxed p-4 bg-neutral-950 text-neutral-100 rounded-lg border-border/80 resize-none"
+                  className="flex-1 font-mono text-xs leading-relaxed p-4 bg-neutral-950 text-neutral-100 rounded-lg border-border/80 resize-none min-h-[450px]"
                   placeholder="# Write GitHub Markdown..."
                 />
               </div>
             ) : (
-              /* GitHub Profile README Container Mockup */
+              /* Simulated Authentic GitHub README Container */
               <div
                 className={`transition-all duration-300 w-full ${
                   previewDevice === "mobile"
-                    ? "max-w-[400px] border-x border-t border-border/80 rounded-t-2xl shadow-xl bg-card"
-                    : "max-w-4xl"
+                    ? "max-w-[400px] shadow-2xl"
+                    : "max-w-4xl shadow-xl"
                 }`}
               >
                 {/* GitHub Repo Header Simulation */}
-                <div className="border border-border/80 rounded-t-xl bg-card px-4 py-2.5 flex items-center justify-between text-xs font-mono text-muted-foreground border-b-0">
+                <div
+                  className={`border border-b-0 rounded-t-xl px-4 py-2.5 flex items-center justify-between text-xs font-mono transition-colors ${
+                    githubTheme === "dark"
+                      ? "bg-[#161b22] border-[#30363d] text-[#8b949e]"
+                      : "bg-[#f6f8fa] border-[#d0d7de] text-[#57606a]"
+                  }`}
+                >
                   <span className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">
-                      {doc.profile?.githubUsername || "octocat"}
-                    </span>
+                    <span className="font-semibold text-foreground">{username}</span>
                     <span>/</span>
-                    <span className="text-foreground">README.md</span>
+                    <span className="font-semibold text-foreground">README.md</span>
                   </span>
                   <Badge variant="outline" className="text-[10px] font-mono">
                     Public
                   </Badge>
                 </div>
 
-                {/* Rendered Markdown Preview Body */}
-                <div className="border border-border/80 rounded-b-xl bg-card/60 p-4 sm:p-8 shadow-xs">
-                  <ReadmeMarkdownPreview
-                    markdown={doc.content || ""}
-                    title={doc.title}
-                  />
-                </div>
+                {/* Rendered Markdown Body */}
+                <ReadmeMarkdownPreview
+                  markdown={doc.content || ""}
+                  title={doc.title}
+                  theme={githubTheme}
+                  showToolbar={false}
+                  className="rounded-t-none border-t-0"
+                />
               </div>
             )}
           </div>
         </main>
-
-        {/* PANEL 3 (RIGHT): PROPERTIES & SETTINGS */}
-        <div className={`h-full lg:block ${mobilePanelTab === "properties" ? "block w-full flex-1" : "hidden"}`}>
-          <PropertiesPanel
-            doc={doc}
-            selectedSection={selectedSection}
-            onUpdateDoc={handleUpdateDoc}
-            onUpdateSection={handleUpdateSection}
-          />
-        </div>
       </div>
 
       {/* GitHub Integration Modal */}

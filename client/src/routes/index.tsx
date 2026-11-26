@@ -48,6 +48,7 @@ const PortfolioEditorPage = lazy(() => import("@/pages/PortfolioEditorPage"));
 const PublicPortfolioPage = lazy(() => import("@/pages/PublicPortfolioPage"));
 const GithubReadmeLandingPage = lazy(() => import("@/pages/GithubReadmeLandingPage"));
 const GithubReadmeEditorPage = lazy(() => import("@/pages/GithubReadmeEditorPage"));
+const GithubReadmePreviewPage = lazy(() => import("@/pages/GithubReadmePreviewPage"));
 
 /*
  * Kick off the most likely first-screen chunks in parallel with the entry
@@ -129,6 +130,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <PortfolioPreviewPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/github-readme/:id/preview",
+    element: (
+      <ProtectedRoute>
+        <GithubReadmePreviewPage />
       </ProtectedRoute>
     ),
   },
