@@ -17,9 +17,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { githubReadmeApi } from "@/api/githubReadme";
 import { toast } from "@/lib/toast";
+import { ReadmeTemplateSwitcher } from "@/components/githubReadme/ReadmeTemplateSwitcher";
 import type {
   GithubReadme,
   GithubReadmeSection,
+  GithubReadmeTemplateId,
 } from "@/types";
 
 interface PropertiesPanelProps {
@@ -27,6 +29,7 @@ interface PropertiesPanelProps {
   selectedSection: GithubReadmeSection | null;
   onUpdateDoc: (updates: Partial<GithubReadme>) => void;
   onUpdateSection: (sectionId: string, updates: Partial<GithubReadmeSection>) => void;
+  onSelectTemplate?: (templateId: GithubReadmeTemplateId) => void;
   className?: string;
   activeTab?: "section" | "settings";
   hideHeaderTabs?: boolean;
@@ -55,6 +58,7 @@ export function PropertiesPanel({
   selectedSection,
   onUpdateDoc,
   onUpdateSection,
+  onSelectTemplate,
   className = "",
   activeTab,
   hideHeaderTabs = false,
@@ -263,6 +267,22 @@ export function PropertiesPanel({
         {panelTab === "settings" ? (
           /* GLOBAL SETTINGS TAB */
           <div className="space-y-4">
+            {onSelectTemplate && (
+              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-foreground">README Template</span>
+                  <ReadmeTemplateSwitcher
+                    currentTemplateId={(doc.template as GithubReadmeTemplateId) || "developer-tech-stack"}
+                    onSelectTemplate={onSelectTemplate}
+                    triggerVariant="button"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Switch layouts anytime. All your sections and personal information are preserved.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Stats Cards Theme</Label>
               <Select

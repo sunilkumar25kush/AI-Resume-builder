@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import {
+  Check,
   FileUp,
   GitBranch,
   LayoutTemplate,
@@ -79,6 +80,19 @@ export function CreateReadmeDialog({
   useEffect(() => {
     if (selectedTemplateId) setSelectedTemplate(selectedTemplateId);
   }, [selectedTemplateId]);
+
+  const [templateCategory, setTemplateCategory] = useState<string>("all");
+
+  const filteredTemplates = useMemo(() => {
+    return README_TEMPLATES.filter((tpl) => {
+      if (templateCategory === "popular" && !tpl.badge?.includes("Popular")) return false;
+      if (templateCategory === "developer" && tpl.category !== "developer") return false;
+      if (templateCategory === "dashboard" && tpl.category !== "dashboard") return false;
+      if (templateCategory === "gaming" && tpl.category !== "gaming") return false;
+      if (templateCategory === "minimal" && tpl.category !== "minimal") return false;
+      return true;
+    });
+  }, [templateCategory]);
 
   // AI Form states
   const [aiPrompt, setAiPrompt] = useState("");
@@ -242,15 +256,15 @@ export function CreateReadmeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-5 sm:p-6 overflow-hidden">
+        <DialogHeader className="shrink-0 pb-1">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Terminal className="h-5 w-5" />
             </span>
             <span>Create GitHub Profile README</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs text-muted-foreground">
             Choose how you want to start building your personal GitHub profile showcase.
           </DialogDescription>
         </DialogHeader>
@@ -258,31 +272,43 @@ export function CreateReadmeDialog({
         <Tabs
           value={activeTab}
           onValueChange={(val) => setActiveTab(val as typeof activeTab)}
-          className="w-full mt-2"
+          className="w-full mt-1 flex-1 flex flex-col overflow-hidden min-h-0"
         >
-          <TabsList className="grid w-full grid-cols-4 h-11">
-            <TabsTrigger value="template" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <LayoutTemplate className="h-4 w-4" />
-              <span className="hidden sm:inline">Choose</span> Template
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto p-1 bg-muted/60 rounded-xl gap-1 shrink-0">
+            <TabsTrigger
+              value="template"
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer transition-all"
+            >
+              <LayoutTemplate className="h-3.5 w-3.5" />
+              <span>Choose Template</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <Sparkles className="h-4 w-4 text-primary" />
-              AI Generate
+            <TabsTrigger
+              value="ai"
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer transition-all"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>AI Generate</span>
             </TabsTrigger>
-            <TabsTrigger value="scratch" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <PenTool className="h-4 w-4" />
-              Scratch
+            <TabsTrigger
+              value="scratch"
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer transition-all"
+            >
+              <PenTool className="h-3.5 w-3.5" />
+              <span>From Scratch</span>
             </TabsTrigger>
-            <TabsTrigger value="import" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <FileUp className="h-4 w-4" />
-              Import
+            <TabsTrigger
+              value="import"
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer transition-all"
+            >
+              <FileUp className="h-3.5 w-3.5" />
+              <span>Import Markdown</span>
             </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: CHOOSE TEMPLATE */}
-          <TabsContent value="template" className="space-y-4 pt-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+          <TabsContent value="template" className="flex-1 flex flex-col overflow-hidden min-h-0 space-y-3 pt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
+              <div className="space-y-1">
                 <Label htmlFor="tpl-title" className="text-xs font-semibold">
                   Project Title
                 </Label>
@@ -291,10 +317,11 @@ export function CreateReadmeDialog({
                   value={projectTitle}
                   onChange={(e) => setProjectTitle(e.target.value)}
                   placeholder="e.g. Full-Stack Profile README"
+                  className="h-8 text-xs"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="tpl-user" className="text-xs font-semibold">
                   GitHub Username
                 </Label>
@@ -303,48 +330,108 @@ export function CreateReadmeDialog({
                   value={githubUsername}
                   onChange={(e) => setGithubUsername(e.target.value)}
                   placeholder="e.g. octocat"
+                  className="h-8 text-xs font-mono"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Select Template Style</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {README_TEMPLATES.map((tpl) => {
-                  const isSelected = selectedTemplate === tpl.id;
-                  return (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      onClick={() => setSelectedTemplate(tpl.id)}
-                      className={`text-left p-3 rounded-xl border text-xs transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                          : "border-border hover:border-primary/40 bg-card"
-                      }`}
-                    >
-                      <div>
-                        <div className="font-semibold text-foreground flex items-center justify-between">
-                          <span>{tpl.name}</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
-                          {tpl.description}
-                        </p>
-                      </div>
-                      <span className="mt-2 text-[10px] font-mono text-primary font-medium">
-                        {tpl.badge}
-                      </span>
-                    </button>
-                  );
-                })}
+            {/* Category Filter Pills */}
+            <div className="flex items-center justify-between gap-2 shrink-0 pt-1">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Template Style ({filteredTemplates.length})
+              </Label>
+              <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-0.5">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "popular", label: "Popular ★" },
+                  { id: "developer", label: "Developer" },
+                  { id: "dashboard", label: "Dashboard" },
+                  { id: "gaming", label: "Gaming 🎮" },
+                  { id: "minimal", label: "Minimal" },
+                ].map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setTemplateCategory(c.id)}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                      templateCategory === c.id
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-muted/70 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            {/* Template Grid */}
+            <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 min-h-[180px]">
+              {filteredTemplates.map((tpl) => {
+                const isSelected = selectedTemplate === tpl.id;
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => setSelectedTemplate(tpl.id)}
+                    className={`text-left p-3 rounded-xl border-2 text-xs transition-all cursor-pointer flex flex-col justify-between group ${
+                      isSelected
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-xs"
+                        : "border-border/80 hover:border-primary/50 bg-card hover:bg-card/90"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                          {tpl.name}
+                        </span>
+                        {tpl.badge && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-foreground border border-border/60 shrink-0">
+                            {tpl.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+                        {tpl.description}
+                      </p>
+                      {tpl.tags && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {tpl.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-mono"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between text-xs">
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        {tpl.statsTheme || "tokyonight"}
+                      </span>
+                      {isSelected ? (
+                        <span className="flex items-center gap-1 text-[11px] font-semibold text-primary">
+                          <Check className="h-3 w-3" />
+                          Selected
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground group-hover:text-foreground">
+                          Select →
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <DialogFooter className="pt-2 shrink-0 border-t border-border/60">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleCreateFromTemplate} disabled={loading} className="gap-2">
+              <Button onClick={handleCreateFromTemplate} disabled={loading} className="gap-2 cursor-pointer shadow-sm">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 <span>Create with Template</span>
               </Button>
@@ -352,7 +439,7 @@ export function CreateReadmeDialog({
           </TabsContent>
 
           {/* TAB 2: AI GENERATE */}
-          <TabsContent value="ai" className="space-y-4 pt-3">
+          <TabsContent value="ai" className="flex-1 flex flex-col overflow-y-auto pr-1 space-y-4 pt-3 min-h-0">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="ai-prompt" className="text-xs font-semibold flex items-center gap-1.5">
@@ -486,11 +573,11 @@ export function CreateReadmeDialog({
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <DialogFooter className="pt-2 shrink-0 border-t border-border/60 mt-auto">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleGenerateAi} disabled={loading} className="gap-2">
+              <Button onClick={handleGenerateAi} disabled={loading} className="gap-2 cursor-pointer shadow-sm">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 <span>Generate README with AI</span>
               </Button>
@@ -498,7 +585,7 @@ export function CreateReadmeDialog({
           </TabsContent>
 
           {/* TAB 3: START FROM SCRATCH */}
-          <TabsContent value="scratch" className="space-y-4 pt-3">
+          <TabsContent value="scratch" className="flex-1 flex flex-col overflow-y-auto pr-1 space-y-4 pt-3 min-h-0">
             <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="scratch-title" className="text-xs font-semibold">
@@ -529,11 +616,11 @@ export function CreateReadmeDialog({
               </p>
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <DialogFooter className="pt-2 shrink-0 border-t border-border/60 mt-auto">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleCreateScratch} disabled={loading} className="gap-2">
+              <Button onClick={handleCreateScratch} disabled={loading} className="gap-2 cursor-pointer shadow-sm">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 <span>Start from Scratch</span>
               </Button>
@@ -541,7 +628,7 @@ export function CreateReadmeDialog({
           </TabsContent>
 
           {/* TAB 4: IMPORT MARKDOWN */}
-          <TabsContent value="import" className="space-y-4 pt-3">
+          <TabsContent value="import" className="flex-1 flex flex-col overflow-y-auto pr-1 space-y-4 pt-3 min-h-0">
             <div className="space-y-3">
               {/* Dropzone */}
               <label
@@ -579,11 +666,11 @@ export function CreateReadmeDialog({
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <DialogFooter className="pt-2 shrink-0 border-t border-border/60 mt-auto">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleImport} disabled={loading || !importedMarkdown.trim()} className="gap-2">
+              <Button onClick={handleImport} disabled={loading || !importedMarkdown.trim()} className="gap-2 cursor-pointer shadow-sm">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 <span>Import and Open in Editor</span>
               </Button>

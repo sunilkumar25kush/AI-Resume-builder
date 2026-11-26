@@ -21,14 +21,16 @@ import { Badge } from "@/components/ui/badge";
 import { useGithubReadmeStore } from "@/stores/githubReadme";
 import { ReadmeMarkdownPreview } from "@/components/githubReadme/ReadmeMarkdownPreview";
 import { ExportPublishDialog } from "@/components/githubReadme/editor/ExportPublishDialog";
+import { ReadmeTemplateSwitcher } from "@/components/githubReadme/ReadmeTemplateSwitcher";
 import { compileReadmeToMarkdown, getDefaultSections } from "@/components/githubReadme/compiler";
-import type { GithubReadme } from "@/types";
+import { README_TEMPLATES, getTemplatePreset } from "@/components/githubReadme/templates/registry";
+import type { GithubReadme, GithubReadmeTemplateId } from "@/types";
 
 export function GithubReadmePreviewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { activeReadme, loading, fetchReadmeById } = useGithubReadmeStore();
+  const { activeReadme, loading, fetchReadmeById, update: updateReadme } = useGithubReadmeStore();
 
   const [doc, setDoc] = useState<Partial<GithubReadme> | null>(null);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
@@ -36,6 +38,45 @@ export function GithubReadmePreviewPage() {
   const [githubTheme, setGithubTheme] = useState<"dark" | "light">("dark");
   const [isCopied, setIsCopied] = useState(false);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
+
+  // Switch template directly in preview mode
+  const handleSwitchTemplateInPreview = async (newTemplateId: GithubReadmeTemplateId) => {
+    if (!doc || !id) return;
+    const preset = getTemplatePreset(newTemplateId);
+    if (!preset) return;
+
+    const updated: Partial<GithubReadme> = {
+      ...doc,
+      template: newTemplateId,
+      profile: {
+        ...doc.profile,
+        headline: doc.profile?.headline || preset.profile?.headline || "",
+        bio: doc.profile?.bio || preset.profile?.bio || "",
+      },
+      statsConfig: {
+        ...doc.statsConfig,
+        ...preset.statsConfig,
+      },
+      settings: {
+        ...doc.settings,
+        ...preset.settings,
+      },
+      sections: getDefaultSections(newTemplateId),
+      bannerUrl: preset.bannerUrl || doc.bannerUrl || "",
+      gifUrl: preset.gifUrl || doc.gifUrl || "",
+    };
+    updated.content = compileReadmeToMarkdown(updated);
+    setDoc(updated);
+
+    try {
+      await updateReadme(id, updated);
+      const tplName = README_TEMPLATES.find((t) => t.id === newTemplateId)?.name || newTemplateId;
+      toast.success(`Switched to "${tplName}" template!`);
+    } catch {
+      const tplName = README_TEMPLATES.find((t) => t.id === newTemplateId)?.name || newTemplateId;
+      toast.info(`Previewing "${tplName}" template`);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -113,9 +154,10 @@ export function GithubReadmePreviewPage() {
             <h1 className="text-sm font-semibold text-foreground truncate max-w-xs sm:max-w-md">
               {doc?.title || "GitHub Profile README"}
             </h1>
-            <Badge variant="outline" className="text-[10px] capitalize hidden md:inline-flex">
-              {doc?.template?.replace("-", " ")}
-            </Badge>
+            <ReadmeTemplateSwitcher
+              currentTemplateId={(doc?.template as GithubReadmeTemplateId) || "developer-tech-stack"}
+              onSelectTemplate={handleSwitchTemplateInPreview}
+            />
           </div>
         </div>
 

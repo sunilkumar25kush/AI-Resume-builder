@@ -37,13 +37,15 @@ import { PropertiesPanel } from "@/components/githubReadme/editor/PropertiesPane
 import { AiAssistantDialog } from "@/components/githubReadme/editor/AiAssistantDialog";
 import { GithubIntegrationModal } from "@/components/githubReadme/GithubIntegrationModal";
 import { ExportPublishDialog } from "@/components/githubReadme/editor/ExportPublishDialog";
+import { ReadmeTemplateSwitcher } from "@/components/githubReadme/ReadmeTemplateSwitcher";
 import { ReadmeMarkdownPreview } from "@/components/githubReadme/ReadmeMarkdownPreview";
 import { compileReadmeToMarkdown, getDefaultSections } from "@/components/githubReadme/compiler";
-import { getTemplatePreset } from "@/components/githubReadme/templates/registry";
+import { README_TEMPLATES, getTemplatePreset } from "@/components/githubReadme/templates/registry";
 import type {
   GithubReadme,
   GithubReadmeSection,
   GithubReadmeSectionType,
+  GithubReadmeTemplateId,
 } from "@/types";
 
 type EditorTab = "content" | "sections" | "design";
@@ -348,6 +350,39 @@ export function GithubReadmeEditorPage() {
     toast.success("Reset README to template default settings!");
   };
 
+  // Switch template
+  const handleSwitchTemplate = (newTemplateId: GithubReadmeTemplateId) => {
+    const preset = getTemplatePreset(newTemplateId);
+    if (!preset) return;
+
+    const nextDoc: Partial<GithubReadme> = {
+      ...doc,
+      template: newTemplateId,
+      profile: {
+        ...doc.profile,
+        headline: doc.profile?.headline || preset.profile?.headline || "",
+        bio: doc.profile?.bio || preset.profile?.bio || "",
+      },
+      statsConfig: {
+        ...doc.statsConfig,
+        ...preset.statsConfig,
+      },
+      settings: {
+        ...doc.settings,
+        ...preset.settings,
+      },
+      sections: getDefaultSections(newTemplateId),
+      bannerUrl: preset.bannerUrl || doc.bannerUrl || "",
+      gifUrl: preset.gifUrl || doc.gifUrl || "",
+    };
+    nextDoc.content = compileReadmeToMarkdown(nextDoc);
+    setDoc(nextDoc);
+    pushToHistory(nextDoc);
+    setSaveStatus("unsaved");
+    const tplName = README_TEMPLATES.find((t) => t.id === newTemplateId)?.name || newTemplateId;
+    toast.success(`Switched to "${tplName}" template!`);
+  };
+
   // Copy markdown to clipboard
   const handleCopyMarkdown = () => {
     if (!doc.content) return;
@@ -462,9 +497,10 @@ export function GithubReadmeEditorPage() {
             placeholder="Project Title"
           />
 
-          <Badge variant="outline" className="text-[10px] capitalize hidden md:inline-flex">
-            {doc.template?.replace("-", " ")}
-          </Badge>
+          <ReadmeTemplateSwitcher
+            currentTemplateId={(doc.template as GithubReadmeTemplateId) || "developer-tech-stack"}
+            onSelectTemplate={handleSwitchTemplate}
+          />
         </div>
 
         {/* Center: Undo / Redo & Auto-save Status */}
@@ -759,6 +795,7 @@ export function GithubReadmeEditorPage() {
                 selectedSection={selectedSection}
                 onUpdateDoc={handleUpdateDoc}
                 onUpdateSection={handleUpdateSection}
+                onSelectTemplate={handleSwitchTemplate}
                 activeTab="settings"
                 hideHeaderTabs={true}
                 className="bg-transparent"
