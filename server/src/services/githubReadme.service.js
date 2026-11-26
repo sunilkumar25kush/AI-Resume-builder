@@ -78,7 +78,7 @@ export function compileMarkdownFromReadme(data) {
   // ----------------------------------------------------
   // 1. DEVELOPER TECH STACK
   // ----------------------------------------------------
-  if (template === "developer-tech-stack" || template === "developer") {
+  if (template === "developer-tech-stack" || template === "developer" || template === "sahil-dev-stack") {
     lines.push(
       `<div align="center">`,
       `  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=24,14,10&height=200&section=header&text=${encodeURIComponent(
@@ -175,7 +175,7 @@ export function compileMarkdownFromReadme(data) {
   // ----------------------------------------------------
   // 2. MODERN DEVELOPER DASHBOARD
   // ----------------------------------------------------
-  else if (template === "modern-dashboard") {
+  else if (template === "modern-dashboard" || template === "hugo-starry-cyber") {
     lines.push(
       `<div align="center">`,
       `  <img src="https://capsule-render.vercel.app/api?type=slice&color=0:3b82f6,50:6366f1,100:8b5cf6&height=180&section=header&text=${encodeURIComponent(
@@ -258,7 +258,7 @@ export function compileMarkdownFromReadme(data) {
   // ----------------------------------------------------
   // 3. ANIME / GAMING DEVELOPER
   // ----------------------------------------------------
-  else if (template === "anime-gaming" || template === "cyberpunk") {
+  else if (template === "anime-gaming" || template === "cyberpunk" || template === "anime-tokyo-ghoul") {
     lines.push(
       `<div align="center">`,
       `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff007f,50:7928ca,100:00dfd8&height=200&section=header&text=🎮+${encodeURIComponent(
@@ -340,7 +340,7 @@ export function compileMarkdownFromReadme(data) {
   // ----------------------------------------------------
   // 4. MINIMAL AESTHETIC
   // ----------------------------------------------------
-  else if (template === "minimal-aesthetic" || template === "minimal") {
+  else if (template === "minimal-aesthetic" || template === "minimal" || template === "midnight-shady") {
     lines.push(
       `# ${name}`,
       `*${headline}*`,
@@ -724,7 +724,7 @@ export function compileMarkdownFromReadme(data) {
   // ----------------------------------------------------
   // 11. STUDENT DEVELOPER
   // ----------------------------------------------------
-  else if (template === "student") {
+  else if (template === "student" || template === "joshua-lofi-city") {
     lines.push(
       `<div align="center">`,
       `  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:6366f1,100:a855f7&height=180&section=header&text=🎓+${encodeURIComponent(

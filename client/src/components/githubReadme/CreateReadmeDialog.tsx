@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { githubReadmeApi } from "@/api/githubReadme";
+import { getApiErrorMessage } from "@/api/client";
 import { useGithubReadmeStore } from "@/stores/githubReadme";
 import { useResumesStore } from "@/stores/resumes";
 import { useAuthStore } from "@/stores/auth";
@@ -124,8 +125,7 @@ export function CreateReadmeDialog({
       setAiPrompt((prev) => (prev ? `${prev.trim()}${addition}` : addition.trim()));
       toast.success(`Fetched GitHub context for @${data.username}! Added to prompt.`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to fetch GitHub profile";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || "Failed to fetch GitHub profile");
     } finally {
       setFetchingGithub(false);
     }
@@ -151,8 +151,7 @@ export function CreateReadmeDialog({
       onOpenChange(false);
       navigate(`/github-readme/${created._id || created.id}/edit`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to create README";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || "Failed to create README");
     } finally {
       setLoading(false);
     }
@@ -172,8 +171,7 @@ export function CreateReadmeDialog({
       onOpenChange(false);
       navigate(`/github-readme/${created._id || created.id}/edit`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to generate README";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || "Failed to generate README");
     } finally {
       setLoading(false);
     }
@@ -212,8 +210,7 @@ export function CreateReadmeDialog({
       onOpenChange(false);
       navigate(`/github-readme/${created._id || created.id}/edit`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to start blank project";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || "Failed to start blank project");
     } finally {
       setLoading(false);
     }
@@ -234,8 +231,7 @@ export function CreateReadmeDialog({
       onOpenChange(false);
       navigate(`/github-readme/${created._id || created.id}/edit`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to import README";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || "Failed to import README");
     } finally {
       setLoading(false);
     }

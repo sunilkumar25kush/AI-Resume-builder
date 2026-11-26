@@ -95,7 +95,7 @@ const settingsSchema = new mongoose.Schema(
   {
     headerStyle: {
       type: String,
-      enum: ["wave", "typing", "capsule", "minimal", "ascii", "badges"],
+      enum: ["wave", "typing", "capsule", "minimal", "ascii", "badges", "slice"],
       default: "wave",
     },
     layout: {
@@ -135,6 +135,11 @@ const githubReadmeSchema = new mongoose.Schema(
     template: {
       type: String,
       enum: [
+        "hugo-starry-cyber",
+        "sahil-dev-stack",
+        "anime-tokyo-ghoul",
+        "midnight-shady",
+        "joshua-lofi-city",
         "minimal",
         "developer",
         "cyberpunk",

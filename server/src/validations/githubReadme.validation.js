@@ -48,7 +48,7 @@ const projectSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  headerStyle: z.enum(["wave", "typing", "capsule", "minimal", "ascii", "badges"]).optional().default("wave"),
+  headerStyle: z.enum(["wave", "typing", "capsule", "minimal", "ascii", "badges", "slice"]).optional().default("wave"),
   layout: z.enum(["standard", "compact", "centered", "two-column"]).optional().default("standard"),
   badgesStyle: z.enum(["flat", "flat-square", "for-the-badge", "plastic"]).optional().default("for-the-badge"),
 });
@@ -82,6 +82,11 @@ const competitiveSchema = z.object({
 });
 
 export const README_TEMPLATES = [
+  "hugo-starry-cyber",
+  "sahil-dev-stack",
+  "anime-tokyo-ghoul",
+  "midnight-shady",
+  "joshua-lofi-city",
   "minimal",
   "developer",
   "cyberpunk",
