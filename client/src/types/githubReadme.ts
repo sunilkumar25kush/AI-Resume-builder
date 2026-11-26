@@ -1,4 +1,9 @@
 export type GithubReadmeTemplateId =
+  | "hugo-starry-cyber"
+  | "sahil-dev-stack"
+  | "anime-tokyo-ghoul"
+  | "midnight-shady"
+  | "joshua-lofi-city"
   | "developer-tech-stack"
   | "modern-dashboard"
   | "anime-gaming"
@@ -112,7 +117,7 @@ export interface GithubReadmeCompetitive {
 }
 
 export interface GithubReadmeSettings {
-  headerStyle?: "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges";
+  headerStyle?: "wave" | "typing" | "capsule" | "minimal" | "ascii" | "badges" | "slice";
   layout?: "standard" | "compact" | "centered" | "two-column";
   badgesStyle?: "flat" | "flat-square" | "for-the-badge" | "plastic";
 }

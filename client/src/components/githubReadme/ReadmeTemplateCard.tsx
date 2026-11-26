@@ -14,6 +14,16 @@ export function ReadmeTemplateCard({ template, onUse, onPreview }: ReadmeTemplat
   // Select icon according to template
   const getTemplateIcon = () => {
     switch (template.id) {
+      case "hugo-starry-cyber":
+        return <Sparkles className="h-4 w-4 text-cyan-400" />;
+      case "sahil-dev-stack":
+        return <Laptop className="h-4 w-4 text-sky-400" />;
+      case "anime-tokyo-ghoul":
+        return <Gamepad2 className="h-4 w-4 text-rose-500" />;
+      case "midnight-shady":
+        return <Feather className="h-4 w-4 text-zinc-300" />;
+      case "joshua-lofi-city":
+        return <GraduationCap className="h-4 w-4 text-amber-400" />;
       case "anime-gaming":
         return <Gamepad2 className="h-4 w-4 text-pink-400" />;
       case "modern-dashboard":
@@ -37,6 +47,16 @@ export function ReadmeTemplateCard({ template, onUse, onPreview }: ReadmeTemplat
   // Get background gradient for card thumbnail banner
   const getBannerGradient = () => {
     switch (template.id) {
+      case "hugo-starry-cyber":
+        return "from-cyan-950 via-slate-950 to-blue-950 border-cyan-500/40";
+      case "sahil-dev-stack":
+        return "from-sky-950 via-slate-900 to-indigo-950 border-sky-500/40";
+      case "anime-tokyo-ghoul":
+        return "from-rose-950/80 via-purple-950/80 to-zinc-950 border-rose-500/40";
+      case "midnight-shady":
+        return "from-zinc-950 via-neutral-900 to-zinc-950 border-zinc-700";
+      case "joshua-lofi-city":
+        return "from-amber-950/60 via-slate-950 to-emerald-950/60 border-amber-500/40";
       case "anime-gaming":
         return "from-pink-950/60 via-purple-950/70 to-cyan-950/60 border-pink-500/30";
       case "modern-dashboard":

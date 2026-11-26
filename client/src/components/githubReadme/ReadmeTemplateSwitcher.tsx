@@ -92,6 +92,16 @@ export function ReadmeTemplateSwitcher({
 
   const getTemplateIcon = (tplId: string) => {
     switch (tplId) {
+      case "hugo-starry-cyber":
+        return <Sparkles className="h-4 w-4 text-cyan-400" />;
+      case "sahil-dev-stack":
+        return <Laptop className="h-4 w-4 text-sky-400" />;
+      case "anime-tokyo-ghoul":
+        return <Gamepad2 className="h-4 w-4 text-rose-500" />;
+      case "midnight-shady":
+        return <Feather className="h-4 w-4 text-zinc-300" />;
+      case "joshua-lofi-city":
+        return <GraduationCap className="h-4 w-4 text-amber-400" />;
       case "anime-gaming":
         return <Gamepad2 className="h-4 w-4 text-pink-400" />;
       case "modern-dashboard":

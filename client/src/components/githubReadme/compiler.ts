@@ -150,21 +150,28 @@ export const TECH_BADGE_COLORS: Record<string, string> = {
 
 /** Get default section items for a given template */
 export function getDefaultSections(template = "developer-tech-stack"): GithubReadmeSection[] {
+  const isMinimal = template === "minimal-aesthetic" || template === "midnight-shady";
+  const isGamerOrAnime = template === "anime-gaming" || template === "anime-tokyo-ghoul";
+  const isDashboard = template === "modern-dashboard" || template === "hugo-starry-cyber";
+  const isSahil = template === "sahil-dev-stack" || template === "developer-tech-stack";
+  const isJoshua = template === "joshua-lofi-city" || template === "student";
+
   return [
     { id: "sec_header", type: "header", title: "Profile Header", enabled: true },
     { id: "sec_about", type: "about", title: "About Me", enabled: true },
-    { id: "sec_skills", type: "skills", title: "Skills & Tech Stack", enabled: true },
-    { id: "sec_stats", type: "stats", title: "GitHub Statistics", enabled: true },
-    { id: "sec_trophies", type: "trophies", title: "GitHub Trophies", enabled: template !== "minimal-aesthetic" },
-    { id: "sec_top_langs", type: "top_langs", title: "Most Used Languages", enabled: true },
-    { id: "sec_graph", type: "graph", title: "Contribution Graph", enabled: template === "modern-dashboard" || template === "anime-gaming" || template === "minimal-aesthetic" },
-    { id: "sec_projects", type: "projects", title: "Featured Projects", enabled: true },
-    { id: "sec_socials", type: "socials", title: "Social Links", enabled: true },
-    { id: "sec_contact", type: "contact", title: "Contact Information", enabled: false },
+    { id: "sec_skills", type: "skills", title: "Skills & Tech Stack", enabled: !isDashboard },
+    { id: "sec_stats", type: "stats", title: isDashboard ? "Languages and Activity" : "GitHub Statistics", enabled: true },
+    { id: "sec_trophies", type: "trophies", title: "GitHub Trophies", enabled: isSahil || isGamerOrAnime },
+    { id: "sec_top_langs", type: "top_langs", title: "Most Used Languages", enabled: !isDashboard && !isMinimal },
+    { id: "sec_graph", type: "graph", title: "Contribution Graph", enabled: isDashboard || isGamerOrAnime || isMinimal },
+    { id: "sec_projects", type: "projects", title: "Featured Projects", enabled: !isJoshua && !isDashboard },
+    { id: "sec_socials", type: "socials", title: "Social Links", enabled: isSahil || isMinimal },
+    { id: "sec_contact", type: "contact", title: "Contact Information", enabled: isDashboard || isJoshua },
     { id: "sec_experience", type: "experience", title: "Work Experience", enabled: false },
     { id: "sec_education", type: "education", title: "Education", enabled: false },
     { id: "sec_certifications", type: "certifications", title: "Certifications", enabled: false },
-    { id: "sec_competitive", type: "competitive", title: "Competitive Programming", enabled: template === "anime-gaming" },
+    { id: "sec_achievements", type: "achievements", title: "Achievements", enabled: isSahil },
+    { id: "sec_competitive", type: "competitive", title: "Competitive Programming", enabled: isGamerOrAnime },
   ];
 }
 
@@ -242,62 +249,67 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
             `</div>`,
             "",
           );
-        } else if (templateId === "modern-dashboard") {
-          // Inspired by Hugo Yannt: Starry gothic / pixel-art banner
+        } else if (templateId === "hugo-starry-cyber" || templateId === "modern-dashboard") {
+          // Dev Hugo Yannt reference: Starry night gothic pixel castle banner with pixel font
           lines.push(
             `<div align="center">`,
-            `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:0b0f19,50:111827,100:030712&height=180&section=header&text=Dev+${encodeURIComponent(
+            `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:050811,40:0d1527,100:03060d&height=210&section=header&text=Dev+${encodeURIComponent(
               name,
-            )}&fontSize=42&fontColor=38bdf8&fontAlignY=45&desc=${encodeURIComponent(headline)}&descAlignY=68&descAlign=50" width="100%" alt="Dev Header" />`,
+            )}&fontSize=42&fontColor=ffffff&fontAlignY=45&desc=${encodeURIComponent(headline)}&descAlignY=66&descAlign=50" width="100%" alt="Dev Header" />`,
             `</div>`,
             "",
             `<p align="center">`,
-            `  <code>📍 ${profile.location || "Remote • Worldwide"}</code> &nbsp;•&nbsp; <code>he/him</code>`,
+            `  <code>📍 ${profile.location || "Brazil 🇧🇷"}</code> &nbsp;•&nbsp; <code>he/him</code>`,
             `</p>`,
             "",
           );
-        } else if (templateId === "anime-gaming" || templateId === "cyberpunk") {
-          // Inspired by Mohabbat / Kaneki Ken aesthetic
+        } else if (templateId === "sahil-dev-stack" || templateId === "developer-tech-stack" || templateId === "developer") {
+          // Sahil Raut reference:
+          lines.push(
+            `### 💻 Hi 👋, I'm ${name}`,
+            "",
+            `> ✉️ Email me at [${profile.email || "sahilraut200619@gmail.com"}](mailto:${profile.email || "sahilraut200619@gmail.com"}) for collaboration, projects, or anything else 🙃`,
+            "",
+          );
+        } else if (templateId === "anime-tokyo-ghoul" || templateId === "anime-gaming" || templateId === "cyberpunk") {
+          // Mohabbat / Tokyo Ghoul reference: Kaneki splatter dark banner + social badges
           lines.push(
             `<div align="center">`,
-            `  <img src="https://capsule-render.vercel.app/api?type=slice&color=0:ff007f,50:7928ca,100:00dfd8&height=200&section=header&text=✦+${encodeURIComponent(
+            `  <img src="https://capsule-render.vercel.app/api?type=slice&color=0:1e1b4b,50:4c0519,100:09090b&height=220&section=header&text=✦+Hi%2C+I'm+${encodeURIComponent(
               name,
-            )}+✦&fontSize=44&fontColor=ffffff&desc=⚔️+${encodeURIComponent(headline)}&descAlignY=60" width="100%" alt="Anime Header" />`,
+            )}!+✦&fontSize=42&fontColor=ffffff&desc=⚔️+${encodeURIComponent(headline)}&descAlignY=64" width="100%" alt="Tokyo Ghoul Banner" />`,
             `</div>`,
             "",
             `<p align="center">`,
-            `  <img src="https://readme-typing-svg.herokuapp.com?font=Press+Start+2P&size=13&pause=1000&color=00FF99&center=true&vCenter=true&width=520&lines=PLAYER+1+READY...;HI%2C+I'M+${encodeURIComponent(name).toUpperCase()};CODE+•+COFFEE+•+BUILD" alt="Typing Arcade Banner" />`,
+            `  <a href="https://discord.com"><img src="https://img.shields.io/badge/DISCORD-5865F2?style=for-the-badge&logo=discord&logoColor=white" /></a>&nbsp;`,
+            `  <a href="https://linkedin.com"><img src="https://img.shields.io/badge/LINKEDIN-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" /></a>&nbsp;`,
+            `  <a href="https://twitter.com"><img src="https://img.shields.io/badge/TWITTER-1DA1F2?style=for-the-badge&logo=x&logoColor=white" /></a>`,
             `</p>`,
             "",
           );
-        } else if (templateId === "minimal-aesthetic" || templateId === "minimal") {
-          // Inspired by midnight.shady (Creation of Adam / monochrome)
+        } else if (templateId === "midnight-shady" || templateId === "minimal-aesthetic" || templateId === "minimal") {
+          // Midnight Shady reference: Creation of Adam browser window + centered text
           lines.push(
             `<div align="center">`,
-            `  <img src="https://capsule-render.vercel.app/api?type=transparent&height=150&section=header&text=✦+${encodeURIComponent(name)}+✦&fontSize=38&fontColor=f4f4f5&desc=${encodeURIComponent(headline)}&descAlignY=65" width="100%" alt="Minimalist Header" />`,
+            `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:09090b,50:18181b,100:09090b&height=180&section=header&text=✦+Creation+of+Code+✦&fontSize=32&fontColor=71717a&desc=Connecting+the+Digital+Consciousness&descAlignY=65" width="100%" alt="Creation of Adam Header" />`,
             `</div>`,
             "",
-            `<h2 align="center">Hi 👋, I'm ${name}</h2>`,
-            `<p align="center"><b>${profile.currentRole || "Backend Developer • Clean Architecture"}</b></p>`,
-            `<p align="center"><i>${headline}</i></p>`,
+            `<h2 align="center">Hi 👋, Imma ${name}</h2>`,
+            `<p align="center"><b>${profile.currentRole || "Backend Developer"}</b></p>`,
+            `<p align="center"><code>${profile.currentWork || "Building reliable backend systems with clean architecture and scalable solutions."}</code></p>`,
             "",
             `---`,
             "",
           );
-        } else if (templateId === "developer-tech-stack" || templateId === "developer") {
-          // Inspired by Sahil Raut
-          lines.push(
-            `### 💻 Hi 👋, I'm ${name}`,
-            "",
-            `> ✉️ Email me at [${profile.email || "developer@example.com"}](mailto:${profile.email || "developer@example.com"}) for collaboration, projects, or anything else 🤝`,
-            "",
-          );
-        } else if (templateId === "student" || templateId === "creative") {
-          // Inspired by Joshua Thadi
+        } else if (templateId === "joshua-lofi-city" || templateId === "student" || templateId === "creative") {
+          // Joshua Thadi reference: Lo-Fi rooftop cityscape banner with terminal poem & Namaste
           lines.push(
             `<div align="center">`,
-            `  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=14,24,30&height=180&section=header&text=Namaste+🙏+I'm+${encodeURIComponent(name)}&fontSize=38&fontAlignY=40&desc=${encodeURIComponent(headline)}&descAlignY=65&descAlign=50" width="100%" alt="Creative Header" />`,
+            `  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:18181b,50:27272a,100:09090b&height=200&section=header&text=Namaste+🙏+I'm+${encodeURIComponent(name)}&fontSize=38&fontAlignY=42&desc=${encodeURIComponent(headline)}&descAlignY=68" width="100%" alt="Lo-Fi Cityscape Header" />`,
             `</div>`,
+            "",
+            `> **Heaven on earth. Nature's masterpiece!** Serenity in every view...  `,
+            `> \`Life = love; for(life in love): print(alive) else: print(!live)\``,
             "",
           );
         } else if (settings.headerStyle === "typing") {
@@ -359,20 +371,42 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
 
         // Check for companion illustrations / mascots (Anime / Minimal Astronaut / Dev at desk)
         const hasCompanionMascot =
+          templateId === "anime-tokyo-ghoul" ||
           templateId === "anime-gaming" ||
+          templateId === "midnight-shady" ||
           templateId === "minimal-aesthetic" ||
+          templateId === "joshua-lofi-city" ||
           templateId === "student" ||
           templateId === "creative";
 
         const companionImgUrl =
           doc.gifUrl ||
-          (templateId === "anime-gaming"
+          (templateId === "anime-tokyo-ghoul" || templateId === "anime-gaming"
             ? "https://media.giphy.com/media/unQ3IJU2RG7DO/giphy.gif"
-            : templateId === "minimal-aesthetic"
-            ? "https://raw.githubusercontent.com/sunilkumar25kush/assets/main/astronaut.png"
-            : "https://media.giphy.com/media/L1R1tvI9svkIWwpVYr/giphy.gif");
+            : templateId === "midnight-shady" || templateId === "minimal-aesthetic"
+            ? "https://media.giphy.com/media/L1R1tvI9svkIWwpVYr/giphy.gif"
+            : "https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif");
 
-        if (hasCompanionMascot) {
+        if (templateId === "hugo-starry-cyber" || templateId === "modern-dashboard") {
+          lines.push(
+            profile.bio || "I'm in my final semester of Information Systems, and I love turning technology into income.",
+            "",
+            `- 🚀 **Building now:** ${profile.currentWork || "Fluxo, my own app currently in development"}`,
+            `- 🎯 **Goal:** ${profile.learning || "to move abroad and work in Cybersecurity"}`,
+            `- 💛 **Open to:** ${profile.askMeAbout || "internships & freelance work"}`,
+            `- 💬 **Any questions?** ${profile.funFact || "Feel free to reach out!"}`,
+            "",
+          );
+        } else if (templateId === "sahil-dev-stack" || templateId === "developer-tech-stack") {
+          lines.push(
+            `- 🔭 **I'm Open To Work**`,
+            `- 🌱 **I'm currently learning:** ${profile.learning || "Backend Development (Node.js / Express)"}`,
+            `- 📫 **How to reach me:** [${profile.email || "sahilraut200619@gmail.com"}](mailto:${profile.email || "sahilraut200619@gmail.com"})`,
+            `- ⚡ **Pronouns:** He/Him`,
+            `- 🐛 **Fun fact:** ${profile.funFact || "99 little bugs in the code, take one down, patch it around, 127 little bugs in the code 🐛"}`,
+            "",
+          );
+        } else if (hasCompanionMascot) {
           const bioContent = [
             profile.bio ? `<p>${profile.bio}</p>` : "",
             facts.length > 0 ? `<ul>${facts.map((f) => `<li>${f.replace(/^- /, "")}</li>`).join("")}</ul>` : "",
@@ -405,13 +439,15 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
         lines.push(`### 💻 ${sec.title || "Tech Stack"}`);
 
         const useSkillIcons =
+          templateId === "anime-tokyo-ghoul" ||
           templateId === "anime-gaming" ||
+          templateId === "midnight-shady" ||
           templateId === "minimal-aesthetic" ||
-          templateId === "modern-dashboard" ||
+          templateId === "joshua-lofi-city" ||
           templateId === "student";
 
         if (useSkillIcons) {
-          const iconTheme = templateId === "minimal-aesthetic" ? "dark" : "dark";
+          const iconTheme = templateId === "minimal-aesthetic" || templateId === "midnight-shady" ? "dark" : "dark";
           const iconsUrl = renderSkillIconsUrl(skills, iconTheme, 12);
           lines.push(
             `<p align="center">`,
@@ -469,22 +505,46 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
       case "stats": {
         lines.push(`### 📊 ${sec.title || "GitHub Analytics"}`);
 
-        if (templateId === "modern-dashboard") {
+        if (templateId === "hugo-starry-cyber" || templateId === "modern-dashboard") {
           // Inspired by Hugo Yannt: Language Donut + GitHub Stats + 4-Metric table
           lines.push(
             `<p align="center">`,
-            `  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=${githubUser}&layout=donut&theme=${statsTheme}&hide_border=true" height="175" alt="Languages Radar" />`,
-            `  <img src="https://github-readme-stats.vercel.app/api?username=${githubUser}&show_icons=true&theme=${statsTheme}&hide_border=true" height="175" alt="GitHub Stats" />`,
+            `  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=${githubUser}&layout=donut&theme=${statsTheme}&hide_border=false" height="185" alt="Radar de linguagens" />`,
+            `  <img src="https://github-readme-stats.vercel.app/api?username=${githubUser}&show_icons=true&theme=${statsTheme}&hide_border=false" height="185" alt="Principais linguagens" />`,
             `</p>`,
             "",
             `<table width="100%">`,
             `  <tr>`,
-            `    <td align="center" width="25%"><b>📦 Repositories</b><br/><code>15+ Active</code></td>`,
-            `    <td align="center" width="25%"><b>🔥 Total Commits</b><br/><code>800+</code></td>`,
-            `    <td align="center" width="25%"><b>🔀 Pull Requests</b><br/><code>40+</code></td>`,
-            `    <td align="center" width="25%"><b>⭐ Stars Received</b><br/><code>50+</code></td>`,
+            `    <td align="center" width="25%"><b>Repositórios</b><br/><code>12 Active</code></td>`,
+            `    <td align="center" width="25%"><b>Commits no último ano</b><br/><code>450+</code></td>`,
+            `    <td align="center" width="25%"><b>Pull requests</b><br/><code>28</code></td>`,
+            `    <td align="center" width="25%"><b>Estrelas recebidas</b><br/><code>15+</code></td>`,
             `  </tr>`,
             `</table>`,
+            "",
+          );
+        } else if (templateId === "anime-tokyo-ghoul") {
+          lines.push(
+            `<p align="center">`,
+            `  <img src="https://komarev.com/ghpvc/?username=${githubUser}&label=PROFILE+VIEWS&color=ec4899&style=for-the-badge" alt="Profile Views" />`,
+            `</p>`,
+            "",
+            `<p align="center">`,
+            `  <img src="https://github-readme-stats.vercel.app/api?username=${githubUser}&show_icons=true&theme=tokyonight&hide_border=true" height="165" alt="Mohabbat Stats" />`,
+            `  <img src="https://streak-stats.demolab.com/?user=${githubUser}&theme=tokyonight&hide_border=true" height="165" alt="Streak Stats" />`,
+            `</p>`,
+            "",
+            `### 📅 3D Contribution Calendar`,
+            `<p align="center">`,
+            `  <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=${githubUser}&theme=tokyonight" width="95%" alt="Isometric 3D Calendar" />`,
+            `</p>`,
+            "",
+          );
+        } else if (templateId === "midnight-shady") {
+          lines.push(
+            `<p align="center">`,
+            `  <img src="https://streak-stats.demolab.com/?user=${githubUser}&theme=github_dark&hide_border=true" height="175" alt="Streak & Contributions" />`,
+            `</p>`,
             "",
           );
         } else {
@@ -670,14 +730,23 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
   });
 
   // Footer banners for creative / aesthetic templates
-  if (templateId === "modern-dashboard") {
+  if (templateId === "hugo-starry-cyber" || templateId === "modern-dashboard") {
     lines.push(
+      `### 💬 Contacts`,
+      `<p align="center">`,
+      `  <a href="https://instagram.com" target="_blank"><img src="https://img.shields.io/badge/INSTAGRAM-000000?style=for-the-badge&logo=instagram&logoColor=00E5FF" /></a>&nbsp;`,
+      `  <a href="mailto:${profile.email || "dev@example.com"}"><img src="https://img.shields.io/badge/GMAIL-000000?style=for-the-badge&logo=gmail&logoColor=00E5FF" /></a>&nbsp;`,
+      `  <a href="https://linkedin.com" target="_blank"><img src="https://img.shields.io/badge/LINKEDIN-000000?style=for-the-badge&logo=linkedin&logoColor=00E5FF" /></a>&nbsp;`,
+      `  <a href="https://whatsapp.com" target="_blank"><img src="https://img.shields.io/badge/WHATSAPP-000000?style=for-the-badge&logo=whatsapp&logoColor=00E5FF" /></a>&nbsp;`,
+      `  <a href="https://discord.com" target="_blank"><img src="https://img.shields.io/badge/DISCORD-000000?style=for-the-badge&logo=discord&logoColor=00E5FF" /></a>`,
+      `</p>`,
+      "",
       `<div align="center">`,
-      `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:030712,50:111827,100:0b0f19&height=80&section=footer&text=⚡+Crafted+with+Passion+and+Precision+⚡&fontSize=18&fontColor=38bdf8" width="100%" alt="Footer Art" />`,
+      `  <img src="https://capsule-render.vercel.app/api?type=slice&color=0:00e5ff,50:090d16,100:00e5ff&height=180&section=footer&text=愛&fontSize=70&fontColor=00e5ff&desc=✦+Passionate+Engineering+•+Cybersecurity+•+Aesthetics+✦&descAlignY=72" width="100%" alt="Kanji Love Art" />`,
       `</div>`,
       "",
     );
-  } else if (templateId === "student" || templateId === "creative") {
+  } else if (templateId === "joshua-lofi-city" || templateId === "student" || templateId === "creative") {
     lines.push(
       `### ☕ Support Me`,
       `<p align="center">`,
@@ -685,8 +754,15 @@ export function compileReadmeToMarkdown(doc: Partial<GithubReadme>): string {
       `</p>`,
       "",
       `<div align="center">`,
-      `  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=30,24,14&height=100&section=footer" width="100%" alt="Footer Banner" />`,
+      `  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:064e3b,50:047857,100:064e3b&height=100&section=footer&text=⛩️+Aesthetic+Torii+Shrine+•+Peaceful+Coding+⛩️&fontSize=18&fontColor=a7f3d0" width="100%" alt="Footer Banner" />`,
       `</div>`,
+      "",
+    );
+  } else if (templateId === "anime-tokyo-ghoul") {
+    lines.push(
+      `<p align="center">`,
+      `  Made with 🖤 by <a href="https://github.com/${githubUser}">${name}</a>`,
+      `</p>`,
       "",
     );
   }

@@ -2,6 +2,101 @@ import type { GithubReadmeTemplateId, ReadmeTemplateMeta, CreateGithubReadmeInpu
 
 export const README_TEMPLATES: ReadmeTemplateMeta[] = [
   {
+    id: "hugo-starry-cyber",
+    name: "Dev Hugo Starry Cyber",
+    category: "developer",
+    description: "Starry Night gothic castle aesthetic with pixel typography, dual Language Radar & progress bars, 4-column metric counter, neon cyan contact pills, and Kanji love artwork.",
+    badge: "Cyber Gothic 🌌",
+    headerStyle: "capsule",
+    statsTheme: "nord",
+    badgesStyle: "for-the-badge",
+    tags: ["Starry Castle", "Language Radar", "4-Metric Strip", "Neon Cyan", "Kanji Love Art"],
+    accentColor: "#00E5FF",
+    features: [
+      "Pixel-art gothic starry castle banner with custom subtitle",
+      "Goal & focus bullets (Building Fluxo, Cybersecurity, Internships)",
+      "Dual language radar & horizontal percentage progress cards",
+      "4-metric repository analytics strip (Repos, Commits, PRs, Stars)",
+      "Neon cyan pill contacts & glowing hands Kanji '愛' artwork",
+    ],
+  },
+  {
+    id: "sahil-dev-stack",
+    name: "Sahil Dev-Stack & Open Source",
+    category: "developer",
+    description: "Badge-dense engineering showcase with email collaboration callout, 40+ categorized shields, GitHub trophies row, and Hacktoberfest super contributor milestones.",
+    badge: "Open Source 🚀",
+    headerStyle: "wave",
+    statsTheme: "radical",
+    badgesStyle: "for-the-badge",
+    tags: ["Email Banner", "40+ Shields", "GitHub Trophies", "Hacktoberfest"],
+    accentColor: "#38BDF8",
+    features: [
+      "Direct email collaboration callout box",
+      "Open to work & debugging fun fact bullet points",
+      "Comprehensive 40+ categorized technology badges",
+      "Horizontal GitHub Trophies widget showcase",
+      "Open source contributions, Multer bug fixes & circular stats card",
+    ],
+  },
+  {
+    id: "anime-tokyo-ghoul",
+    name: "Mohabbat Tokyo Ghoul Dark",
+    category: "gaming",
+    description: "Atmospheric Tokyo Ghoul anime dark aesthetic with Kaneki banner, animated pixel cat companion, 3D isometric contribution graph, and competitive programming widget.",
+    badge: "Dark Anime 🩸",
+    headerStyle: "slice",
+    statsTheme: "tokyonight",
+    badgesStyle: "for-the-badge",
+    tags: ["Kaneki Art", "Pixel Cat GIF", "3D Isometric Graph", "LeetCode / CP"],
+    accentColor: "#EC4899",
+    features: [
+      "Kaneki Ken splatter dark banner with social pill badges",
+      "Two-column About Me with animated pixel cat mascot",
+      "Side-by-side stats and streak card with anime illustration",
+      "3D Isometric contribution calendar & activity curve graph",
+      "Competitive programming rating card & custom signature footer",
+    ],
+  },
+  {
+    id: "midnight-shady",
+    name: "Midnight Shady Retro Terminal",
+    category: "developer",
+    description: "Creation of Adam retro browser header with stippled pixel astronaut companion, clean centered backend engineering manifesto, 3-stat counter, and neon waveform graph.",
+    badge: "Retro Stipple 🛸",
+    headerStyle: "minimal",
+    statsTheme: "github_dark",
+    badgesStyle: "flat-square",
+    tags: ["Creation of Adam", "Stippled Astronaut", "3-Stat Counter", "Neon Waveform"],
+    accentColor: "#00F0FF",
+    features: [
+      "Creation of Adam dot-matrix browser window artwork banner",
+      "Clean centered headline: 'Building reliable backend systems'",
+      "Two-column About Me with stippled retro pixel astronaut",
+      "Squircle Connect icons (GitHub, LinkedIn, Gmail)",
+      "3-column stats metrics and neon blue activity waveform",
+    ],
+  },
+  {
+    id: "joshua-lofi-city",
+    name: "Joshua Lo-Fi Cityscape & Shrine",
+    category: "creative",
+    description: "Lo-Fi anime rooftop cityscape with terminal life code, Namaste greeting, developer with headphones illustration, colorful app icon grid, and Japanese Torii shrine banner.",
+    badge: "Lo-Fi City ⛩️",
+    headerStyle: "wave",
+    statsTheme: "onedark",
+    badgesStyle: "for-the-badge",
+    tags: ["Lo-Fi Rooftop", "Namaste Greeting", "Headphones Dev", "Japanese Shrine"],
+    accentColor: "#FBBF24",
+    features: [
+      "Rooftop cityscape night banner with 'Josh The Boss' terminal code",
+      "Namaste greeting with dual monitors developer illustration",
+      "Colorful squircle brand icons grid (Languages & Tools)",
+      "Pill tech stack badges & Buy Me A Coffee support button",
+      "Aesthetic Japanese pixel art Torii gate shrine footer banner",
+    ],
+  },
+  {
     id: "developer-tech-stack",
     name: "Developer Tech Stack",
     category: "developer",
@@ -227,10 +322,11 @@ export const README_TEMPLATES: ReadmeTemplateMeta[] = [
 /** Return default starter payload for a given template */
 export function getTemplatePreset(templateId: GithubReadmeTemplateId, username = "octocat"): CreateGithubReadmeInput {
   switch (templateId) {
+    case "hugo-starry-cyber":
     case "modern-dashboard":
       return {
-        title: "Modern Developer Dashboard README",
-        template: "modern-dashboard",
+        title: "Dev Hugo Starry Cyber README",
+        template: "hugo-starry-cyber",
         sourceOption: "template",
         profile: {
           name: "Hugo Yannt",
@@ -298,11 +394,12 @@ export function getTemplatePreset(templateId: GithubReadmeTemplateId, username =
         },
       };
 
+    case "anime-tokyo-ghoul":
     case "anime-gaming":
     case "cyberpunk":
       return {
         title: "Anime & Gaming Developer README",
-        template: "anime-gaming",
+        template: "anime-tokyo-ghoul",
         sourceOption: "template",
         profile: {
           name: "Mohabbat",
@@ -359,11 +456,12 @@ export function getTemplatePreset(templateId: GithubReadmeTemplateId, username =
         },
       };
 
+    case "midnight-shady":
     case "minimal-aesthetic":
     case "minimal":
       return {
         title: "Minimalist Developer README",
-        template: "minimal-aesthetic",
+        template: "midnight-shady",
         sourceOption: "template",
         profile: {
           name: "Imma Shady",
@@ -471,10 +569,11 @@ export function getTemplatePreset(templateId: GithubReadmeTemplateId, username =
         },
       };
 
+    case "joshua-lofi-city":
     case "student":
       return {
-        title: "Student & Creative Developer README",
-        template: "student",
+        title: "Joshua Lo-Fi Cityscape README",
+        template: "joshua-lofi-city",
         sourceOption: "template",
         profile: {
           name: "Joshua Thadi",
@@ -582,12 +681,13 @@ export function getTemplatePreset(templateId: GithubReadmeTemplateId, username =
         },
       };
 
+    case "sahil-dev-stack":
     case "developer-tech-stack":
     case "developer":
     default:
       return {
         title: "Developer Tech Stack README",
-        template: "developer-tech-stack",
+        template: "sahil-dev-stack",
         sourceOption: "template",
         profile: {
           name: "Sahil Raut",
